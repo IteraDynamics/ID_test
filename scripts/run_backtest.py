@@ -165,7 +165,11 @@ def main() -> None:
     print(f"  Total Fees:   ${metrics.total_fees_paid:>12,.2f}")
     print(f"  Slippage:     ${metrics.total_slippage_cost:>12,.2f}")
     print(f"  Avg Cost:     {metrics.avg_cost_per_trade_bps:.1f} bps/trade")
-    print(f"  Turnover:     {metrics.turnover_x:.2f}x")
+    print(f"  Turnover:     {metrics.turnover_x:.2f}x  (initial capital)")
+    print(f"  Turnover NAV: {metrics.turnover_x_nav_adj:.2f}x  (mean NAV adjusted)")
+    print(f"  Avg BUY:      ${metrics.avg_entry_notional_usd:>10,.0f}  ({metrics.avg_entry_notional_pct_nav*100:.1f}% NAV)")
+    print(f"  Avg SELL:     ${metrics.avg_exit_notional_usd:>10,.0f}  ({metrics.avg_exit_notional_pct_nav*100:.1f}% NAV)")
+    print(f"  Exit/Entry:   {metrics.avg_exit_entry_notional_ratio:.3f}x  (notional ratio)")
     print("=" * 60)
 
     # ── Save artifacts ────────────────────────────────────────────────

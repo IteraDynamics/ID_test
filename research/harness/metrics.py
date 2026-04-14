@@ -55,6 +55,14 @@ class BacktestMetrics:
     n_bars: int
     bars_per_year: float
 
+    # Detailed turnover diagnostics (defaults for backward compatibility)
+    turnover_x_nav_adj: float = 0.0         # sum(notional) / mean(equity_curve)
+    avg_entry_notional_usd: float = 0.0     # avg notional of BUY trades (USD)
+    avg_exit_notional_usd: float = 0.0      # avg notional of SELL trades (USD)
+    avg_exit_entry_notional_ratio: float = 0.0  # exit_avg / entry_avg in USD
+    avg_entry_notional_pct_nav: float = 0.0 # avg entry notional as fraction of NAV at entry
+    avg_exit_notional_pct_nav: float = 0.0  # avg exit notional as fraction of NAV at exit
+
     # Extra context
     strategy_id: str = "unknown"
     asset: str = "BTC"
@@ -83,6 +91,12 @@ class BacktestMetrics:
             "total_slippage_cost": round(self.total_slippage_cost, 2),
             "avg_cost_per_trade_bps": round(self.avg_cost_per_trade_bps, 2),
             "turnover_x": round(self.turnover_x, 4),
+            "turnover_x_nav_adj": round(self.turnover_x_nav_adj, 4),
+            "avg_entry_notional_usd": round(self.avg_entry_notional_usd, 2),
+            "avg_exit_notional_usd": round(self.avg_exit_notional_usd, 2),
+            "avg_exit_entry_notional_ratio": round(self.avg_exit_entry_notional_ratio, 4),
+            "avg_entry_notional_pct_nav": round(self.avg_entry_notional_pct_nav, 4),
+            "avg_exit_notional_pct_nav": round(self.avg_exit_notional_pct_nav, 4),
         }
 
     def to_markdown(self) -> str:
@@ -122,7 +136,17 @@ class BacktestMetrics:
             f"| Total Fees Paid | ${d['total_fees_paid']:,.2f} |",
             f"| Total Slippage Cost | ${d['total_slippage_cost']:,.2f} |",
             f"| Avg Cost / Trade | {d['avg_cost_per_trade_bps']:.1f} bps |",
-            f"| Turnover | {d['turnover_x']:.2f}x |",
+            f"| Turnover (/ initial capital) | {d['turnover_x']:.2f}x |",
+            f"| Turnover (/ mean NAV, NAV-adj) | {d['turnover_x_nav_adj']:.2f}x |",
+            "",
+            "## Turnover Diagnostics",
+            f"| Metric | Value |",
+            f"|--------|-------|",
+            f"| Avg Entry Notional (USD) | ${d['avg_entry_notional_usd']:,.0f} |",
+            f"| Avg Exit Notional (USD) | ${d['avg_exit_notional_usd']:,.0f} |",
+            f"| Exit / Entry Notional Ratio | {d['avg_exit_entry_notional_ratio']:.3f} |",
+            f"| Avg Entry Notional (% NAV) | {d['avg_entry_notional_pct_nav']*100:.1f}% |",
+            f"| Avg Exit Notional (% NAV) | {d['avg_exit_notional_pct_nav']*100:.1f}% |",
         ]
         return "\n".join(lines)
 
@@ -197,6 +221,16 @@ def compute_metrics(
     total_notional = sum(getattr(t, "notional_usd", 0.0) for t in trades)
     turnover_x = total_notional / initial if initial > 0 else 0.0
 
+    # ── Detailed notional diagnostics ─────────────────────────────────
+    (
+        avg_entry_notional_usd,
+        avg_exit_notional_usd,
+        avg_exit_entry_notional_ratio,
+        avg_entry_notional_pct_nav,
+        avg_exit_notional_pct_nav,
+        turnover_x_nav_adj,
+    ) = _notional_stats(trades, eq)
+
     return BacktestMetrics(
         total_return_pct=round(total_ret, 4),
         cagr_pct=round(cagr, 4),
@@ -213,6 +247,12 @@ def compute_metrics(
         total_slippage_cost=round(total_slippage, 2),
         avg_cost_per_trade_bps=round(avg_cost_bps, 2),
         turnover_x=round(turnover_x, 4),
+        turnover_x_nav_adj=round(turnover_x_nav_adj, 4),
+        avg_entry_notional_usd=round(avg_entry_notional_usd, 2),
+        avg_exit_notional_usd=round(avg_exit_notional_usd, 2),
+        avg_exit_entry_notional_ratio=round(avg_exit_entry_notional_ratio, 4),
+        avg_entry_notional_pct_nav=round(avg_entry_notional_pct_nav, 4),
+        avg_exit_notional_pct_nav=round(avg_exit_notional_pct_nav, 4),
         initial_equity=round(initial, 2),
         final_equity=round(final, 2),
         start=str(eq.index[0]),
@@ -327,6 +367,55 @@ def _trade_stats(trades: list, equity_curve: pd.Series) -> tuple[int, float, flo
     avg_loss = float(np.mean(losses)) if len(losses) > 0 else 0.0
 
     return len(trades), win_rate, avg_ret, avg_win, avg_loss
+
+
+def _notional_stats(
+    trades: list,
+    equity_curve: pd.Series,
+) -> tuple[float, float, float, float, float, float]:
+    """Compute per-direction notional metrics and NAV-adjusted turnover.
+
+    For each trade, looks up the NAV at the trade bar from the equity curve so
+    that notional can be expressed both in raw USD and as a fraction of NAV.
+
+    Returns
+    -------
+    (avg_entry_notional_usd, avg_exit_notional_usd, avg_exit_entry_ratio,
+     avg_entry_pct_nav, avg_exit_pct_nav, turnover_x_nav_adj)
+    """
+    if not trades or len(equity_curve) == 0:
+        return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+
+    eq = equity_curve
+    mean_nav = float(eq.mean())
+    total_notional = sum(getattr(t, "notional_usd", 0.0) for t in trades)
+    turnover_nav_adj = total_notional / mean_nav if mean_nav > 0 else 0.0
+
+    entry_notionals: list[float] = []
+    exit_notionals: list[float] = []
+    entry_pct_navs: list[float] = []
+    exit_pct_navs: list[float] = []
+
+    for t in trades:
+        n = getattr(t, "notional_usd", 0.0)
+        bar = getattr(t, "bar_index", None)
+        nav_at = float(eq.iloc[bar]) if bar is not None and 0 <= bar < len(eq) else mean_nav
+        pct = n / nav_at if nav_at > 0 else 0.0
+
+        if t.direction == "BUY":
+            entry_notionals.append(n)
+            entry_pct_navs.append(pct)
+        elif t.direction == "SELL":
+            exit_notionals.append(n)
+            exit_pct_navs.append(pct)
+
+    avg_entry = float(np.mean(entry_notionals)) if entry_notionals else 0.0
+    avg_exit = float(np.mean(exit_notionals)) if exit_notionals else 0.0
+    ratio = avg_exit / avg_entry if avg_entry > 0 else 0.0
+    avg_entry_pct = float(np.mean(entry_pct_navs)) if entry_pct_navs else 0.0
+    avg_exit_pct = float(np.mean(exit_pct_navs)) if exit_pct_navs else 0.0
+
+    return avg_entry, avg_exit, ratio, avg_entry_pct, avg_exit_pct, turnover_nav_adj
 
 
 def _empty_metrics(params: dict) -> BacktestMetrics:
