@@ -6,15 +6,20 @@ Each strategy exposes:
 Imports:
     from research.strategies import Action, StrategyContext, StrategyIntent
     from research.strategies import trend_following, volatility_breakout, mean_reversion
+    from research.strategies import trend_following_v2, trend_following_v3
 """
 
 from research.strategies.contracts import Action, StrategyContext, StrategyIntent
 from research.strategies import trend_following
+from research.strategies import trend_following_v2
+from research.strategies import trend_following_v3
 from research.strategies import volatility_breakout
 from research.strategies import mean_reversion
 
 REGISTRY: dict[str, object] = {
     "trend_following": trend_following,
+    "trend_following_v2": trend_following_v2,
+    "trend_following_v3": trend_following_v3,
     "volatility_breakout": volatility_breakout,
     "mean_reversion": mean_reversion,
 }
@@ -24,6 +29,8 @@ __all__ = [
     "StrategyContext",
     "StrategyIntent",
     "trend_following",
+    "trend_following_v2",
+    "trend_following_v3",
     "volatility_breakout",
     "mean_reversion",
     "REGISTRY",
