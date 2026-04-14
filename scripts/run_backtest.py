@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+"""IteraDynamics — Backtest CLI.
+
+Runs a single-strategy backtest on OHLCV CSV data and outputs artifacts.
+
+Usage examples:
+    python scripts/run_backtest.py --data data/btc_1h.csv --strategy trend_following
+    python scripts/run_backtest.py --data data/btc_1h.csv --strategy vol_breakout --start 2022-01-01 --end 2023-12-31
+    python scripts/run_backtest.py --data data/btc_1h.csv --strategy mean_reversion --capital 50000
+
+PowerShell:
+    python scripts/run_backtest.py --data data\\btc_1h.csv --strategy trend_following
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import sys
+from pathlib import Path
+
+# ── Ensure project root on path ───────────────────────────────────────────────
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from dotenv import load_dotenv
+load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)-7s — %(message)s",
+    datefmt="%H:%M:%S",
+)
+log = logging.getLogger("run_backtest")
+
+from research.harness.data_loader import load_ohlcv, validate_ohlcv
+from research.harness.backtest_engine import run_backtest
+from research.harness.metrics import compute_metrics
+from research.harness.artifacts import save_artifacts
+from research.strategies import REGISTRY as STRATEGY_REGISTRY
+
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description="IteraDynamics single-strategy backtest",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    p.add_argument("--data", required=True, help="Path to OHLCV CSV")
+    p.add_argument(
+        "--strategy",
+        default="trend_following",
+        choices=list(STRATEGY_REGISTRY.keys()),
+        help="Strategy to backtest",
+    )
+    p.add_argument("--asset", default="BTC", help="Asset label")
+    p.add_argument("--start", default=None, help="Start date (YYYY-MM-DD)")
+    p.add_argument("--end", default=None, help="End date (YYYY-MM-DD)")
+    p.add_argument("--capital", type=float, default=100_000.0, help="Initial capital (USD)")
+    p.add_argument("--fee", type=float, default=0.0006, help="Fee rate per trade")
+    p.add_argument("--slippage", type=float, default=5.0, help="Slippage in bps")
+    p.add_argument(
+        "--out-dir", default=None, help="Artifact output directory (default: artifacts/<strategy>)"
+    )
+    p.add_argument("--no-chart", action="store_true", help="Skip chart PNG generation")
+    return p.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+
+    # ── Load data ─────────────────────────────────────────────────────
+    log.info("Loading data: %s", args.data)
+    df = load_ohlcv(args.data, start=args.start, end=args.end, asset=args.asset)
+    warnings = validate_ohlcv(df)
+    for w in warnings:
+        log.warning("Data warning: %s", w)
+
+    log.info(
+        "Loaded %d bars  %s → %s  [%s]",
+        len(df), df.index[0], df.index[-1], args.asset,
+    )
+
+    # ── Run backtest ──────────────────────────────────────────────────
+    strategy_module = STRATEGY_REGISTRY[args.strategy]
+    log.info("Running backtest: strategy=%s  capital=$%.2f", args.strategy, args.capital)
+
+    result = run_backtest(
+        df=df,
+        strategy_module=strategy_module,
+        initial_capital=args.capital,
+        fee_rate=args.fee,
+        slippage_bps=args.slippage,
+        asset=args.asset,
+    )
+
+    # ── Compute metrics ───────────────────────────────────────────────
+    metrics = compute_metrics(result.equity_curve, result.trades, result.params)
+
+    # ── Print summary ─────────────────────────────────────────────────
+    print("\n" + "=" * 60)
+    print(f"  BACKTEST COMPLETE — {args.strategy} / {args.asset}")
+    print("=" * 60)
+    print(f"  Period:       {metrics.start[:10]} → {metrics.end[:10]}")
+    print(f"  Bars:         {metrics.n_bars:,}")
+    print(f"  Initial:      ${metrics.initial_equity:>12,.2f}")
+    print(f"  Final:        ${metrics.final_equity:>12,.2f}")
+    print(f"  Total Return: {metrics.total_return_pct:>+.2f}%")
+    print(f"  CAGR:         {metrics.cagr_pct:>+.2f}%")
+    print(f"  Max Drawdown: {metrics.max_drawdown_pct:.2f}%")
+    print(f"  Sharpe:       {metrics.sharpe:.3f}")
+    print(f"  Calmar:       {metrics.calmar:.3f}")
+    print(f"  Ann. Vol:     {metrics.volatility_ann_pct:.2f}%")
+    print(f"  Trades:       {metrics.n_trades}")
+    print(f"  Win Rate:     {metrics.win_rate_pct:.1f}%")
+    print("=" * 60)
+
+    # ── Save artifacts ────────────────────────────────────────────────
+    run_id = f"{args.strategy}_{args.asset}_{str(df.index[0])[:10]}_{str(df.index[-1])[:10]}"
+    out_dir = args.out_dir or None
+    saved_to = save_artifacts(
+        result=result,
+        metrics=metrics,
+        run_id=run_id,
+        out_dir=out_dir,
+        save_chart=not args.no_chart,
+    )
+    log.info("Artifacts saved to: %s", saved_to)
+    print(f"\n  Artifacts: {saved_to}")
+    print(f"    equity_curve.csv  trades.csv  summary.json  summary.md  chart.png\n")
+
+
+if __name__ == "__main__":
+    main()
