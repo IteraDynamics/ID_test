@@ -207,42 +207,85 @@ def _infer_bars_per_year(eq: pd.Series) -> float:
 
 
 def _trade_stats(trades: list, equity_curve: pd.Series) -> tuple[int, float, float, float, float]:
-    """Compute trade-level statistics from round-trip pairs.
+    """Compute win rate using true equity-based round-trip cycles.
 
-    Pairs BUY trades with subsequent SELL trades on bar_index basis.
+    A cycle is defined as the period during which the strategy holds a
+    non-zero position continuously: from first entry (exposure crosses
+    above zero) to full exit (exposure returns to zero).  The P&L of
+    each cycle is measured from the equity curve value at the first BUY
+    to the equity curve value at the last SELL in that cycle.
+
+    This avoids the inflated win rate caused by pairing every small
+    position *addition* (BUY rebalance) with the eventual exit SELL.
+    That naive pairing always looks like a win in a sustained uptrend,
+    regardless of whether the overall cycle was profitable.
     """
     if not trades:
         return 0, 0.0, 0.0, 0.0, 0.0
 
-    # Build round-trip pairs: find consecutive BUY → SELL pairs
-    buys = [t for t in trades if t.direction == "BUY"]
-    sells = [t for t in trades if t.direction == "SELL"]
-    if not buys or not sells:
+    if equity_curve is None or len(equity_curve) == 0:
         return len(trades), 0.0, 0.0, 0.0, 0.0
 
-    # Simple pair-off: match each BUY to the next SELL after it
-    paired_returns: list[float] = []
-    sell_idx = 0
-    for buy in buys:
-        while sell_idx < len(sells) and sells[sell_idx].bar_index <= buy.bar_index:
-            sell_idx += 1
-        if sell_idx >= len(sells):
-            break
-        sell = sells[sell_idx]
-        # Round-trip return (approximate, using prices)
-        if buy.price > 0:
-            rt_ret = (sell.price / buy.price - 1.0) * 100.0
-            # Deduct total fee+slippage from both legs as % of entry
-            cost_pct = (buy.fee_usd + buy.slippage_usd + sell.fee_usd + sell.slippage_usd) / (
-                buy.notional_usd
-            ) * 100.0 if buy.notional_usd > 0 else 0.0
-            paired_returns.append(rt_ret - cost_pct)
-        sell_idx += 1
+    # ── Group trades into continuous holding cycles ───────────────────
+    # A cycle ends when a SELL trade brings the running exposure near 0.
+    # We approximate this by detecting SELL trades that follow all BUYs
+    # before the next BUY burst (i.e. the last SELL before a gap).
 
-    if not paired_returns:
+    sorted_trades = sorted(trades, key=lambda t: t.bar_index)
+
+    cycles: list[tuple[int, int]] = []   # (entry_bar, exit_bar)
+    cycle_start: int | None = None
+    last_sell_bar: int | None = None
+
+    for t in sorted_trades:
+        if t.direction == "BUY":
+            if cycle_start is None:
+                cycle_start = t.bar_index
+            last_sell_bar = None   # reset: still in a cycle
+        elif t.direction == "SELL":
+            last_sell_bar = t.bar_index
+
+    # Re-scan to find actual cycle boundaries using exposure transitions
+    # Strategy: each time we see a SELL and the next event is a BUY (or end),
+    # that SELL closes the cycle.
+    cycle_start = None
+    i = 0
+    while i < len(sorted_trades):
+        t = sorted_trades[i]
+        if t.direction == "BUY" and cycle_start is None:
+            cycle_start = t.bar_index
+        elif t.direction == "SELL":
+            # Check if the next trade is a BUY (new cycle) or there is none
+            next_is_buy_or_end = (
+                i + 1 >= len(sorted_trades)
+                or sorted_trades[i + 1].direction == "BUY"
+            )
+            if next_is_buy_or_end and cycle_start is not None:
+                cycles.append((cycle_start, t.bar_index))
+                cycle_start = None
+        i += 1
+
+    if not cycles:
         return len(trades), 0.0, 0.0, 0.0, 0.0
 
-    arr = np.array(paired_returns)
+    # ── Measure each cycle's return from the equity curve ─────────────
+    eq = equity_curve
+    cycle_returns: list[float] = []
+
+    for entry_bar, exit_bar in cycles:
+        # Guard against out-of-range indices
+        if entry_bar >= len(eq) or exit_bar >= len(eq):
+            continue
+        eq_entry = float(eq.iloc[entry_bar])
+        eq_exit = float(eq.iloc[exit_bar])
+        if eq_entry > 0:
+            cycle_ret = (eq_exit / eq_entry - 1.0) * 100.0
+            cycle_returns.append(cycle_ret)
+
+    if not cycle_returns:
+        return len(trades), 0.0, 0.0, 0.0, 0.0
+
+    arr = np.array(cycle_returns)
     wins = arr[arr > 0]
     losses = arr[arr <= 0]
     win_rate = 100.0 * len(wins) / len(arr)
