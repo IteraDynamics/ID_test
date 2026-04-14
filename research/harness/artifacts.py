@@ -93,11 +93,11 @@ def save_artifacts(
     # ── Summary JSON ─────────────────────────────────────────────────
     summary = metrics.to_dict()
     summary["backtest_params"] = result.params
-    with open(out_dir / "summary.json", "w") as f:
+    with open(out_dir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, default=str)
 
     # ── Summary Markdown ─────────────────────────────────────────────
-    with open(out_dir / "summary.md", "w") as f:
+    with open(out_dir / "summary.md", "w", encoding="utf-8") as f:
         f.write(metrics.to_markdown())
         f.write("\n\n---\n\n")
         f.write("## Backtest Parameters\n\n")

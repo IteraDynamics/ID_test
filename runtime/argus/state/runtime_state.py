@@ -66,7 +66,7 @@ class RuntimeState:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         self.last_updated = datetime.utcnow().isoformat()
         data = asdict(self)
-        with open(out_path, "w") as f:
+        with open(out_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, default=str)
         log.debug("RuntimeState saved to %s", out_path)
         return out_path
@@ -79,7 +79,7 @@ class RuntimeState:
             log.info("No state file at %s — starting fresh.", load_path)
             return cls()
         try:
-            with open(load_path) as f:
+            with open(load_path, encoding="utf-8") as f:
                 data = json.load(f)
             return cls(**{k: data.get(k, v) for k, v in asdict(cls()).items()})
         except Exception as exc:
