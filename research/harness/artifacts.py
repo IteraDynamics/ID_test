@@ -72,11 +72,14 @@ def save_artifacts(
                 "bar_index": t.bar_index,
                 "timestamp": t.timestamp,
                 "direction": t.direction,
-                "price": t.price,
+                "mid_price": t.mid_price,
+                "effective_price": round(t.effective_price, 6),
                 "qty": t.qty,
                 "notional_usd": t.notional_usd,
                 "fee_usd": round(t.fee_usd, 4),
                 "slippage_usd": round(t.slippage_usd, 4),
+                "spread_usd": round(t.spread_usd, 4),
+                "cost_bps": round(t.cost_bps, 4),
                 "prev_exposure": round(t.prev_exposure, 5),
                 "new_exposure": round(t.new_exposure, 5),
                 "reason": t.reason,
@@ -86,7 +89,7 @@ def save_artifacts(
         ])
         trades_df.to_csv(out_dir / "trades.csv", index=False)
     else:
-        pd.DataFrame(columns=["bar_index", "timestamp", "direction", "price"]).to_csv(
+        pd.DataFrame(columns=["bar_index", "timestamp", "direction", "mid_price", "effective_price", "cost_bps"]).to_csv(
             out_dir / "trades.csv", index=False
         )
 

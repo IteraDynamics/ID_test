@@ -70,9 +70,17 @@ class Fill:
     qty : float
         Filled quantity.
     fill_price : float
-        Average fill price.
+        Average fill price (mid +/- slippage + spread).
     fee : float
-        Total fee paid.
+        Total fee paid (explicit cash deduction).
+    mid_price : float
+        Bar close before any fill adjustment.
+    slippage_usd : float
+        Implicit NAV cost from worse fill price (accounting only).
+    spread_usd : float
+        Implicit NAV cost from bid/ask spread (accounting only).
+    cost_bps : float
+        (fee + slippage + spread) / notional * 10_000.
     timestamp : datetime
     """
 
@@ -82,6 +90,10 @@ class Fill:
     qty: float
     fill_price: float
     fee: float
+    mid_price: float = 0.0
+    slippage_usd: float = 0.0
+    spread_usd: float = 0.0
+    cost_bps: float = 0.0
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 

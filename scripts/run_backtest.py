@@ -35,6 +35,7 @@ log = logging.getLogger("run_backtest")
 
 from research.harness.data_loader import load_ohlcv, validate_ohlcv
 from research.harness.backtest_engine import run_backtest
+from research.harness.execution_model import ExecutionConfig
 from research.harness.metrics import compute_metrics
 from research.harness.artifacts import save_artifacts
 from research.strategies import REGISTRY as STRATEGY_REGISTRY
@@ -56,8 +57,23 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--start", default=None, help="Start date (YYYY-MM-DD)")
     p.add_argument("--end", default=None, help="End date (YYYY-MM-DD)")
     p.add_argument("--capital", type=float, default=100_000.0, help="Initial capital (USD)")
-    p.add_argument("--fee", type=float, default=0.0006, help="Fee rate per trade")
-    p.add_argument("--slippage", type=float, default=5.0, help="Slippage in bps")
+
+    # ── Execution cost overrides (all optional — defaults from .env or ExecutionConfig) ──
+    p.add_argument("--fee", type=float, default=None,
+                   help="Taker fee rate (e.g. 0.0006 = 6 bps)")
+    p.add_argument("--maker-fees", action="store_true",
+                   help="Use maker fee rate instead of taker")
+    p.add_argument("--maker-fee", type=float, default=None,
+                   help="Maker fee rate (e.g. 0.0002 = 2 bps)")
+    p.add_argument("--base-slippage", type=float, default=None,
+                   help="Base slippage floor in bps (default 3)")
+    p.add_argument("--slippage-size-factor", type=float, default=None,
+                   help="Slippage bps per 100%% NAV turnover (default 10)")
+    p.add_argument("--slippage-vol-factor", type=float, default=None,
+                   help="Slippage bps per 100%% ATR (default 50)")
+    p.add_argument("--cooldown", type=int, default=None,
+                   help="Minimum bars between trades (default 0)")
+
     p.add_argument(
         "--out-dir", default=None, help="Artifact output directory (default: artifacts/<strategy>)"
     )
@@ -80,6 +96,31 @@ def main() -> None:
         len(df), df.index[0], df.index[-1], args.asset,
     )
 
+    # ── Build execution config ────────────────────────────────────────
+    exec_config = ExecutionConfig.from_env()
+    if args.fee is not None:
+        exec_config.taker_fee_rate = args.fee
+    if args.maker_fees:
+        exec_config.use_maker_fees = True
+    if args.maker_fee is not None:
+        exec_config.maker_fee_rate = args.maker_fee
+    if args.base_slippage is not None:
+        exec_config.base_slippage_bps = args.base_slippage
+    if args.slippage_size_factor is not None:
+        exec_config.slippage_size_factor = args.slippage_size_factor
+    if args.slippage_vol_factor is not None:
+        exec_config.slippage_vol_factor = args.slippage_vol_factor
+    if args.cooldown is not None:
+        exec_config.cooldown_bars = args.cooldown
+
+    log.info(
+        "Execution model: taker_fee=%.4f  base_slip=%.1fbps  "
+        "size_factor=%.1f  vol_factor=%.1f  cooldown=%d",
+        exec_config.taker_fee_rate, exec_config.base_slippage_bps,
+        exec_config.slippage_size_factor, exec_config.slippage_vol_factor,
+        exec_config.cooldown_bars,
+    )
+
     # ── Run backtest ──────────────────────────────────────────────────
     strategy_module = STRATEGY_REGISTRY[args.strategy]
     log.info("Running backtest: strategy=%s  capital=$%.2f", args.strategy, args.capital)
@@ -88,8 +129,7 @@ def main() -> None:
         df=df,
         strategy_module=strategy_module,
         initial_capital=args.capital,
-        fee_rate=args.fee,
-        slippage_bps=args.slippage,
+        exec_config=exec_config,
         asset=args.asset,
     )
 
@@ -112,6 +152,10 @@ def main() -> None:
     print(f"  Ann. Vol:     {metrics.volatility_ann_pct:.2f}%")
     print(f"  Trades:       {metrics.n_trades}")
     print(f"  Win Rate:     {metrics.win_rate_pct:.1f}%")
+    print(f"  Total Fees:   ${metrics.total_fees_paid:>12,.2f}")
+    print(f"  Slippage:     ${metrics.total_slippage_cost:>12,.2f}")
+    print(f"  Avg Cost:     {metrics.avg_cost_per_trade_bps:.1f} bps/trade")
+    print(f"  Turnover:     {metrics.turnover_x:.2f}x")
     print("=" * 60)
 
     # ── Save artifacts ────────────────────────────────────────────────

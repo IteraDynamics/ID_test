@@ -26,10 +26,9 @@ from research.regimes.baseline_engine import BaselineRegimeEngine
 from research.regimes.contracts import RegimeLabel
 from research.strategies.contracts import Action, StrategyContext
 from research.harness.backtest_engine import TradeRecord
+from research.harness.execution_model import ExecutionConfig, compute_atr_pct_series, compute_fill
 from research.harness.metrics import compute_metrics, BacktestMetrics
 
-DEFAULT_FEE_RATE = float(os.getenv("FEE_RATE", "0.0006"))
-DEFAULT_SLIPPAGE_BPS = float(os.getenv("SLIPPAGE_BPS", "5"))
 DEFAULT_INITIAL_CAPITAL = float(os.getenv("INITIAL_CAPITAL", "100000.0"))
 REBALANCE_THRESHOLD = 0.02
 
@@ -82,10 +81,12 @@ def run_portfolio_backtest(
     sleeves: list[SleeveConfig],
     regime_engine: BaselineRegimeEngine | None = None,
     initial_capital: float = DEFAULT_INITIAL_CAPITAL,
-    fee_rate: float = DEFAULT_FEE_RATE,
-    slippage_bps: float = DEFAULT_SLIPPAGE_BPS,
+    exec_config: ExecutionConfig | None = None,
     max_portfolio_exposure: float = 1.0,
     asset: str = "BTC",
+    # Legacy kwargs
+    fee_rate: float | None = None,
+    slippage_bps: float | None = None,
 ) -> tuple[PortfolioResult, BacktestMetrics]:
     """Run a multi-strategy portfolio backtest.
 
@@ -97,12 +98,18 @@ def run_portfolio_backtest(
         List of SleeveConfig objects.
     regime_engine :
         Regime engine.  Defaults to BaselineRegimeEngine().
-    initial_capital, fee_rate, slippage_bps :
-        Standard backtest parameters.
+    initial_capital :
+        Starting NAV in USD.
+    exec_config :
+        ExecutionConfig controlling all fill cost parameters.
     max_portfolio_exposure :
         Hard cap on blended portfolio exposure.
     asset :
         Asset label.
+    fee_rate :
+        Legacy override: sets taker_fee_rate on a default ExecutionConfig.
+    slippage_bps :
+        Legacy override: sets base_slippage_bps on a default ExecutionConfig.
 
     Returns
     -------
@@ -114,18 +121,26 @@ def run_portfolio_backtest(
     if regime_engine is None:
         regime_engine = BaselineRegimeEngine()
 
+    # Build execution config, honouring legacy kwargs
+    if exec_config is None:
+        exec_config = ExecutionConfig()
+        if fee_rate is not None:
+            exec_config.taker_fee_rate = fee_rate
+        if slippage_bps is not None:
+            exec_config.base_slippage_bps = slippage_bps
+
     # Normalise weights
     total_weight = sum(s.weight for s in sleeves)
     if total_weight <= 0:
         raise ValueError("Sleeve weights must be positive.")
     normalised_weights = [s.weight / total_weight for s in sleeves]
 
-    slippage_frac = slippage_bps / 10_000.0
     n = len(df)
 
-    # Pre-compute regime series
+    # Pre-compute regime series and ATR% for dynamic slippage
     regime_signals = regime_engine.classify_dataframe(df)
     regime_labels = [sig.label for sig in regime_signals]
+    atr_pct_series = compute_atr_pct_series(df)
 
     # State
     cash = initial_capital
@@ -138,8 +153,11 @@ def run_portfolio_backtest(
     sleeve_labels = [s.label or f"sleeve_{i}" for i, s in enumerate(sleeves)]
     trades: list[TradeRecord] = []
 
+    last_trade_bar = -9999
+
     for i in range(n):
         close_price = float(df["close"].iloc[i])
+        atr_pct = float(atr_pct_series.iloc[i])
         nav = cash + position_units * close_price
         regime = regime_labels[i]
         df_slice = df.iloc[: i + 1]
@@ -181,44 +199,51 @@ def run_portfolio_backtest(
 
         # ── Simulate trade ────────────────────────────────────────────
         delta = target_exposure - current_exposure
-        if abs(delta) >= REBALANCE_THRESHOLD:
+        cooldown_ok = (i - last_trade_bar) >= exec_config.cooldown_bars
+        if abs(delta) >= REBALANCE_THRESHOLD and cooldown_ok:
             direction = "BUY" if delta > 0 else "SELL"
             target_pv = nav * target_exposure
             current_pv = position_units * close_price
             trade_notional = abs(target_pv - current_pv)
 
-            slip_price = (
-                close_price * (1 + slippage_frac)
-                if direction == "BUY"
-                else close_price * (1 - slippage_frac)
+            fill = compute_fill(
+                mid_price=close_price,
+                notional=trade_notional,
+                nav=nav,
+                atr_pct=atr_pct,
+                direction=direction,
+                config=exec_config,
             )
-            fee = trade_notional * fee_rate
-            slip_cost = trade_notional * slippage_frac
 
             if direction == "BUY":
-                units = trade_notional / slip_price
+                units = trade_notional / fill.effective_price
                 position_units += units
-                cash -= trade_notional + fee
+                cash -= trade_notional + fill.fee_usd
             else:
-                units = trade_notional / slip_price
+                units = trade_notional / fill.effective_price
                 position_units = max(0.0, position_units - units)
-                cash += trade_notional - fee
+                cash += trade_notional - fill.fee_usd
 
             nav = cash + position_units * close_price
+            prev_exposure = current_exposure
             current_exposure = (position_units * close_price) / nav if nav > 0 else 0.0
+            last_trade_bar = i
 
             trades.append(
                 TradeRecord(
                     bar_index=i,
                     timestamp=str(df.index[i]),
                     direction=direction,
-                    price=close_price,
+                    mid_price=close_price,
+                    effective_price=round(fill.effective_price, 6),
                     qty=units,
                     notional_usd=trade_notional,
-                    fee_usd=fee,
-                    slippage_usd=slip_cost,
-                    prev_exposure=current_exposure - delta,
-                    new_exposure=current_exposure,
+                    fee_usd=round(fill.fee_usd, 6),
+                    slippage_usd=round(fill.slippage_usd, 6),
+                    spread_usd=round(fill.spread_usd, 6),
+                    cost_bps=round(fill.cost_bps, 4),
+                    prev_exposure=round(prev_exposure, 6),
+                    new_exposure=round(current_exposure, 6),
                     reason=f"portfolio_blend target={target_exposure:.3f}",
                     strategy_id="portfolio",
                 )
@@ -237,8 +262,8 @@ def run_portfolio_backtest(
 
     params = {
         "initial_capital": initial_capital,
-        "fee_rate": fee_rate,
-        "slippage_bps": slippage_bps,
+        "taker_fee_rate": exec_config.taker_fee_rate,
+        "base_slippage_bps": exec_config.base_slippage_bps,
         "max_portfolio_exposure": max_portfolio_exposure,
         "asset": asset,
         "sleeves": [

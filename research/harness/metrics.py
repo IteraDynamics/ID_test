@@ -39,6 +39,12 @@ class BacktestMetrics:
     avg_win_pct: float
     avg_loss_pct: float
 
+    # Execution costs
+    total_fees_paid: float
+    total_slippage_cost: float
+    avg_cost_per_trade_bps: float
+    turnover_x: float               # sum(notional) / initial_capital
+
     # Equity
     initial_equity: float
     final_equity: float
@@ -73,6 +79,10 @@ class BacktestMetrics:
             "avg_trade_return_pct": round(self.avg_trade_return_pct, 4),
             "avg_win_pct": round(self.avg_win_pct, 4),
             "avg_loss_pct": round(self.avg_loss_pct, 4),
+            "total_fees_paid": round(self.total_fees_paid, 2),
+            "total_slippage_cost": round(self.total_slippage_cost, 2),
+            "avg_cost_per_trade_bps": round(self.avg_cost_per_trade_bps, 2),
+            "turnover_x": round(self.turnover_x, 4),
         }
 
     def to_markdown(self) -> str:
@@ -105,6 +115,14 @@ class BacktestMetrics:
             f"| Avg Trade Return | {d['avg_trade_return_pct']:.3f}% |",
             f"| Avg Win | {d['avg_win_pct']:.3f}% |",
             f"| Avg Loss | {d['avg_loss_pct']:.3f}% |",
+            "",
+            "## Execution Costs",
+            f"| Metric | Value |",
+            f"|--------|-------|",
+            f"| Total Fees Paid | ${d['total_fees_paid']:,.2f} |",
+            f"| Total Slippage Cost | ${d['total_slippage_cost']:,.2f} |",
+            f"| Avg Cost / Trade | {d['avg_cost_per_trade_bps']:.1f} bps |",
+            f"| Turnover | {d['turnover_x']:.2f}x |",
         ]
         return "\n".join(lines)
 
@@ -168,6 +186,17 @@ def compute_metrics(
     # ── Trade stats ───────────────────────────────────────────────────
     n_trades, win_rate, avg_ret, avg_win, avg_loss = _trade_stats(trades, equity_curve)
 
+    # ── Execution cost aggregates ─────────────────────────────────────
+    total_fees = sum(getattr(t, "fee_usd", 0.0) for t in trades)
+    total_slippage = sum(
+        getattr(t, "slippage_usd", 0.0) + getattr(t, "spread_usd", 0.0)
+        for t in trades
+    )
+    cost_bps_list = [getattr(t, "cost_bps", 0.0) for t in trades]
+    avg_cost_bps = float(np.mean(cost_bps_list)) if cost_bps_list else 0.0
+    total_notional = sum(getattr(t, "notional_usd", 0.0) for t in trades)
+    turnover_x = total_notional / initial if initial > 0 else 0.0
+
     return BacktestMetrics(
         total_return_pct=round(total_ret, 4),
         cagr_pct=round(cagr, 4),
@@ -180,6 +209,10 @@ def compute_metrics(
         avg_trade_return_pct=round(avg_ret, 4),
         avg_win_pct=round(avg_win, 4),
         avg_loss_pct=round(avg_loss, 4),
+        total_fees_paid=round(total_fees, 2),
+        total_slippage_cost=round(total_slippage, 2),
+        avg_cost_per_trade_bps=round(avg_cost_bps, 2),
+        turnover_x=round(turnover_x, 4),
         initial_equity=round(initial, 2),
         final_equity=round(final, 2),
         start=str(eq.index[0]),
@@ -309,6 +342,10 @@ def _empty_metrics(params: dict) -> BacktestMetrics:
         avg_trade_return_pct=0.0,
         avg_win_pct=0.0,
         avg_loss_pct=0.0,
+        total_fees_paid=0.0,
+        total_slippage_cost=0.0,
+        avg_cost_per_trade_bps=0.0,
+        turnover_x=0.0,
         initial_equity=0.0,
         final_equity=0.0,
         start="",

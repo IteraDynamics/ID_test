@@ -22,6 +22,7 @@ from typing import Any
 import pandas as pd
 
 from research.regimes.baseline_engine import BaselineRegimeEngine
+from research.harness.execution_model import compute_atr_pct_scalar
 from runtime.argus.apex_core.signal_generator import generate_signals, SignalBundle
 from runtime.argus.allocators.portfolio_allocator import PortfolioAllocator, AllocationDecision
 from runtime.argus.brokers.base import BaseBroker
@@ -96,6 +97,7 @@ class Orchestrator:
         self._cycle_count += 1
         current_price = float(df["close"].iloc[-1])
         timestamp = str(df.index[-1])
+        atr_pct = compute_atr_pct_scalar(df)
 
         # ── Update governor with current NAV ──────────────────────────
         nav = self.broker.get_nav(self.asset, current_price)
@@ -148,11 +150,13 @@ class Orchestrator:
                     qty=qty,
                     price=current_price,
                     reason=decision.reason[:120],
+                    atr_pct=atr_pct,
                 )
                 if fill:
                     log.info(
-                        "Fill: %s %.6f %s @ %.2f fee=%.4f",
-                        fill.side, fill.qty, fill.asset, fill.fill_price, fill.fee,
+                        "Fill: %s %.6f %s @ %.2f (mid=%.2f) fee=%.4f cost=%.1fbps",
+                        fill.side, fill.qty, fill.asset, fill.fill_price,
+                        fill.mid_price, fill.fee, fill.cost_bps,
                     )
                     self._state.fill_count += 1
 
