@@ -20,10 +20,7 @@ venv/
 env/
 .virtualenv/
 
-artifacts/*.csv
-artifacts/*.json
-artifacts/*.png
-artifacts/*.md
+artifacts/*
 !artifacts/.gitkeep
 
 debug/*.log
