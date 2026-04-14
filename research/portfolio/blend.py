@@ -30,7 +30,7 @@ from research.harness.execution_model import ExecutionConfig, compute_atr_pct_se
 from research.harness.metrics import compute_metrics, BacktestMetrics
 
 DEFAULT_INITIAL_CAPITAL = float(os.getenv("INITIAL_CAPITAL", "100000.0"))
-REBALANCE_THRESHOLD = 0.02
+REBALANCE_THRESHOLD = float(os.getenv("REBALANCE_THRESHOLD", "0.02"))
 
 
 @dataclass

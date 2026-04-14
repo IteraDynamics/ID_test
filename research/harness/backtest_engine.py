@@ -39,7 +39,7 @@ from research.strategies.contracts import Action, StrategyContext, StrategyInten
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 DEFAULT_INITIAL_CAPITAL = float(os.getenv("INITIAL_CAPITAL", "100000.0"))
-REBALANCE_THRESHOLD = 0.02   # only trade if target exposure changes by > 2%
+REBALANCE_THRESHOLD = float(os.getenv("REBALANCE_THRESHOLD", "0.02"))
 
 
 @dataclass

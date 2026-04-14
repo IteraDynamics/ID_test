@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -73,6 +74,8 @@ def parse_args() -> argparse.Namespace:
                    help="Slippage bps per 100%% ATR (default 50)")
     p.add_argument("--cooldown", type=int, default=None,
                    help="Minimum bars between trades (default 0)")
+    p.add_argument("--rebalance-threshold", type=float, default=None,
+                   help="Min exposure delta to trigger a trade (default 0.02 = 2%%)")
 
     p.add_argument(
         "--out-dir", default=None, help="Artifact output directory (default: artifacts/<strategy>)"
@@ -125,11 +128,18 @@ def main() -> None:
     strategy_module = STRATEGY_REGISTRY[args.strategy]
     log.info("Running backtest: strategy=%s  capital=$%.2f", args.strategy, args.capital)
 
+    rebalance_threshold = (
+        args.rebalance_threshold
+        if args.rebalance_threshold is not None
+        else float(os.getenv("REBALANCE_THRESHOLD", "0.02"))
+    )
+
     result = run_backtest(
         df=df,
         strategy_module=strategy_module,
         initial_capital=args.capital,
         exec_config=exec_config,
+        rebalance_threshold=rebalance_threshold,
         asset=args.asset,
     )
 
