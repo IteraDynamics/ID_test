@@ -47,6 +47,7 @@ import numpy as np
 
 from research.harness.data_loader import load_ohlcv, validate_ohlcv
 from research.harness.backtest_engine import run_backtest
+from research.harness.execution_model import ExecutionConfig
 from research.strategies import REGISTRY as STRATEGY_REGISTRY
 from research.ml.calibration.training_data import (
     extract_calibration_samples,
@@ -161,6 +162,17 @@ def parse_args() -> argparse.Namespace:
         default="BTC",
         help="Asset label",
     )
+    # Execution params — should match whatever you'll use in run_backtest.py --calibrate
+    p.add_argument("--fee", type=float, default=None,
+                   help="Taker fee rate (e.g. 0.0008 = 8 bps). Matches --fee in run_backtest.py")
+    p.add_argument("--base-slippage", type=float, default=None,
+                   help="Base slippage floor in bps. Matches --base-slippage in run_backtest.py")
+    p.add_argument("--slippage-vol-factor", type=float, default=None,
+                   help="Slippage bps per 100%% ATR. Matches --slippage-vol-factor in run_backtest.py")
+    p.add_argument("--cooldown", type=int, default=None,
+                   help="Minimum bars between trades. Matches --cooldown in run_backtest.py")
+    p.add_argument("--rebalance-threshold", type=float, default=None,
+                   help="Min exposure delta to trigger a trade. Matches --rebalance-threshold in run_backtest.py")
     return p.parse_args()
 
 
@@ -197,7 +209,25 @@ def main() -> None:
         log.info("Strategy: %s", name)
         log.info("Running backtest (%d bars)…", len(df))
 
-        result = run_backtest(df, module, initial_capital=args.capital, asset=args.asset)
+        exec_config = ExecutionConfig()
+        if args.fee is not None:
+            exec_config.taker_fee_rate = args.fee
+        if args.base_slippage is not None:
+            exec_config.base_slippage_bps = args.base_slippage
+        if args.slippage_vol_factor is not None:
+            exec_config.slippage_vol_factor = args.slippage_vol_factor
+        if args.cooldown is not None:
+            exec_config.cooldown_bars = args.cooldown
+
+        rebalance_threshold = args.rebalance_threshold if args.rebalance_threshold is not None else 0.02
+
+        result = run_backtest(
+            df, module,
+            initial_capital=args.capital,
+            asset=args.asset,
+            exec_config=exec_config,
+            rebalance_threshold=rebalance_threshold,
+        )
         log.info("Backtest complete: %d trades", result.n_trades)
 
         samples = extract_calibration_samples(result, strategy_id=name)
