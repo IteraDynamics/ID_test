@@ -60,12 +60,18 @@ class Orchestrator:
         exposure_governor: ExposureGovernor | None = None,
         asset: str = "BTC",
         state_path: str | None = None,
+        calibrators_dir: str | None = None,
     ) -> None:
         self.broker = broker
-        self.strategies = strategies
         self.regime_engine = regime_engine or BaselineRegimeEngine()
         self.asset = asset
         self.state_path = state_path
+
+        # Wrap strategies with ML confidence calibrators if model files are available.
+        # Calibration is purely optional: if no model file exists for a strategy, its
+        # module is used unchanged (passthrough). Behaviour is identical to prior versions
+        # when calibrators_dir=None and no default model files are present.
+        self.strategies = self._wrap_with_calibrators(strategies, calibrators_dir)
 
         dd_gov = drawdown_governor or DrawdownGovernor()
         exp_gov = exposure_governor or ExposureGovernor()
@@ -76,6 +82,40 @@ class Orchestrator:
 
         self._state = RuntimeState.load(state_path)
         self._cycle_count = 0
+
+    # ── Internal ───────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _wrap_with_calibrators(
+        strategies: list[tuple[Any, float]],
+        calibrators_dir: str | None,
+    ) -> list[tuple[Any, float]]:
+        """Wrap each strategy module with its confidence calibrator, if available.
+
+        Calibrators are loaded from JSON files in ``calibrators_dir``.
+        If ``calibrators_dir`` is None, the default ``artifacts/ml_models/``
+        path is checked.  Missing files are silently ignored — the original
+        module is used as-is (passthrough behaviour).
+        """
+        try:
+            from research.ml.calibration import make_calibrated_strategy
+            from research.ml.calibration.model_store import load_calibrator
+        except ImportError:
+            # ML package not installed — skip calibration silently
+            return strategies
+
+        wrapped = []
+        for module, weight in strategies:
+            strategy_id = getattr(module, "STRATEGY_ID", "")
+            cal = load_calibrator(strategy_id, models_dir=calibrators_dir)
+            if cal is not None and cal.is_fitted:
+                log.info(
+                    "Loaded confidence calibrator for %s (method=%s n_samples=%d)",
+                    strategy_id, cal.calibration_method, cal.n_samples,
+                )
+            wrapped_module = make_calibrated_strategy(module, cal)
+            wrapped.append((wrapped_module, weight))
+        return wrapped
 
     # ── Public API ─────────────────────────────────────────────────────────────
 

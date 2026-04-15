@@ -116,6 +116,8 @@ def run_backtest(
     # Legacy kwargs — honoured when exec_config is None
     fee_rate: float | None = None,
     slippage_bps: float | None = None,
+    # ML calibration — optional, backward-compatible
+    calibrators: "dict | None" = None,
 ) -> BacktestResult:
     """Run a deterministic single-strategy backtest.
 
@@ -143,11 +145,21 @@ def run_backtest(
         Legacy: sets taker_fee_rate on a default ExecutionConfig.
     slippage_bps :
         Legacy: sets base_slippage_bps on a default ExecutionConfig.
+    calibrators :
+        Optional dict mapping strategy_id → PlattCalibrator.  When provided,
+        ENTER_LONG confidence values are post-processed before the bar loop.
+        Pass ``None`` (default) for identical behaviour to prior versions.
 
     Returns
     -------
     BacktestResult
     """
+    if calibrators:
+        from research.ml.calibration import make_calibrated_strategy
+        sid = getattr(strategy_module, "STRATEGY_ID", "")
+        cal = calibrators.get(sid)
+        if cal is not None:
+            strategy_module = make_calibrated_strategy(strategy_module, cal)
     if regime_engine is None:
         regime_engine = BaselineRegimeEngine()
 
