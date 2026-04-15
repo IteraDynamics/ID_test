@@ -81,6 +81,16 @@ def parse_args() -> argparse.Namespace:
         "--out-dir", default=None, help="Artifact output directory (default: artifacts/<strategy>)"
     )
     p.add_argument("--no-chart", action="store_true", help="Skip chart PNG generation")
+    p.add_argument(
+        "--calibrate",
+        action="store_true",
+        help="Apply ML confidence calibration if a trained model exists in artifacts/ml_models/",
+    )
+    p.add_argument(
+        "--calibrators-dir",
+        default=None,
+        help="Path to calibrator JSON files (default: artifacts/ml_models/)",
+    )
     return p.parse_args()
 
 
@@ -124,6 +134,29 @@ def main() -> None:
         exec_config.cooldown_bars,
     )
 
+    # ── Optionally load ML calibrators ───────────────────────────────
+    calibrators = None
+    if args.calibrate:
+        try:
+            from research.ml.calibration.model_store import load_calibrator
+            sid = args.strategy
+            cal = load_calibrator(sid, models_dir=args.calibrators_dir)
+            if cal is not None and cal.is_fitted:
+                calibrators = {sid: cal}
+                log.info(
+                    "Loaded calibrator for %s (method=%s  n_samples=%d)",
+                    sid, cal.calibration_method, cal.n_samples,
+                )
+            else:
+                log.warning(
+                    "--calibrate specified but no fitted model found for '%s' in %s  "
+                    "— running without calibration.",
+                    sid,
+                    args.calibrators_dir or "artifacts/ml_models/",
+                )
+        except ImportError:
+            log.warning("ML calibration package not available — skipping.")
+
     # ── Run backtest ──────────────────────────────────────────────────
     strategy_module = STRATEGY_REGISTRY[args.strategy]
     log.info("Running backtest: strategy=%s  capital=$%.2f", args.strategy, args.capital)
@@ -141,6 +174,7 @@ def main() -> None:
         exec_config=exec_config,
         rebalance_threshold=rebalance_threshold,
         asset=args.asset,
+        calibrators=calibrators,
     )
 
     # ── Compute metrics ───────────────────────────────────────────────
