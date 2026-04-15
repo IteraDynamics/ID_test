@@ -139,7 +139,10 @@ def main() -> None:
     if args.calibrate:
         try:
             from research.ml.calibration.model_store import load_calibrator
-            sid = args.strategy
+            # Use the module's canonical STRATEGY_ID — this matches what
+            # train_calibrator.py used when saving and what backtest_engine
+            # uses when looking up the calibrator at inference time.
+            sid = getattr(STRATEGY_REGISTRY[args.strategy], "STRATEGY_ID", args.strategy)
             cal = load_calibrator(sid, models_dir=args.calibrators_dir)
             if cal is not None and cal.is_fitted:
                 calibrators = {sid: cal}

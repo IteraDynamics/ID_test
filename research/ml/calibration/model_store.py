@@ -48,6 +48,8 @@ def _calibrator_to_dict(cal: PlattCalibrator) -> dict[str, Any]:
         "n_samples": cal.n_samples,
         "is_fitted": cal.is_fitted,
         "trained_at": cal.trained_at,
+        "feature_names": cal.feature_names,
+        "weights": cal.weights,
         "_isotonic_xs": cal._isotonic_xs,
         "_isotonic_ys": cal._isotonic_ys,
     }
@@ -63,6 +65,8 @@ def _calibrator_from_dict(d: dict[str, Any]) -> PlattCalibrator:
         is_fitted=bool(d.get("is_fitted", False)),
         calibration_method=str(d.get("calibration_method", "platt")),
         trained_at=str(d.get("trained_at", "")),
+        feature_names=list(d.get("feature_names", [])),
+        weights=list(d.get("weights", [])),
         _isotonic_xs=list(d.get("_isotonic_xs", [])),
         _isotonic_ys=list(d.get("_isotonic_ys", [])),
     )

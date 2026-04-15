@@ -41,7 +41,9 @@ def _apply_calibration(
     if intent.action != Action.ENTER_LONG or not calibrator.is_fitted:
         return intent
 
-    cal_meta = calibrator.predict_with_meta(intent.confidence)
+    # Pass full intent.meta so multivariate calibrators can use indicator features
+    features = intent.meta if intent.meta else None
+    cal_meta = calibrator.predict_with_meta(intent.confidence, features=features)
     calibrated_conf = cal_meta["calibrated_confidence"]
     # Enforce valid range (PlattCalibrator already clips, but be defensive)
     calibrated_conf = max(0.0, min(1.0, float(calibrated_conf)))

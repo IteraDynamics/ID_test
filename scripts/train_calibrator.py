@@ -91,12 +91,31 @@ def _evaluate_calibrator(
     raw_confs: np.ndarray,
     labels: np.ndarray,
     tag: str = "",
+    feature_samples=None,
 ) -> dict:
-    """Compute before/after quality metrics for a calibrator."""
+    """Compute before/after quality metrics for a calibrator.
+
+    Parameters
+    ----------
+    feature_samples :
+        list[CalibrationSample] — required for multivariate calibrators so
+        that the full feature vector is used.  Falls back to univariate when
+        ``None`` or when calibrator is not multivariate.
+    """
     raw_brier = _brier_score(raw_confs, labels)
     raw_ece = _expected_calibration_error(raw_confs, labels)
 
-    calibrated_probs = np.array([calibrator.predict(c) for c in raw_confs])
+    if (
+        feature_samples is not None
+        and calibrator.calibration_method == "multivariate_logistic"
+    ):
+        calibrated_probs = np.array([
+            calibrator.predict_from_features(s.features, s.heuristic_confidence)
+            for s in feature_samples
+        ])
+    else:
+        calibrated_probs = np.array([calibrator.predict(c) for c in raw_confs])
+
     cal_brier = _brier_score(calibrated_probs, labels)
     cal_ece = _expected_calibration_error(calibrated_probs, labels)
 
@@ -205,8 +224,12 @@ def main() -> None:
             log.warning("Unknown strategy '%s' — skipping. Available: %s", name, list(STRATEGY_REGISTRY))
             continue
 
+        # Use the module's canonical STRATEGY_ID (not the registry key) so that
+        # the saved file matches what backtest_engine looks up at inference time.
+        actual_sid = getattr(module, "STRATEGY_ID", name)
+
         log.info("=" * 60)
-        log.info("Strategy: %s", name)
+        log.info("Strategy: %s  (id=%s)", name, actual_sid)
         log.info("Running backtest (%d bars)…", len(df))
 
         exec_config = ExecutionConfig()
@@ -230,7 +253,7 @@ def main() -> None:
         )
         log.info("Backtest complete: %d trades", result.n_trades)
 
-        samples = extract_calibration_samples(result, strategy_id=name)
+        samples = extract_calibration_samples(result, strategy_id=actual_sid)
         log.info("Extracted %d calibration samples", len(samples))
 
         if len(samples) == 0:
@@ -248,12 +271,28 @@ def main() -> None:
         train_raw, train_labels = samples_to_arrays(train_samples)
         test_raw, test_labels = samples_to_arrays(test_samples)
 
-        # Fit calibrator on training split
-        calibrator = PlattCalibrator.fit(
-            raw_confidences=train_raw.tolist(),
-            outcome_labels=train_labels.astype(int).tolist(),
-            strategy_id=name,
-        )
+        # Auto-select calibrator type: when confidence has near-zero variance
+        # (strategy emits the same fixed value for every entry), univariate
+        # Platt is a no-op.  Switch to multivariate logistic which learns from
+        # the full indicator feature vector stored in CalibrationSample.features.
+        conf_std = float(np.std(train_raw)) if len(train_raw) > 0 else 0.0
+        use_multivariate = conf_std < 0.01
+
+        if use_multivariate:
+            log.info(
+                "Confidence variance near-zero (std=%.5f) — using multivariate logistic calibration",
+                conf_std,
+            )
+            calibrator = PlattCalibrator.fit_multivariate(
+                train_samples,
+                strategy_id=actual_sid,
+            )
+        else:
+            calibrator = PlattCalibrator.fit(
+                raw_confidences=train_raw.tolist(),
+                outcome_labels=train_labels.astype(int).tolist(),
+                strategy_id=actual_sid,
+            )
 
         if not calibrator.is_fitted:
             log.warning(
@@ -264,6 +303,7 @@ def main() -> None:
         # Evaluate on test split (if we have test data)
         report: dict = {
             "strategy": name,
+            "strategy_id": actual_sid,
             "n_total_samples": len(samples),
             "n_train": len(train_samples),
             "n_test": len(test_samples),
@@ -272,7 +312,10 @@ def main() -> None:
         }
 
         if calibrator.is_fitted and len(test_samples) > 0:
-            test_metrics = _evaluate_calibrator(calibrator, test_raw, test_labels, tag="test")
+            test_metrics = _evaluate_calibrator(
+                calibrator, test_raw, test_labels, tag="test",
+                feature_samples=test_samples if use_multivariate else None,
+            )
             report.update(test_metrics)
             log.info(
                 "Test set — Brier: %.4f → %.4f (Δ=%.4f)  |  ECE: %.4f → %.4f  |  Win rate: %.1f%%",
@@ -286,19 +329,28 @@ def main() -> None:
         elif calibrator.is_fitted:
             # Evaluate on all samples (no test split possible)
             all_raw, all_labels = samples_to_arrays(samples)
-            all_metrics = _evaluate_calibrator(calibrator, all_raw, all_labels, tag="all")
+            all_metrics = _evaluate_calibrator(
+                calibrator, all_raw, all_labels, tag="all",
+                feature_samples=samples if use_multivariate else None,
+            )
             report.update(all_metrics)
 
         # Re-fit final calibrator on ALL samples for deployment
-        final_calibrator = PlattCalibrator.fit(
-            raw_confidences=[s.heuristic_confidence for s in samples],
-            outcome_labels=[s.outcome_label for s in samples],
-            strategy_id=name,
-        )
+        if use_multivariate:
+            final_calibrator = PlattCalibrator.fit_multivariate(
+                samples,
+                strategy_id=actual_sid,
+            )
+        else:
+            final_calibrator = PlattCalibrator.fit(
+                raw_confidences=[s.heuristic_confidence for s in samples],
+                outcome_labels=[s.outcome_label for s in samples],
+                strategy_id=actual_sid,
+            )
 
         saved_path = save_calibrator(
             final_calibrator,
-            strategy_id=name,
+            strategy_id=actual_sid,
             models_dir=output_dir,
             training_summary=report,
         )

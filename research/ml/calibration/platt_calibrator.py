@@ -94,14 +94,18 @@ def _pool_adjacent_violators(scores: np.ndarray, labels: np.ndarray) -> tuple[np
 class PlattCalibrator:
     """Maps raw heuristic confidence → calibrated win probability.
 
-    Platt scaling: P(win) = sigmoid(A * raw_conf + B).
+    Supports two modes:
+    - Univariate Platt: P(win) = sigmoid(A * raw_conf + B).
+    - Multivariate logistic: P(win) = sigmoid(weights · features + B).
+      Used automatically when raw confidence has near-zero variance (e.g. a
+      strategy emits the same constant confidence for every entry).
 
     Attributes
     ----------
     A : float
-        Platt slope (fitted). 1.0 when unfitted (identity-ish).
+        Platt slope (univariate mode). 1.0 when unfitted.
     B : float
-        Platt intercept (fitted). 0.0 when unfitted.
+        Intercept. Used in both univariate and multivariate modes.
     strategy_id : str
         Strategy this calibrator was trained for.
     model_version : str
@@ -111,9 +115,13 @@ class PlattCalibrator:
     is_fitted : bool
         False → predict() is a passthrough returning raw confidence unchanged.
     calibration_method : str
-        "platt" or "isotonic_fallback".
+        "platt", "isotonic_fallback", or "multivariate_logistic".
     trained_at : str
         ISO-format timestamp of when fit() was called.
+    feature_names : list[str]
+        Feature names used in multivariate mode (empty for univariate).
+    weights : list[float]
+        Logistic regression coefficients for multivariate mode.
     _isotonic_xs : list[float]
         Breakpoints for isotonic fallback (empty when method="platt").
     _isotonic_ys : list[float]
@@ -128,6 +136,8 @@ class PlattCalibrator:
     is_fitted: bool = False
     calibration_method: str = "platt"
     trained_at: str = ""
+    feature_names: list[float] = field(default_factory=list)
+    weights: list[float] = field(default_factory=list)
     _isotonic_xs: list[float] = field(default_factory=list)
     _isotonic_ys: list[float] = field(default_factory=list)
 
@@ -137,6 +147,7 @@ class PlattCalibrator:
         """Return calibrated win probability in [0, 1].
 
         Returns raw_confidence unchanged if calibrator is not fitted.
+        For multivariate mode, falls back to 0.5 when no features are provided.
         """
         if not self.is_fitted:
             return float(raw_confidence)
@@ -144,16 +155,70 @@ class PlattCalibrator:
         if self.calibration_method == "isotonic_fallback":
             return self._isotonic_predict(raw_confidence)
 
+        if self.calibration_method == "multivariate_logistic":
+            # Univariate fallback: raw_confidence as a single feature
+            if self.feature_names and "raw_confidence" in self.feature_names:
+                return self.predict_from_features({"raw_confidence": raw_confidence}, raw_confidence)
+            # If raw_confidence is not a trained feature, return base probability
+            score = self.B
+            return float(np.clip(_sigmoid(np.array(score)), 0.0, 1.0))
+
         score = self.A * raw_confidence + self.B
         return float(np.clip(_sigmoid(np.array(score)), 0.0, 1.0))
 
-    def predict_with_meta(self, raw_confidence: float) -> dict:
+    def predict_from_features(
+        self,
+        features: dict,
+        raw_confidence: float | None = None,
+    ) -> float:
+        """Return calibrated win probability using full feature vector.
+
+        Used by multivariate logistic mode. Falls back to univariate
+        ``predict()`` if this calibrator was not fitted in multivariate mode.
+
+        Parameters
+        ----------
+        features :
+            Dict of feature name → float value (e.g. from ``intent.meta``).
+        raw_confidence :
+            Raw heuristic confidence (used as fallback for univariate mode).
+        """
+        if not self.is_fitted:
+            return float(raw_confidence) if raw_confidence is not None else 0.5
+
+        if self.calibration_method != "multivariate_logistic" or not self.feature_names:
+            # Univariate fallback
+            if raw_confidence is not None:
+                return self.predict(raw_confidence)
+            return 0.5
+
+        x = np.array([features.get(fname, 0.0) for fname in self.feature_names])
+        score = float(np.dot(np.array(self.weights), x) + self.B)
+        return float(np.clip(_sigmoid(np.array(score)), 0.0, 1.0))
+
+    def predict_with_meta(
+        self,
+        raw_confidence: float,
+        features: dict | None = None,
+    ) -> dict:
         """Return calibrated value plus audit metadata dict.
 
         The dict is injected into ``StrategyIntent.meta["ml_calibration"]``
         by ``_apply_calibration`` for full auditability.
+
+        Parameters
+        ----------
+        raw_confidence :
+            Raw heuristic confidence from the strategy.
+        features :
+            Optional dict of indicator values from ``intent.meta``.  When
+            provided and this is a multivariate calibrator, the full feature
+            vector is used instead of just ``raw_confidence``.
         """
-        calibrated = self.predict(raw_confidence)
+        if features and self.calibration_method == "multivariate_logistic":
+            calibrated = self.predict_from_features(features, raw_confidence)
+        else:
+            calibrated = self.predict(raw_confidence)
         return {
             "calibrated_confidence": round(calibrated, 6),
             "raw_confidence": round(float(raw_confidence), 6),
@@ -240,6 +305,115 @@ class PlattCalibrator:
             base.calibration_method = "isotonic_fallback"
             base.trained_at = time.strftime("%Y-%m-%dT%H:%M:%S")
 
+        return base
+
+    @classmethod
+    def fit_multivariate(
+        cls,
+        samples: list,
+        strategy_id: str = "",
+        model_version: str = "",
+        feature_names: list[str] | None = None,
+        min_samples: int = MIN_SAMPLES_PLATT,
+    ) -> "PlattCalibrator":
+        """Fit multivariate logistic regression on the full indicator feature vector.
+
+        Useful when raw confidence has near-zero variance (e.g. a strategy
+        emits a fixed confidence for all entries).  Feature values come from
+        ``CalibrationSample.features`` (populated from ``intent.meta`` at the
+        entry bar — no lookahead).
+
+        Parameters
+        ----------
+        samples :
+            ``list[CalibrationSample]`` from ``extract_calibration_samples()``.
+        strategy_id :
+            Strategy identifier for the audit trail.
+        model_version :
+            Optional version tag (defaults to current timestamp).
+        feature_names :
+            Explicit list of feature keys to use.  When ``None``, all features
+            with non-trivial variance (std > 1e-6) are selected automatically.
+        min_samples :
+            Minimum samples required to fit; below this returns unfitted.
+
+        Returns
+        -------
+        PlattCalibrator
+            Fitted calibrator with ``calibration_method="multivariate_logistic"``,
+            or passthrough if insufficient samples or no variable features found.
+        """
+        n = len(samples)
+        version = model_version or time.strftime("%Y%m%d_%H%M%S")
+        base = cls(strategy_id=strategy_id, model_version=version, n_samples=n)
+
+        if n < min_samples:
+            return base  # is_fitted=False → passthrough
+
+        if not _SCIPY_AVAILABLE:
+            return base
+
+        # Collect candidate feature names with non-trivial variance
+        if feature_names is None:
+            all_keys: list[str] = []
+            seen: set[str] = set()
+            for s in samples:
+                for k in s.features:
+                    if k not in seen:
+                        all_keys.append(k)
+                        seen.add(k)
+            feature_names = []
+            for k in all_keys:
+                vals = np.array([s.features.get(k, 0.0) for s in samples])
+                if float(np.std(vals)) > 1e-6:
+                    feature_names.append(k)
+            feature_names = sorted(feature_names)  # deterministic ordering
+
+        if not feature_names:
+            return base  # no variable features
+
+        # Build feature matrix
+        X_raw = np.array(
+            [[s.features.get(fname, 0.0) for fname in feature_names] for s in samples],
+            dtype=float,
+        )
+        labels = np.array([s.outcome_label for s in samples], dtype=float)
+
+        # Standardize (zero-mean, unit-variance) for numerical stability
+        mu = X_raw.mean(axis=0)
+        sigma = X_raw.std(axis=0)
+        sigma[sigma < 1e-8] = 1.0  # avoid divide-by-zero for near-constant features
+        X_std = (X_raw - mu) / sigma
+
+        def neg_ll(params: np.ndarray) -> float:
+            w = params[:-1]
+            b = params[-1]
+            p = _sigmoid(X_std @ w + b)
+            eps = 1e-12
+            p = np.clip(p, eps, 1.0 - eps)
+            return -float(np.mean(labels * np.log(p) + (1.0 - labels) * np.log(1.0 - p)))
+
+        x0 = np.zeros(len(feature_names) + 1)
+        result = minimize(neg_ll, x0, method="L-BFGS-B", options={"maxiter": 2000, "ftol": 1e-9})
+
+        if result.fun >= neg_ll(x0):
+            return base  # optimization did not improve on the null model
+
+        w_std = result.x[:-1]
+        b_std = result.x[-1]
+
+        # Convert standardized weights → raw-feature weights so no standardization
+        # is needed at inference time:  sigmoid(w_std · z + b) = sigmoid(w_raw · x + b_raw)
+        w_raw = w_std / sigma
+        b_raw = float(b_std - np.dot(w_raw, mu))
+
+        base.feature_names = feature_names
+        base.weights = w_raw.tolist()
+        base.A = 0.0  # not used in multivariate mode
+        base.B = b_raw
+        base.is_fitted = True
+        base.calibration_method = "multivariate_logistic"
+        base.trained_at = time.strftime("%Y-%m-%dT%H:%M:%S")
         return base
 
     # ── Internal ─────────────────────────────────────────────────────────
