@@ -231,10 +231,12 @@ def run_portfolio_backtest(
             else:  # ENTER_LONG or any sizing action
                 raw_desired = min(intent.desired_exposure_frac, sleeve.max_sleeve_exposure)
                 current_virtual = sleeve_virtual_exp[lbl]
-                # Only update sleeve exposure if change is meaningful — prevents micro-churn
-                # when strategies (e.g. mean_reversion) re-emit ENTER_LONG every bar with
-                # marginally different RSI/vol-ratio-based sizing while already in position.
-                if abs(raw_desired - current_virtual) >= _rebalance_threshold:
+                # Only allow ENTER_LONG to INCREASE sleeve exposure (add-on semantics).
+                # Strategies like vol_breakout re-emit ENTER_LONG every bar with
+                # vol_ratio-scaled sizing that oscillates between MIN and MAX exposure.
+                # Allowing those downward adjustments creates continuous portfolio
+                # rebalancing churn.  Reductions must be signalled via EXIT_LONG.
+                if raw_desired > current_virtual and (raw_desired - current_virtual) >= _rebalance_threshold:
                     desired = raw_desired
                     sleeve_virtual_exp[lbl] = desired
                 else:
