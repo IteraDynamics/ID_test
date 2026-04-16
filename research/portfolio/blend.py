@@ -224,8 +224,16 @@ def run_portfolio_backtest(
                 # Maintain the sleeve's own position — do not use portfolio exposure
                 desired = sleeve_virtual_exp[lbl]
             else:  # ENTER_LONG or any sizing action
-                desired = min(intent.desired_exposure_frac, sleeve.max_sleeve_exposure)
-                sleeve_virtual_exp[lbl] = desired
+                raw_desired = min(intent.desired_exposure_frac, sleeve.max_sleeve_exposure)
+                current_virtual = sleeve_virtual_exp[lbl]
+                # Only update sleeve exposure if change is meaningful — prevents micro-churn
+                # when strategies (e.g. mean_reversion) re-emit ENTER_LONG every bar with
+                # marginally different RSI/vol-ratio-based sizing while already in position.
+                if abs(raw_desired - current_virtual) >= _rebalance_threshold:
+                    desired = raw_desired
+                    sleeve_virtual_exp[lbl] = desired
+                else:
+                    desired = current_virtual
 
             sleeve_desired_exposures.append(desired)
             sleeve_exp_arrays[lbl][i] = desired
