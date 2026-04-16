@@ -29,6 +29,7 @@ from research.ml.calibration.platt_calibrator import PlattCalibrator
 def _apply_calibration(
     intent: StrategyIntent,
     calibrator: PlattCalibrator,
+    current_exposure: float = 0.0,
 ) -> StrategyIntent:
     """Return a new StrategyIntent with calibrated confidence and scaled exposure.
 
@@ -40,11 +41,12 @@ def _apply_calibration(
     1. **Confidence** is replaced by the calibrated P(win) estimate.
        The ExposureGovernor will block the entry if this falls below 0.35.
 
-    2. **desired_exposure_frac** is scaled proportionally to calibrated P(win).
-       This is the continuous-sizing benefit of calibration: the model outputs
-       a higher confidence → take a larger position, and vice-versa.
-       Scaling formula: ``new_exposure = original_exposure × (calibrated / raw)``
-       clamped to [0, 1].  When raw == 0 the exposure is left unchanged.
+    2. **desired_exposure_frac** is scaled proportionally to calibrated P(win):
+       ``target = original_exposure × (calibrated / raw)``
+       The target is then **clamped to ≥ current_exposure** to prevent turning
+       an add-on intent (e.g. from 35% → 65%) into an unintended exit when the
+       scaled target would fall below the current position.  In that case the
+       strategy holds its current position — neither adding nor selling.
 
     The raw confidence is preserved in ``intent.meta["ml_calibration"]``
     for the full audit trail.
@@ -58,10 +60,13 @@ def _apply_calibration(
     calibrated_conf = max(0.0, min(1.0, float(cal_meta["calibrated_confidence"])))
 
     # Scale position size in proportion to calibrated vs raw confidence.
-    # This lets the ML model continuously adjust conviction beyond the 0.35 gate.
+    # Clamp so the target never falls below the current held exposure —
+    # without this, a weak add-on signal scales below the current position
+    # and the engine interprets it as a sell, destroying pyramid strategies.
     raw_conf = float(intent.confidence)
     if raw_conf > 1e-9:
-        scaled_exposure = min(1.0, intent.desired_exposure_frac * (calibrated_conf / raw_conf))
+        target = intent.desired_exposure_frac * (calibrated_conf / raw_conf)
+        scaled_exposure = min(1.0, max(float(current_exposure), target))
     else:
         scaled_exposure = intent.desired_exposure_frac
 
@@ -101,7 +106,10 @@ class _CalibratedStrategyWrapper:
         intent = self._module.generate_intent(df, ctx, closed_only=closed_only)
         if self._calibrator is None or not self._calibrator.is_fitted:
             return intent
-        return _apply_calibration(intent, self._calibrator)
+        return _apply_calibration(
+            intent, self._calibrator,
+            current_exposure=ctx.current_exposure_frac,
+        )
 
 
 def make_calibrated_strategy(
