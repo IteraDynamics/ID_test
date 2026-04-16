@@ -83,7 +83,9 @@ def run_portfolio_backtest(
     initial_capital: float = DEFAULT_INITIAL_CAPITAL,
     exec_config: ExecutionConfig | None = None,
     max_portfolio_exposure: float = 1.0,
+    rebalance_threshold: float | None = None,
     asset: str = "BTC",
+    calibrators: "dict | None" = None,
     # Legacy kwargs
     fee_rate: float | None = None,
     slippage_bps: float | None = None,
@@ -104,8 +106,15 @@ def run_portfolio_backtest(
         ExecutionConfig controlling all fill cost parameters.
     max_portfolio_exposure :
         Hard cap on blended portfolio exposure.
+    rebalance_threshold :
+        Minimum absolute exposure delta to trigger a trade.
+        Defaults to the REBALANCE_THRESHOLD env var (0.02).
     asset :
         Asset label.
+    calibrators :
+        Optional dict mapping strategy_id → PlattCalibrator.  When provided,
+        each sleeve's strategy module is wrapped so ENTER_LONG confidence values
+        are post-processed before blending.  Pass ``None`` for unchanged behaviour.
     fee_rate :
         Legacy override: sets taker_fee_rate on a default ExecutionConfig.
     slippage_bps :
@@ -118,8 +127,26 @@ def run_portfolio_backtest(
     if not sleeves:
         raise ValueError("No sleeves configured.")
 
+    # Apply calibrators to sleeves before anything else
+    if calibrators:
+        from research.ml.calibration import make_calibrated_strategy
+        wrapped = []
+        for sleeve in sleeves:
+            sid = getattr(sleeve.strategy_module, "STRATEGY_ID", "")
+            cal = calibrators.get(sid)
+            wrapped.append(SleeveConfig(
+                strategy_module=make_calibrated_strategy(sleeve.strategy_module, cal),
+                weight=sleeve.weight,
+                label=sleeve.label,
+                max_sleeve_exposure=sleeve.max_sleeve_exposure,
+                allowed_regimes=sleeve.allowed_regimes,
+            ))
+        sleeves = wrapped
+
     if regime_engine is None:
         regime_engine = BaselineRegimeEngine()
+
+    _rebalance_threshold = rebalance_threshold if rebalance_threshold is not None else REBALANCE_THRESHOLD
 
     # Build execution config, honouring legacy kwargs
     if exec_config is None:
@@ -200,7 +227,7 @@ def run_portfolio_backtest(
         # ── Simulate trade ────────────────────────────────────────────
         delta = target_exposure - current_exposure
         cooldown_ok = (i - last_trade_bar) >= exec_config.cooldown_bars
-        if abs(delta) >= REBALANCE_THRESHOLD and cooldown_ok:
+        if abs(delta) >= _rebalance_threshold and cooldown_ok:
             direction = "BUY" if delta > 0 else "SELL"
             target_pv = nav * target_exposure
             current_pv = position_units * close_price
