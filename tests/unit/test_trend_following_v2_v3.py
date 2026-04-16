@@ -179,12 +179,12 @@ class TestSharedBehavior:
 # ── V2-specific tests ─────────────────────────────────────────────────────────
 
 class TestTrendFollowingV2:
-    def test_entry_exposure_is_fixed(self):
-        """V2 must always enter at ENTRY_EXPOSURE (0.75), not a variable."""
+    def test_entry_exposure_is_confidence_scaled(self):
+        """V2 entry exposure must be within [MIN_ENTRY_EXPOSURE, MAX_ENTRY_EXPOSURE]."""
         df = _make_df(n=200, trend="up")
         intent = _intent(trend_following_v2, df, regime=RegimeLabel.TREND_UP, exposure=0.0)
         if intent.action == Action.ENTER_LONG:
-            assert abs(intent.desired_exposure_frac - trend_following_v2.ENTRY_EXPOSURE) < 1e-9
+            assert trend_following_v2.MIN_ENTRY_EXPOSURE <= intent.desired_exposure_frac <= trend_following_v2.MAX_ENTRY_EXPOSURE + 1e-9
 
     def test_no_add_on_while_long(self):
         """V2 must never return ENTER_LONG while already long (no add-on in v2)."""
@@ -199,6 +199,52 @@ class TestTrendFollowingV2:
 
     def test_strategy_id(self):
         assert trend_following_v2.STRATEGY_ID == "trend_following_v2"
+
+    def test_trailing_exit_fires_on_reversal(self):
+        """After a strong uptrend, a sharp reversal should trigger trailing exit."""
+        n_up = 200
+        n_down = 80
+        rng = np.random.default_rng(42)
+        up_prices = 30_000.0 * np.exp(
+            np.cumsum(0.004 + rng.standard_normal(n_up) * 0.005)
+        )
+        down_prices = up_prices[-1] * np.exp(
+            np.cumsum(-0.005 + rng.standard_normal(n_down) * 0.005)
+        )
+        prices = np.concatenate([up_prices, down_prices])
+        idx = pd.date_range("2021-01-01", periods=len(prices), freq="1h")
+        df = pd.DataFrame({
+            "open": prices * 0.999, "high": prices * 1.005,
+            "low": prices * 0.995, "close": prices, "volume": np.ones(len(prices)) * 500.0,
+        }, index=idx)
+
+        found_trailing_exit = False
+        for i in range(n_up, len(prices)):
+            df_slice = df.iloc[: i + 1]
+            ctx = _ctx(RegimeLabel.TREND_UP, exposure=0.60, bar=i)
+            intent = trend_following_v2.generate_intent(df_slice, ctx)
+            if intent.action == Action.EXIT_LONG and "Trailing exit" in intent.reason:
+                found_trailing_exit = True
+                break
+        assert found_trailing_exit, "Trailing exit should fire during sharp reversal"
+
+    def test_high_atr_blocks_entry(self):
+        """Entries should be blocked when ATR% exceeds the guard threshold."""
+        rng = np.random.default_rng(99)
+        n = 200
+        prices = 30_000.0 * np.exp(
+            np.cumsum(0.003 + rng.standard_normal(n) * 0.04)
+        )
+        idx = pd.date_range("2021-01-01", periods=n, freq="1h")
+        df = pd.DataFrame({
+            "open": prices * 0.98, "high": prices * 1.04,
+            "low": prices * 0.96, "close": prices, "volume": np.ones(n) * 500.0,
+        }, index=idx)
+
+        intent = _intent(trend_following_v2, df, regime=RegimeLabel.TREND_UP, exposure=0.0)
+        if intent.action == Action.ENTER_LONG:
+            atr_pct = intent.meta.get("atr_pct", 0.0)
+            assert atr_pct <= trend_following_v2.ATR_ENTRY_BLOCK_THRESHOLD
 
 
 # ── V3-specific tests ─────────────────────────────────────────────────────────

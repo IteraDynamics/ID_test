@@ -118,6 +118,7 @@ def run_backtest(
     slippage_bps: float | None = None,
     # ML calibration — optional, backward-compatible
     calibrators: "dict | None" = None,
+    min_confidence_to_enter: float | None = None,
 ) -> BacktestResult:
     """Run a deterministic single-strategy backtest.
 
@@ -149,6 +150,10 @@ def run_backtest(
         Optional dict mapping strategy_id → PlattCalibrator.  When provided,
         ENTER_LONG confidence values are post-processed before the bar loop.
         Pass ``None`` (default) for identical behaviour to prior versions.
+    min_confidence_to_enter :
+        Optional confidence gate for new long entries. If set, ENTER_LONG
+        intents with ``intent.confidence < min_confidence_to_enter`` are
+        suppressed (treated as HOLD for that bar).
 
     Returns
     -------
@@ -190,6 +195,9 @@ def run_backtest(
     position_arr = np.zeros(n, dtype=float)
     trades: list[TradeRecord] = []
     intents: list[StrategyIntent] = []
+    total_entry_intents = 0
+    blocked_entry_intents = 0
+    entry_confidences: list[float] = []
 
     for i in range(n):
         close_price = float(df["close"].iloc[i])
@@ -213,7 +221,18 @@ def run_backtest(
         intents.append(intent)
 
         # ── Determine target exposure ─────────────────────────────────
-        if intent.action in (Action.EXIT_LONG, Action.FLAT):
+        if intent.action == Action.ENTER_LONG:
+            total_entry_intents += 1
+            entry_confidences.append(float(intent.confidence))
+
+        if (
+            min_confidence_to_enter is not None
+            and intent.action == Action.ENTER_LONG
+            and float(intent.confidence) < float(min_confidence_to_enter)
+        ):
+            blocked_entry_intents += 1
+            target_exposure = current_exposure
+        elif intent.action in (Action.EXIT_LONG, Action.FLAT):
             target_exposure = 0.0
         elif intent.action == Action.HOLD:
             target_exposure = current_exposure
@@ -284,6 +303,20 @@ def run_backtest(
     equity_series = pd.Series(equity_arr, index=df.index, name="equity")
     position_series = pd.Series(position_arr, index=df.index, name="exposure")
     regime_series = pd.Series(regime_labels, index=df.index, name="regime", dtype=object)
+    conf_stats: dict[str, float | int] = {"n_entry_intents": total_entry_intents}
+    if entry_confidences:
+        c = np.asarray(entry_confidences, dtype=float)
+        conf_stats.update(
+            {
+                "min": round(float(np.min(c)), 6),
+                "p10": round(float(np.percentile(c, 10)), 6),
+                "p25": round(float(np.percentile(c, 25)), 6),
+                "p50": round(float(np.percentile(c, 50)), 6),
+                "p75": round(float(np.percentile(c, 75)), 6),
+                "p90": round(float(np.percentile(c, 90)), 6),
+                "max": round(float(np.max(c)), 6),
+            }
+        )
 
     return BacktestResult(
         equity_curve=equity_series,
@@ -301,6 +334,10 @@ def run_backtest(
             "cooldown_bars": exec_config.cooldown_bars,
             "max_exposure": max_exposure,
             "rebalance_threshold": rebalance_threshold,
+            "min_confidence_to_enter": min_confidence_to_enter,
+            "total_entry_intents": total_entry_intents,
+            "blocked_entry_intents": blocked_entry_intents,
+            "entry_confidence_stats": conf_stats,
             "asset": asset,
             "strategy_id": (
                 strategy_module.__name__

@@ -236,3 +236,61 @@ class TestGovernorBlocksLowCalibratedConfidence:
         )
         assert not allowed
         assert "confidence" in reason.lower()
+
+
+class TestBacktestConfidenceGate:
+    def test_backtest_gate_blocks_low_calibrated_entries(self):
+        """Backtest engine should suppress ENTER_LONG when confidence is too low."""
+
+        class _AlwaysEnter:
+            STRATEGY_ID = "test_gate_strategy"
+
+            @staticmethod
+            def generate_intent(df, ctx, closed_only=True):
+                return StrategyIntent(
+                    action=Action.ENTER_LONG,
+                    confidence=0.72,
+                    desired_exposure_frac=0.60,
+                    horizon_hours=24,
+                    reason="always-enter",
+                    meta={},
+                    strategy_id="test_gate_strategy",
+                )
+
+        # Craft a calibrator that pushes 0.72 well below 0.35
+        low_output_cal = PlattCalibrator(
+            A=-10.0,
+            B=-5.0,
+            strategy_id="test_gate_strategy",
+            is_fitted=True,
+            calibration_method="platt",
+        )
+        assert low_output_cal.predict(0.72) < 0.35
+
+        df = make_df(n=250, seed=21, trend="up")
+
+        # No gate: strategy should enter and trade.
+        no_gate = run_backtest(
+            df,
+            _AlwaysEnter,
+            calibrators={"test_gate_strategy": low_output_cal},
+            asset="BTC",
+            min_confidence_to_enter=None,
+        )
+        assert no_gate.n_trades > 0
+
+        # Gate on: entries suppressed, so no trades.
+        with_gate = run_backtest(
+            df,
+            _AlwaysEnter,
+            calibrators={"test_gate_strategy": low_output_cal},
+            asset="BTC",
+            min_confidence_to_enter=0.35,
+        )
+        assert with_gate.n_trades == 0
+        assert with_gate.params["blocked_entry_intents"] > 0
+        assert with_gate.params["blocked_entry_intents"] == with_gate.params["total_entry_intents"]
+        conf_stats = with_gate.params["entry_confidence_stats"]
+        assert conf_stats["n_entry_intents"] == with_gate.params["total_entry_intents"]
+        assert "p25" in conf_stats
+        assert "p50" in conf_stats

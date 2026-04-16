@@ -9,28 +9,29 @@ position on nearly every TREND_UP bar.
 
 V2 eliminates all intra-trend resizing:
 
-1. **Binary exposure**: flat (0.0) or long (0.75) — two states only.
+1. **Confidence-scaled exposure**: exposure ranges from 0.40 (low-confidence
+   entry) to 0.80 (high-confidence entry), determined at entry time and then
+   frozen until a structural exit fires.
 2. **Freeze on entry**: once long, always return HOLD (delta = 0, no trade)
    unless a genuine structural exit fires.
 3. **Tighter entry threshold**: spread must exceed 0.003 (vs 0.002 in v1)
    and price must be firmly above the slow EMA (> 0), reducing false starts.
-4. **Disciplined exits**: exit conditions are graduated —
+4. **ATR entry guard**: entries are blocked when ATR% exceeds 2.5% (the
+   regime engine's VOL_EXPANSION threshold), filtering high-risk entries.
+5. **Disciplined exits**: exit conditions are graduated —
    - HIGH_VOL: immediate emergency exit (regime too dangerous).
    - TREND_DOWN + bearish crossover: requires *both* a regime flip AND EMA
      crossover to exit, preventing exits on brief regime dips that recover.
+   - Adaptive trailing exit: price_vs_slow deterioration from its trailing
+     peak triggers early exit before deeper structural breaks.
    - Material crossover: EMA spread < -0.5% (not just touching zero).
    - Hard structural break: close < slow EMA by more than -1.5% (vs -0.5%
      in v1), filtering out brief intraday dips below the EMA.
-
-Expected impact
----------------
-- Trades: ~50–120 (from ~560–690)
-- Turnover: ~20–60x (from ~280x)
-- Net CAGR: similar or better (fewer entry/exit round-trips vs v1 whipsaws)
 """
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 from research.regimes.contracts import RegimeLabel
@@ -43,15 +44,82 @@ FAST_EMA = 21
 SLOW_EMA = 55
 MOMENTUM_LOOKBACK = 5
 
-ENTRY_EXPOSURE = 0.75           # fixed — no continuous sizing
+MIN_ENTRY_EXPOSURE = 0.40
+MAX_ENTRY_EXPOSURE = 0.80
 MIN_ENTRY_SPREAD = 0.003        # fast EMA must be 0.3% above slow (vs 0.2% in v1)
 
 # Exit thresholds — raised vs v1 to suppress whipsaws
 CROSSOVER_EXIT_THRESHOLD = -0.005   # spread must cross -0.5% (not just zero)
 PRICE_BREAK_THRESHOLD = -0.015      # close < slow_ema * (1 - 0.015)
 
+# Adaptive trailing exit: exit when price_vs_slow drops by this fraction of
+# its trailing peak (e.g. peak was 5%, drop to 2% = 60% deterioration).
+TRAILING_EXIT_DRAWDOWN_FRAC = 0.60
+TRAILING_EXIT_MIN_PEAK = 0.02      # peak must have been at least 2% to arm
+
+# Trailing window: number of bars to look back for the price_vs_slow peak.
+TRAILING_PEAK_WINDOW = 72
+
+# ATR entry guard threshold (matches regime engine's mid_vol_threshold)
+ATR_ENTRY_BLOCK_THRESHOLD = 0.025
+
 # Exposure threshold below which we consider ourselves "flat"
 FLAT_THRESHOLD = 0.05
+
+
+def _clip01(x: float) -> float:
+    return max(0.0, min(1.0, x))
+
+
+def _compute_atr_pct(df: pd.DataFrame, period: int = 14) -> float:
+    """Compute ATR% at the last bar.  Causal, no lookahead."""
+    close = df["close"]
+    high = df["high"]
+    low = df["low"]
+    prev_close = close.shift(1)
+    tr = pd.concat(
+        [high - low, (high - prev_close).abs(), (low - prev_close).abs()],
+        axis=1,
+    ).max(axis=1)
+    atr = tr.ewm(span=period, adjust=False).mean()
+    return float((atr / close).fillna(0.0).iloc[-1])
+
+
+def _entry_confidence(
+    ema_spread: float,
+    spread_momentum: float,
+    price_vs_slow: float,
+    atr_pct: float,
+) -> float:
+    """Map trend-strength features to a bounded entry confidence in [0, 1].
+
+    Scores are normalised around the same structural thresholds used by entry
+    logic so confidence remains interpretable and stable across market regimes.
+    """
+    spread_score = _clip01((ema_spread - MIN_ENTRY_SPREAD) / 0.006)
+    momentum_score = _clip01((spread_momentum + 0.0015) / 0.003)
+    structure_score = _clip01(price_vs_slow / 0.015)
+    # Vol penalty: lower confidence when ATR is elevated (but below hard block)
+    vol_penalty = _clip01((atr_pct - 0.010) / 0.015)  # 0 at 1%, 1 at 2.5%
+
+    score = (
+        0.40 * spread_score
+        + 0.25 * momentum_score
+        + 0.20 * structure_score
+        - 0.15 * vol_penalty
+    )
+    score = max(0.0, score)
+    confidence = 0.25 + 0.65 * score
+    return _clip01(confidence)
+
+
+def _trailing_peak_price_vs_slow(df: pd.DataFrame, window: int) -> float:
+    """Compute the peak price_vs_slow over the trailing window.  Causal."""
+    close = df["close"]
+    ema_slow = close.ewm(span=SLOW_EMA, adjust=False).mean()
+    pvs = (close - ema_slow) / ema_slow
+    lookback = pvs.iloc[-window:] if len(pvs) >= window else pvs
+    return float(lookback.max())
 
 
 def generate_intent(
@@ -131,7 +199,27 @@ def generate_intent(
                 strategy_id=STRATEGY_ID,
             )
 
-        # Priority 3 — material EMA crossover (spread clearly negative)
+        # Priority 3 — adaptive trailing exit
+        trailing_peak = _trailing_peak_price_vs_slow(df, TRAILING_PEAK_WINDOW)
+        meta["trailing_peak_pvs"] = round(trailing_peak, 5)
+        if (
+            trailing_peak >= TRAILING_EXIT_MIN_PEAK
+            and price_vs_slow < trailing_peak * (1.0 - TRAILING_EXIT_DRAWDOWN_FRAC)
+        ):
+            return StrategyIntent(
+                action=Action.EXIT_LONG,
+                confidence=0.82,
+                desired_exposure_frac=0.0,
+                horizon_hours=4,
+                reason=(
+                    f"Trailing exit: price_vs_slow {price_vs_slow:.4f} "
+                    f"dropped >{TRAILING_EXIT_DRAWDOWN_FRAC:.0%} from peak {trailing_peak:.4f}"
+                ),
+                meta=meta,
+                strategy_id=STRATEGY_ID,
+            )
+
+        # Priority 4 — material EMA crossover (spread clearly negative)
         if ema_spread < CROSSOVER_EXIT_THRESHOLD:
             return StrategyIntent(
                 action=Action.EXIT_LONG,
@@ -143,7 +231,7 @@ def generate_intent(
                 strategy_id=STRATEGY_ID,
             )
 
-        # Priority 4 — hard structural price break
+        # Priority 5 — hard structural price break
         if price_vs_slow < PRICE_BREAK_THRESHOLD:
             return StrategyIntent(
                 action=Action.EXIT_LONG,
@@ -167,18 +255,33 @@ def generate_intent(
         )
 
     # ── When flat: entry logic only ───────────────────────────────────────────
+    atr_pct = _compute_atr_pct(df)
+    meta["atr_pct"] = round(atr_pct, 6)
+
     bullish_entry = (
         ctx.regime == RegimeLabel.TREND_UP
         and ema_spread > MIN_ENTRY_SPREAD
-        and price_vs_slow > 0.0          # price firmly above slow EMA
-        and spread_momentum >= 0         # trend not decelerating
+        and price_vs_slow > 0.0
+        and spread_momentum >= 0
+        and atr_pct <= ATR_ENTRY_BLOCK_THRESHOLD
     )
 
     if bullish_entry:
+        entry_confidence = _entry_confidence(ema_spread, spread_momentum, price_vs_slow, atr_pct)
+        desired_exposure = MIN_ENTRY_EXPOSURE + (MAX_ENTRY_EXPOSURE - MIN_ENTRY_EXPOSURE) * entry_confidence
+        desired_exposure = _clip01(desired_exposure)
+
+        meta["entry_confidence_raw"] = round(entry_confidence, 6)
+        meta["entry_confidence_components"] = {
+            "spread_score": round(_clip01((ema_spread - MIN_ENTRY_SPREAD) / 0.006), 6),
+            "momentum_score": round(_clip01((spread_momentum + 0.0015) / 0.003), 6),
+            "structure_score": round(_clip01(price_vs_slow / 0.015), 6),
+            "vol_penalty": round(_clip01((atr_pct - 0.010) / 0.015), 6),
+        }
         return StrategyIntent(
             action=Action.ENTER_LONG,
-            confidence=0.75,
-            desired_exposure_frac=ENTRY_EXPOSURE,
+            confidence=entry_confidence,
+            desired_exposure_frac=desired_exposure,
             horizon_hours=72,
             reason="Trend entry: TREND_UP + EMA spread + price structure",
             meta=meta,

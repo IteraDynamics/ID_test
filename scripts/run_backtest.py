@@ -91,6 +91,12 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Path to calibrator JSON files (default: artifacts/ml_models/)",
     )
+    p.add_argument(
+        "--min-confidence",
+        type=float,
+        default=None,
+        help="Minimum confidence required for ENTER_LONG intents (default: 0.35 when --calibrate is used).",
+    )
     return p.parse_args()
 
 
@@ -166,6 +172,18 @@ def main() -> None:
         if args.rebalance_threshold is not None
         else float(os.getenv("REBALANCE_THRESHOLD", "0.02"))
     )
+    min_confidence_to_enter = args.min_confidence
+    if args.calibrate and min_confidence_to_enter is None:
+        min_confidence_to_enter = 0.35
+        log.info(
+            "Calibration gate enabled: min_confidence=%.2f for ENTER_LONG intents",
+            min_confidence_to_enter,
+        )
+    elif min_confidence_to_enter is not None:
+        log.info(
+            "Confidence gate enabled: min_confidence=%.2f for ENTER_LONG intents",
+            min_confidence_to_enter,
+        )
 
     result = run_backtest(
         df=df,
@@ -175,6 +193,7 @@ def main() -> None:
         rebalance_threshold=rebalance_threshold,
         asset=args.asset,
         calibrators=calibrators,
+        min_confidence_to_enter=min_confidence_to_enter,
     )
 
     # ── Compute metrics ───────────────────────────────────────────────
@@ -204,6 +223,31 @@ def main() -> None:
     print(f"  Avg BUY:      ${metrics.avg_entry_notional_usd:>10,.0f}  ({metrics.avg_entry_notional_pct_nav*100:.1f}% NAV)")
     print(f"  Avg SELL:     ${metrics.avg_exit_notional_usd:>10,.0f}  ({metrics.avg_exit_notional_pct_nav*100:.1f}% NAV)")
     print(f"  Exit/Entry:   {metrics.avg_exit_entry_notional_ratio:.3f}x  (notional ratio)")
+    blocked_entries = int(result.params.get("blocked_entry_intents", 0))
+    total_entries = int(result.params.get("total_entry_intents", 0))
+    min_conf = result.params.get("min_confidence_to_enter", None)
+    conf_stats = result.params.get("entry_confidence_stats", {})
+    if min_conf is not None:
+        blocked_pct = (100.0 * blocked_entries / total_entries) if total_entries > 0 else 0.0
+        print(
+            f"  Gate Blocks:  {blocked_entries}/{total_entries} entry intents "
+            f"({blocked_pct:.1f}%)  @ min_conf={float(min_conf):.2f}"
+        )
+    if isinstance(conf_stats, dict) and int(conf_stats.get("n_entry_intents", 0)) > 0:
+        print(
+            "  Entry Conf:   "
+            f"min={float(conf_stats.get('min', 0.0)):.3f}  "
+            f"p25={float(conf_stats.get('p25', 0.0)):.3f}  "
+            f"p50={float(conf_stats.get('p50', 0.0)):.3f}  "
+            f"p75={float(conf_stats.get('p75', 0.0)):.3f}  "
+            f"max={float(conf_stats.get('max', 0.0)):.3f}"
+        )
+        print(
+            "  Thresholds:   "
+            f"~10% block={float(conf_stats.get('p10', 0.0)):.3f}  "
+            f"~25% block={float(conf_stats.get('p25', 0.0)):.3f}  "
+            f"~50% block={float(conf_stats.get('p50', 0.0)):.3f}"
+        )
     print("=" * 60)
 
     # ── Save artifacts ────────────────────────────────────────────────
