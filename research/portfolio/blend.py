@@ -181,6 +181,11 @@ def run_portfolio_backtest(
     trades: list[TradeRecord] = []
 
     last_trade_bar = -9999
+    # Tracks the last blended exposure the portfolio committed to rebalancing toward.
+    # Comparing new blended against this (not against mark-to-market current_exposure)
+    # prevents continuous drift-rebalancing as asset prices move the portfolio's
+    # actual exposure away from target between intentional sleeve transitions.
+    intended_target = 0.0
 
     # Per-sleeve virtual exposure: each sleeve operates as if it owns 100% of
     # its own capital.  Passing the portfolio's total exposure to every sleeve
@@ -242,13 +247,16 @@ def run_portfolio_backtest(
         blended = sum(
             w * e for w, e in zip(normalised_weights, sleeve_desired_exposures)
         )
-        target_exposure = min(blended, max_portfolio_exposure)
+        new_intended = min(blended, max_portfolio_exposure)
 
         # ── Simulate trade ────────────────────────────────────────────
-        delta = target_exposure - current_exposure
+        # Compare new intended allocation against last committed intended, not
+        # against mark-to-market current_exposure — this prevents drift rebalancing.
         cooldown_ok = (i - last_trade_bar) >= exec_config.cooldown_bars
-        if abs(delta) >= _rebalance_threshold and cooldown_ok:
-            direction = "BUY" if delta > 0 else "SELL"
+        if abs(new_intended - intended_target) >= _rebalance_threshold and cooldown_ok:
+            target_exposure = new_intended
+            intended_target = new_intended
+            direction = "BUY" if target_exposure > current_exposure else "SELL"
             target_pv = nav * target_exposure
             current_pv = position_units * close_price
             trade_notional = abs(target_pv - current_pv)
