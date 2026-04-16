@@ -182,6 +182,12 @@ def run_portfolio_backtest(
 
     last_trade_bar = -9999
 
+    # Per-sleeve virtual exposure: each sleeve operates as if it owns 100% of
+    # its own capital.  Passing the portfolio's total exposure to every sleeve
+    # causes strategies to think they're already long the moment any other
+    # sleeve enters, producing HOLD signals, wrong sizing, and runaway churn.
+    sleeve_virtual_exp = {lbl: 0.0 for lbl in sleeve_labels}
+
     for i in range(n):
         close_price = float(df["close"].iloc[i])
         atr_pct = float(atr_pct_series.iloc[i])
@@ -198,11 +204,14 @@ def run_portfolio_backtest(
             if sleeve.allowed_regimes is not None and regime not in sleeve.allowed_regimes:
                 sleeve_desired_exposures.append(0.0)
                 sleeve_exp_arrays[lbl][i] = 0.0
+                sleeve_virtual_exp[lbl] = 0.0
                 continue
 
+            # Give the sleeve its OWN virtual exposure so it makes decisions
+            # as if it were the only strategy running.
             ctx = StrategyContext(
                 regime=regime,
-                current_exposure_frac=current_exposure,
+                current_exposure_frac=sleeve_virtual_exp[lbl],
                 asset=asset,
                 bar_index=i,
             )
@@ -210,10 +219,13 @@ def run_portfolio_backtest(
 
             if intent.action in (Action.EXIT_LONG, Action.FLAT):
                 desired = 0.0
+                sleeve_virtual_exp[lbl] = 0.0
             elif intent.action == Action.HOLD:
-                desired = current_exposure * normalised_weights[j]
-            else:
+                # Maintain the sleeve's own position — do not use portfolio exposure
+                desired = sleeve_virtual_exp[lbl]
+            else:  # ENTER_LONG or any sizing action
                 desired = min(intent.desired_exposure_frac, sleeve.max_sleeve_exposure)
+                sleeve_virtual_exp[lbl] = desired
 
             sleeve_desired_exposures.append(desired)
             sleeve_exp_arrays[lbl][i] = desired
