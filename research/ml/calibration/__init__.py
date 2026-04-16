@@ -30,12 +30,23 @@ def _apply_calibration(
     intent: StrategyIntent,
     calibrator: PlattCalibrator,
 ) -> StrategyIntent:
-    """Return a new StrategyIntent with calibrated confidence.
+    """Return a new StrategyIntent with calibrated confidence and scaled exposure.
 
     Only ENTER_LONG intents are modified; all others are returned as-is.
     If the calibrator is unfitted, the intent is returned unchanged.
 
-    The raw confidence is preserved in ``intent.meta["ml_calibration"]["raw_confidence"]``
+    Two effects on the returned intent:
+
+    1. **Confidence** is replaced by the calibrated P(win) estimate.
+       The ExposureGovernor will block the entry if this falls below 0.35.
+
+    2. **desired_exposure_frac** is scaled proportionally to calibrated P(win).
+       This is the continuous-sizing benefit of calibration: the model outputs
+       a higher confidence → take a larger position, and vice-versa.
+       Scaling formula: ``new_exposure = original_exposure × (calibrated / raw)``
+       clamped to [0, 1].  When raw == 0 the exposure is left unchanged.
+
+    The raw confidence is preserved in ``intent.meta["ml_calibration"]``
     for the full audit trail.
     """
     if intent.action != Action.ENTER_LONG or not calibrator.is_fitted:
@@ -44,14 +55,20 @@ def _apply_calibration(
     # Pass full intent.meta so multivariate calibrators can use indicator features
     features = intent.meta if intent.meta else None
     cal_meta = calibrator.predict_with_meta(intent.confidence, features=features)
-    calibrated_conf = cal_meta["calibrated_confidence"]
-    # Enforce valid range (PlattCalibrator already clips, but be defensive)
-    calibrated_conf = max(0.0, min(1.0, float(calibrated_conf)))
+    calibrated_conf = max(0.0, min(1.0, float(cal_meta["calibrated_confidence"])))
+
+    # Scale position size in proportion to calibrated vs raw confidence.
+    # This lets the ML model continuously adjust conviction beyond the 0.35 gate.
+    raw_conf = float(intent.confidence)
+    if raw_conf > 1e-9:
+        scaled_exposure = min(1.0, intent.desired_exposure_frac * (calibrated_conf / raw_conf))
+    else:
+        scaled_exposure = intent.desired_exposure_frac
 
     return StrategyIntent(
         action=intent.action,
         confidence=calibrated_conf,
-        desired_exposure_frac=intent.desired_exposure_frac,
+        desired_exposure_frac=scaled_exposure,
         horizon_hours=intent.horizon_hours,
         reason=intent.reason,
         meta={**intent.meta, "ml_calibration": cal_meta},
