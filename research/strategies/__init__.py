@@ -15,6 +15,7 @@ from research.strategies import trend_following_v2
 from research.strategies import trend_following_v3
 from research.strategies import trend_following_v4
 from research.strategies import trend_following_v5
+from research.strategies import trend_following_v6
 from research.strategies import volatility_breakout
 from research.strategies import mean_reversion
 
@@ -24,6 +25,7 @@ REGISTRY: dict[str, object] = {
     "trend_following_v3": trend_following_v3,
     "trend_following_v4": trend_following_v4,
     "trend_following_v5": trend_following_v5,
+    "trend_following_v6": trend_following_v6,
     "volatility_breakout": volatility_breakout,
     "mean_reversion": mean_reversion,
 }
@@ -37,6 +39,7 @@ __all__ = [
     "trend_following_v3",
     "trend_following_v4",
     "trend_following_v5",
+    "trend_following_v6",
     "volatility_breakout",
     "mean_reversion",
     "REGISTRY",
