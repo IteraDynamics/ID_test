@@ -202,7 +202,7 @@ def run_backtest(
         regime = regime_labels[i]
         ctx = StrategyContext(
             regime=regime,
-            current_exposure_frac=current_exposure,
+            current_exposure_frac=min(1.0, max(0.0, current_exposure)),
             asset=asset,
             bar_index=i,
         )

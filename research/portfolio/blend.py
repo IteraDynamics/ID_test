@@ -216,7 +216,7 @@ def run_portfolio_backtest(
             # as if it were the only strategy running.
             ctx = StrategyContext(
                 regime=regime,
-                current_exposure_frac=sleeve_virtual_exp[lbl],
+                current_exposure_frac=min(1.0, max(0.0, sleeve_virtual_exp[lbl])),
                 asset=asset,
                 bar_index=i,
             )
