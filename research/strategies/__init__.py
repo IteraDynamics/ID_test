@@ -24,6 +24,10 @@ from research.strategies import trend_following_v8_cap60
 from research.strategies import trend_following_v8_cap50
 from research.strategies import trend_following_v8_ecap75
 from research.strategies import trend_following_v8_ecap75_add90
+from research.strategies import trend_following_v8_ecap60
+from research.strategies import trend_following_v8_ecap60_add80
+from research.strategies import trend_following_v8_ecap50
+from research.strategies import trend_following_v8_ecap50_add70
 from research.strategies import volatility_breakout
 from research.strategies import mean_reversion
 
@@ -42,6 +46,10 @@ REGISTRY: dict[str, object] = {
     "trend_following_v8_cap50": trend_following_v8_cap50,
     "trend_following_v8_ecap75": trend_following_v8_ecap75,
     "trend_following_v8_ecap75_add90": trend_following_v8_ecap75_add90,
+    "trend_following_v8_ecap60": trend_following_v8_ecap60,
+    "trend_following_v8_ecap60_add80": trend_following_v8_ecap60_add80,
+    "trend_following_v8_ecap50": trend_following_v8_ecap50,
+    "trend_following_v8_ecap50_add70": trend_following_v8_ecap50_add70,
     "volatility_breakout": volatility_breakout,
     "mean_reversion": mean_reversion,
 }
@@ -64,6 +72,10 @@ __all__ = [
     "trend_following_v8_cap50",
     "trend_following_v8_ecap75",
     "trend_following_v8_ecap75_add90",
+    "trend_following_v8_ecap60",
+    "trend_following_v8_ecap60_add80",
+    "trend_following_v8_ecap50",
+    "trend_following_v8_ecap50_add70",
     "volatility_breakout",
     "mean_reversion",
     "REGISTRY",
