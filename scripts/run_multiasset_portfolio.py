@@ -571,7 +571,7 @@ def main() -> None:
             if j > i
         },
     }
-    with open(out_dir / "summary.json", "w") as f:
+    with open(out_dir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
 
     md: list[str] = [
@@ -623,7 +623,7 @@ def main() -> None:
                 if j > i:
                     md.append(f"| {a} / {b} | {corr_matrix.loc[a, b]:.3f} |")
 
-    with open(out_dir / "summary.md", "w") as f:
+    with open(out_dir / "summary.md", "w", encoding="utf-8") as f:
         f.write("\n".join(md) + "\n")
 
     if not args.no_chart:
