@@ -14,8 +14,8 @@ The combinatorial AND logic is what keeps it mostly dormant.
 Entry gate — ALL must hold:
     1. Regime == TREND_DOWN (current bar confirms bearish hourly regime).
     2. Price < 720-bar EMA (≈ 30-day structural trend is bearish).
-    3. Price ≥ 25% below 90-day rolling high (macro drawdown confirmed,
-       not a -10% to -20% pullback inside a bull market).
+    3. Price ≥ 20% below 90-day rolling high (macro drawdown confirmed,
+       not a -10% to -15% pullback inside a bull market).
     4. EMA spread < -0.8% for 6 consecutive bars (persistent bear structure,
        not a one-bar regime flip).
     5. ATR% ≥ 2.5% (volatility is actively expanding — crash is live).
@@ -43,7 +43,7 @@ STRATEGY_ID = "crash_short_v1"
 # ── Macro structural filters ───────────────────────────────────────────────────
 MACRO_EMA = 720              # ≈ 30 days on 1-hour bars
 DRAWDOWN_LOOKBACK = 2160     # 90-day rolling high window (bars)
-DRAWDOWN_THRESHOLD = 0.25    # price must be ≥ 25% below 90-day rolling high
+DRAWDOWN_THRESHOLD = 0.20    # price must be ≥ 20% below 90-day rolling high
 
 # ── EMA structure ──────────────────────────────────────────────────────────────
 FAST_EMA = 21
