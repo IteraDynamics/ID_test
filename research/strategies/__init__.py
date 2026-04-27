@@ -35,6 +35,7 @@ from research.strategies import crash_short_v2
 from research.strategies import volatility_breakout
 from research.strategies import mean_reversion
 from research.strategies import post_capitulation_long_v1
+from research.strategies import post_capitulation_long_v2
 
 REGISTRY: dict[str, object] = {
     "trend_following": trend_following,
@@ -62,6 +63,7 @@ REGISTRY: dict[str, object] = {
     "volatility_breakout": volatility_breakout,
     "mean_reversion": mean_reversion,
     "post_capitulation_long_v1": post_capitulation_long_v1,
+    "post_capitulation_long_v2": post_capitulation_long_v2,
 }
 
 __all__ = [
@@ -93,5 +95,6 @@ __all__ = [
     "volatility_breakout",
     "mean_reversion",
     "post_capitulation_long_v1",
+    "post_capitulation_long_v2",
     "REGISTRY",
 ]
