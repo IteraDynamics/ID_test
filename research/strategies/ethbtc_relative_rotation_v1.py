@@ -16,10 +16,16 @@ Signal logic
 - Neutral      : |spread| ≤ MIN_REL_SPREAD
 - Signal locked for MIN_HOLD_BARS after each switch (churn prevention)
 
+v1 is intentionally tuned as a macro allocator, not an intraday relative-value
+trader.  The first prototype used 2-day / 10-day EMAs, 8-hour confirmation,
+and a 2-day minimum hold, which produced destructive churn.  This version uses
+multi-week confirmation/holding windows so it can express ETH/BTC regime shifts
+without continuously trading noise.
+
 Target allocations (no leverage, long-only, both assets always held)
 ---------------------------------------------------------------------
-  ETH favored  →  BTC 30% / ETH 70%
-  BTC favored  →  BTC 70% / ETH 30%
+  ETH favored  →  BTC 35% / ETH 65%
+  BTC favored  →  BTC 65% / ETH 35%
   Neutral      →  BTC 50% / ETH 50%
 """
 
@@ -35,16 +41,22 @@ import pandas as pd
 
 STRATEGY_ID = "ethbtc_relative_rotation_v1"
 
-FAST_EMA = 48          # ~2 days at 1H
-SLOW_EMA = 240         # ~10 days at 1H
-CONFIRM_BARS = 8       # raw signal must persist this many bars before acting
-MIN_HOLD_BARS = 48     # bars before rotation is allowed after the last switch
-MIN_REL_SPREAD = 0.005 # EMA spread threshold (0.5% of slow EMA)
+# Macro-relative cadence on 1H bars.
+# FAST_EMA ≈ 10 days, SLOW_EMA ≈ 45 days.  Confirmation ≈ 3 days.
+# Minimum hold ≈ 3 weeks.  This targets ETH/BTC regime shifts rather than
+# intraday noise.
+FAST_EMA = 240
+SLOW_EMA = 1080
+CONFIRM_BARS = 72
+MIN_HOLD_BARS = 504
+MIN_REL_SPREAD = 0.03  # 3.0% EMA spread threshold
 
-BTC_FRAC_ETH_FAVORED = 0.30
-ETH_FRAC_ETH_FAVORED = 0.70
-BTC_FRAC_BTC_FAVORED = 0.70
-ETH_FRAC_BTC_FAVORED = 0.30
+# Keep tilts moderate.  This should behave like a Fund v1 allocator overlay,
+# not a high-conviction standalone strategy that fully abandons either asset.
+BTC_FRAC_ETH_FAVORED = 0.35
+ETH_FRAC_ETH_FAVORED = 0.65
+BTC_FRAC_BTC_FAVORED = 0.65
+ETH_FRAC_BTC_FAVORED = 0.35
 BTC_FRAC_NEUTRAL = 0.50
 ETH_FRAC_NEUTRAL = 0.50
 
