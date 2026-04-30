@@ -27,6 +27,7 @@ Outputs:
     artifacts/multi_asset_portfolio/
         - equity_curves.csv
         - daily_returns.csv
+        - allocation_sweep.csv
         - summary.json
 """
 
@@ -145,6 +146,30 @@ def compute_metrics(equity: pd.Series) -> Metrics:
     )
 
 
+def _blend_curves(
+    crypto_daily: pd.Series,
+    equity_daily: pd.Series,
+    capital: float,
+    crypto_weight: float,
+    equity_weight: float,
+) -> pd.DataFrame:
+    total_weight = crypto_weight + equity_weight
+    if total_weight <= 0:
+        raise ValueError("Weights must sum to a positive number")
+    cw = crypto_weight / total_weight
+    ew = equity_weight / total_weight
+
+    crypto_scaled = _normalize_to_capital(crypto_daily, capital * cw, "crypto_sleeve")
+    equity_scaled = _normalize_to_capital(equity_daily, capital * ew, "equity_sleeve")
+    combined = crypto_scaled + equity_scaled
+    combined.name = "itera_multi_asset"
+    return pd.DataFrame({
+        "crypto_sleeve": crypto_scaled,
+        "equity_sleeve": equity_scaled,
+        "itera_multi_asset": combined,
+    })
+
+
 def print_metrics(label: str, m: Metrics, corr: float | None = None) -> None:
     corr_txt = "   —" if corr is None else f" {corr:>7.3f}"
     print(
@@ -169,6 +194,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--capital", type=float, default=100000.0, help="Total research portfolio capital")
     p.add_argument("--crypto-weight", type=float, default=0.70, help="Capital weight assigned to Crypto Sleeve")
     p.add_argument("--equity-weight", type=float, default=0.30, help="Capital weight assigned to Equity Sleeve")
+    p.add_argument(
+        "--sweep",
+        action="store_true",
+        help="Also run a static allocation sweep from 100/0 through 0/100 in 10%% increments.",
+    )
     p.add_argument("--out-dir", default="artifacts/multi_asset_portfolio")
     return p.parse_args()
 
@@ -199,21 +229,9 @@ def main() -> None:
     crypto_daily = crypto_daily.loc[common_index]
     equity_daily = equity_daily.loc[common_index]
 
-    crypto_alloc = args.capital * crypto_weight
-    equity_alloc = args.capital * equity_weight
-
-    crypto_scaled = _normalize_to_capital(crypto_daily, crypto_alloc, "crypto_sleeve")
-    equity_scaled = _normalize_to_capital(equity_daily, equity_alloc, "equity_sleeve")
-    combined = crypto_scaled + equity_scaled
-    combined.name = "itera_multi_asset"
-
-    curves = pd.DataFrame({
-        "crypto_sleeve": crypto_scaled,
-        "equity_sleeve": equity_scaled,
-        "itera_multi_asset": combined,
-    })
-
+    curves = _blend_curves(crypto_daily, equity_daily, args.capital, crypto_weight, equity_weight)
     daily_returns = curves.pct_change().dropna()
+
     corr_crypto_equity = float(daily_returns["crypto_sleeve"].corr(daily_returns["equity_sleeve"]))
     corr_combined_crypto = float(daily_returns["itera_multi_asset"].corr(daily_returns["crypto_sleeve"]))
     corr_combined_equity = float(daily_returns["itera_multi_asset"].corr(daily_returns["equity_sleeve"]))
@@ -251,10 +269,45 @@ def main() -> None:
     print(f"  Sharpe {p.sharpe - c.sharpe:+.3f}")
     print(f"  Calmar {p.calmar - c.calmar:+.3f}")
 
+    sweep_rows: list[dict] = []
+    if args.sweep:
+        print("\n  ALLOCATION SWEEP")
+        print("  " + "-" * 98)
+        print(f"  {'Crypto':>7} {'Equity':>7} {'TotRet':>10} {'CAGR':>10} {'MaxDD':>10} {'Sharpe':>8} {'Calmar':>8} {'AnnVol':>10} {'ΔSharpe':>9} {'ΔDD':>8}")
+        print("  " + "-" * 98)
+
+        base = metrics["crypto_sleeve"]
+        for crypto_pct in range(100, -1, -10):
+            equity_pct = 100 - crypto_pct
+            sweep_curves = _blend_curves(crypto_daily, equity_daily, args.capital, crypto_pct / 100.0, equity_pct / 100.0)
+            m = compute_metrics(sweep_curves["itera_multi_asset"])
+            row = {
+                "crypto_weight": crypto_pct / 100.0,
+                "equity_weight": equity_pct / 100.0,
+                **asdict(m),
+                "delta_sharpe_vs_crypto": m.sharpe - base.sharpe,
+                "delta_maxdd_vs_crypto": m.max_drawdown_pct - base.max_drawdown_pct,
+            }
+            sweep_rows.append(row)
+            print(
+                f"  {crypto_pct:>6.0f}% {equity_pct:>6.0f}%"
+                f" {m.total_return_pct:>9.2f}%"
+                f" {m.cagr_pct:>9.2f}%"
+                f" {m.max_drawdown_pct:>9.2f}%"
+                f" {m.sharpe:>8.3f}"
+                f" {m.calmar:>8.3f}"
+                f" {m.ann_vol_pct:>9.2f}%"
+                f" {m.sharpe - base.sharpe:>+9.3f}"
+                f" {m.max_drawdown_pct - base.max_drawdown_pct:>+8.2f}%"
+            )
+
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     curves.to_csv(out / "equity_curves.csv")
     daily_returns.to_csv(out / "daily_returns.csv")
+
+    if sweep_rows:
+        pd.DataFrame(sweep_rows).to_csv(out / "allocation_sweep.csv", index=False)
 
     summary = {
         "capital": args.capital,
@@ -267,12 +320,16 @@ def main() -> None:
         "correlation_combined_crypto": corr_combined_crypto,
         "correlation_combined_equity": corr_combined_equity,
         "metrics": {k: asdict(v) for k, v in metrics.items()},
+        "allocation_sweep": sweep_rows,
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
 
     print("\n" + "=" * 108)
     print(f"  Artifacts saved to: {out}")
-    print("    equity_curves.csv  daily_returns.csv  summary.json")
+    artifact_line = "    equity_curves.csv  daily_returns.csv  summary.json"
+    if sweep_rows:
+        artifact_line += "  allocation_sweep.csv"
+    print(artifact_line)
     print("=" * 108)
 
 
