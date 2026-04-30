@@ -23,7 +23,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pandas as pd
 
 from research.harness.data_loader import load_ohlcv
-from research.strategies.contracts import StrategyContext
+from research.regimes.contracts import RegimeLabel
+from research.strategies.contracts import Action, StrategyContext
 from research.strategies.equity_spy_trend_v1 import generate_intent
 
 
@@ -39,19 +40,21 @@ def run_backtest(df: pd.DataFrame, capital: float = 100000.0):
         slice_df = df.iloc[: i + 1]
 
         ctx = StrategyContext(
+            regime=RegimeLabel.UNKNOWN,
             current_exposure_frac=exposure,
             asset="SPY",
+            bar_index=i,
         )
 
         intent = generate_intent(slice_df, ctx, closed_only=True)
         price = float(slice_df["close"].iloc[-1])
 
-        if intent.action.name == "ENTER_LONG" and exposure == 0.0:
+        if intent.action == Action.ENTER_LONG and exposure == 0.0:
             exposure = intent.desired_exposure_frac
             entry_price = price
             trades += 1
 
-        elif intent.action.name == "EXIT" and exposure > 0.0:
+        elif intent.action in (Action.EXIT_LONG, Action.FLAT) and exposure > 0.0:
             pnl = (price / entry_price - 1.0) * exposure
             equity *= (1.0 + pnl)
             exposure = 0.0
