@@ -15,6 +15,7 @@ Outputs:
     artifacts/spy_trend_backtest/
         - equity_curve.csv
         - trades.csv
+        - robustness_windows.csv
         - summary.json
 """
 
@@ -37,6 +38,13 @@ from research.strategies.contracts import Action, StrategyContext
 from research.strategies.equity_spy_trend_v1 import STRATEGY_ID, generate_intent
 
 TRADING_DAYS_PER_YEAR = 252
+
+ROBUSTNESS_WINDOWS = [
+    ("GFC_2008", "2007-10-01", "2009-03-31"),
+    ("COVID_2020", "2020-02-01", "2020-06-30"),
+    ("BEAR_2022", "2022-01-01", "2022-12-31"),
+    ("POST_2022_RECOVERY", "2023-01-01", "2024-12-31"),
+]
 
 
 @dataclass(frozen=True)
@@ -76,6 +84,14 @@ def compute_metrics(equity: pd.Series) -> Metrics:
         calmar=calmar,
         ann_vol_pct=ann_vol * 100.0,
     )
+
+
+def _window_metrics(equity: pd.Series, start: str, end: str) -> Metrics | None:
+    window = equity[(equity.index >= pd.Timestamp(start)) & (equity.index <= pd.Timestamp(end))]
+    if len(window) < 2:
+        return None
+    rebased = window / window.iloc[0] * 100.0
+    return compute_metrics(rebased)
 
 
 def run_backtest(df: pd.DataFrame, capital: float = 100000.0):
@@ -162,6 +178,31 @@ def print_metrics(label: str, m: Metrics) -> None:
     )
 
 
+def build_robustness_rows(strategy_equity: pd.Series, buy_hold_equity: pd.Series) -> list[dict]:
+    rows: list[dict] = []
+    for label, start, end in ROBUSTNESS_WINDOWS:
+        strat_m = _window_metrics(strategy_equity, start, end)
+        bh_m = _window_metrics(buy_hold_equity, start, end)
+        if strat_m is None or bh_m is None:
+            continue
+        rows.append({
+            "window": label,
+            "start": start,
+            "end": end,
+            "strategy_total_return_pct": strat_m.total_return_pct,
+            "strategy_max_drawdown_pct": strat_m.max_drawdown_pct,
+            "strategy_sharpe": strat_m.sharpe,
+            "strategy_calmar": strat_m.calmar,
+            "buy_hold_total_return_pct": bh_m.total_return_pct,
+            "buy_hold_max_drawdown_pct": bh_m.max_drawdown_pct,
+            "buy_hold_sharpe": bh_m.sharpe,
+            "buy_hold_calmar": bh_m.calmar,
+            "delta_return_pct": strat_m.total_return_pct - bh_m.total_return_pct,
+            "delta_max_drawdown_pct": strat_m.max_drawdown_pct - bh_m.max_drawdown_pct,
+        })
+    return rows
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run SPY daily equity trend backtest")
     parser.add_argument("--data", required=True, help="Path to SPY daily CSV")
@@ -180,6 +221,7 @@ if __name__ == "__main__":
     strategy_m = compute_metrics(strategy_equity)
     buy_hold_m = compute_metrics(buy_hold_equity)
     exposure_pct = float((exposure > 0).mean() * 100.0)
+    robustness_rows = build_robustness_rows(strategy_equity, buy_hold_equity)
 
     print(f"Loaded {len(df)} bars: {df.index[0]} → {df.index[-1]}")
     print("\n" + "=" * 96)
@@ -201,6 +243,22 @@ if __name__ == "__main__":
     print(f"  Trades:        {len(trades)}")
     print(f"  Exposure time: {exposure_pct:.1f}%")
 
+    if robustness_rows:
+        print("\n  ROBUSTNESS WINDOWS")
+        print("  " + "-" * 92)
+        print(f"  {'Window':<20} {'StratRet':>9} {'BHRet':>9} {'ΔRet':>9} {'StratDD':>9} {'BHDD':>9} {'ΔDD':>9}")
+        print("  " + "-" * 92)
+        for row in robustness_rows:
+            print(
+                f"  {row['window']:<20}"
+                f" {row['strategy_total_return_pct']:>8.2f}%"
+                f" {row['buy_hold_total_return_pct']:>8.2f}%"
+                f" {row['delta_return_pct']:>+8.2f}%"
+                f" {row['strategy_max_drawdown_pct']:>8.2f}%"
+                f" {row['buy_hold_max_drawdown_pct']:>8.2f}%"
+                f" {row['delta_max_drawdown_pct']:>+8.2f}%"
+            )
+
     if not trades.empty:
         print("\n  TRADE SUMMARY")
         print("  " + "-" * 72)
@@ -221,6 +279,7 @@ if __name__ == "__main__":
     }).to_csv(out / "equity_curve.csv")
 
     trades.to_csv(out / "trades.csv", index=False)
+    pd.DataFrame(robustness_rows).to_csv(out / "robustness_windows.csv", index=False)
 
     summary = {
         "strategy_id": STRATEGY_ID,
@@ -232,10 +291,11 @@ if __name__ == "__main__":
         "exposure_time_pct": exposure_pct,
         "strategy": asdict(strategy_m),
         "buy_hold": asdict(buy_hold_m),
+        "robustness_windows": robustness_rows,
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
 
     print("\n" + "=" * 96)
     print(f"  Artifacts saved to: {out}")
-    print("    equity_curve.csv  trades.csv  summary.json")
+    print("    equity_curve.csv  trades.csv  robustness_windows.csv  summary.json")
     print("=" * 96)
