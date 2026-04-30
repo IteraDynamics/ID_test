@@ -1,5 +1,24 @@
+#!/usr/bin/env python
+"""
+Itera Dynamics — SPY Daily Equity Trend Backtest Runner
+
+Research-only runner for equity_spy_trend_v1.
+
+Purpose:
+    Validate that the Itera StrategyIntent architecture can run cleanly on
+    daily equity ETF data.
+
+Classification:
+    Research-only. This does not affect crypto Fund v1 / Fund v2 runtime.
+"""
+
+from __future__ import annotations
+
 import argparse
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pandas as pd
 
@@ -45,7 +64,7 @@ def run_backtest(df: pd.DataFrame, capital: float = 100000.0):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Run SPY daily equity trend backtest")
     parser.add_argument("--data", required=True, help="Path to SPY daily CSV")
     parser.add_argument("--start", default=None)
     parser.add_argument("--end", default=None)
