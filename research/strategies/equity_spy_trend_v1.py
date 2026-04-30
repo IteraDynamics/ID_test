@@ -54,10 +54,7 @@ def generate_intent(
 
     Otherwise hold / stay flat.
     """
-    if closed_only:
-        data = df.copy()
-    else:
-        data = df.copy()
+    data = df.copy()
 
     if len(data) < _MIN_BARS:
         return StrategyIntent(
@@ -113,7 +110,7 @@ def generate_intent(
 
     if in_position and exit_signal:
         return StrategyIntent(
-            action=Action.EXIT,
+            action=Action.EXIT_LONG,
             confidence=max(confidence, 0.70),
             desired_exposure_frac=0.0,
             horizon_hours=24 * 5,
