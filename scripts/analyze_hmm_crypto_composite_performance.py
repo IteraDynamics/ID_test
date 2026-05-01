@@ -79,6 +79,8 @@ def _join_regimes_to_forward_returns(
     composite_slice = composite.loc[start:end].copy()
     equity_slice = equity.loc[start:end, equity_cols].copy()
 
+    # Regime at timestamp t is evaluated against the next observed equity return.
+    # This is attribution, not a trading rule.
     forward_returns = equity_slice.pct_change().shift(-1)
     forward_returns = forward_returns.add_prefix("fwd_ret_")
 
@@ -87,37 +89,65 @@ def _join_regimes_to_forward_returns(
     return joined
 
 
-def _max_drawdown(returns: pd.Series) -> float:
+def _safe_return_stats(returns: pd.Series, baseline_avg: float, total_sum_return: float) -> dict[str, float | int]:
     returns = returns.dropna()
-    if returns.empty:
-        return 0.0
-    curve = (1.0 + returns).cumprod()
-    running_max = curve.cummax()
-    dd = curve / running_max - 1.0
-    return float(dd.min())
+    count = int(len(returns))
+    if count == 0:
+        return {
+            "bars": 0,
+            "avg_forward_return": 0.0,
+            "avg_forward_return_bps": 0.0,
+            "median_forward_return": 0.0,
+            "hit_rate": 0.0,
+            "return_vol": 0.0,
+            "avg_return_lift_vs_baseline": 0.0,
+            "avg_return_lift_vs_baseline_bps": 0.0,
+            "simple_sum_return": 0.0,
+            "share_of_total_sum_return": 0.0,
+        }
+
+    avg = float(returns.mean())
+    simple_sum = float(returns.sum())
+    share = simple_sum / total_sum_return if abs(total_sum_return) > 1e-12 else 0.0
+    lift = avg - baseline_avg
+    return {
+        "bars": count,
+        "avg_forward_return": avg,
+        "avg_forward_return_bps": avg * 10_000.0,
+        "median_forward_return": float(returns.median()),
+        "hit_rate": float((returns > 0).mean()),
+        "return_vol": float(returns.std(ddof=0)),
+        "avg_return_lift_vs_baseline": lift,
+        "avg_return_lift_vs_baseline_bps": lift * 10_000.0,
+        "simple_sum_return": simple_sum,
+        "share_of_total_sum_return": float(share),
+    }
 
 
 def _summarize_returns(joined: pd.DataFrame, equity_cols: list[str]) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     total_bars = len(joined)
+    baseline_by_col = {
+        col: float(joined[f"fwd_ret_{col}"].dropna().mean()) for col in equity_cols
+    }
+    total_sum_by_col = {
+        col: float(joined[f"fwd_ret_{col}"].dropna().sum()) for col in equity_cols
+    }
 
     for regime, grp in joined.groupby(REGIME_COLUMN, sort=False):
         for col in equity_cols:
             ret_col = f"fwd_ret_{col}"
             returns = grp[ret_col].dropna()
-            count = int(len(returns))
+            stats = _safe_return_stats(
+                returns,
+                baseline_avg=baseline_by_col[col],
+                total_sum_return=total_sum_by_col[col],
+            )
             row = {
                 "composite_regime": regime,
                 "series": col,
-                "bars": count,
-                "pct_observations": float(count / total_bars) if total_bars else 0.0,
-                "avg_forward_return": float(returns.mean()) if count else 0.0,
-                "median_forward_return": float(returns.median()) if count else 0.0,
-                "hit_rate": float((returns > 0).mean()) if count else 0.0,
-                "return_vol": float(returns.std(ddof=0)) if count else 0.0,
-                "simple_sum_return": float(returns.sum()) if count else 0.0,
-                "conditional_compounded_return": float((1.0 + returns).prod() - 1.0) if count else 0.0,
-                "conditional_max_drawdown": _max_drawdown(returns),
+                **stats,
+                "pct_observations": float(stats["bars"] / total_bars) if total_bars else 0.0,
             }
             rows.append(row)
 
@@ -130,16 +160,17 @@ def _summarize_overall(joined: pd.DataFrame, equity_cols: list[str]) -> pd.DataF
         ret_col = f"fwd_ret_{col}"
         returns = joined[ret_col].dropna()
         count = int(len(returns))
+        avg = float(returns.mean()) if count else 0.0
         rows.append(
             {
                 "series": col,
                 "bars": count,
-                "avg_forward_return": float(returns.mean()) if count else 0.0,
+                "avg_forward_return": avg,
+                "avg_forward_return_bps": avg * 10_000.0,
                 "median_forward_return": float(returns.median()) if count else 0.0,
                 "hit_rate": float((returns > 0).mean()) if count else 0.0,
                 "return_vol": float(returns.std(ddof=0)) if count else 0.0,
-                "compounded_return": float((1.0 + returns).prod() - 1.0) if count else 0.0,
-                "max_drawdown": _max_drawdown(returns),
+                "simple_sum_return": float(returns.sum()) if count else 0.0,
             }
         )
     return pd.DataFrame(rows)
@@ -172,6 +203,14 @@ def _to_markdown_table(df: pd.DataFrame, floatfmt: str = ".6f") -> str:
     return "\n".join(lines)
 
 
+def _primary_series(ranking: pd.DataFrame) -> str:
+    series_set = set(ranking["series"])
+    for candidate in ["crypto_sleeve", "portfolio", "itera_four_sleeve"]:
+        if candidate in series_set:
+            return candidate
+    return str(ranking["series"].iloc[0])
+
+
 def _write_markdown(
     out_path: Path,
     equity_curves_path: Path,
@@ -179,8 +218,8 @@ def _write_markdown(
     overall: pd.DataFrame,
     ranking: pd.DataFrame,
 ) -> None:
-    portfolio_like = "portfolio" if "portfolio" in set(ranking["series"]) else ranking["series"].iloc[0]
-    primary = ranking[ranking["series"] == portfolio_like].sort_values("rank_by_avg_forward_return")
+    primary_series = _primary_series(ranking)
+    primary = ranking[ranking["series"] == primary_series].sort_values("rank_by_avg_forward_return")
 
     lines = [
         "# HMM Regime v1 — Crypto Composite Performance Attribution",
@@ -201,7 +240,7 @@ def _write_markdown(
         "",
         _to_markdown_table(overall),
         "",
-        f"## Regime Ranking — {portfolio_like}",
+        f"## Regime Ranking — {primary_series}",
         "",
         _to_markdown_table(
             primary[
@@ -209,10 +248,11 @@ def _write_markdown(
                     "composite_regime",
                     "bars",
                     "pct_observations",
-                    "avg_forward_return",
+                    "avg_forward_return_bps",
+                    "avg_return_lift_vs_baseline_bps",
                     "hit_rate",
-                    "conditional_compounded_return",
-                    "conditional_max_drawdown",
+                    "simple_sum_return",
+                    "share_of_total_sum_return",
                     "rank_by_avg_forward_return",
                 ]
             ]
@@ -222,6 +262,7 @@ def _write_markdown(
         "",
         "```text",
         "This is attribution evidence only, not an execution rule.",
+        "The script intentionally avoids compounding non-contiguous regime slices because that can create misleading magnitudes.",
         "Do not wire composite regimes into Fund v1 paper trading.",
         "If the attribution is useful, the next step is a separate shadow-mode governor hypothesis test with explicit costs and transition rules.",
         "```",
@@ -250,6 +291,7 @@ def main() -> None:
     regime_summary = _summarize_returns(joined, equity_cols)
     overall = _summarize_overall(joined, equity_cols)
     ranking = _build_regime_rankings(regime_summary)
+    primary_series = _primary_series(ranking)
 
     joined.to_csv(out_dir / "composite_regime_forward_returns.csv")
     regime_summary.to_csv(out_dir / "regime_performance_summary.csv", index=False)
@@ -268,7 +310,12 @@ def main() -> None:
             "start": str(joined.index.min()),
             "end": str(joined.index.max()),
             "equity_columns": equity_cols,
+            "primary_series": primary_series,
         },
+        "metric_notes": [
+            "Regime slices are non-contiguous; compounded conditional returns and conditional drawdowns are intentionally not reported.",
+            "Use average return, lift versus baseline, hit rate, and contribution-style sums as attribution evidence only.",
+        ],
         "artifacts": {
             "composite_regime_forward_returns": str(out_dir / "composite_regime_forward_returns.csv"),
             "regime_performance_summary": str(out_dir / "regime_performance_summary.csv"),
@@ -298,10 +345,9 @@ def main() -> None:
     with pd.option_context("display.max_columns", None, "display.width", 220, "display.float_format", "{:.6f}".format):
         print("\nOverall Performance Summary:")
         print(overall.to_string(index=False))
-        portfolio_like = "portfolio" if "portfolio" in set(ranking["series"]) else ranking["series"].iloc[0]
-        print(f"\nRegime Ranking — {portfolio_like}:")
+        print(f"\nRegime Ranking — {primary_series}:")
         print(
-            ranking[ranking["series"] == portfolio_like]
+            ranking[ranking["series"] == primary_series]
             .sort_values("rank_by_avg_forward_return")
             .to_string(index=False)
         )
