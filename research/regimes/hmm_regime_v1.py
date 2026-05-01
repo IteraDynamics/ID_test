@@ -214,25 +214,60 @@ def fit_hmm_regime(features: pd.DataFrame, config: HMMConfig | None = None) -> t
 
 
 def label_states(raw_means: np.ndarray, feature_columns: list[str]) -> dict[int, str]:
+    """Assign interpretable research labels to fitted HMM states.
+
+    The HMM can discover multiple positive-trend states. This mapper therefore
+    ranks states by volatility and trend strength before assigning labels, rather
+    than allowing every positive-momentum state to collapse into TREND_UP.
+    """
     idx = {name: i for i, name in enumerate(feature_columns)}
-    labels: dict[int, str] = {}
+    n_states = raw_means.shape[0]
+
     vols = raw_means[:, idx["vol_20"]]
     rets = raw_means[:, idx["log_return"]]
-    moms = raw_means[:, idx["mom_60"]]
+    mom_20 = raw_means[:, idx["mom_20"]]
+    mom_60 = raw_means[:, idx["mom_60"]]
     trends = raw_means[:, idx["trend_dist_200"]]
+    fast_slow = raw_means[:, idx["ema_50_200_dist"]]
 
+    labels: dict[int, str] = {}
     high_vol_state = int(np.argmax(vols))
-    low_vol_state = int(np.argmin(vols))
+    labels[high_vol_state] = "HIGH_VOL"
 
-    for s in range(raw_means.shape[0]):
-        if s == high_vol_state:
-            labels[s] = "HIGH_VOL"
-        elif trends[s] > 0 and moms[s] > 0 and rets[s] >= 0:
-            labels[s] = "TREND_UP"
-        elif trends[s] < 0 and moms[s] < 0:
+    remaining = [s for s in range(n_states) if s not in labels]
+    if not remaining:
+        return labels
+
+    for s in remaining:
+        if trends[s] < 0.0 and mom_60[s] < 0.0:
             labels[s] = "TREND_DOWN"
-        elif s == low_vol_state:
-            labels[s] = "VOL_COMPRESSION"
+
+    remaining = [s for s in range(n_states) if s not in labels]
+    if not remaining:
+        return labels
+
+    def trend_score(state: int) -> float:
+        return float(rets[state] + mom_20[state] + mom_60[state] + trends[state] + fast_slow[state])
+
+    # Among non-crisis/non-down states, the strongest broad positive state is the
+    # clean TREND_UP regime. Lower-volatility positive states are better treated
+    # as compression/calm trend states, while weak positive states are RANGE.
+    trend_up_state = max(remaining, key=trend_score)
+    if trend_score(trend_up_state) > 0.0:
+        labels[trend_up_state] = "TREND_UP"
+
+    remaining = [s for s in range(n_states) if s not in labels]
+    if not remaining:
+        return labels
+
+    low_vol_state = min(remaining, key=lambda s: vols[s])
+    labels[low_vol_state] = "VOL_COMPRESSION"
+
+    remaining = [s for s in range(n_states) if s not in labels]
+    for s in remaining:
+        if trends[s] > 0.0 and mom_60[s] > 0.0 and fast_slow[s] > 0.0:
+            labels[s] = "MATURE_TREND"
         else:
             labels[s] = "RANGE"
+
     return labels
