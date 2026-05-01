@@ -219,6 +219,8 @@ def label_states(raw_means: np.ndarray, feature_columns: list[str]) -> dict[int,
     The HMM can discover multiple positive-trend states. This mapper therefore
     ranks states by volatility and trend strength before assigning labels, rather
     than allowing every positive-momentum state to collapse into TREND_UP.
+    Weak positive states are labeled conservatively as RANGE until downstream
+    shadow-mode testing proves they deserve a more constructive interpretation.
     """
     idx = {name: i for i, name in enumerate(feature_columns)}
     n_states = raw_means.shape[0]
@@ -250,8 +252,8 @@ def label_states(raw_means: np.ndarray, feature_columns: list[str]) -> dict[int,
         return float(rets[state] + mom_20[state] + mom_60[state] + trends[state] + fast_slow[state])
 
     # Among non-crisis/non-down states, the strongest broad positive state is the
-    # clean TREND_UP regime. Lower-volatility positive states are better treated
-    # as compression/calm trend states, while weak positive states are RANGE.
+    # clean TREND_UP regime. This avoids treating weak/choppy positive states as
+    # high-confidence uptrends.
     trend_up_state = max(remaining, key=trend_score)
     if trend_score(trend_up_state) > 0.0:
         labels[trend_up_state] = "TREND_UP"
@@ -265,9 +267,6 @@ def label_states(raw_means: np.ndarray, feature_columns: list[str]) -> dict[int,
 
     remaining = [s for s in range(n_states) if s not in labels]
     for s in remaining:
-        if trends[s] > 0.0 and mom_60[s] > 0.0 and fast_slow[s] > 0.0:
-            labels[s] = "MATURE_TREND"
-        else:
-            labels[s] = "RANGE"
+        labels[s] = "RANGE"
 
     return labels
