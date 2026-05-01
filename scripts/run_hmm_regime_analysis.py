@@ -12,6 +12,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from research.harness.resampler import resample_ohlcv
 from research.regimes.hmm_regime_v1 import build_hmm_features, fit_hmm_regime
 
 
@@ -34,16 +35,22 @@ DATE_COLUMN_CANDIDATES = [
     "start_time",
 ]
 
-CLOSE_COLUMN_CANDIDATES = [
-    "close",
-    "Close",
-    "CLOSE",
-    "adj_close",
-    "Adj Close",
-    "adjusted_close",
-    "price",
-    "last",
-]
+OHLCV_COLUMN_CANDIDATES = {
+    "open": ["open", "Open", "OPEN"],
+    "high": ["high", "High", "HIGH"],
+    "low": ["low", "Low", "LOW"],
+    "close": [
+        "close",
+        "Close",
+        "CLOSE",
+        "adj_close",
+        "Adj Close",
+        "adjusted_close",
+        "price",
+        "last",
+    ],
+    "volume": ["volume", "Volume", "VOLUME", "vol", "Vol"],
+}
 
 
 def _find_column(columns: pd.Index, candidates: list[str]) -> str | None:
@@ -66,20 +73,28 @@ def _load_ohlcv(path: str) -> pd.DataFrame:
         raise ValueError(f"Input file is empty: {path}")
 
     date_col = _find_column(df.columns, DATE_COLUMN_CANDIDATES) or str(df.columns[0])
-    close_col = _find_column(df.columns, CLOSE_COLUMN_CANDIDATES)
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce", utc=False)
+    df = df.dropna(subset=[date_col]).set_index(date_col).sort_index()
 
-    if close_col is None:
+    rename_map: dict[str, str] = {}
+    for canonical, candidates in OHLCV_COLUMN_CANDIDATES.items():
+        found = _find_column(df.columns, candidates)
+        if found is not None:
+            rename_map[found] = canonical
+
+    if "close" not in rename_map.values() and "close" not in df.columns:
         available = ", ".join(str(col) for col in df.columns)
+        close_candidates = OHLCV_COLUMN_CANDIDATES["close"]
         raise ValueError(
             "Could not find a close-price column. "
-            f"Looked for: {CLOSE_COLUMN_CANDIDATES}. "
+            f"Looked for: {close_candidates}. "
             f"Available columns: [{available}]"
         )
 
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce", utc=False)
-    df = df.dropna(subset=[date_col]).set_index(date_col).sort_index()
-    df = df.rename(columns={close_col: "close"})
-    df["close"] = pd.to_numeric(df["close"], errors="coerce")
+    df = df.rename(columns=rename_map)
+    for col in ["open", "high", "low", "close", "volume"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.dropna(subset=["close"])
 
     if df.empty:
@@ -88,11 +103,25 @@ def _load_ohlcv(path: str) -> pd.DataFrame:
     return df
 
 
+def _maybe_resample(df: pd.DataFrame, freq: str | None) -> pd.DataFrame:
+    if not freq:
+        return df
+
+    required = {"open", "high", "low", "close"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"Cannot resample to {freq}; missing OHLC columns: {sorted(missing)}. "
+            "Resampling requires open, high, low, close."
+        )
+    return resample_ohlcv(df, freq)
+
+
 def _build_state_diagnostics(
     features: pd.DataFrame,
     probabilities: pd.DataFrame,
     state_labels: dict[int, str],
-    forward_days: int = 20,
+    forward_bars: int = 20,
 ) -> pd.DataFrame:
     """Summarize realized feature profiles by inferred HMM state.
 
@@ -100,8 +129,8 @@ def _build_state_diagnostics(
     is not passed into the HMM, and should not be used as a label input.
     """
     diag_frame = features.join(probabilities[["hmm_state_id", "hmm_state_label"]], how="inner")
-    diag_frame[f"forward_{forward_days}d_return"] = (
-        diag_frame["log_return"].shift(-1).rolling(forward_days).sum().shift(-(forward_days - 1))
+    diag_frame[f"forward_{forward_bars}bar_return"] = (
+        diag_frame["log_return"].shift(-1).rolling(forward_bars).sum().shift(-(forward_bars - 1))
     )
 
     total_obs = len(diag_frame)
@@ -120,8 +149,8 @@ def _build_state_diagnostics(
         for col in DIAGNOSTIC_COLUMNS:
             row[f"avg_{col}"] = float(state_rows[col].mean()) if count else float("nan")
 
-        row[f"avg_forward_{forward_days}d_return"] = (
-            float(state_rows[f"forward_{forward_days}d_return"].mean()) if count else float("nan")
+        row[f"avg_forward_{forward_bars}bar_return"] = (
+            float(state_rows[f"forward_{forward_bars}bar_return"].mean()) if count else float("nan")
         )
         rows.append(row)
 
@@ -131,11 +160,13 @@ def _build_state_diagnostics(
 def _write_summary(
     out_dir: Path,
     data_path: str,
+    resample: str | None,
     result,
     diagnostics: pd.DataFrame,
 ) -> None:
     summary = {
         "data_path": data_path,
+        "resample": resample,
         "states": len(result.state_labels),
         "converged": bool(result.converged),
         "iterations": int(result.iterations),
@@ -153,7 +184,7 @@ def _write_summary(
         "research_status": "shadow_mode_only",
         "notes": [
             "HMM output is research-only and must not replace deterministic Layer 1 yet.",
-            "Forward 20-day return is reporting-only and is not used for fitting or label assignment.",
+            "Forward 20-bar return is reporting-only and is not used for fitting or label assignment.",
         ],
     }
     with (out_dir / "summary.json").open("w", encoding="utf-8") as f:
@@ -165,14 +196,24 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", required=True)
     parser.add_argument("--out", default="artifacts/hmm_regime_v1")
+    parser.add_argument(
+        "--resample",
+        default=None,
+        help="Optional pandas resample frequency such as 4h or 1D. Uses closed-bar OHLCV resampling.",
+    )
     args = parser.parse_args()
 
     df = _load_ohlcv(args.data)
+    df = _maybe_resample(df, args.resample)
     features = build_hmm_features(df)
     result, probs = fit_hmm_regime(features)
     diagnostics = _build_state_diagnostics(features, probs, result.state_labels)
 
     print("\n=== HMM REGIME ANALYSIS ===")
+    print(f"Data: {args.data}")
+    print(f"Resample: {args.resample or 'none'}")
+    print(f"Bars after load/resample: {len(df)}")
+    print(f"Feature rows: {len(features)}")
     print(f"States: {len(result.state_labels)}")
     print(f"Converged: {result.converged}")
     print(f"Iterations: {result.iterations}")
@@ -198,7 +239,7 @@ def main() -> None:
 
     probs.to_csv(out_dir / "state_probabilities.csv")
     diagnostics.to_csv(out_dir / "state_diagnostics.csv", index=False)
-    _write_summary(out_dir, args.data, result, diagnostics)
+    _write_summary(out_dir, args.data, args.resample, result, diagnostics)
 
     print(f"\nArtifacts saved to: {out_dir}")
     print(f"  - {out_dir / 'state_probabilities.csv'}")
