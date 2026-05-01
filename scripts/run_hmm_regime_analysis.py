@@ -13,7 +13,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from research.harness.resampler import resample_ohlcv
-from research.regimes.hmm_regime_v1 import build_hmm_features, fit_hmm_regime
+from research.regimes.hmm_regime_v1 import HMMConfig, build_hmm_features, fit_hmm_regime
 
 
 DIAGNOSTIC_COLUMNS = [
@@ -161,12 +161,20 @@ def _write_summary(
     out_dir: Path,
     data_path: str,
     resample: str | None,
+    config: HMMConfig,
     result,
     diagnostics: pd.DataFrame,
 ) -> None:
     summary = {
         "data_path": data_path,
         "resample": resample,
+        "config": {
+            "n_states": int(config.n_states),
+            "max_iter": int(config.max_iter),
+            "tol": float(config.tol),
+            "random_seed": int(config.random_seed),
+            "min_std": float(config.min_std),
+        },
         "states": len(result.state_labels),
         "converged": bool(result.converged),
         "iterations": int(result.iterations),
@@ -201,12 +209,15 @@ def main() -> None:
         default=None,
         help="Optional pandas resample frequency such as 4h or 1D. Uses closed-bar OHLCV resampling.",
     )
+    parser.add_argument("--max-iter", type=int, default=75, help="Maximum HMM EM iterations")
+    parser.add_argument("--tol", type=float, default=1e-5, help="HMM convergence tolerance")
     args = parser.parse_args()
 
     df = _load_ohlcv(args.data)
     df = _maybe_resample(df, args.resample)
     features = build_hmm_features(df)
-    result, probs = fit_hmm_regime(features)
+    config = HMMConfig(max_iter=args.max_iter, tol=args.tol)
+    result, probs = fit_hmm_regime(features, config=config)
     diagnostics = _build_state_diagnostics(features, probs, result.state_labels)
 
     print("\n=== HMM REGIME ANALYSIS ===")
@@ -215,6 +226,8 @@ def main() -> None:
     print(f"Bars after load/resample: {len(df)}")
     print(f"Feature rows: {len(features)}")
     print(f"States: {len(result.state_labels)}")
+    print(f"Max iterations: {config.max_iter}")
+    print(f"Tolerance: {config.tol}")
     print(f"Converged: {result.converged}")
     print(f"Iterations: {result.iterations}")
     print(f"Log likelihood: {result.log_likelihood:.6f}")
@@ -239,7 +252,7 @@ def main() -> None:
 
     probs.to_csv(out_dir / "state_probabilities.csv")
     diagnostics.to_csv(out_dir / "state_diagnostics.csv", index=False)
-    _write_summary(out_dir, args.data, args.resample, result, diagnostics)
+    _write_summary(out_dir, args.data, args.resample, config, result, diagnostics)
 
     print(f"\nArtifacts saved to: {out_dir}")
     print(f"  - {out_dir / 'state_probabilities.csv'}")
