@@ -18,7 +18,7 @@ Notes:
     - For serious live equity deployment, validate against broker/vendor data.
 
 Example:
-    python scripts/download_yahoo_equity_data.py --symbol SPY --start 2005-01-01 --out data/SPY_1D.csv
+    python scripts/download_equity_data.py --symbol SPY --start 2005-01-01 --out data/SPY_1D.csv
 """
 
 from __future__ import annotations
