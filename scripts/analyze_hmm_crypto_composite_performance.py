@@ -3,7 +3,7 @@
 
 Research-only attribution utility. Joins the shadow-mode crypto composite HMM
 regime labels to an existing Fund v1 equity curve artifact and summarizes
-forward next-bar returns by composite regime.
+forward next-bar returns by regime.
 
 This script does not modify runtime behavior, strategy logic, allocation,
 governors, or execution paths.
@@ -51,7 +51,56 @@ def _read_time_indexed_csv(path: Path) -> pd.DataFrame:
     return df
 
 
-def _select_equity_columns(equity: pd.DataFrame) -> list[str]:
+def _median_interval_seconds(index: pd.DatetimeIndex) -> float:
+    if len(index) < 3:
+        return 0.0
+    deltas = index.to_series().diff().dropna().dt.total_seconds()
+    if deltas.empty:
+        return 0.0
+    return float(deltas.median())
+
+
+def _frequency_label(seconds: float) -> str:
+    if seconds <= 0:
+        return "unknown"
+    if abs(seconds - 3600.0) < 1:
+        return "1H"
+    if abs(seconds - 4 * 3600.0) < 1:
+        return "4H"
+    if abs(seconds - 86400.0) < 1:
+        return "1D"
+    return f"{seconds:.0f}s"
+
+
+def _validate_frequency_compatibility(
+    composite: pd.DataFrame,
+    equity: pd.DataFrame,
+    allow_mixed_frequency: bool,
+) -> dict[str, float | str]:
+    composite_seconds = _median_interval_seconds(composite.index)
+    equity_seconds = _median_interval_seconds(equity.index)
+    diagnostics = {
+        "composite_median_interval_seconds": composite_seconds,
+        "equity_median_interval_seconds": equity_seconds,
+        "composite_frequency": _frequency_label(composite_seconds),
+        "equity_frequency": _frequency_label(equity_seconds),
+    }
+
+    if composite_seconds <= 0 or equity_seconds <= 0:
+        raise ValueError(f"Could not infer input frequencies: {diagnostics}")
+
+    ratio = max(composite_seconds, equity_seconds) / min(composite_seconds, equity_seconds)
+    diagnostics["frequency_ratio"] = ratio
+    if ratio > 1.5 and not allow_mixed_frequency:
+        raise ValueError(
+            "Refusing mixed-frequency attribution join. "
+            f"Diagnostics: {diagnostics}. "
+            "Pass --allow-mixed-frequency only after explicitly confirming this is intended."
+        )
+    return diagnostics
+
+
+def _select_equity_columns(equity: pd.DataFrame, target_series: str) -> list[str]:
     numeric_cols = []
     for col in equity.columns:
         converted = pd.to_numeric(equity[col], errors="coerce")
@@ -60,7 +109,12 @@ def _select_equity_columns(equity: pd.DataFrame) -> list[str]:
             numeric_cols.append(str(col))
     if not numeric_cols:
         raise ValueError("No numeric equity curve columns found.")
-    return numeric_cols
+    if target_series not in numeric_cols:
+        raise ValueError(
+            f"Target series {target_series!r} not found as a numeric column. "
+            f"Available numeric columns: {numeric_cols}"
+        )
+    return [target_series]
 
 
 def _join_regimes_to_forward_returns(
@@ -84,7 +138,7 @@ def _join_regimes_to_forward_returns(
     forward_returns = equity_slice.pct_change().shift(-1)
     forward_returns = forward_returns.add_prefix("fwd_ret_")
 
-    joined = composite_slice.join(forward_returns, how="outer").sort_index().ffill()
+    joined = composite_slice.join(forward_returns, how="inner").sort_index()
     joined = joined.dropna(subset=[REGIME_COLUMN])
     return joined
 
@@ -203,23 +257,16 @@ def _to_markdown_table(df: pd.DataFrame, floatfmt: str = ".6f") -> str:
     return "\n".join(lines)
 
 
-def _primary_series(ranking: pd.DataFrame) -> str:
-    series_set = set(ranking["series"])
-    for candidate in ["crypto_sleeve", "portfolio", "itera_four_sleeve"]:
-        if candidate in series_set:
-            return candidate
-    return str(ranking["series"].iloc[0])
-
-
 def _write_markdown(
     out_path: Path,
     equity_curves_path: Path,
     composite_path: Path,
+    target_series: str,
+    frequency_diagnostics: dict[str, float | str],
     overall: pd.DataFrame,
     ranking: pd.DataFrame,
 ) -> None:
-    primary_series = _primary_series(ranking)
-    primary = ranking[ranking["series"] == primary_series].sort_values("rank_by_avg_forward_return")
+    primary = ranking[ranking["series"] == target_series].sort_values("rank_by_avg_forward_return")
 
     lines = [
         "# HMM Regime v1 — Crypto Composite Performance Attribution",
@@ -233,14 +280,17 @@ def _write_markdown(
         "```text",
         f"Composite regimes: {composite_path}",
         f"Equity curves: {equity_curves_path}",
-        "Return alignment: composite regime at time t mapped to next-bar equity return after t",
+        f"Target series: {target_series}",
+        f"Composite frequency: {frequency_diagnostics['composite_frequency']}",
+        f"Equity frequency: {frequency_diagnostics['equity_frequency']}",
+        "Return alignment: inner join on matching timestamps; composite regime at time t mapped to next-bar equity return after t",
         "```",
         "",
         "## Overall Series Summary",
         "",
         _to_markdown_table(overall),
         "",
-        f"## Regime Ranking — {primary_series}",
+        f"## Regime Ranking — {target_series}",
         "",
         _to_markdown_table(
             primary[
@@ -262,9 +312,9 @@ def _write_markdown(
         "",
         "```text",
         "This is attribution evidence only, not an execution rule.",
+        "The script refuses materially mixed-frequency joins unless explicitly overridden.",
         "The script intentionally avoids compounding non-contiguous regime slices because that can create misleading magnitudes.",
         "Do not wire composite regimes into Fund v1 paper trading.",
-        "If the attribution is useful, the next step is a separate shadow-mode governor hypothesis test with explicit costs and transition rules.",
         "```",
         "",
     ]
@@ -274,24 +324,30 @@ def _write_markdown(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--composite", default=str(DEFAULT_COMPOSITE_PATH))
-    parser.add_argument("--equity-curves", default=None)
+    parser.add_argument("--equity-curves", required=True)
+    parser.add_argument("--target-series", required=True)
+    parser.add_argument("--allow-mixed-frequency", action="store_true")
     parser.add_argument("--out", default=str(DEFAULT_OUT_DIR))
     args = parser.parse_args()
 
     composite_path = Path(args.composite)
-    equity_curves_path = Path(args.equity_curves) if args.equity_curves else _find_latest_equity_curves()
+    equity_curves_path = Path(args.equity_curves)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     composite = _read_time_indexed_csv(composite_path)
     equity = _read_time_indexed_csv(equity_curves_path)
-    equity_cols = _select_equity_columns(equity)
+    frequency_diagnostics = _validate_frequency_compatibility(
+        composite,
+        equity,
+        allow_mixed_frequency=args.allow_mixed_frequency,
+    )
+    equity_cols = _select_equity_columns(equity, args.target_series)
 
     joined = _join_regimes_to_forward_returns(composite, equity, equity_cols)
     regime_summary = _summarize_returns(joined, equity_cols)
     overall = _summarize_overall(joined, equity_cols)
     ranking = _build_regime_rankings(regime_summary)
-    primary_series = _primary_series(ranking)
 
     joined.to_csv(out_dir / "composite_regime_forward_returns.csv")
     regime_summary.to_csv(out_dir / "regime_performance_summary.csv", index=False)
@@ -303,18 +359,22 @@ def main() -> None:
         "inputs": {
             "composite_regimes": str(composite_path),
             "equity_curves": str(equity_curves_path),
+            "target_series": args.target_series,
         },
         "alignment": {
-            "method": "composite regime at time t joined to next-bar forward equity return after t",
+            "method": "inner join on matching timestamps; composite regime at time t joined to next-bar forward equity return after t",
             "bars": int(len(joined)),
             "start": str(joined.index.min()),
             "end": str(joined.index.max()),
             "equity_columns": equity_cols,
-            "primary_series": primary_series,
+            "primary_series": args.target_series,
+            "frequency_diagnostics": frequency_diagnostics,
+            "allow_mixed_frequency": bool(args.allow_mixed_frequency),
         },
         "metric_notes": [
             "Regime slices are non-contiguous; compounded conditional returns and conditional drawdowns are intentionally not reported.",
             "Use average return, lift versus baseline, hit rate, and contribution-style sums as attribution evidence only.",
+            "Materially mixed-frequency joins are refused by default.",
         ],
         "artifacts": {
             "composite_regime_forward_returns": str(out_dir / "composite_regime_forward_returns.csv"),
@@ -337,17 +397,32 @@ def main() -> None:
         },
     }
     (out_dir / "summary.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
-    _write_markdown(out_dir / "summary.md", equity_curves_path, composite_path, overall, ranking)
+    _write_markdown(
+        out_dir / "summary.md",
+        equity_curves_path,
+        composite_path,
+        args.target_series,
+        frequency_diagnostics,
+        overall,
+        ranking,
+    )
 
     print("\n=== HMM CRYPTO COMPOSITE PERFORMANCE ATTRIBUTION ===")
     print(f"Composite: {composite_path}")
     print(f"Equity curves: {equity_curves_path}")
+    print(f"Target series: {args.target_series}")
+    print(
+        "Frequencies: "
+        f"composite={frequency_diagnostics['composite_frequency']} "
+        f"equity={frequency_diagnostics['equity_frequency']} "
+        f"ratio={frequency_diagnostics['frequency_ratio']:.2f}"
+    )
     with pd.option_context("display.max_columns", None, "display.width", 220, "display.float_format", "{:.6f}".format):
         print("\nOverall Performance Summary:")
         print(overall.to_string(index=False))
-        print(f"\nRegime Ranking — {primary_series}:")
+        print(f"\nRegime Ranking — {args.target_series}:")
         print(
-            ranking[ranking["series"] == primary_series]
+            ranking[ranking["series"] == args.target_series]
             .sort_values("rank_by_avg_forward_return")
             .to_string(index=False)
         )
