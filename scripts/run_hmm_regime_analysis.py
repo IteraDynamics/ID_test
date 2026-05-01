@@ -25,11 +25,67 @@ DIAGNOSTIC_COLUMNS = [
     "ema_50_200_dist",
 ]
 
+DATE_COLUMN_CANDIDATES = [
+    "timestamp",
+    "datetime",
+    "date",
+    "time",
+    "open_time",
+    "start_time",
+]
+
+CLOSE_COLUMN_CANDIDATES = [
+    "close",
+    "Close",
+    "CLOSE",
+    "adj_close",
+    "Adj Close",
+    "adjusted_close",
+    "price",
+    "last",
+]
+
+
+def _find_column(columns: pd.Index, candidates: list[str]) -> str | None:
+    exact = {str(col): str(col) for col in columns}
+    for candidate in candidates:
+        if candidate in exact:
+            return exact[candidate]
+
+    normalized = {str(col).strip().lower().replace(" ", "_"): str(col) for col in columns}
+    for candidate in candidates:
+        key = candidate.strip().lower().replace(" ", "_")
+        if key in normalized:
+            return normalized[key]
+    return None
+
 
 def _load_ohlcv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
-    df[df.columns[0]] = pd.to_datetime(df[df.columns[0]])
-    return df.set_index(df.columns[0]).sort_index()
+    if df.empty:
+        raise ValueError(f"Input file is empty: {path}")
+
+    date_col = _find_column(df.columns, DATE_COLUMN_CANDIDATES) or str(df.columns[0])
+    close_col = _find_column(df.columns, CLOSE_COLUMN_CANDIDATES)
+
+    if close_col is None:
+        available = ", ".join(str(col) for col in df.columns)
+        raise ValueError(
+            "Could not find a close-price column. "
+            f"Looked for: {CLOSE_COLUMN_CANDIDATES}. "
+            f"Available columns: [{available}]"
+        )
+
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce", utc=False)
+    df = df.dropna(subset=[date_col]).set_index(date_col).sort_index()
+    df = df.rename(columns={close_col: "close"})
+    df["close"] = pd.to_numeric(df["close"], errors="coerce")
+    df = df.dropna(subset=["close"])
+
+    if df.empty:
+        raise ValueError(f"No valid timestamp/close rows after loading: {path}")
+
+    return df
 
 
 def _build_state_diagnostics(
