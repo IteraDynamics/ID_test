@@ -113,6 +113,26 @@ def _surface_rollup(persistence: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _format_markdown_value(value: object, floatfmt: str = ".4f") -> str:
+    if isinstance(value, float):
+        return format(value, floatfmt)
+    return str(value)
+
+
+def _to_markdown_table(df: pd.DataFrame, floatfmt: str = ".4f") -> str:
+    """Render a simple GitHub-flavored markdown table without tabulate."""
+    if df.empty:
+        return "_No rows._"
+
+    columns = [str(col) for col in df.columns]
+    lines = ["| " + " | ".join(columns) + " |"]
+    lines.append("| " + " | ".join(["---"] * len(columns)) + " |")
+    for _, row in df.iterrows():
+        values = [_format_markdown_value(row[col], floatfmt=floatfmt) for col in df.columns]
+        lines.append("| " + " | ".join(values) + " |")
+    return "\n".join(lines)
+
+
 def _write_markdown(
     out_path: Path,
     rollup: pd.DataFrame,
@@ -130,19 +150,19 @@ def _write_markdown(
     lines.append("")
     lines.append("## Surface Rollup")
     lines.append("")
-    lines.append(rollup.to_markdown(index=False, floatfmt=".4f"))
+    lines.append(_to_markdown_table(rollup))
     lines.append("")
     lines.append("## Persistence Ranking")
     lines.append("")
-    lines.append(ranked[["surface", "avg_persistence", "min_persistence", "avg_dwell_bars", "max_single_bar_episode_pct"]].to_markdown(index=False, floatfmt=".4f"))
+    lines.append(_to_markdown_table(ranked[["surface", "avg_persistence", "min_persistence", "avg_dwell_bars", "max_single_bar_episode_pct"]]))
     lines.append("")
     lines.append("## Noisiest Surfaces By Single-Bar Episode Rate")
     lines.append("")
-    lines.append(noisy[["surface", "max_single_bar_episode_pct", "avg_persistence", "avg_dwell_bars"]].to_markdown(index=False, floatfmt=".4f"))
+    lines.append(_to_markdown_table(noisy[["surface", "max_single_bar_episode_pct", "avg_persistence", "avg_dwell_bars"]]))
     lines.append("")
     lines.append("## State-Level Persistence")
     lines.append("")
-    lines.append(persistence[["surface", "state_label", "persistence", "avg_dwell_bars", "median_dwell_bars", "single_bar_episode_pct"]].to_markdown(index=False, floatfmt=".4f"))
+    lines.append(_to_markdown_table(persistence[["surface", "state_label", "persistence", "avg_dwell_bars", "median_dwell_bars", "single_bar_episode_pct"]]))
     lines.append("")
     lines.append("## Research Decision")
     lines.append("")
