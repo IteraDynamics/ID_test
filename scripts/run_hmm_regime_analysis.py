@@ -157,6 +157,108 @@ def _build_state_diagnostics(
     return pd.DataFrame(rows)
 
 
+def _build_transition_matrix(probabilities: pd.DataFrame, state_labels: dict[int, str]) -> pd.DataFrame:
+    states = sorted(state_labels)
+    label_by_state = {state: f"{state}:{state_labels[state]}" for state in states}
+    counts = pd.DataFrame(0, index=states, columns=states, dtype=int)
+
+    observed = probabilities["hmm_state_id"].astype(int)
+    prev_states = observed.iloc[:-1].to_numpy()
+    next_states = observed.iloc[1:].to_numpy()
+    for prev_state, next_state in zip(prev_states, next_states):
+        counts.loc[int(prev_state), int(next_state)] += 1
+
+    row_totals = counts.sum(axis=1).replace(0, pd.NA)
+    matrix = counts.div(row_totals, axis=0).fillna(0.0)
+    matrix.index = [label_by_state[s] for s in states]
+    matrix.columns = [label_by_state[s] for s in states]
+    return matrix
+
+
+def _build_state_episodes(probabilities: pd.DataFrame, state_labels: dict[int, str]) -> pd.DataFrame:
+    observed = probabilities["hmm_state_id"].astype(int)
+    if observed.empty:
+        return pd.DataFrame(
+            columns=[
+                "episode_id",
+                "state_id",
+                "state_label",
+                "start_time",
+                "end_time",
+                "bars",
+            ]
+        )
+
+    episodes: list[dict[str, object]] = []
+    episode_id = 0
+    start_pos = 0
+    current_state = int(observed.iloc[0])
+
+    for pos in range(1, len(observed)):
+        state = int(observed.iloc[pos])
+        if state != current_state:
+            idx = observed.index
+            episodes.append(
+                {
+                    "episode_id": episode_id,
+                    "state_id": current_state,
+                    "state_label": state_labels[current_state],
+                    "start_time": idx[start_pos],
+                    "end_time": idx[pos - 1],
+                    "bars": pos - start_pos,
+                }
+            )
+            episode_id += 1
+            start_pos = pos
+            current_state = state
+
+    idx = observed.index
+    episodes.append(
+        {
+            "episode_id": episode_id,
+            "state_id": current_state,
+            "state_label": state_labels[current_state],
+            "start_time": idx[start_pos],
+            "end_time": idx[-1],
+            "bars": len(observed) - start_pos,
+        }
+    )
+    return pd.DataFrame(episodes)
+
+
+def _build_dwell_summary(episodes: pd.DataFrame, state_labels: dict[int, str]) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    for state_id in sorted(state_labels):
+        state_episodes = episodes[episodes["state_id"] == state_id]
+        episode_count = int(len(state_episodes))
+        if episode_count:
+            bars = state_episodes["bars"].astype(float)
+            rows.append(
+                {
+                    "state_id": state_id,
+                    "state_label": state_labels[state_id],
+                    "episode_count": episode_count,
+                    "avg_dwell_bars": float(bars.mean()),
+                    "median_dwell_bars": float(bars.median()),
+                    "max_dwell_bars": int(bars.max()),
+                    "single_bar_episode_pct": float((bars == 1).mean()),
+                }
+            )
+        else:
+            rows.append(
+                {
+                    "state_id": state_id,
+                    "state_label": state_labels[state_id],
+                    "episode_count": 0,
+                    "avg_dwell_bars": 0.0,
+                    "median_dwell_bars": 0.0,
+                    "max_dwell_bars": 0,
+                    "single_bar_episode_pct": 0.0,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
 def _write_summary(
     out_dir: Path,
     data_path: str,
@@ -164,6 +266,8 @@ def _write_summary(
     config: HMMConfig,
     result,
     diagnostics: pd.DataFrame,
+    transition_matrix: pd.DataFrame,
+    dwell_summary: pd.DataFrame,
 ) -> None:
     summary = {
         "data_path": data_path,
@@ -184,19 +288,38 @@ def _write_summary(
             str(int(row["state_id"])): int(row["count"])
             for _, row in diagnostics.iterrows()
         },
+        "state_persistence": {
+            str(index): float(transition_matrix.loc[index, index])
+            for index in transition_matrix.index
+        },
+        "dwell_summary": {
+            str(int(row["state_id"])): {
+                "state_label": row["state_label"],
+                "episode_count": int(row["episode_count"]),
+                "avg_dwell_bars": float(row["avg_dwell_bars"]),
+                "median_dwell_bars": float(row["median_dwell_bars"]),
+                "max_dwell_bars": int(row["max_dwell_bars"]),
+                "single_bar_episode_pct": float(row["single_bar_episode_pct"]),
+            }
+            for _, row in dwell_summary.iterrows()
+        },
         "artifacts": {
             "state_probabilities": str(out_dir / "state_probabilities.csv"),
             "state_diagnostics": str(out_dir / "state_diagnostics.csv"),
+            "transition_matrix": str(out_dir / "transition_matrix.csv"),
+            "dwell_summary": str(out_dir / "dwell_summary.csv"),
+            "state_episodes": str(out_dir / "state_episodes.csv"),
             "summary": str(out_dir / "summary.json"),
         },
         "research_status": "shadow_mode_only",
         "notes": [
             "HMM output is research-only and must not replace deterministic Layer 1 yet.",
             "Forward 20-bar return is reporting-only and is not used for fitting or label assignment.",
+            "Transition and dwell diagnostics are descriptive and are not strategy rules.",
         ],
     }
     with (out_dir / "summary.json").open("w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2, sort_keys=True)
+        json.dump(summary, f, indent=2, sort_keys=True, default=str)
         f.write("\n")
 
 
@@ -219,6 +342,9 @@ def main() -> None:
     config = HMMConfig(max_iter=args.max_iter, tol=args.tol)
     result, probs = fit_hmm_regime(features, config=config)
     diagnostics = _build_state_diagnostics(features, probs, result.state_labels)
+    transition_matrix = _build_transition_matrix(probs, result.state_labels)
+    state_episodes = _build_state_episodes(probs, result.state_labels)
+    dwell_summary = _build_dwell_summary(state_episodes, result.state_labels)
 
     print("\n=== HMM REGIME ANALYSIS ===")
     print(f"Data: {args.data}")
@@ -247,16 +373,53 @@ def main() -> None:
     ):
         print(diagnostics.to_string(index=False))
 
+    print("\nTransition Matrix:")
+    with pd.option_context(
+        "display.max_columns",
+        None,
+        "display.width",
+        220,
+        "display.float_format",
+        "{:.4f}".format,
+    ):
+        print(transition_matrix.to_string())
+
+    print("\nDwell Summary:")
+    with pd.option_context(
+        "display.max_columns",
+        None,
+        "display.width",
+        220,
+        "display.float_format",
+        "{:.4f}".format,
+    ):
+        print(dwell_summary.to_string(index=False))
+
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     probs.to_csv(out_dir / "state_probabilities.csv")
     diagnostics.to_csv(out_dir / "state_diagnostics.csv", index=False)
-    _write_summary(out_dir, args.data, args.resample, config, result, diagnostics)
+    transition_matrix.to_csv(out_dir / "transition_matrix.csv")
+    dwell_summary.to_csv(out_dir / "dwell_summary.csv", index=False)
+    state_episodes.to_csv(out_dir / "state_episodes.csv", index=False)
+    _write_summary(
+        out_dir,
+        args.data,
+        args.resample,
+        config,
+        result,
+        diagnostics,
+        transition_matrix,
+        dwell_summary,
+    )
 
     print(f"\nArtifacts saved to: {out_dir}")
     print(f"  - {out_dir / 'state_probabilities.csv'}")
     print(f"  - {out_dir / 'state_diagnostics.csv'}")
+    print(f"  - {out_dir / 'transition_matrix.csv'}")
+    print(f"  - {out_dir / 'dwell_summary.csv'}")
+    print(f"  - {out_dir / 'state_episodes.csv'}")
     print(f"  - {out_dir / 'summary.json'}")
 
 
