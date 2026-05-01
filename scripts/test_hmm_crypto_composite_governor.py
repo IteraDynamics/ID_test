@@ -30,7 +30,7 @@ DEFAULT_COMPOSITE_PATH = Path(
 )
 DEFAULT_OUT_DIR = Path("artifacts/hmm_regime_v1_crypto_composite_governor")
 REGIME_COLUMN = "composite_regime"
-DEFAULT_TARGET_SERIES = "crypto_sleeve"
+DEFAULT_TARGET_SERIES = "portfolio"
 
 
 @dataclass(frozen=True)
@@ -49,52 +49,27 @@ SCHEDULES = [
         description="No scaling; reproduces the base target return stream.",
     ),
     ScheduleConfig(
-        name="light_defensive",
+        name="risk_off_only_light",
+        default_scale=1.00,
+        regime_scales={"STRUCTURAL_RISK_OFF": 0.75},
+        description="Simple first-pass risk-off-only reduction.",
+    ),
+    ScheduleConfig(
+        name="risk_off_only_moderate",
+        default_scale=1.00,
+        regime_scales={"STRUCTURAL_RISK_OFF": 0.50},
+        description="Moderate first-pass risk-off-only reduction.",
+    ),
+    ScheduleConfig(
+        name="risk_off_and_mixed_light",
         default_scale=1.00,
         regime_scales={
             "STRUCTURAL_RISK_OFF": 0.75,
             "MIXED": 0.85,
-            "STRUCTURAL_RISK_OFF_TACTICAL_REBOUND": 0.90,
         },
-        description="Light risk reduction in structural risk-off and unresolved mixed regimes.",
-    ),
-    ScheduleConfig(
-        name="moderate_defensive",
-        default_scale=1.00,
-        regime_scales={
-            "STRUCTURAL_RISK_OFF": 0.50,
-            "MIXED": 0.75,
-            "STRUCTURAL_RISK_OFF_TACTICAL_REBOUND": 0.75,
-        },
-        description="Moderate risk reduction focused on structural risk-off and mixed regimes.",
-    ),
-    ScheduleConfig(
-        name="strong_defensive",
-        default_scale=1.00,
-        regime_scales={
-            "STRUCTURAL_RISK_OFF": 0.25,
-            "MIXED": 0.50,
-            "STRUCTURAL_RISK_OFF_TACTICAL_REBOUND": 0.50,
-            "MIXED_STRUCTURAL_TACTICAL_RISK_OFF": 0.75,
-        },
-        description="Aggressive risk reduction for stress-like and ambiguous regimes.",
+        description="Light reduction in structural risk-off and fully mixed regimes only.",
     ),
 ]
-
-
-def _find_latest_equity_curves() -> Path:
-    candidates = sorted(
-        Path("artifacts").glob("**/equity_curves.csv"),
-        key=lambda path: path.stat().st_mtime,
-        reverse=True,
-    )
-    if not candidates:
-        raise FileNotFoundError(
-            "Could not auto-discover an equity_curves.csv artifact. "
-            "Pass --equity-curves explicitly, for example: "
-            "--equity-curves artifacts/<fund_run>/equity_curves.csv"
-        )
-    return candidates[0]
 
 
 def _read_time_indexed_csv(path: Path) -> pd.DataFrame:
@@ -108,14 +83,58 @@ def _read_time_indexed_csv(path: Path) -> pd.DataFrame:
     return df
 
 
-def _infer_bars_per_year(index: pd.DatetimeIndex) -> float:
+def _median_interval_seconds(index: pd.DatetimeIndex) -> float:
     if len(index) < 3:
-        return 365.25 * 24.0
+        return 0.0
     deltas = index.to_series().diff().dropna().dt.total_seconds()
-    median_seconds = float(deltas.median())
-    if median_seconds <= 0:
+    if deltas.empty:
+        return 0.0
+    return float(deltas.median())
+
+
+def _frequency_label(seconds: float) -> str:
+    if seconds <= 0:
+        return "unknown"
+    if abs(seconds - 3600.0) < 1:
+        return "1H"
+    if abs(seconds - 4 * 3600.0) < 1:
+        return "4H"
+    if abs(seconds - 86400.0) < 1:
+        return "1D"
+    return f"{seconds:.0f}s"
+
+
+def _validate_frequency_compatibility(
+    composite: pd.DataFrame,
+    equity: pd.DataFrame,
+    allow_mixed_frequency: bool,
+) -> dict[str, float | str]:
+    composite_seconds = _median_interval_seconds(composite.index)
+    equity_seconds = _median_interval_seconds(equity.index)
+    diagnostics = {
+        "composite_median_interval_seconds": composite_seconds,
+        "equity_median_interval_seconds": equity_seconds,
+        "composite_frequency": _frequency_label(composite_seconds),
+        "equity_frequency": _frequency_label(equity_seconds),
+    }
+    if composite_seconds <= 0 or equity_seconds <= 0:
+        raise ValueError(f"Could not infer input frequencies: {diagnostics}")
+    ratio = max(composite_seconds, equity_seconds) / min(composite_seconds, equity_seconds)
+    diagnostics["frequency_ratio"] = ratio
+    if ratio > 1.5 and not allow_mixed_frequency:
+        raise ValueError(
+            "Refusing mixed-frequency governor join. "
+            f"Diagnostics: {diagnostics}. "
+            "Pass --allow-mixed-frequency only after explicitly confirming this is intended."
+        )
+    return diagnostics
+
+
+def _infer_bars_per_year(index: pd.DatetimeIndex) -> float:
+    seconds = _median_interval_seconds(index)
+    if seconds <= 0:
         return 365.25 * 24.0
-    return float((365.25 * 24.0 * 3600.0) / median_seconds)
+    return float((365.25 * 24.0 * 3600.0) / seconds)
 
 
 def _max_drawdown(equity: pd.Series) -> float:
@@ -190,7 +209,7 @@ def _join_regimes_to_returns(
     forward_return_col = f"fwd_ret_{target_series}"
     equity_slice[forward_return_col] = equity_slice[target_series].pct_change().shift(-1)
 
-    joined = composite_slice.join(equity_slice[[forward_return_col]], how="outer").sort_index().ffill()
+    joined = composite_slice.join(equity_slice[[forward_return_col]], how="inner").sort_index()
     joined = joined.dropna(subset=[REGIME_COLUMN, forward_return_col])
     return joined
 
@@ -291,95 +310,28 @@ def _to_markdown_table(df: pd.DataFrame, floatfmt: str = ".6f") -> str:
     return "\n".join(lines)
 
 
-def _write_markdown(
-    out_path: Path,
-    composite_path: Path,
-    equity_curves_path: Path,
-    target_series: str,
-    transition_cost_bps_per_unit: float,
-    schedule_summary: pd.DataFrame,
-    regime_scale_summary: pd.DataFrame,
-) -> None:
-    ranked = schedule_summary.sort_values(["calmar", "sharpe", "max_drawdown"], ascending=[False, False, False])
-    lines = [
-        "# HMM Crypto Composite Governor — Shadow Hypothesis Test",
-        "",
-        "## Status",
-        "",
-        "Research-only shadow-mode test. This evaluates fixed defensive exposure scale schedules against the existing crypto sleeve forward-return stream.",
-        "",
-        "## Inputs",
-        "",
-        "```text",
-        f"Composite regimes: {composite_path}",
-        f"Equity curves: {equity_curves_path}",
-        f"Target series: {target_series}",
-        "Return alignment: composite regime at time t mapped to next-bar target return after t",
-        f"Transition cost: {transition_cost_bps_per_unit:.4f} bps per 1.00 exposure-scale change",
-        "Runtime impact: none",
-        "```",
-        "",
-        "## Schedule Summary",
-        "",
-        _to_markdown_table(schedule_summary),
-        "",
-        "## Ranking By Calmar / Sharpe",
-        "",
-        _to_markdown_table(
-            ranked[
-                [
-                    "schedule",
-                    "cagr",
-                    "max_drawdown",
-                    "sharpe",
-                    "calmar",
-                    "ann_vol",
-                    "avg_scale",
-                    "pct_scaled_bars",
-                    "scale_changes",
-                    "total_scale_turnover",
-                    "total_transition_cost_return",
-                    "delta_cagr",
-                    "delta_max_drawdown",
-                    "delta_sharpe",
-                    "delta_calmar",
-                ]
-            ]
-        ),
-        "",
-        "## Regime Scale Summary",
-        "",
-        _to_markdown_table(regime_scale_summary),
-        "",
-        "## Interpretation Guardrail",
-        "",
-        "```text",
-        "This is still a research-only shadow test, not execution-ready evidence.",
-        "Transition costs are modeled as a simple exposure-scale-change cost, not full exchange/execution simulation.",
-        "Do not modify Fund v1 paper trading from this result.",
-        "A candidate may proceed only if cost-adjusted improvement persists and behavior is interpretable.",
-        "```",
-        "",
-    ]
-    out_path.write_text("\n".join(lines), encoding="utf-8")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--composite", default=str(DEFAULT_COMPOSITE_PATH))
-    parser.add_argument("--equity-curves", default=None)
-    parser.add_argument("--target-series", default=DEFAULT_TARGET_SERIES)
+    parser.add_argument("--equity-curves", required=True)
+    parser.add_argument("--target-series", required=True)
     parser.add_argument("--transition-cost-bps", type=float, default=10.0, help="Cost in bps per 1.00 exposure-scale change")
+    parser.add_argument("--allow-mixed-frequency", action="store_true")
     parser.add_argument("--out", default=str(DEFAULT_OUT_DIR))
     args = parser.parse_args()
 
     composite_path = Path(args.composite)
-    equity_curves_path = Path(args.equity_curves) if args.equity_curves else _find_latest_equity_curves()
+    equity_curves_path = Path(args.equity_curves)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     composite = _read_time_indexed_csv(composite_path)
     equity = _read_time_indexed_csv(equity_curves_path)
+    frequency_diagnostics = _validate_frequency_compatibility(
+        composite,
+        equity,
+        allow_mixed_frequency=args.allow_mixed_frequency,
+    )
     joined = _join_regimes_to_returns(composite, equity, args.target_series)
     bars_per_year = _infer_bars_per_year(joined.index)
 
@@ -404,15 +356,18 @@ def main() -> None:
             "transition_cost_bps_per_unit_scale_change": args.transition_cost_bps,
         },
         "alignment": {
-            "method": "composite regime at time t joined to next-bar target return after t",
+            "method": "inner join on matching timestamps; composite regime at time t joined to next-bar target return after t",
             "bars": int(len(joined)),
             "start": str(joined.index.min()),
             "end": str(joined.index.max()),
             "bars_per_year_inferred": float(bars_per_year),
+            "frequency_diagnostics": frequency_diagnostics,
+            "allow_mixed_frequency": bool(args.allow_mixed_frequency),
         },
         "metric_notes": [
             "Transition costs are modeled as cost_bps * abs(scale_t - scale_t-1).",
             "Scaled return assumes de-risked capital earns zero return for the next bar.",
+            "Materially mixed-frequency joins are refused by default.",
             "This is research-only signal evidence, not a production governor.",
         ],
         "schedules": [
@@ -428,7 +383,6 @@ def main() -> None:
             "governor_schedule_returns": str(out_dir / "governor_schedule_returns.csv"),
             "governor_schedule_summary": str(out_dir / "governor_schedule_summary.csv"),
             "governor_regime_scale_summary": str(out_dir / "governor_regime_scale_summary.csv"),
-            "summary_md": str(out_dir / "summary.md"),
             "summary_json": str(out_dir / "summary.json"),
         },
         "decision": {
@@ -443,20 +397,17 @@ def main() -> None:
         },
     }
     (out_dir / "summary.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
-    _write_markdown(
-        out_dir / "summary.md",
-        composite_path,
-        equity_curves_path,
-        args.target_series,
-        args.transition_cost_bps,
-        schedule_summary,
-        regime_scale_summary,
-    )
 
     print("\n=== HMM CRYPTO COMPOSITE GOVERNOR SHADOW TEST ===")
     print(f"Composite: {composite_path}")
     print(f"Equity curves: {equity_curves_path}")
     print(f"Target series: {args.target_series}")
+    print(
+        "Frequencies: "
+        f"composite={frequency_diagnostics['composite_frequency']} "
+        f"equity={frequency_diagnostics['equity_frequency']} "
+        f"ratio={frequency_diagnostics['frequency_ratio']:.2f}"
+    )
     print(f"Transition cost: {args.transition_cost_bps:.4f} bps per 1.00 exposure-scale change")
     with pd.option_context("display.max_columns", None, "display.width", 260, "display.float_format", "{:.6f}".format):
         print("\nSchedule Summary:")
