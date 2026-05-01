@@ -9,10 +9,9 @@ Important:
 - Does NOT modify Fund v1 runtime behavior.
 - Does NOT create a production governor.
 - Does NOT route orders or change strategy intent.
-- Does NOT model transition costs yet.
 
 The purpose is to answer whether composite-regime attribution is strong enough
-to justify a deeper, cost-aware governor research pass.
+to justify a deeper governor research pass.
 """
 
 from __future__ import annotations
@@ -196,15 +195,23 @@ def _join_regimes_to_returns(
     return joined
 
 
-def _apply_schedule(joined: pd.DataFrame, target_series: str, schedule: ScheduleConfig) -> pd.DataFrame:
+def _apply_schedule(
+    joined: pd.DataFrame,
+    target_series: str,
+    schedule: ScheduleConfig,
+    transition_cost_bps_per_unit: float,
+) -> pd.DataFrame:
     ret_col = f"fwd_ret_{target_series}"
     out = joined[[REGIME_COLUMN, ret_col]].copy()
     out["schedule"] = schedule.name
     out["scale"] = out[REGIME_COLUMN].map(schedule.regime_scales).fillna(schedule.default_scale).astype(float)
-    out["governed_return"] = out[ret_col] * out["scale"]
     out["base_return"] = out[ret_col]
+    out["gross_governed_return"] = out[ret_col] * out["scale"]
+    out["scale_delta"] = out["scale"].diff().abs().fillna(0.0)
+    out["transition_cost_return"] = out["scale_delta"] * (transition_cost_bps_per_unit / 10_000.0)
+    out["governed_return"] = out["gross_governed_return"] - out["transition_cost_return"]
     out["return_delta"] = out["governed_return"] - out["base_return"]
-    out["scale_change"] = out["scale"].diff().abs().fillna(0.0) > 1e-12
+    out["scale_change"] = out["scale_delta"] > 1e-12
     return out
 
 
@@ -229,6 +236,9 @@ def _build_schedule_summary(
                 "min_scale": float(frame["scale"].min()),
                 "pct_scaled_bars": float((frame["scale"] < 1.0).mean()),
                 "scale_changes": int(frame["scale_change"].sum()),
+                "total_scale_turnover": float(frame["scale_delta"].sum()),
+                "total_transition_cost_return": float(frame["transition_cost_return"].sum()),
+                "avg_transition_cost_bps": float(frame["transition_cost_return"].mean() * 10_000.0),
                 "avg_return_delta_bps": float(frame["return_delta"].mean() * 10_000.0),
                 "sum_return_delta": float(frame["return_delta"].sum()),
             }
@@ -254,7 +264,9 @@ def _build_regime_scale_summary(scheduled_frames: list[pd.DataFrame]) -> pd.Data
                     "bars": int(len(grp)),
                     "avg_scale": float(grp["scale"].mean()),
                     "base_avg_return_bps": float(grp["base_return"].mean() * 10_000.0),
-                    "governed_avg_return_bps": float(grp["governed_return"].mean() * 10_000.0),
+                    "gross_governed_avg_return_bps": float(grp["gross_governed_return"].mean() * 10_000.0),
+                    "net_governed_avg_return_bps": float(grp["governed_return"].mean() * 10_000.0),
+                    "transition_cost_return": float(grp["transition_cost_return"].sum()),
                     "sum_return_delta": float(grp["return_delta"].sum()),
                 }
             )
@@ -284,6 +296,7 @@ def _write_markdown(
     composite_path: Path,
     equity_curves_path: Path,
     target_series: str,
+    transition_cost_bps_per_unit: float,
     schedule_summary: pd.DataFrame,
     regime_scale_summary: pd.DataFrame,
 ) -> None:
@@ -302,7 +315,7 @@ def _write_markdown(
         f"Equity curves: {equity_curves_path}",
         f"Target series: {target_series}",
         "Return alignment: composite regime at time t mapped to next-bar target return after t",
-        "Transition costs: NOT modeled",
+        f"Transition cost: {transition_cost_bps_per_unit:.4f} bps per 1.00 exposure-scale change",
         "Runtime impact: none",
         "```",
         "",
@@ -324,6 +337,8 @@ def _write_markdown(
                     "avg_scale",
                     "pct_scaled_bars",
                     "scale_changes",
+                    "total_scale_turnover",
+                    "total_transition_cost_return",
                     "delta_cagr",
                     "delta_max_drawdown",
                     "delta_sharpe",
@@ -339,10 +354,10 @@ def _write_markdown(
         "## Interpretation Guardrail",
         "",
         "```text",
-        "This is signal evidence only, not execution-ready evidence.",
-        "Transition costs are not modeled in this pass.",
+        "This is still a research-only shadow test, not execution-ready evidence.",
+        "Transition costs are modeled as a simple exposure-scale-change cost, not full exchange/execution simulation.",
         "Do not modify Fund v1 paper trading from this result.",
-        "A candidate may proceed only if it improves drawdown/Calmar/Sharpe enough to justify a cost-aware follow-up test.",
+        "A candidate may proceed only if cost-adjusted improvement persists and behavior is interpretable.",
         "```",
         "",
     ]
@@ -354,6 +369,7 @@ def main() -> None:
     parser.add_argument("--composite", default=str(DEFAULT_COMPOSITE_PATH))
     parser.add_argument("--equity-curves", default=None)
     parser.add_argument("--target-series", default=DEFAULT_TARGET_SERIES)
+    parser.add_argument("--transition-cost-bps", type=float, default=10.0, help="Cost in bps per 1.00 exposure-scale change")
     parser.add_argument("--out", default=str(DEFAULT_OUT_DIR))
     args = parser.parse_args()
 
@@ -367,7 +383,10 @@ def main() -> None:
     joined = _join_regimes_to_returns(composite, equity, args.target_series)
     bars_per_year = _infer_bars_per_year(joined.index)
 
-    scheduled_frames = [_apply_schedule(joined, args.target_series, schedule) for schedule in SCHEDULES]
+    scheduled_frames = [
+        _apply_schedule(joined, args.target_series, schedule, args.transition_cost_bps)
+        for schedule in SCHEDULES
+    ]
     schedule_returns = pd.concat(scheduled_frames).sort_index()
     schedule_summary = _build_schedule_summary(scheduled_frames, bars_per_year)
     regime_scale_summary = _build_regime_scale_summary(scheduled_frames)
@@ -382,6 +401,7 @@ def main() -> None:
             "composite_regimes": str(composite_path),
             "equity_curves": str(equity_curves_path),
             "target_series": args.target_series,
+            "transition_cost_bps_per_unit_scale_change": args.transition_cost_bps,
         },
         "alignment": {
             "method": "composite regime at time t joined to next-bar target return after t",
@@ -391,7 +411,7 @@ def main() -> None:
             "bars_per_year_inferred": float(bars_per_year),
         },
         "metric_notes": [
-            "Transition costs are not modeled.",
+            "Transition costs are modeled as cost_bps * abs(scale_t - scale_t-1).",
             "Scaled return assumes de-risked capital earns zero return for the next bar.",
             "This is research-only signal evidence, not a production governor.",
         ],
@@ -413,7 +433,7 @@ def main() -> None:
         },
         "decision": {
             "status": "research_only_shadow_governor_hypothesis",
-            "next_step": "review_schedule_results_and_select_any_candidate_for_cost_aware_followup",
+            "next_step": "review_cost_adjusted_schedule_results_and_select_any_candidate_for_deeper_validation",
             "not_approved": [
                 "fund_v1_runtime_change",
                 "direct_strategy_gating",
@@ -428,6 +448,7 @@ def main() -> None:
         composite_path,
         equity_curves_path,
         args.target_series,
+        args.transition_cost_bps,
         schedule_summary,
         regime_scale_summary,
     )
@@ -436,8 +457,8 @@ def main() -> None:
     print(f"Composite: {composite_path}")
     print(f"Equity curves: {equity_curves_path}")
     print(f"Target series: {args.target_series}")
-    print("Transition costs modeled: no")
-    with pd.option_context("display.max_columns", None, "display.width", 240, "display.float_format", "{:.6f}".format):
+    print(f"Transition cost: {args.transition_cost_bps:.4f} bps per 1.00 exposure-scale change")
+    with pd.option_context("display.max_columns", None, "display.width", 260, "display.float_format", "{:.6f}".format):
         print("\nSchedule Summary:")
         print(schedule_summary.to_string(index=False))
         print("\nRanking By Calmar / Sharpe:")
