@@ -287,6 +287,25 @@ def _to_markdown_table(df: pd.DataFrame, floatfmt: str = ".4f") -> str:
     return "\n".join(lines)
 
 
+def _rank_and_delta(summary: pd.DataFrame, baseline: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    if summary.empty:
+        return summary, summary
+    out = summary.copy()
+    if baseline in out["strategy"].values:
+        base = out.loc[out["strategy"] == baseline].iloc[0]
+        for col in ["total_return_pct", "cagr_pct", "max_drawdown_pct", "sharpe", "calmar", "ann_vol_pct", "total_trades"]:
+            out[f"delta_{col}_vs_baseline"] = out[col] - float(base[col])
+    target_rows = out[
+        (out["cagr_pct"] >= 25.0)
+        & (out["max_drawdown_pct"] >= -35.0)
+        & (out["sharpe"] >= 1.0)
+        & (out["calmar"] >= 0.9)
+    ].copy()
+    target_rows = target_rows.sort_values(["calmar", "cagr_pct"], ascending=[False, False])
+    out = out.sort_values(["calmar", "cagr_pct"], ascending=[False, False])
+    return out, target_rows
+
+
 def _write_markdown(out_path: Path, summary: pd.DataFrame, target_rows: pd.DataFrame, args: argparse.Namespace) -> None:
     lines = [
         "# Crypto Risk Budget v2 — Strategy Variant Sweep",
@@ -323,6 +342,37 @@ def _write_markdown(out_path: Path, summary: pd.DataFrame, target_rows: pd.DataF
     out_path.write_text("\n".join(lines), encoding="utf-8")
 
 
+def _checkpoint(
+    out_dir: Path,
+    rows: list[dict[str, Any]],
+    equity_curves: dict[str, pd.Series],
+    detail_payload: dict[str, Any],
+    args: argparse.Namespace,
+    completed: list[str],
+) -> None:
+    summary = pd.DataFrame(rows)
+    ranked, target_rows = _rank_and_delta(summary, args.baseline)
+    if equity_curves:
+        pd.DataFrame(equity_curves).sort_index().to_csv(out_dir / "variant_equity_curves_checkpoint.csv")
+    ranked.to_csv(out_dir / "variant_summary_checkpoint.csv", index=False)
+    target_rows.to_csv(out_dir / "target_frontier_candidates_checkpoint.csv", index=False)
+    payload = {
+        "research_status": "checkpoint_partial_strategy_variant_sweep",
+        "completed_strategies": completed,
+        "baseline": args.baseline,
+        "cost_assumptions": {
+            "fee": args.fee,
+            "base_slippage_bps": args.base_slippage,
+            "slippage_vol_factor": args.slippage_vol_factor,
+            "rebalance_threshold": args.rebalance_threshold,
+        },
+        "details": detail_payload,
+    }
+    (out_dir / "summary_checkpoint.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    _write_markdown(out_dir / "summary_checkpoint.md", ranked, target_rows, args)
+    log.info("Checkpoint saved after %d strategy variant(s): %s", len(completed), out_dir)
+
+
 def main() -> None:
     args = parse_args()
     strategies = _parse_strategies(args.strategies)
@@ -344,6 +394,7 @@ def main() -> None:
     equity_curves: dict[str, pd.Series] = {}
     rows: list[dict[str, Any]] = []
     detail_payload: dict[str, Any] = {}
+    completed: list[str] = []
 
     print("\n" + "=" * 132)
     print("  CRYPTO RISK BUDGET V2 — IMPLEMENTABLE STRATEGY VARIANT SWEEP")
@@ -377,21 +428,11 @@ def main() -> None:
             "trades": trades,
             "exposure": exposure,
         }
+        completed.append(strategy_name)
+        _checkpoint(out_dir, rows, equity_curves, detail_payload, args, completed)
 
     summary = pd.DataFrame(rows)
-    if args.baseline in summary["strategy"].values:
-        base = summary.loc[summary["strategy"] == args.baseline].iloc[0]
-        for col in ["total_return_pct", "cagr_pct", "max_drawdown_pct", "sharpe", "calmar", "ann_vol_pct", "total_trades"]:
-            summary[f"delta_{col}_vs_baseline"] = summary[col] - float(base[col])
-
-    target_rows = summary[
-        (summary["cagr_pct"] >= 25.0)
-        & (summary["max_drawdown_pct"] >= -35.0)
-        & (summary["sharpe"] >= 1.0)
-        & (summary["calmar"] >= 0.9)
-    ].copy()
-    target_rows = target_rows.sort_values(["calmar", "cagr_pct"], ascending=[False, False])
-    summary = summary.sort_values(["calmar", "cagr_pct"], ascending=[False, False])
+    summary, target_rows = _rank_and_delta(summary, args.baseline)
 
     aligned_equity = pd.DataFrame(equity_curves).sort_index()
     aligned_equity.to_csv(out_dir / "variant_equity_curves.csv")
@@ -402,6 +443,7 @@ def main() -> None:
         "research_status": "research_only_strategy_variant_sweep",
         "baseline": args.baseline,
         "strategies": strategies,
+        "completed_strategies": completed,
         "cost_assumptions": {
             "fee": args.fee,
             "base_slippage_bps": args.base_slippage,
