@@ -306,6 +306,28 @@ def _exposure_proxy(strategy: pd.Series, benchmarks: pd.DataFrame) -> pd.DataFra
     return pd.DataFrame(rows)
 
 
+def _format_md_value(value: object, floatfmt: str = ".4f") -> str:
+    if isinstance(value, float):
+        return format(value, floatfmt)
+    if pd.isna(value):
+        return ""
+    text = str(value)
+    return text.replace("|", "\\|").replace("\n", " ")
+
+
+def _to_markdown_table(df: pd.DataFrame, floatfmt: str = ".4f") -> str:
+    """Render a simple markdown table without pandas' optional tabulate dependency."""
+    if df.empty:
+        return "_No rows._"
+    columns = [str(col) for col in df.columns]
+    lines = ["| " + " | ".join(columns) + " |"]
+    lines.append("| " + " | ".join(["---"] * len(columns)) + " |")
+    for _, row in df.iterrows():
+        values = [_format_md_value(row[col], floatfmt=floatfmt) for col in df.columns]
+        lines.append("| " + " | ".join(values) + " |")
+    return "\n".join(lines)
+
+
 def _write_markdown(out_path: Path, period: dict[str, str | int], metrics: pd.DataFrame, capture: pd.DataFrame) -> None:
     lines = [
         "# Crypto Risk Budget v2 — Upside/Downside Capture Audit",
@@ -324,11 +346,11 @@ def _write_markdown(out_path: Path, period: dict[str, str | int], metrics: pd.Da
         "",
         "## Performance Metrics",
         "",
-        metrics.to_markdown(index=False, floatfmt=".4f"),
+        _to_markdown_table(metrics),
         "",
         "## Capture Summary",
         "",
-        capture.to_markdown(index=False, floatfmt=".4f") if not capture.empty else "_No capture rows._",
+        _to_markdown_table(capture) if not capture.empty else "_No capture rows._",
         "",
         "## Interpretation Guardrail",
         "",
