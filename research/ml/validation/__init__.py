@@ -11,6 +11,14 @@ run_walk_forward    — iterate over all folds
 
 from research.ml.validation.fold_spec import FoldSpec, build_annual_folds, from_custom_json
 from research.ml.validation.walk_forward import FoldResult, run_fold, run_walk_forward
+from research.ml.validation.fund_walk_forward import (
+    FundFoldResult,
+    FundSleeveSpec,
+    SleeveFoldMetrics,
+    default_fund_sleeves,
+    run_fund_fold,
+    run_fund_walk_forward,
+)
 
 __all__ = [
     "FoldSpec",
@@ -19,4 +27,10 @@ __all__ = [
     "from_custom_json",
     "run_fold",
     "run_walk_forward",
+    "FundFoldResult",
+    "FundSleeveSpec",
+    "SleeveFoldMetrics",
+    "default_fund_sleeves",
+    "run_fund_fold",
+    "run_fund_walk_forward",
 ]
