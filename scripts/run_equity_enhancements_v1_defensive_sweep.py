@@ -155,9 +155,9 @@ def _build_curve(
     data = pd.concat([prices, signal], axis=1).dropna(subset=["SPY", "QQQ"])
     if defensive_close is not None:
         data = pd.concat([data, defensive_close.rename("DEF")], axis=1).dropna(subset=["DEF"])
-    returns = data[["SPY", "QQQ"]].pct_change().fillna(0.0)
+    returns = data[["SPY", "QQQ"]].pct_change(fill_method=None).fillna(0.0)
     if defensive_close is not None:
-        def_returns = data["DEF"].pct_change().fillna(0.0)
+        def_returns = data["DEF"].pct_change(fill_method=None).fillna(0.0)
     else:
         def_returns = pd.Series(0.0, index=data.index)
     exec_spy = data["target_spy_weight"].shift(1).fillna(0.0)
@@ -212,7 +212,7 @@ def _max_time_underwater_days(eq: pd.Series) -> float:
 
 
 def _sortino(eq: pd.Series) -> float:
-    rets = eq.dropna().astype(float).pct_change().dropna()
+    rets = eq.dropna().astype(float).pct_change(fill_method=None).dropna()
     if rets.empty:
         return 0.0
     downside = np.minimum(rets, 0.0)
@@ -226,7 +226,7 @@ def _perf(eq: pd.Series) -> dict[str, float]:
     eq = eq.dropna().astype(float)
     if len(eq) < 2:
         return {}
-    rets = eq.pct_change().dropna()
+    rets = eq.pct_change(fill_method=None).dropna()
     years = max((eq.index[-1] - eq.index[0]).total_seconds() / (365.25 * 24 * 3600), 1e-9)
     total = float(eq.iloc[-1] / eq.iloc[0] - 1.0)
     cagr = float((eq.iloc[-1] / eq.iloc[0]) ** (1.0 / years) - 1.0)
@@ -237,8 +237,8 @@ def _perf(eq: pd.Series) -> dict[str, float]:
     sharpe = float((rets.mean() / std) * math.sqrt(bpy)) if std > 1e-12 else 0.0
     ann_vol = float(std * math.sqrt(bpy)) if std > 0 else 0.0
     calmar = float(cagr / abs(max_dd)) if max_dd < 0 else 0.0
-    worst_90 = float(eq.pct_change(90).dropna().min()) if len(eq) > 90 else 0.0
-    worst_180 = float(eq.pct_change(180).dropna().min()) if len(eq) > 180 else 0.0
+    worst_90 = float(eq.pct_change(90, fill_method=None).dropna().min()) if len(eq) > 90 else 0.0
+    worst_180 = float(eq.pct_change(180, fill_method=None).dropna().min()) if len(eq) > 180 else 0.0
     return {
         "total_return_pct": total * 100.0,
         "cagr_pct": cagr * 100.0,
