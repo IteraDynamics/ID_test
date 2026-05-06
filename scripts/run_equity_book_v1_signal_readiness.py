@@ -178,6 +178,27 @@ def _replay(prices: pd.DataFrame, sma_window: int, capital: float) -> tuple[pd.D
     return signals, executed, curves
 
 
+def _fmt_md_value(value: object) -> str:
+    if isinstance(value, float):
+        return f"{value:.4f}"
+    if pd.isna(value):
+        return ""
+    return str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def _md_table(df: pd.DataFrame) -> str:
+    if df.empty:
+        return "_No rows._"
+    cols = [str(c) for c in df.columns]
+    lines = [
+        "| " + " | ".join(cols) + " |",
+        "| " + " | ".join(["---"] * len(cols)) + " |",
+    ]
+    for _, row in df.iterrows():
+        lines.append("| " + " | ".join(_fmt_md_value(row[c]) for c in df.columns) + " |")
+    return "\n".join(lines)
+
+
 def _write_summary_md(path: Path, payload: dict, perf: pd.DataFrame) -> None:
     lines = [
         "# Equity Book v1 — Signal Readiness",
@@ -195,7 +216,7 @@ def _write_summary_md(path: Path, payload: dict, perf: pd.DataFrame) -> None:
         "",
         "## Performance Summary",
         "",
-        perf.to_markdown(index=False),
+        _md_table(perf),
         "",
         "## Guardrail",
         "",
