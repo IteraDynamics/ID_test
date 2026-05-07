@@ -209,14 +209,22 @@ def _build_signal_panel(
 
 
 def _base_weights(spy: pd.Series, qqq: pd.Series, bil: pd.Series, equity_core_window: int) -> pd.DataFrame:
-    prices = pd.concat([spy.rename("SPY"), qqq.rename("QQQ"), bil.rename("BIL")], axis=1).dropna()
+    """Build promoted Equity Core weights using full SPY/QQQ history first.
+
+    The defensive-carry sweep computes SPY/QQQ SMA state on the full common
+    SPY/QQQ history and only then intersects with the defensive asset. Doing the
+    BIL intersection before the SMA calculation truncates pre-2019 history and
+    creates a false initial cash-only warmup inside the BIL overlap. This helper
+    intentionally mirrors the promoted defensive-sweep baseline.
+    """
+    prices = pd.concat([spy.rename("SPY"), qqq.rename("QQQ")], axis=1).dropna().sort_index()
     spy_sma = prices["SPY"].rolling(equity_core_window, min_periods=equity_core_window).mean()
     qqq_sma = prices["QQQ"].rolling(equity_core_window, min_periods=equity_core_window).mean()
     w = pd.DataFrame(index=prices.index)
     w["SPY"] = 0.5 * (prices["SPY"] > spy_sma).astype(float)
     w["QQQ"] = 0.5 * (prices["QQQ"] > qqq_sma).astype(float)
     w["BIL"] = 1.0 - w["SPY"] - w["QQQ"]
-    return w
+    return w.reindex(pd.concat([prices, bil.rename("BIL")], axis=1).dropna().index)
 
 
 def _force_full_equity(w: pd.DataFrame) -> pd.DataFrame:
