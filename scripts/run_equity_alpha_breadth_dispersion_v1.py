@@ -394,6 +394,36 @@ def _forward_tables(panel: pd.DataFrame, targets: dict[str, pd.Series], horizons
     return pd.DataFrame(rows), pd.DataFrame(qrows), pd.DataFrame(count_rows)
 
 
+def _edge_summary(df: pd.DataFrame, family_col: str) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+    group_cols = ["target", "horizon_days", family_col]
+    rows = []
+    for keys, grp in df.groupby(group_cols):
+        if len(grp) < 2:
+            continue
+        target, horizon, family = keys
+        best = grp.sort_values("mean_forward_return_pct", ascending=False).iloc[0]
+        worst = grp.sort_values("mean_forward_return_pct", ascending=True).iloc[0]
+        rows.append(
+            {
+                "target": target,
+                "horizon_days": horizon,
+                "family": family,
+                "best_bucket": best.get("regime", best.get("bucket")),
+                "worst_bucket": worst.get("regime", worst.get("bucket")),
+                "best_mean_forward_return_pct": best["mean_forward_return_pct"],
+                "worst_mean_forward_return_pct": worst["mean_forward_return_pct"],
+                "edge_spread_pct": best["mean_forward_return_pct"] - worst["mean_forward_return_pct"],
+                "best_hit_rate_pct": best["hit_rate_pct"],
+                "worst_hit_rate_pct": worst["hit_rate_pct"],
+                "best_n": int(best["n"]),
+                "worst_n": int(worst["n"]),
+            }
+        )
+    return pd.DataFrame(rows).sort_values(["edge_spread_pct", "best_hit_rate_pct"], ascending=[False, False]) if rows else pd.DataFrame()
+
+
 def _fmt_md_value(value: object) -> str:
     if isinstance(value, float):
         return f"{value:.4f}"
@@ -417,7 +447,16 @@ def _md_table(df: pd.DataFrame, max_rows: int | None = None) -> str:
     return "\n".join(lines)
 
 
-def _write_summary_md(path: Path, context: pd.DataFrame, regime: pd.DataFrame, quantile: pd.DataFrame, skipped: pd.DataFrame, args: argparse.Namespace) -> None:
+def _write_summary_md(
+    path: Path,
+    context: pd.DataFrame,
+    regime: pd.DataFrame,
+    quantile: pd.DataFrame,
+    regime_edge: pd.DataFrame,
+    quantile_edge: pd.DataFrame,
+    skipped: pd.DataFrame,
+    args: argparse.Namespace,
+) -> None:
     lines = [
         "# Equity Alpha v1 — Breadth / Dispersion Diagnostics",
         "",
@@ -436,6 +475,14 @@ def _write_summary_md(path: Path, context: pd.DataFrame, regime: pd.DataFrame, q
         "## Performance Context",
         "",
         _md_table(context, max_rows=20),
+        "",
+        "## Regime Edge Summary — Top Rows",
+        "",
+        _md_table(regime_edge, max_rows=30),
+        "",
+        "## Quantile Edge Summary — Top Rows",
+        "",
+        _md_table(quantile_edge, max_rows=30),
         "",
         "## Forward Return by Regime — First Rows",
         "",
@@ -506,6 +553,8 @@ def main() -> None:
 
     regime_table, quantile_table, counts = _forward_tables(panel, targets, horizons)
     counts = counts.groupby(["regime_family", "regime"], as_index=False)["n"].max() if not counts.empty else counts
+    regime_edge = _edge_summary(regime_table, "regime_family")
+    quantile_edge = _edge_summary(quantile_table, "signal")
 
     context_rows = []
     for name, price in targets.items():
@@ -517,6 +566,8 @@ def main() -> None:
     panel.to_csv(out_dir / "daily_signal_panel.csv")
     regime_table.to_csv(out_dir / "forward_return_by_regime.csv", index=False)
     quantile_table.to_csv(out_dir / "forward_return_by_quantile.csv", index=False)
+    regime_edge.to_csv(out_dir / "regime_edge_summary.csv", index=False)
+    quantile_edge.to_csv(out_dir / "quantile_edge_summary.csv", index=False)
     counts.to_csv(out_dir / "regime_counts.csv", index=False)
     context.to_csv(out_dir / "performance_context_summary.csv", index=False)
     skipped.to_csv(out_dir / "skipped_assets.csv", index=False)
@@ -539,6 +590,8 @@ def main() -> None:
             "daily_signal_panel": str(out_dir / "daily_signal_panel.csv"),
             "forward_return_by_regime": str(out_dir / "forward_return_by_regime.csv"),
             "forward_return_by_quantile": str(out_dir / "forward_return_by_quantile.csv"),
+            "regime_edge_summary": str(out_dir / "regime_edge_summary.csv"),
+            "quantile_edge_summary": str(out_dir / "quantile_edge_summary.csv"),
             "regime_counts": str(out_dir / "regime_counts.csv"),
             "performance_context_summary": str(out_dir / "performance_context_summary.csv"),
             "skipped_assets": str(out_dir / "skipped_assets.csv"),
@@ -548,10 +601,10 @@ def main() -> None:
         "decision": {"status": "diagnostic_only", "not_approved": ["strategy", "paper_trading", "live_allocation", "broker_change", "runtime_change", "crypto_allocator_change", "global_allocator_change"]},
     }
     (out_dir / "summary.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
-    _write_summary_md(out_dir / "summary.md", context, regime_table, quantile_table, skipped, args)
+    _write_summary_md(out_dir / "summary.md", context, regime_table, quantile_table, regime_edge, quantile_edge, skipped, args)
 
     interesting = regime_table.sort_values(["target", "horizon_days", "mean_forward_return_pct"], ascending=[True, True, False]) if not regime_table.empty else pd.DataFrame()
-    with pd.option_context("display.max_columns", None, "display.width", 340, "display.float_format", "{:.4f}".format):
+    with pd.option_context("display.max_columns", None, "display.width", 360, "display.float_format", "{:.4f}".format):
         print("\n=== EQUITY ALPHA V1 — BREADTH / DISPERSION DIAGNOSTICS ===")
         print(f"Loaded sectors: {', '.join(loaded_sectors.keys())}")
         print(f"Loaded optional assets: {', '.join(loaded_optional.keys()) if loaded_optional else 'none'}")
@@ -560,8 +613,12 @@ def main() -> None:
             print(skipped.to_string(index=False))
         print("\nPerformance Context:")
         print(context.to_string(index=False))
+        print("\nRegime Edge Summary — Top rows:")
+        print(regime_edge.head(30).to_string(index=False) if not regime_edge.empty else "No regime edge rows.")
+        print("\nQuantile Edge Summary — Top rows:")
+        print(quantile_edge.head(30).to_string(index=False) if not quantile_edge.empty else "No quantile edge rows.")
         print("\nForward Return by Regime — Top rows:")
-        print(interesting.head(40).to_string(index=False) if not interesting.empty else "No regime rows.")
+        print(interesting.head(30).to_string(index=False) if not interesting.empty else "No regime rows.")
         print("\nRegime Counts:")
         print(counts.to_string(index=False) if not counts.empty else "No count rows.")
     print(f"\nArtifacts saved to: {out_dir}")
