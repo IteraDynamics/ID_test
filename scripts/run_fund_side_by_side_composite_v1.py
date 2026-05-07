@@ -15,6 +15,7 @@ import json
 import math
 import sys
 from pathlib import Path
+from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -27,6 +28,7 @@ import pandas as pd
 DEFAULT_OUT = "artifacts/fund_side_by_side_composite_v1"
 START_CAPITAL = 100_000.0
 TRADING_DAYS = 252.0
+DEFAULT_CRYPTO_BENCHMARKS = "BTC_HODL,ETH_HODL,BTC_ETH_50_50_DAILY_REBAL,BTC_ETH_60_40_DAILY_REBAL"
 WINDOWS = [
     ("FULL", "1900-01-01", "2100-01-01"),
     ("COVID_2020", "2020-02-01", "2020-06-30"),
@@ -43,6 +45,7 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--crypto-curve", required=True, help="CSV containing the crypto sleeve equity curve.")
     p.add_argument("--crypto-column", required=True, help="Column inside --crypto-curve to use as crypto sleeve.")
+    p.add_argument("--crypto-benchmark-columns", default=DEFAULT_CRYPTO_BENCHMARKS)
     p.add_argument("--equity-curve", default=None, help="Optional CSV containing an equity sleeve curve.")
     p.add_argument("--equity-column", default=None, help="Column inside --equity-curve to use as equity sleeve.")
     p.add_argument("--spy-data", default="data/SPY_1D.csv")
@@ -53,6 +56,15 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--capital", type=float, default=START_CAPITAL)
     p.add_argument("--out-dir", default=DEFAULT_OUT)
     return p.parse_args()
+
+
+def _parse_csv_list(raw: str) -> list[str]:
+    out = []
+    for part in str(raw).split(","):
+        value = part.strip()
+        if value:
+            out.append(value)
+    return list(dict.fromkeys(out))
 
 
 def _detect_time_col(df: pd.DataFrame) -> str:
@@ -77,16 +89,34 @@ def _read_csv_with_datetime_index(path: Path) -> pd.DataFrame:
     return df
 
 
-def _load_curve(path: Path, column: str, label: str) -> pd.Series:
-    df = _read_csv_with_datetime_index(path)
+def _curve_from_df(df: pd.DataFrame, column: str, label: str) -> pd.Series:
     if column not in df.columns:
-        raise ValueError(f"{label} column '{column}' not found in {path}. Columns={list(df.columns)}")
+        raise ValueError(f"{label} column '{column}' not found. Columns={list(df.columns)}")
     s = pd.to_numeric(df[column], errors="coerce").dropna().astype(float)
     if len(s) < 2:
-        raise ValueError(f"{label} curve has insufficient rows: {path}::{column}")
+        raise ValueError(f"{label} curve has insufficient rows: {column}")
     if s.iloc[0] <= 0:
-        raise ValueError(f"{label} curve must start positive: {path}::{column}")
+        raise ValueError(f"{label} curve must start positive: {column}")
     return s.rename(label)
+
+
+def _load_curve(path: Path, column: str, label: str) -> pd.Series:
+    return _curve_from_df(_read_csv_with_datetime_index(path), column, label)
+
+
+def _load_optional_curves(path: Path, columns: Iterable[str]) -> tuple[dict[str, pd.Series], list[str]]:
+    df = _read_csv_with_datetime_index(path)
+    curves: dict[str, pd.Series] = {}
+    skipped: list[str] = []
+    for col in columns:
+        if col not in df.columns:
+            skipped.append(col)
+            continue
+        try:
+            curves[col] = _curve_from_df(df, col, col)
+        except Exception:
+            skipped.append(col)
+    return curves, skipped
 
 
 def _load_close(path: Path, label: str) -> pd.Series:
@@ -114,15 +144,13 @@ def _equity_core_bil_curve(spy: pd.Series, qqq: pd.Series, bil: pd.Series | None
         data = pd.concat([data, bil.rename("DEF")], axis=1).dropna()
         weights = weights.reindex(data.index).fillna(0.0)
         def_rets = data["DEF"].pct_change(fill_method=None).fillna(0.0)
-        name = "EQUITY_CORE_SMA175_BIL"
     else:
         weights = weights.reindex(data.index).fillna(0.0)
         def_rets = pd.Series(0.0, index=data.index)
-        name = "EQUITY_CORE_SMA175_CASH"
     rets = data[["SPY", "QQQ"]].pct_change(fill_method=None).fillna(0.0)
     exec_w = weights.shift(1).fillna({"SPY": 0.0, "QQQ": 0.0, "DEF": 1.0})
     port_rets = exec_w["SPY"] * rets["SPY"] + exec_w["QQQ"] * rets["QQQ"] + exec_w["DEF"] * def_rets
-    return (float(capital) * (1.0 + port_rets).cumprod()).rename(name)
+    return (float(capital) * (1.0 + port_rets).cumprod()).rename("EQUITY_SLEEVE")
 
 
 def _asset_curve(price: pd.Series, capital: float, name: str) -> pd.Series:
@@ -133,8 +161,7 @@ def _asset_curve(price: pd.Series, capital: float, name: str) -> pd.Series:
 def _passive_spy_qqq(spy: pd.Series, qqq: pd.Series, capital: float) -> pd.Series:
     prices = pd.concat([spy.rename("SPY"), qqq.rename("QQQ")], axis=1).dropna()
     rets = prices.pct_change(fill_method=None).fillna(0.0)
-    port_rets = 0.5 * rets["SPY"] + 0.5 * rets["QQQ"]
-    return (float(capital) * (1.0 + port_rets).cumprod()).rename("PASSIVE_SPY_QQQ_50_50")
+    return (float(capital) * (1.0 + (0.5 * rets["SPY"] + 0.5 * rets["QQQ"])).cumprod()).rename("PASSIVE_SPY_QQQ_50_50")
 
 
 def _normalize(s: pd.Series, capital: float) -> pd.Series:
@@ -188,8 +215,6 @@ def _bars_per_year(index: pd.DatetimeIndex) -> float:
 
 def _max_time_underwater_days(eq: pd.Series) -> float:
     eq = eq.dropna().astype(float)
-    if eq.empty:
-        return 0.0
     dd = eq / eq.cummax() - 1.0
     start = None
     max_days = 0.0
@@ -289,10 +314,7 @@ def _md_table(df: pd.DataFrame, max_rows: int | None = None) -> str:
     if max_rows is not None:
         df = df.head(max_rows)
     cols = [str(c) for c in df.columns]
-    lines = [
-        "| " + " | ".join(cols) + " |",
-        "| " + " | ".join(["---"] * len(cols)) + " |",
-    ]
+    lines = ["| " + " | ".join(cols) + " |", "| " + " | ".join(["---"] * len(cols)) + " |"]
     for _, row in df.iterrows():
         lines.append("| " + " | ".join(_fmt_md_value(row[c]) for c in df.columns) + " |")
     return "\n".join(lines)
@@ -308,6 +330,7 @@ def _write_summary_md(path: Path, perf: pd.DataFrame, capture: pd.DataFrame, win
         "",
         "```text",
         f"Crypto curve: {payload['inputs']['crypto_curve']}::{payload['inputs']['crypto_column']}",
+        f"Crypto benchmarks loaded: {', '.join(payload['inputs']['loaded_crypto_benchmarks']) or 'none'}",
         f"Equity source: {payload['inputs']['equity_source']}",
         f"Weights: {payload['inputs']['weights']}",
         f"Common overlap: {payload['common_overlap']['start']} → {payload['common_overlap']['end']} ({payload['common_overlap']['bars']} bars)",
@@ -315,15 +338,15 @@ def _write_summary_md(path: Path, perf: pd.DataFrame, capture: pd.DataFrame, win
         "",
         "## Performance Summary",
         "",
-        _md_table(perf, max_rows=40),
+        _md_table(perf, max_rows=60),
         "",
         "## Capture Summary",
         "",
-        _md_table(capture, max_rows=80),
+        _md_table(capture, max_rows=120),
         "",
         "## Window Performance Summary",
         "",
-        _md_table(window_perf, max_rows=80),
+        _md_table(window_perf, max_rows=120),
         "",
         "## Guardrail",
         "",
@@ -341,6 +364,9 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     crypto = _load_curve(Path(args.crypto_curve), args.crypto_column, "CRYPTO_SLEEVE")
+    crypto_benchmarks, skipped_crypto_benchmarks = _load_optional_curves(
+        Path(args.crypto_curve), _parse_csv_list(args.crypto_benchmark_columns)
+    )
 
     if args.equity_curve and args.equity_column:
         equity = _load_curve(Path(args.equity_curve), args.equity_column, "EQUITY_SLEEVE")
@@ -355,18 +381,22 @@ def main() -> None:
     common = crypto.dropna().index.intersection(equity.dropna().index)
     if len(common) < 20:
         raise ValueError(f"Insufficient common overlap between crypto and equity curves: {len(common)} bars")
-    crypto_common = _normalize(crypto.loc[common], args.capital).rename("CRYPTO_SLEEVE")
-    equity_common = _normalize(equity.loc[common], args.capital).rename("EQUITY_SLEEVE")
 
-    curves: dict[str, pd.Series] = {"CRYPTO_SLEEVE": crypto_common, "EQUITY_SLEEVE": equity_common}
-    crypto_rets = crypto_common.pct_change(fill_method=None).fillna(0.0)
-    equity_rets = equity_common.pct_change(fill_method=None).fillna(0.0)
+    curves: dict[str, pd.Series] = {
+        "CRYPTO_SLEEVE": _normalize(crypto.loc[common], args.capital).rename("CRYPTO_SLEEVE"),
+        "EQUITY_SLEEVE": _normalize(equity.loc[common], args.capital).rename("EQUITY_SLEEVE"),
+    }
+
+    crypto_rets = curves["CRYPTO_SLEEVE"].pct_change(fill_method=None).fillna(0.0)
+    equity_rets = curves["EQUITY_SLEEVE"].pct_change(fill_method=None).fillna(0.0)
     for label, cw, ew in _parse_weights(args.weights):
         port_rets = cw * crypto_rets + ew * equity_rets
         curves[label] = (args.capital * (1.0 + port_rets).cumprod()).rename(label)
 
-    # Benchmarks over their own data but later normalized to common overlap for fair summary.
+    # Benchmarks over their own data, normalized to the composite common overlap where possible.
     benchmark_curves: dict[str, pd.Series] = {}
+    for name, curve in crypto_benchmarks.items():
+        benchmark_curves[name] = curve.rename(name)
     try:
         spy = _load_close(Path(args.spy_data), "SPY")
         qqq = _load_close(Path(args.qqq_data), "QQQ")
@@ -374,7 +404,7 @@ def main() -> None:
         benchmark_curves["QQQ_HODL"] = _asset_curve(qqq, args.capital, "QQQ_HODL")
         benchmark_curves["PASSIVE_SPY_QQQ_50_50"] = _passive_spy_qqq(spy, qqq, args.capital)
     except Exception:
-        benchmark_curves = {}
+        pass
 
     for name, curve in benchmark_curves.items():
         idx = common.intersection(curve.dropna().index)
@@ -384,11 +414,24 @@ def main() -> None:
     curve_df = pd.concat(curves.values(), axis=1)
     perf_rows = []
     for name, curve in curves.items():
-        perf_rows.append({"series": name, "start": str(curve.dropna().index[0]), "end": str(curve.dropna().index[-1]), "bars": len(curve.dropna()), **_perf(curve)})
+        clean = curve.dropna()
+        perf_rows.append({"series": name, "start": str(clean.index[0]), "end": str(clean.index[-1]), "bars": len(clean), **_perf(clean)})
     perf = pd.DataFrame(perf_rows).sort_values(["calmar", "sharpe", "cagr_pct"], ascending=[False, False, False])
 
     capture_rows = []
-    benchmark_names = [n for n in ["CRYPTO_SLEEVE", "EQUITY_SLEEVE", "SPY_HODL", "QQQ_HODL", "PASSIVE_SPY_QQQ_50_50"] if n in curves]
+    benchmark_names = [
+        n for n in [
+            "CRYPTO_SLEEVE",
+            "EQUITY_SLEEVE",
+            "BTC_HODL",
+            "ETH_HODL",
+            "BTC_ETH_50_50_DAILY_REBAL",
+            "BTC_ETH_60_40_DAILY_REBAL",
+            "SPY_HODL",
+            "QQQ_HODL",
+            "PASSIVE_SPY_QQQ_50_50",
+        ] if n in curves
+    ]
     composite_names = [n for n in curves if n.startswith("FUND_STATIC_")]
     for series_name in composite_names:
         for bench_name in benchmark_names:
@@ -416,6 +459,9 @@ def main() -> None:
         "inputs": {
             "crypto_curve": args.crypto_curve,
             "crypto_column": args.crypto_column,
+            "crypto_benchmark_columns_requested": _parse_csv_list(args.crypto_benchmark_columns),
+            "loaded_crypto_benchmarks": list(crypto_benchmarks.keys()),
+            "skipped_crypto_benchmarks": skipped_crypto_benchmarks,
             "equity_source": equity_source,
             "weights": args.weights,
             "capital": args.capital,
@@ -436,9 +482,12 @@ def main() -> None:
     (out_dir / "summary.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
     _write_summary_md(out_dir / "summary.md", perf, capture, window_perf, payload)
 
-    with pd.option_context("display.max_columns", None, "display.width", 340, "display.float_format", "{:.4f}".format):
+    with pd.option_context("display.max_columns", None, "display.width", 420, "display.float_format", "{:.4f}".format):
         print("\n=== FUND SIDE-BY-SIDE COMPOSITE V1 ===")
         print(f"Crypto input: {args.crypto_curve}::{args.crypto_column}")
+        print(f"Crypto benchmarks loaded: {', '.join(crypto_benchmarks.keys()) if crypto_benchmarks else 'none'}")
+        if skipped_crypto_benchmarks:
+            print(f"Crypto benchmarks skipped: {', '.join(skipped_crypto_benchmarks)}")
         print(f"Equity source: {equity_source}")
         print(f"Common overlap: {common[0]} → {common[-1]} ({len(common)} bars)")
         print("\nPerformance Summary:")
