@@ -244,6 +244,11 @@ def _equity_core_returns(spy: pd.Series, qqq: pd.Series, risk_off: pd.Series | N
     return (exec_w["SPY"] * rets["SPY"] + exec_w["QQQ"] * rets["QQQ"] + exec_w["DEF"] * def_rets).rename("EQUITY_CORE")
 
 
+def _price_from_returns(rets: pd.Series) -> pd.Series:
+    rets = rets.dropna().astype(float)
+    return (1.0 + rets).cumprod()
+
+
 def _build_signal_panel(
     spy: pd.Series,
     qqq: pd.Series,
@@ -305,6 +310,10 @@ def _build_signal_panel(
     return panel
 
 
+def _target_base(panel: pd.DataFrame, series: pd.Series) -> pd.Series:
+    return series.reindex(panel.index).dropna()
+
+
 def _forward_tables(panel: pd.DataFrame, targets: dict[str, pd.Series], horizons: list[int]) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     rows = []
     qrows = []
@@ -326,15 +335,17 @@ def _forward_tables(panel: pd.DataFrame, targets: dict[str, pd.Series], horizons
         "sector_avg_pairwise_corr_63d",
         "QQQ_SPY_ratio_63d_change",
         "SPY_RSP_ratio_63d_change",
+        "QQQ_QQQE_ratio_63d_change",
         "XLK_SPY_ratio_63d_change",
     ]
     available_signal_cols = [c for c in signal_cols if c in panel.columns]
 
     for target_name, series in targets.items():
-        aligned = series.reindex(panel.index).ffill()
+        aligned = _target_base(panel, series)
+        valid_panel = panel.reindex(aligned.index)
         for horizon in horizons:
             fwd = _forward_return(aligned, horizon)
-            base = panel.copy()
+            base = valid_panel.copy()
             base["forward_return"] = fwd
             for regime_col in regime_cols:
                 if regime_col not in base.columns:
@@ -476,28 +487,31 @@ def main() -> None:
         corr_window=args.correlation_lookback,
     )
 
-    spy_ret = spy.pct_change(fill_method=None).fillna(0.0).rename("SPY")
-    qqq_ret = qqq.pct_change(fill_method=None).fillna(0.0).rename("QQQ")
-    passive_price = (1.0 + (0.5 * spy_ret.reindex(panel.index).fillna(0.0) + 0.5 * qqq_ret.reindex(panel.index).fillna(0.0))).cumprod().rename("SPY_QQQ_50_50")
+    spy_ret = spy.pct_change(fill_method=None).dropna().rename("SPY")
+    qqq_ret = qqq.pct_change(fill_method=None).dropna().rename("QQQ")
+    common_passive = spy_ret.index.intersection(qqq_ret.index)
+    passive_rets = (0.5 * spy_ret.loc[common_passive] + 0.5 * qqq_ret.loc[common_passive]).rename("SPY_QQQ_50_50")
+    passive_price = _price_from_returns(passive_rets).rename("SPY_QQQ_50_50")
     core_cash_rets = _equity_core_returns(spy, qqq, None, args.equity_core_window)
-    core_cash_price = (1.0 + core_cash_rets.reindex(panel.index).fillna(0.0)).cumprod().rename("EQUITY_CORE_CASH")
+    core_cash_price = _price_from_returns(core_cash_rets).rename("EQUITY_CORE_CASH")
     targets = {
-        "SPY": spy.reindex(panel.index).ffill(),
-        "QQQ": qqq.reindex(panel.index).ffill(),
+        "SPY": spy,
+        "QQQ": qqq,
         "SPY_QQQ_50_50": passive_price,
         "EQUITY_CORE_CASH": core_cash_price,
     }
     if "BIL" in loaded_optional:
         core_bil_rets = _equity_core_returns(spy, qqq, loaded_optional["BIL"], args.equity_core_window)
-        targets["EQUITY_CORE_BIL"] = (1.0 + core_bil_rets.reindex(panel.index).fillna(0.0)).cumprod().rename("EQUITY_CORE_BIL")
+        targets["EQUITY_CORE_BIL"] = _price_from_returns(core_bil_rets).rename("EQUITY_CORE_BIL")
 
     regime_table, quantile_table, counts = _forward_tables(panel, targets, horizons)
     counts = counts.groupby(["regime_family", "regime"], as_index=False)["n"].max() if not counts.empty else counts
 
     context_rows = []
     for name, price in targets.items():
-        returns = price.reindex(panel.index).ffill().pct_change(fill_method=None).dropna()
-        context_rows.append({"target": name, **_perf_from_returns(returns)})
+        aligned = _target_base(panel, price)
+        returns = aligned.pct_change(fill_method=None).dropna()
+        context_rows.append({"target": name, "start": str(aligned.index[0]), "end": str(aligned.index[-1]), "bars": int(len(aligned)), **_perf_from_returns(returns)})
     context = pd.DataFrame(context_rows).sort_values(["calmar", "sharpe", "cagr_pct"], ascending=[False, False, False])
 
     panel.to_csv(out_dir / "daily_signal_panel.csv")
