@@ -4,205 +4,164 @@
 
 **Branch:** `research/fund-side-by-side-composite-v1`
 
-**Research status:** static side-by-side crypto/equity fund composite tested.
+**Research status:** static crypto/equity side-by-side composite tested.
 
-**Runtime status:** no paper-trading, broker, execution, governor, live allocation, crypto runtime, dashboard, or global allocator changes approved.
+**Runtime status:** no dynamic allocator, paper-trading, live allocation, broker/execution, dashboard, runtime, or global allocator changes approved.
 
 ## Executive Summary
 
-This research tests a fund-level investor view, not a dynamic allocator.
-
-The current operating architecture remains:
+This research tests an investor-facing fund view:
 
 ```text
-Crypto systems run independently.
-Equity systems run independently.
-No central dynamic allocator decides which sleeve gets capital each bar.
+Independent crypto system + independent equity system
+viewed side by side under static capital weights
 ```
 
-This test asks a separate reporting/product question:
+This is not a return to a dynamic allocator. The systems remain independently evaluated and separately executable. The composite answers a fund-performance question:
 
 ```text
-If Itera's crypto and equity systems ran side by side under static capital weights, what would the total fund return stream look like?
+If Itera ran crypto and equities in parallel, what would the total fund return stream look like?
 ```
 
-The answer is strong.
+The result is strong. A static 50/50 crypto/equity composite materially improved fund-level return quality versus standalone crypto, standalone equity, and passive equity benchmarks.
 
-A static crypto/equity composite materially improved the fund-level return path versus either standalone sleeve and versus passive equity benchmarks on risk-adjusted metrics.
+## Preferred Composite
 
-The cleanest candidate is:
+Preferred initial fund composite:
 
 ```text
-50% crypto / 50% equity
+50% crypto sleeve
+50% equity sleeve
 ```
 
-A secondary candidate is:
+Secondary candidate:
 
 ```text
-60% crypto / 40% equity
+60% crypto sleeve
+40% equity sleeve
 ```
 
-The 70/30 crypto-heavy configuration adds only marginal CAGR while weakening drawdown-adjusted return quality.
-
-## Inputs Tested
-
-### Equity Sleeve
-
-The equity sleeve was computed from local data as:
+Demote:
 
 ```text
-SPY/QQQ SMA175 with BIL risk-off
+70% crypto / 30% equity
 ```
 
-This reflects the merged Equity Core + Defensive Carry findings.
+Reason: the 70/30 version adds only a small amount of CAGR while degrading Sharpe, Calmar, drawdown, and time-underwater behavior.
 
-### Crypto Sleeve Pass 1
+## Input Sleeves
+
+### Crypto Input A
 
 ```text
 artifacts/crypto_risk_budget_v2_capture_audit/equity_curves.csv::Fund_v1
 ```
 
-### Crypto Sleeve Pass 2
+### Crypto Input B
 
 ```text
 artifacts/fund_tilted_cal_4s_2019-03-08_2025-12-31/equity_curves.csv::portfolio
 ```
 
-The tilted 4-sleeve crypto pass is treated as the more current fund-composite read because it reflects the later calibrated multi-sleeve crypto structure.
+### Equity Input
 
-## Common Test Window
+Computed from local market data:
 
-Both runs used the same common overlap:
+```text
+SPY/QQQ SMA175 with BIL risk-off
+```
+
+Common overlap for both runs:
 
 ```text
 2019-03-08 → 2025-12-30
 1714 bars
 ```
 
-## Primary Result — Tilted 4-Sleeve Crypto Composite
+## Result A — Crypto Risk Budget v2 Capture Audit Fund_v1
 
-### 50/50 Composite
+### Best Composite
 
 ```text
 FUND_STATIC_CRYPTO50_EQUITY50
-CAGR:   18.3230%
-MaxDD: -14.1536%
-Sharpe: 1.6165
-Sortino: 2.5123
-Calmar: 1.2946
-AnnVol: 10.7974%
-Worst 90d:  -10.0847%
-Worst 180d: -11.2221%
-Max time underwater: 597 days
+CAGR:   18.25%
+MaxDD: -14.14%
+Sharpe: 1.563
+Sortino: 2.356
+Calmar: 1.291
+AnnVol: 11.15%
+Worst 90d:  -9.95%
+Worst 180d: -10.45%
 ```
 
-### 60/40 Composite
+### Standalone Sleeves
 
 ```text
-FUND_STATIC_CRYPTO60_EQUITY40
-CAGR:   18.4242%
-MaxDD: -14.6921%
-Sharpe: 1.5640
-Sortino: 2.5157
-Calmar: 1.2540
-AnnVol: 11.2456%
-Worst 90d:  -10.5350%
-Worst 180d: -12.3697%
-Max time underwater: 611 days
+Crypto sleeve:
+  CAGR:   18.35%
+  MaxDD: -17.72%
+  Sharpe: 1.167
+  Calmar: 1.036
+
+Equity sleeve:
+  CAGR:   17.03%
+  MaxDD: -19.53%
+  Sharpe: 1.181
+  Calmar: 0.872
 ```
 
-### 70/30 Composite
+## Result B — Tilted 4-Sleeve Calibrated Portfolio
+
+### Best Composite
 
 ```text
-FUND_STATIC_CRYPTO70_EQUITY30
-CAGR:   18.4727%
-MaxDD: -15.4353%
-Sharpe: 1.4701
-Sortino: 2.4224
-Calmar: 1.1968
-AnnVol: 12.0553%
-Worst 90d:  -10.9935%
-Worst 180d: -13.5157%
-Max time underwater: 749 days
+FUND_STATIC_CRYPTO50_EQUITY50
+CAGR:   18.32%
+MaxDD: -14.15%
+Sharpe: 1.617
+Sortino: 2.512
+Calmar: 1.295
+AnnVol: 10.80%
+Worst 90d:  -10.08%
+Worst 180d: -11.22%
 ```
 
-## Standalone Sleeve Context
-
-### Crypto Sleeve
+### Standalone Sleeves
 
 ```text
-CRYPTO_SLEEVE
-CAGR:   18.3028%
-MaxDD: -18.8887%
-Sharpe: 1.1331
-Sortino: 1.8960
-Calmar: 0.9690
-AnnVol: 15.9956%
-Worst 90d:  -12.8759%
-Worst 180d: -16.9407%
-Max time underwater: 773 days
+Crypto sleeve:
+  CAGR:   18.30%
+  MaxDD: -18.89%
+  Sharpe: 1.133
+  Calmar: 0.969
+
+Equity sleeve:
+  CAGR:   17.03%
+  MaxDD: -19.53%
+  Sharpe: 1.181
+  Calmar: 0.872
 ```
 
-### Equity Sleeve
+### Passive Equity Benchmarks
 
 ```text
-EQUITY_SLEEVE
-CAGR:   17.0301%
-MaxDD: -19.5271%
-Sharpe: 1.1809
-Sortino: 1.6338
-Calmar: 0.8721
-AnnVol: 14.2134%
-Worst 90d:  -11.3816%
-Worst 180d: -11.3650%
-Max time underwater: 534 days
-```
+Passive SPY/QQQ 50/50:
+  CAGR:   18.97%
+  MaxDD: -30.86%
+  Sharpe: 0.909
+  Calmar: 0.615
 
-## Passive Equity Benchmark Context
+QQQ HODL:
+  CAGR:   21.55%
+  MaxDD: -35.12%
+  Sharpe: 0.926
+  Calmar: 0.614
 
-### Passive SPY/QQQ 50/50
-
-```text
-PASSIVE_SPY_QQQ_50_50
-CAGR:   18.9709%
-MaxDD: -30.8583%
-Sharpe: 0.9091
-Sortino: 1.2897
-Calmar: 0.6148
-AnnVol: 21.7762%
-Worst 90d:  -22.6223%
-Worst 180d: -26.9892%
-Max time underwater: 714 days
-```
-
-### QQQ Hold
-
-```text
-QQQ_HODL
-CAGR:   21.5528%
-MaxDD: -35.1187%
-Sharpe: 0.9260
-Sortino: 1.3190
-Calmar: 0.6137
-AnnVol: 24.3431%
-Worst 90d:  -27.4273%
-Worst 180d: -30.6605%
-Max time underwater: 715 days
-```
-
-### SPY Hold
-
-```text
-SPY_HODL
-CAGR:   16.2085%
-MaxDD: -33.7172%
-Sharpe: 0.8565
-Sortino: 1.2085
-Calmar: 0.4807
-AnnVol: 19.9078%
-Worst 90d:  -26.9131%
-Worst 180d: -24.1425%
-Max time underwater: 708 days
+SPY HODL:
+  CAGR:   16.21%
+  MaxDD: -33.72%
+  Sharpe: 0.857
+  Calmar: 0.481
 ```
 
 ## Interpretation
@@ -261,7 +220,7 @@ Itera 50/50 Composite AnnVol:   10.80%
 Passive SPY/QQQ 50/50 AnnVol:  21.78%
 ```
 
-Preferred language:
+Preferred wording:
 
 ```text
 From March 2019 through December 2025, a static 50/50 side-by-side composite of Itera's crypto and equity systems produced an 18.3% CAGR with a -14.2% max drawdown, 1.62 Sharpe, and 1.29 Calmar. Over the same window, passive SPY/QQQ 50/50 produced a slightly higher 19.0% CAGR but with a -30.9% max drawdown, 0.91 Sharpe, and 0.61 Calmar.
@@ -347,20 +306,9 @@ Secondary candidate:
 
 Do not promote 70/30 as the primary profile because it does not provide enough incremental return for the deterioration in return quality.
 
-## Important Caveats
+## Crypto Benchmark Support
 
-```text
-This is research-only.
-The composite is a reporting/product view, not a live allocation system.
-The result depends on the validity of the underlying crypto and equity sleeve curves.
-The window starts in March 2019, not 2005, because the crypto sleeve begins in 2019.
-Crypto passive benchmarks should be included in a follow-up patch so the composite can be compared against BTC_HODL, ETH_HODL, BTC/ETH 50/50, and BTC/ETH 60/40.
-No fees, taxes, slippage, custody, borrow, financing, or operational constraints are modeled unless already embedded in the source curves.
-```
-
-## Recommended Follow-Up
-
-Patch the composite runner to automatically include crypto benchmark columns from the crypto source file when present:
+The composite runner now automatically loads passive crypto benchmark columns from the crypto source file when present:
 
 ```text
 BTC_HODL
@@ -369,24 +317,49 @@ BTC_ETH_50_50_DAILY_REBAL
 BTC_ETH_60_40_DAILY_REBAL
 ```
 
-That will allow the fund-composite analysis to compare against:
+This allows the fund-composite analysis to compare against:
 
 ```text
-SPY/QQQ passive equity
-SPY hold
-QQQ hold
-BTC hold
-ETH hold
-BTC/ETH passive crypto baskets
+crypto sleeve standalone
+equity sleeve standalone
+BTC HODL
+ETH HODL
+BTC/ETH passive rebalanced baskets
+SPY HODL
+QQQ HODL
+SPY/QQQ passive 50/50
 ```
 
-This is necessary before making any final fund-level market-beating or benchmark-relative claims.
+Expanded benchmark comparison should be run before finalizing the research checkpoint.
+
+## Important Caveats
+
+```text
+This is research-only.
+The composite is a reporting/product view, not a live allocation system.
+The result depends on the validity of the underlying crypto and equity sleeve curves.
+The window starts in March 2019, not 2005, because the crypto sleeve begins in 2019.
+No fees, taxes, slippage, custody, borrow, financing, or operational constraints are modeled unless already embedded in the source curves.
+```
+
+## Guardrails
+
+```text
+No dynamic allocator.
+No paper trading.
+No live trading.
+No broker integration.
+No runtime integration.
+No dashboard integration.
+No capital-routing engine.
+No optimizer.
+```
 
 ## Bottom Line
 
-This is the first result where Itera clearly looks like a fund rather than a set of isolated strategy tests.
+The fund side-by-side composite is highly promising.
 
-The static 50/50 side-by-side composite nearly matched passive equity benchmark CAGR while producing a much cleaner return path. It also improved meaningfully over standalone crypto and standalone equity systems.
+The cleanest result is a 50/50 static composite of the crypto sleeve and Equity Core + BIL. It nearly matches passive SPY/QQQ 50/50 raw CAGR while producing a dramatically better drawdown-adjusted return stream.
 
 This supports a strong investor-facing claim:
 
