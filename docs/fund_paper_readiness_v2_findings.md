@@ -1,0 +1,332 @@
+# Fund Paper Readiness v2 — Findings
+
+## Status
+
+**Branch:** `research/fund-paper-readiness-v2`
+
+**Research status:** Phase 2 target-generation readiness completed.
+
+**Decision:** promote v2 as a partial-readiness checkpoint.
+
+**Runtime status:** no live trading, broker integration, paper-broker execution, dashboard integration, runtime deployment, or dynamic allocator changes approved.
+
+## Executive Summary
+
+Fund Paper Readiness v2 successfully moves Itera one step closer to paper-trading like a fund.
+
+v1 proved that Itera can account for a two-sleeve paper fund book from precomputed sleeve curves.
+
+v2 asks a stricter question:
+
+```text
+Can Itera produce a daily fund target book from sleeve-level target logic?
+```
+
+The answer is:
+
+```text
+Equity sleeve: yes
+Crypto sleeve: not yet
+Fund target book: partial readiness
+```
+
+The Equity Core sleeve can now generate deterministic daily target weights directly from SPY/QQQ/BIL data. The fund-level target book can combine those equity targets with the static 50/50 fund capital split.
+
+The remaining blocker is the crypto sleeve. The currently available crypto input is a curve/NAV artifact, not a canonical daily target exposure stream.
+
+## Phase 2 Result
+
+Input configuration:
+
+```text
+Target weights: 50% crypto / 50% equity
+SMA window: 175
+Equity inputs:
+  data/SPY_1D.csv
+  data/QQQ_1D.csv
+  data/BIL_1D.csv
+Crypto reference:
+  artifacts/fund_side_by_side_composite_v1_tilted_4s/equity_curves.csv
+```
+
+Output location:
+
+```text
+artifacts/fund_paper_readiness_v2/
+```
+
+Generated outputs:
+
+```text
+equity_target_exposure.csv
+crypto_target_input_audit.csv
+fund_target_book.csv
+sleeve_target_summary.csv
+readiness_gaps.md
+summary.json
+summary.md
+```
+
+## Equity Target Generation
+
+The Equity Core target stream generated successfully.
+
+```text
+Rows: 1714
+Start: 2019-03-08
+End: 2025-12-30
+```
+
+Average within-equity sleeve weights:
+
+```text
+SPY: 40.58%
+QQQ: 40.46%
+BIL: 18.96%
+```
+
+Average equity sleeve gross risk exposure:
+
+```text
+81.04%
+```
+
+This matches the promoted Equity Core + BIL behavior and confirms that the equity sleeve can produce daily target weights from raw market data.
+
+## Equity Risk State Distribution
+
+```text
+SPY_QQQ_RISK_ON:   78.12%
+SPY_QQQ_RISK_OFF:  16.04%
+SPY_ON_QQQ_OFF:     3.03%
+SPY_OFF_QQQ_ON:     2.80%
+```
+
+Interpretation:
+
+```text
+The equity sleeve was fully risk-on for most of the tested window, fully risk-off around 16% of the time, and partially risk-on in a small minority of days.
+```
+
+This is consistent with a governed equity participation sleeve rather than an always-on passive equity book.
+
+## Fund-Level Target Book
+
+With a 50/50 crypto/equity fund capital split, the average fund-level equity instrument targets were:
+
+```text
+Average total fund SPY weight: 20.29%
+Average total fund QQQ weight: 20.23%
+Average total fund BIL weight:  9.48%
+Crypto sleeve target weight:   50.00%
+```
+
+Latest fund target book row:
+
+```text
+Date: 2025-12-30
+Crypto sleeve target: 50.00%
+Equity sleeve target: 50.00%
+Within-equity SPY:    50.00%
+Within-equity QQQ:    50.00%
+Within-equity BIL:     0.00%
+Total fund SPY:       25.00%
+Total fund QQQ:       25.00%
+Total fund BIL:        0.00%
+Crypto target status: curve_only
+Readiness state:      partial
+```
+
+The target book accounting is correct: the total accounted fund weight equals 100% when combining the crypto sleeve allocation with the equity sleeve internal targets.
+
+## Crypto Target Input Audit
+
+The crypto reference artifact exists and loads correctly:
+
+```text
+Path: artifacts/fund_side_by_side_composite_v1_tilted_4s/equity_curves.csv
+Rows: 1714
+Start: 2019-03-08
+End: 2025-12-30
+Status: curve_only
+```
+
+Detected columns:
+
+```text
+CRYPTO_SLEEVE
+EQUITY_SLEEVE
+FUND_STATIC_CRYPTO50_EQUITY50
+FUND_STATIC_CRYPTO60_EQUITY40
+FUND_STATIC_CRYPTO70_EQUITY30
+FUND_STATIC_CRYPTO40_EQUITY60
+FUND_STATIC_CRYPTO30_EQUITY70
+SPY_HODL
+QQQ_HODL
+PASSIVE_SPY_QQQ_50_50
+```
+
+Target-like columns:
+
+```text
+none
+```
+
+Curve-like columns:
+
+```text
+CRYPTO_SLEEVE
+EQUITY_SLEEVE
+FUND_STATIC_CRYPTO50_EQUITY50
+FUND_STATIC_CRYPTO60_EQUITY40
+FUND_STATIC_CRYPTO70_EQUITY30
+FUND_STATIC_CRYPTO40_EQUITY60
+FUND_STATIC_CRYPTO30_EQUITY70
+SPY_HODL
+QQQ_HODL
+```
+
+The crypto artifact is useful as a historical return/NAV source, but it is not a broker-executable target stream.
+
+## Readiness State
+
+Current v2 readiness:
+
+```text
+Equity sleeve target generation: ready
+Fund target book generation: ready
+Crypto target generation: not ready
+Overall readiness: partial
+```
+
+This is the correct outcome for v2.
+
+It means Itera can now generate the equity side of a daily target book, but cannot yet fully generate broker-paper-ready fund targets because the crypto sleeve lacks a canonical daily exposure stream.
+
+## Main Readiness Gap
+
+The missing artifact is:
+
+```text
+canonical crypto daily target exposure stream
+```
+
+It should contain timestamped target exposure/weights generated by the promoted crypto strategy logic, for example:
+
+```text
+timestamp
+crypto_target_exposure
+BTC_1H_target_weight
+BTC_4H_target_weight
+ETH_1H_target_weight
+ETH_4H_target_weight
+crypto_cash_or_risk_off_weight
+crypto_risk_state
+reason
+source_strategy_version
+```
+
+The exact schema can be refined, but the important distinction is:
+
+```text
+Do not infer target exposure from realized equity curves.
+```
+
+Broker-paper execution needs intended daily targets, not just the historical NAV path.
+
+## What v2 Proves
+
+v2 proves:
+
+```text
+1. Equity Core can generate deterministic daily target weights from SPY/QQQ/BIL.
+2. The fund target book can represent static 50/50 sleeve targets.
+3. The target book can translate equity sleeve internals into total fund SPY/QQQ/BIL weights.
+4. The current crypto artifact is curve-ready but not target-ready.
+5. The next blocker is now explicit and well-scoped.
+```
+
+## What v2 Does Not Prove
+
+v2 does not prove:
+
+```text
+crypto target generation readiness
+broker-paper execution readiness
+order generation correctness
+fill simulation correctness
+live trading readiness
+runtime deployment readiness
+dashboard readiness
+legal fund readiness
+```
+
+## Research Decision
+
+Promote v2 as a successful partial-readiness checkpoint:
+
+```text
+Fund Paper Readiness v2 successfully generates a daily equity sleeve target stream and fund-level target book, while identifying the crypto sleeve target stream as the remaining blocker.
+```
+
+Do not promote broker-paper execution yet.
+
+## Recommended Next Step
+
+Next branch should be:
+
+```text
+research/crypto-target-stream-v1
+```
+
+Purpose:
+
+```text
+Create or locate the canonical daily crypto target exposure stream required by Fund Paper Readiness v2.
+```
+
+Primary question:
+
+```text
+Can the promoted crypto sleeve produce daily intended target exposures, not just realized equity curves?
+```
+
+Expected outputs:
+
+```text
+artifacts/crypto_target_stream_v1/
+  crypto_target_exposure.csv
+  crypto_target_schema.json
+  crypto_target_summary.csv
+  readiness_gaps.md
+  summary.md
+  summary.json
+```
+
+## Guardrails
+
+```text
+No live trading.
+No broker integration.
+No paper-broker execution.
+No runtime deployment.
+No dynamic allocator.
+No dashboard integration.
+No legal fund claim.
+```
+
+## Bottom Line
+
+Fund Paper Readiness v2 is a good checkpoint.
+
+Itera is now partially target-ready:
+
+```text
+Equity side: target-ready
+Fund target book: target-ready with static sleeve weights
+Crypto side: curve-ready only
+```
+
+The next real step toward fund-style paper trading is not more accounting and not more tear-sheet work.
+
+It is building the missing crypto daily target exposure stream.
