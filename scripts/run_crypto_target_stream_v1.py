@@ -8,6 +8,10 @@ crypto target exposure stream. If true target/exposure columns exist, it marks
 the artifact target-ready. If only component NAV/account columns exist, it emits
 a clearly labeled component-NAV proxy stream with broker_ready=false.
 
+The native stream preserves the source artifact cadence. A companion daily stream
+is also emitted using last observation per day so fund paper-readiness tooling can
+consume a daily target proxy without silently downsampling elsewhere.
+
 No live trading, broker-paper execution, runtime deployment, dashboard
 integration, or dynamic allocation decisions are made.
 """
@@ -229,6 +233,8 @@ def _build_proxy_stream(df: pd.DataFrame, audit: dict[str, Any], component_cols:
     out["broker_ready"] = False
     out["source_strategy_version"] = Path(str(audit["path"])).parent.name
     out["source_path"] = str(audit["path"])
+    out["cadence_native"] = _infer_cadence(df.index)
+    out["cadence_export"] = "native"
 
     weight_cols = []
     for canonical, actual in zip(component_cols, actual_components):
@@ -264,6 +270,8 @@ def _build_proxy_stream(df: pd.DataFrame, audit: dict[str, Any], component_cols:
         "source_strategy_version",
         "source_status",
         "broker_ready",
+        "cadence_native",
+        "cadence_export",
         "source_path",
     ]
     existing = [c for c in preferred if c in out.columns]
@@ -280,6 +288,8 @@ def _build_target_ready_stream(df: pd.DataFrame, audit: dict[str, Any]) -> pd.Da
     out["broker_ready"] = True
     out["source_strategy_version"] = Path(str(audit["path"])).parent.name
     out["source_path"] = str(audit["path"])
+    out["cadence_native"] = _infer_cadence(df.index)
+    out["cadence_export"] = "native"
     for col in target_cols:
         out[str(col)] = pd.to_numeric(df[col], errors="coerce")
     out["reason"] = "Target-like columns detected; semantics require human validation before broker-paper execution."
@@ -302,6 +312,8 @@ def _empty_stream(audit: dict[str, Any]) -> pd.DataFrame:
                 "source_strategy_version": "missing",
                 "source_status": str(audit.get("status")),
                 "broker_ready": False,
+                "cadence_native": "missing",
+                "cadence_export": "native",
                 "source_path": str(audit.get("path")),
             }
         ]
@@ -318,6 +330,33 @@ def _build_stream_from_selected(audit: dict[str, Any], component_cols: list[str]
     if status == "component_nav_proxy_ready":
         return _build_proxy_stream(df, audit, component_cols)
     return _empty_stream(audit)
+
+
+def _infer_cadence(index: pd.DatetimeIndex) -> str:
+    if len(index) < 3:
+        return "unknown"
+    deltas = index.to_series().diff().dropna().dt.total_seconds()
+    if deltas.empty:
+        return "unknown"
+    med = float(deltas.median())
+    if med <= 0:
+        return "unknown"
+    if med <= 90 * 60:
+        return "hourly_or_intraday"
+    if med < 20 * 3600:
+        return "intraday"
+    if med < 36 * 3600:
+        return "daily"
+    return "sparse_or_irregular"
+
+
+def _daily_last_stream(stream: pd.DataFrame) -> pd.DataFrame:
+    if stream.empty or not isinstance(stream.index, pd.DatetimeIndex) or stream.index.isna().all():
+        return stream.copy()
+    daily = stream.sort_index().resample("D").last().dropna(how="all")
+    if "cadence_export" in daily.columns:
+        daily["cadence_export"] = "daily_last_observation"
+    return daily
 
 
 def _schema_payload() -> dict[str, Any]:
@@ -337,13 +376,16 @@ def _schema_payload() -> dict[str, Any]:
             "source_strategy_version": "Artifact/strategy lineage.",
             "source_status": "target_ready, proxy_from_component_nav, curve_only, missing, or invalid.",
             "broker_ready": "Boolean. True only for validated target-ready streams.",
+            "cadence_native": "Detected native artifact cadence.",
+            "cadence_export": "native or daily_last_observation.",
         },
         "important_note": "proxy_from_component_nav streams are not broker-executable intended targets.",
     }
 
 
-def _summary_rows(stream: pd.DataFrame, selected: dict[str, Any]) -> pd.DataFrame:
+def _summary_rows(stream: pd.DataFrame, selected: dict[str, Any], label: str = "native") -> pd.DataFrame:
     rows = [
+        {"metric": "stream_label", "value": label},
         {"metric": "selected_source", "value": str(selected.get("path"))},
         {"metric": "selected_status", "value": str(selected.get("status"))},
         {"metric": "broker_ready", "value": bool(selected.get("broker_ready"))},
@@ -351,6 +393,10 @@ def _summary_rows(stream: pd.DataFrame, selected: dict[str, Any]) -> pd.DataFram
         {"metric": "start", "value": str(stream.index[0]) if len(stream) else "n/a"},
         {"metric": "end", "value": str(stream.index[-1]) if len(stream) else "n/a"},
     ]
+    if "cadence_native" in stream.columns and len(stream):
+        rows.append({"metric": "cadence_native", "value": str(stream["cadence_native"].dropna().iloc[0]) if not stream["cadence_native"].dropna().empty else "unknown"})
+    if "cadence_export" in stream.columns and len(stream):
+        rows.append({"metric": "cadence_export", "value": str(stream["cadence_export"].dropna().iloc[0]) if not stream["cadence_export"].dropna().empty else label})
     numeric_cols = [c for c in stream.columns if c.endswith("_target_weight") or c in {"crypto_target_exposure", "crypto_cash_or_risk_off_weight"}]
     for col in numeric_cols:
         vals = pd.to_numeric(stream[col], errors="coerce").dropna()
@@ -418,6 +464,8 @@ def _write_gaps(path: Path, selected: dict[str, Any], audits: list[dict[str, Any
             [
                 "A component-NAV proxy stream was created. This is useful for fund readiness and adapter development, but it is not broker-ready because it is inferred from component account values rather than intended strategy targets.",
                 "",
+                "Both native-cadence and daily last-observation exports are emitted. The daily export is for downstream fund target-book compatibility; it is still a proxy, not a broker-executable target stream.",
+                "",
                 "Required next step: export intended crypto target weights directly from the promoted crypto strategy logic.",
                 "",
             ]
@@ -435,7 +483,7 @@ def _write_gaps(path: Path, selected: dict[str, Any], audits: list[dict[str, Any
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
-def _write_summary(path: Path, summary_df: pd.DataFrame, audits_df: pd.DataFrame, selected: dict[str, Any], stream: pd.DataFrame) -> None:
+def _write_summary(path: Path, summary_df: pd.DataFrame, daily_summary_df: pd.DataFrame, audits_df: pd.DataFrame, selected: dict[str, Any], stream: pd.DataFrame, daily_stream: pd.DataFrame) -> None:
     lines = [
         "# Crypto Target Stream v1",
         "",
@@ -452,17 +500,25 @@ def _write_summary(path: Path, summary_df: pd.DataFrame, audits_df: pd.DataFrame
         f"End: {selected.get('end')}",
         "```",
         "",
-        "## Target Stream Summary",
+        "## Native Target Stream Summary",
         "",
-        _md_table(summary_df, max_rows=60),
+        _md_table(summary_df, max_rows=80),
+        "",
+        "## Daily Target Stream Summary",
+        "",
+        _md_table(daily_summary_df, max_rows=80),
         "",
         "## Input Audit",
         "",
         _md_table(audits_df, max_rows=10),
         "",
-        "## Latest Target Row",
+        "## Latest Native Target Row",
         "",
         _md_table(stream.tail(1).reset_index(names="timestamp"), max_rows=1),
+        "",
+        "## Latest Daily Target Row",
+        "",
+        _md_table(daily_stream.tail(1).reset_index(names="timestamp"), max_rows=1),
         "",
         "## Guardrail",
         "",
@@ -490,11 +546,17 @@ def main() -> None:
     ]
     selected = _choose_source(audits)
     stream = _build_stream_from_selected(selected, component_cols)
-    summary_df = _summary_rows(stream, selected)
+    daily_stream = _daily_last_stream(stream)
+    summary_df = _summary_rows(stream, selected, label="native")
+    daily_summary_df = _summary_rows(daily_stream, selected, label="daily_last_observation")
+    combined_summary_df = pd.concat([summary_df, daily_summary_df], ignore_index=True)
     audits_df = pd.DataFrame(audits)
 
     stream.to_csv(out_dir / "crypto_target_exposure.csv")
-    summary_df.to_csv(out_dir / "crypto_target_summary.csv", index=False)
+    daily_stream.to_csv(out_dir / "crypto_target_exposure_daily.csv")
+    combined_summary_df.to_csv(out_dir / "crypto_target_summary.csv", index=False)
+    summary_df.to_csv(out_dir / "crypto_target_summary_native.csv", index=False)
+    daily_summary_df.to_csv(out_dir / "crypto_target_summary_daily.csv", index=False)
     audits_df.to_csv(out_dir / "crypto_target_input_audit.csv", index=False)
     (out_dir / "crypto_target_schema.json").write_text(json.dumps(_schema_payload(), indent=2), encoding="utf-8")
 
@@ -507,10 +569,21 @@ def main() -> None:
             "portfolio_column": args.portfolio_column,
         },
         "selected_source": selected,
+        "exports": {
+            "native_rows": int(len(stream)),
+            "daily_rows": int(len(daily_stream)),
+            "native_start": str(stream.index[0]) if len(stream) else None,
+            "native_end": str(stream.index[-1]) if len(stream) else None,
+            "daily_start": str(daily_stream.index[0]) if len(daily_stream) else None,
+            "daily_end": str(daily_stream.index[-1]) if len(daily_stream) else None,
+        },
         "outputs": {
             "crypto_target_exposure": str(out_dir / "crypto_target_exposure.csv"),
+            "crypto_target_exposure_daily": str(out_dir / "crypto_target_exposure_daily.csv"),
             "crypto_target_schema": str(out_dir / "crypto_target_schema.json"),
             "crypto_target_summary": str(out_dir / "crypto_target_summary.csv"),
+            "crypto_target_summary_native": str(out_dir / "crypto_target_summary_native.csv"),
+            "crypto_target_summary_daily": str(out_dir / "crypto_target_summary_daily.csv"),
             "crypto_target_input_audit": str(out_dir / "crypto_target_input_audit.csv"),
             "readiness_gaps": str(out_dir / "readiness_gaps.md"),
             "summary_md": str(out_dir / "summary.md"),
@@ -520,7 +593,7 @@ def main() -> None:
     }
     (out_dir / "summary.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
     _write_gaps(out_dir / "readiness_gaps.md", selected, audits)
-    _write_summary(out_dir / "summary.md", summary_df, audits_df, selected, stream)
+    _write_summary(out_dir / "summary.md", summary_df, daily_summary_df, audits_df, selected, stream, daily_stream)
 
     with pd.option_context("display.max_columns", None, "display.width", 520, "display.float_format", "{:.4f}".format):
         print("\n=== CRYPTO TARGET STREAM V1 ===")
@@ -528,10 +601,14 @@ def main() -> None:
         print(audits_df.to_string(index=False))
         print("\nSelected Source:")
         print(pd.DataFrame([selected]).to_string(index=False))
-        print("\nTarget Stream Summary:")
+        print("\nNative Target Stream Summary:")
         print(summary_df.to_string(index=False))
-        print("\nLatest Target Row:")
+        print("\nDaily Target Stream Summary:")
+        print(daily_summary_df.to_string(index=False))
+        print("\nLatest Native Target Row:")
         print(stream.tail(1).reset_index(names="timestamp").to_string(index=False))
+        print("\nLatest Daily Target Row:")
+        print(daily_stream.tail(1).reset_index(names="timestamp").to_string(index=False))
     print(f"\nArtifacts saved to: {out_dir}")
 
 
