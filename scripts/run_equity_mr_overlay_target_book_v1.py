@@ -259,68 +259,30 @@ def _perf(eq: pd.Series) -> dict[str, float]:
 
 def _fit_shadow_hmm(panel: pd.DataFrame) -> pd.Series:
     try:
-        hmm_module = importlib.import_module("research.hmm_regime_v1")
+        hmm_module = importlib.import_module("research.regimes.hmm_regime_v1")
     except Exception as exc:
-        raise ImportError("Required research.hmm_regime_v1 module is unavailable; fail-closed per Shadow HMM requirement") from exc
+        raise ImportError("Required research.regimes.hmm_regime_v1 module is unavailable; fail-closed per Shadow HMM requirement") from exc
 
-    if not hasattr(hmm_module, "HMMConfig") or not hasattr(hmm_module, "fit_hmm_regime"):
-        raise AttributeError("research.hmm_regime_v1 must expose HMMConfig and fit_hmm_regime")
+    required_attrs = ["HMMConfig", "fit_hmm_regime", "build_hmm_features"]
+    missing_attrs = [name for name in required_attrs if not hasattr(hmm_module, name)]
+    if missing_attrs:
+        raise AttributeError(f"research.regimes.hmm_regime_v1 missing required attributes: {missing_attrs}")
 
     HMMConfig = getattr(hmm_module, "HMMConfig")
     fit_hmm_regime = getattr(hmm_module, "fit_hmm_regime")
+    build_hmm_features = getattr(hmm_module, "build_hmm_features")
+
+    hmm_input = pd.DataFrame({"close": panel["QQQ_close"].astype(float)}, index=panel.index)
+    features = build_hmm_features(hmm_input)
+    if features.empty:
+        raise ValueError("Shadow HMM feature set is empty after closed-bar feature construction")
+
     config = HMMConfig()
+    _fit_result, probs = fit_hmm_regime(features, config)
+    if "hmm_state_label" not in probs.columns:
+        raise ValueError(f"HMM probability output missing hmm_state_label. Columns: {list(probs.columns)}")
 
-    # Provide a closed-bar research frame with common feature names. The HMM function
-    # signature may evolve; try the common forms without importing runtime code.
-    hmm_input = pd.DataFrame(index=panel.index)
-    hmm_input["close"] = panel["QQQ_close"]
-    hmm_input["return_1d"] = panel["QQQ_close"].pct_change(fill_method=None)
-    hmm_input["vol_20d"] = hmm_input["return_1d"].rolling(20, min_periods=20).std(ddof=0)
-    hmm_input["drawdown"] = panel["QQQ_close"] / panel["QQQ_close"].cummax() - 1.0
-    hmm_input = hmm_input.dropna()
-
-    errors: list[str] = []
-    for call in [
-        lambda: fit_hmm_regime(hmm_input, config),
-        lambda: fit_hmm_regime(hmm_input, cfg=config),
-        lambda: fit_hmm_regime(hmm_input, hmm_config=config),
-    ]:
-        try:
-            result = call()
-            break
-        except TypeError as exc:
-            errors.append(str(exc))
-    else:
-        raise TypeError("Unable to call fit_hmm_regime with supported signatures: " + " | ".join(errors))
-
-    if isinstance(result, pd.Series):
-        regimes = result
-    elif isinstance(result, pd.DataFrame):
-        for col in ["hmm_regime", "regime", "state", "label"]:
-            if col in result.columns:
-                regimes = result[col]
-                break
-        else:
-            raise ValueError(f"HMM result DataFrame missing regime column. Columns: {list(result.columns)}")
-    elif isinstance(result, tuple):
-        regimes = None
-        for item in result:
-            if isinstance(item, pd.Series):
-                regimes = item
-                break
-            if isinstance(item, pd.DataFrame):
-                for col in ["hmm_regime", "regime", "state", "label"]:
-                    if col in item.columns:
-                        regimes = item[col]
-                        break
-                if regimes is not None:
-                    break
-        if regimes is None:
-            raise ValueError("HMM tuple result did not contain a Series or DataFrame regime output")
-    else:
-        raise TypeError(f"Unsupported HMM result type: {type(result)!r}")
-
-    regimes = regimes.reindex(panel.index).ffill().bfill()
+    regimes = probs["hmm_state_label"].reindex(panel.index).ffill().bfill()
     if regimes.isna().any():
         raise ValueError("Shadow HMM regime output contains missing labels after alignment")
     return regimes.astype(str).rename("shadow_hmm_regime")
@@ -435,7 +397,6 @@ def main() -> None:
     ])
 
     if not research_ready:
-        # Still write diagnostics/readiness for audit, then fail closed.
         diag.reset_index(names="timestamp").to_csv(out_dir / "equity_mr_overlay_diagnostics.csv", index=False)
         readiness.to_csv(out_dir / "equity_mr_overlay_readiness_summary.csv", index=False)
         raise SystemExit("Fail-closed readiness failure: " + ", ".join(fail_reasons))
