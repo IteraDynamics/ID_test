@@ -4,13 +4,22 @@
 Research-only crypto target-stream readiness tool.
 
 This script audits crypto sleeve artifacts and attempts to build a canonical-ish
-crypto target exposure stream. If true target/exposure columns exist, it marks
-the artifact target-ready. If only component NAV/account columns exist, it emits
-a clearly labeled component-NAV proxy stream with broker_ready=false.
+crypto target exposure stream for the promoted Crypto Risk Budget v2 candidate.
+If true target/exposure columns exist, it marks the artifact target-ready. If
+only component NAV/account columns exist, it emits a clearly labeled component-
+NAV proxy stream with broker_ready=false.
 
 The native stream preserves the source artifact cadence. A companion daily stream
 is also emitted using last observation per day so fund paper-readiness tooling can
 consume a daily target proxy without silently downsampling elsewhere.
+
+Default candidate lineage:
+
+    candidate_name: hybrid_eth4h_cap75_only
+    BTC_1H: ecap75
+    BTC_4H: ecap75
+    ETH_1H: ecap75
+    ETH_4H: cap75
 
 No live trading, broker-paper execution, runtime deployment, dashboard
 integration, or dynamic allocation decisions are made.
@@ -35,11 +44,13 @@ import pandas as pd
 DEFAULT_PRIMARY = "artifacts/fund_tilted_cal_4s_2019-03-08_2025-12-31/equity_curves.csv"
 DEFAULT_FALLBACK = "artifacts/fund_side_by_side_composite_v1_tilted_4s/equity_curves.csv"
 DEFAULT_OUT = "artifacts/crypto_target_stream_v1"
+DEFAULT_CANDIDATE = "hybrid_eth4h_cap75_only"
 
 COMPONENT_COLUMNS = ["BTC_1H", "BTC_4H", "ETH_1H", "ETH_4H"]
 PORTFOLIO_CANDIDATES = ["portfolio", "PORTFOLIO", "Crypto_Sleeve", "CRYPTO_SLEEVE"]
 TARGET_HINTS = ["target", "weight", "exposure", "allocation", "desired_exposure", "desired_exposure_frac"]
 CURVE_HINTS = ["curve", "nav", "portfolio", "sleeve", "equity", "hodl"]
+LINEAGE_COLUMNS = ["candidate_name", "btc_1h_config", "btc_4h_config", "eth_1h_config", "eth_4h_config"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -52,7 +63,22 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--out-dir", default=DEFAULT_OUT)
     p.add_argument("--component-columns", default=",".join(COMPONENT_COLUMNS))
     p.add_argument("--portfolio-column", default="portfolio")
+    p.add_argument("--candidate-name", default=DEFAULT_CANDIDATE)
+    p.add_argument("--btc-1h-config", default="ecap75")
+    p.add_argument("--btc-4h-config", default="ecap75")
+    p.add_argument("--eth-1h-config", default="ecap75")
+    p.add_argument("--eth-4h-config", default="cap75")
     return p.parse_args()
+
+
+def _lineage(args: argparse.Namespace) -> dict[str, str]:
+    return {
+        "candidate_name": args.candidate_name,
+        "btc_1h_config": args.btc_1h_config,
+        "btc_4h_config": args.btc_4h_config,
+        "eth_1h_config": args.eth_1h_config,
+        "eth_4h_config": args.eth_4h_config,
+    }
 
 
 def _detect_time_col(df: pd.DataFrame) -> str:
@@ -96,21 +122,11 @@ def _find_portfolio_column(df: pd.DataFrame, preferred: str) -> str | None:
 
 
 def _target_like_columns(df: pd.DataFrame) -> list[str]:
-    out = []
-    for c in df.columns:
-        lc = str(c).lower()
-        if any(h in lc for h in TARGET_HINTS):
-            out.append(str(c))
-    return out
+    return [str(c) for c in df.columns if any(h in str(c).lower() for h in TARGET_HINTS)]
 
 
 def _curve_like_columns(df: pd.DataFrame) -> list[str]:
-    out = []
-    for c in df.columns:
-        lc = str(c).lower()
-        if any(h in lc for h in CURVE_HINTS):
-            out.append(str(c))
-    return out
+    return [str(c) for c in df.columns if any(h in str(c).lower() for h in CURVE_HINTS)]
 
 
 def _audit_artifact(path: Path, component_cols: list[str], portfolio_column: str) -> dict[str, Any]:
@@ -214,11 +230,16 @@ def _choose_source(audits: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _load_selected_source(audit: dict[str, Any]) -> pd.DataFrame:
-    path = Path(str(audit["path"]))
-    return _read_csv_indexed(path)
+    return _read_csv_indexed(Path(str(audit["path"])))
 
 
-def _build_proxy_stream(df: pd.DataFrame, audit: dict[str, Any], component_cols: list[str]) -> pd.DataFrame:
+def _add_lineage(out: pd.DataFrame, lineage: dict[str, str]) -> pd.DataFrame:
+    for col, value in lineage.items():
+        out[col] = value
+    return out
+
+
+def _build_proxy_stream(df: pd.DataFrame, audit: dict[str, Any], component_cols: list[str], lineage: dict[str, str]) -> pd.DataFrame:
     portfolio_col = str(audit.get("portfolio_column"))
     if portfolio_col not in df.columns:
         raise ValueError("Selected source lacks portfolio column for proxy stream")
@@ -229,6 +250,7 @@ def _build_proxy_stream(df: pd.DataFrame, audit: dict[str, Any], component_cols:
 
     portfolio = pd.to_numeric(df[portfolio_col], errors="coerce")
     out = pd.DataFrame(index=df.index)
+    out = _add_lineage(out, lineage)
     out["source_status"] = "proxy_from_component_nav"
     out["broker_ready"] = False
     out["source_strategy_version"] = Path(str(audit["path"])).parent.name
@@ -255,35 +277,14 @@ def _build_proxy_stream(df: pd.DataFrame, audit: dict[str, Any], component_cols:
         return "RISK_ON_PROXY"
 
     out["crypto_risk_state"] = out["crypto_target_exposure"].map(state)
-    out["reason"] = "Proxy stream inferred from component NAV/account values; not broker-executable intended targets."
-
-    # Stable output column order.
-    preferred = [
-        "crypto_target_exposure",
-        "btc_1h_target_weight",
-        "btc_4h_target_weight",
-        "eth_1h_target_weight",
-        "eth_4h_target_weight",
-        "crypto_cash_or_risk_off_weight",
-        "crypto_risk_state",
-        "reason",
-        "source_strategy_version",
-        "source_status",
-        "broker_ready",
-        "cadence_native",
-        "cadence_export",
-        "source_path",
-    ]
-    existing = [c for c in preferred if c in out.columns]
-    return out[existing]
+    out["reason"] = "Proxy stream inferred from component NAV/account values for promoted candidate lineage; not broker-executable intended targets."
+    return _order_stream_columns(out)
 
 
-def _build_target_ready_stream(df: pd.DataFrame, audit: dict[str, Any]) -> pd.DataFrame:
-    # Conservative target-ready pass-through. We do not infer semantics beyond
-    # exposing detected target-like columns and marking broker readiness as
-    # requires_validation.
+def _build_target_ready_stream(df: pd.DataFrame, audit: dict[str, Any], lineage: dict[str, str]) -> pd.DataFrame:
     target_cols = list(audit.get("target_like_columns") or [])
     out = pd.DataFrame(index=df.index)
+    out = _add_lineage(out, lineage)
     out["source_status"] = "target_ready"
     out["broker_ready"] = True
     out["source_strategy_version"] = Path(str(audit["path"])).parent.name
@@ -292,15 +293,16 @@ def _build_target_ready_stream(df: pd.DataFrame, audit: dict[str, Any]) -> pd.Da
     out["cadence_export"] = "native"
     for col in target_cols:
         out[str(col)] = pd.to_numeric(df[col], errors="coerce")
-    out["reason"] = "Target-like columns detected; semantics require human validation before broker-paper execution."
-    return out
+    out["reason"] = "Target-like columns detected for promoted candidate lineage; semantics require human validation before broker-paper execution."
+    return _order_stream_columns(out)
 
 
-def _empty_stream(audit: dict[str, Any]) -> pd.DataFrame:
+def _empty_stream(audit: dict[str, Any], lineage: dict[str, str]) -> pd.DataFrame:
     return pd.DataFrame(
         [
             {
                 "timestamp": pd.NaT,
+                **lineage,
                 "crypto_target_exposure": np.nan,
                 "btc_1h_target_weight": np.nan,
                 "btc_4h_target_weight": np.nan,
@@ -320,16 +322,43 @@ def _empty_stream(audit: dict[str, Any]) -> pd.DataFrame:
     ).set_index("timestamp")
 
 
-def _build_stream_from_selected(audit: dict[str, Any], component_cols: list[str]) -> pd.DataFrame:
+def _order_stream_columns(out: pd.DataFrame) -> pd.DataFrame:
+    preferred = [
+        "candidate_name",
+        "crypto_target_exposure",
+        "btc_1h_target_weight",
+        "btc_4h_target_weight",
+        "eth_1h_target_weight",
+        "eth_4h_target_weight",
+        "crypto_cash_or_risk_off_weight",
+        "crypto_risk_state",
+        "btc_1h_config",
+        "btc_4h_config",
+        "eth_1h_config",
+        "eth_4h_config",
+        "reason",
+        "source_strategy_version",
+        "source_status",
+        "broker_ready",
+        "cadence_native",
+        "cadence_export",
+        "source_path",
+    ]
+    existing = [c for c in preferred if c in out.columns]
+    extras = [c for c in out.columns if c not in existing]
+    return out[existing + extras]
+
+
+def _build_stream_from_selected(audit: dict[str, Any], component_cols: list[str], lineage: dict[str, str]) -> pd.DataFrame:
     status = str(audit.get("status"))
     if status in {"missing", "invalid", "curve_only"}:
-        return _empty_stream(audit)
+        return _empty_stream(audit, lineage)
     df = _load_selected_source(audit)
     if status == "target_ready":
-        return _build_target_ready_stream(df, audit)
+        return _build_target_ready_stream(df, audit, lineage)
     if status == "component_nav_proxy_ready":
-        return _build_proxy_stream(df, audit, component_cols)
-    return _empty_stream(audit)
+        return _build_proxy_stream(df, audit, component_cols, lineage)
+    return _empty_stream(audit, lineage)
 
 
 def _infer_cadence(index: pd.DatetimeIndex) -> str:
@@ -359,12 +388,14 @@ def _daily_last_stream(stream: pd.DataFrame) -> pd.DataFrame:
     return daily
 
 
-def _schema_payload() -> dict[str, Any]:
+def _schema_payload(lineage: dict[str, str]) -> dict[str, Any]:
     return {
         "schema_name": "crypto_target_stream_v1",
         "description": "Canonical or proxy crypto target exposure stream for fund paper readiness.",
+        "default_candidate_lineage": lineage,
         "required_columns": {
             "timestamp": "Datetime index or column.",
+            "candidate_name": "Promoted candidate lineage, default hybrid_eth4h_cap75_only.",
             "crypto_target_exposure": "Total intended/proxy crypto risk exposure inside crypto sleeve.",
             "btc_1h_target_weight": "BTC 1H component target/proxy weight inside crypto sleeve.",
             "btc_4h_target_weight": "BTC 4H component target/proxy weight inside crypto sleeve.",
@@ -372,6 +403,10 @@ def _schema_payload() -> dict[str, Any]:
             "eth_4h_target_weight": "ETH 4H component target/proxy weight inside crypto sleeve.",
             "crypto_cash_or_risk_off_weight": "Residual unallocated/risk-off sleeve weight.",
             "crypto_risk_state": "Descriptive risk state.",
+            "btc_1h_config": "Candidate config lineage for BTC_1H.",
+            "btc_4h_config": "Candidate config lineage for BTC_4H.",
+            "eth_1h_config": "Candidate config lineage for ETH_1H.",
+            "eth_4h_config": "Candidate config lineage for ETH_4H.",
             "reason": "Human-readable source/reason.",
             "source_strategy_version": "Artifact/strategy lineage.",
             "source_status": "target_ready, proxy_from_component_nav, curve_only, missing, or invalid.",
@@ -383,9 +418,10 @@ def _schema_payload() -> dict[str, Any]:
     }
 
 
-def _summary_rows(stream: pd.DataFrame, selected: dict[str, Any], label: str = "native") -> pd.DataFrame:
+def _summary_rows(stream: pd.DataFrame, selected: dict[str, Any], lineage: dict[str, str], label: str = "native") -> pd.DataFrame:
     rows = [
         {"metric": "stream_label", "value": label},
+        *[{"metric": k, "value": v} for k, v in lineage.items()],
         {"metric": "selected_source", "value": str(selected.get("path"))},
         {"metric": "selected_status", "value": str(selected.get("status"))},
         {"metric": "broker_ready", "value": bool(selected.get("broker_ready"))},
@@ -435,9 +471,19 @@ def _md_table(df: pd.DataFrame, max_rows: int | None = None) -> str:
     return "\n".join(lines)
 
 
-def _write_gaps(path: Path, selected: dict[str, Any], audits: list[dict[str, Any]]) -> None:
+def _write_gaps(path: Path, selected: dict[str, Any], audits: list[dict[str, Any]], lineage: dict[str, str]) -> None:
     lines = [
         "# Crypto Target Stream v1 — Readiness Gaps",
+        "",
+        "## Candidate Lineage",
+        "",
+        "```text",
+        f"candidate_name: {lineage['candidate_name']}",
+        f"BTC_1H: {lineage['btc_1h_config']}",
+        f"BTC_4H: {lineage['btc_4h_config']}",
+        f"ETH_1H: {lineage['eth_1h_config']}",
+        f"ETH_4H: {lineage['eth_4h_config']}",
+        "```",
         "",
         "## Selected Source",
         "",
@@ -453,41 +499,45 @@ def _write_gaps(path: Path, selected: dict[str, Any], audits: list[dict[str, Any
     ]
     status = str(selected.get("status"))
     if status == "target_ready":
-        lines.extend(
-            [
-                "A target-like artifact was found. Before broker-paper execution, validate that the detected target columns represent intended target exposures rather than realized allocations or reporting weights.",
-                "",
-            ]
-        )
+        lines.extend([
+            "A target-like artifact was found. Before broker-paper execution, validate that the detected target columns represent intended target exposures rather than realized allocations or reporting weights.",
+            "",
+        ])
     elif status == "component_nav_proxy_ready":
-        lines.extend(
-            [
-                "A component-NAV proxy stream was created. This is useful for fund readiness and adapter development, but it is not broker-ready because it is inferred from component account values rather than intended strategy targets.",
-                "",
-                "Both native-cadence and daily last-observation exports are emitted. The daily export is for downstream fund target-book compatibility; it is still a proxy, not a broker-executable target stream.",
-                "",
-                "Required next step: export intended crypto target weights directly from the promoted crypto strategy logic.",
-                "",
-            ]
-        )
+        lines.extend([
+            "A component-NAV proxy stream was created. This is useful for fund readiness and adapter development, but it is not broker-ready because it is inferred from component account values rather than intended strategy targets.",
+            "",
+            "Both native-cadence and daily last-observation exports are emitted. The daily export is for downstream fund target-book compatibility; it is still a proxy, not a broker-executable target stream.",
+            "",
+            "Required next step: export intended crypto target weights directly from the promoted crypto strategy logic.",
+            "",
+        ])
     else:
-        lines.extend(
-            [
-                "No target-ready or component-proxy-ready crypto artifact was found.",
-                "",
-                "Required next step: create a canonical crypto daily target exposure export from promoted strategy logic.",
-                "",
-            ]
-        )
+        lines.extend([
+            "No target-ready or component-proxy-ready crypto artifact was found.",
+            "",
+            "Required next step: create a canonical crypto daily target exposure export from promoted strategy logic.",
+            "",
+        ])
     lines.extend(["## Input Audit", "", _md_table(pd.DataFrame(audits), max_rows=10), ""])
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
-def _write_summary(path: Path, summary_df: pd.DataFrame, daily_summary_df: pd.DataFrame, audits_df: pd.DataFrame, selected: dict[str, Any], stream: pd.DataFrame, daily_stream: pd.DataFrame) -> None:
+def _write_summary(path: Path, summary_df: pd.DataFrame, daily_summary_df: pd.DataFrame, audits_df: pd.DataFrame, selected: dict[str, Any], stream: pd.DataFrame, daily_stream: pd.DataFrame, lineage: dict[str, str]) -> None:
     lines = [
         "# Crypto Target Stream v1",
         "",
         "Research-only crypto target-stream readiness output.",
+        "",
+        "## Candidate Lineage",
+        "",
+        "```text",
+        f"candidate_name: {lineage['candidate_name']}",
+        f"BTC_1H: {lineage['btc_1h_config']}",
+        f"BTC_4H: {lineage['btc_4h_config']}",
+        f"ETH_1H: {lineage['eth_1h_config']}",
+        f"ETH_4H: {lineage['eth_4h_config']}",
+        "```",
         "",
         "## Selected Source",
         "",
@@ -502,11 +552,11 @@ def _write_summary(path: Path, summary_df: pd.DataFrame, daily_summary_df: pd.Da
         "",
         "## Native Target Stream Summary",
         "",
-        _md_table(summary_df, max_rows=80),
+        _md_table(summary_df, max_rows=90),
         "",
         "## Daily Target Stream Summary",
         "",
-        _md_table(daily_summary_df, max_rows=80),
+        _md_table(daily_summary_df, max_rows=90),
         "",
         "## Input Audit",
         "",
@@ -538,6 +588,7 @@ def main() -> None:
     if not component_cols:
         raise ValueError("component-columns must not be empty")
 
+    lineage = _lineage(args)
     primary = Path(args.primary_artifact)
     fallback = Path(args.fallback_artifact)
     audits = [
@@ -545,10 +596,10 @@ def main() -> None:
         _audit_artifact(fallback, component_cols, args.portfolio_column),
     ]
     selected = _choose_source(audits)
-    stream = _build_stream_from_selected(selected, component_cols)
+    stream = _build_stream_from_selected(selected, component_cols, lineage)
     daily_stream = _daily_last_stream(stream)
-    summary_df = _summary_rows(stream, selected, label="native")
-    daily_summary_df = _summary_rows(daily_stream, selected, label="daily_last_observation")
+    summary_df = _summary_rows(stream, selected, lineage, label="native")
+    daily_summary_df = _summary_rows(daily_stream, selected, lineage, label="daily_last_observation")
     combined_summary_df = pd.concat([summary_df, daily_summary_df], ignore_index=True)
     audits_df = pd.DataFrame(audits)
 
@@ -558,10 +609,11 @@ def main() -> None:
     summary_df.to_csv(out_dir / "crypto_target_summary_native.csv", index=False)
     daily_summary_df.to_csv(out_dir / "crypto_target_summary_daily.csv", index=False)
     audits_df.to_csv(out_dir / "crypto_target_input_audit.csv", index=False)
-    (out_dir / "crypto_target_schema.json").write_text(json.dumps(_schema_payload(), indent=2), encoding="utf-8")
+    (out_dir / "crypto_target_schema.json").write_text(json.dumps(_schema_payload(lineage), indent=2), encoding="utf-8")
 
     payload = {
         "research_status": "research_only_crypto_target_stream_v1",
+        "candidate_lineage": lineage,
         "inputs": {
             "primary_artifact": args.primary_artifact,
             "fallback_artifact": args.fallback_artifact,
@@ -592,11 +644,13 @@ def main() -> None:
         "decision": {"status": "target_stream_readiness_only", "not_approved": ["live_trading", "broker_integration", "paper_broker_execution", "runtime_deployment", "dashboard_integration", "dynamic_allocator"]},
     }
     (out_dir / "summary.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
-    _write_gaps(out_dir / "readiness_gaps.md", selected, audits)
-    _write_summary(out_dir / "summary.md", summary_df, daily_summary_df, audits_df, selected, stream, daily_stream)
+    _write_gaps(out_dir / "readiness_gaps.md", selected, audits, lineage)
+    _write_summary(out_dir / "summary.md", summary_df, daily_summary_df, audits_df, selected, stream, daily_stream, lineage)
 
-    with pd.option_context("display.max_columns", None, "display.width", 520, "display.float_format", "{:.4f}".format):
+    with pd.option_context("display.max_columns", None, "display.width", 560, "display.float_format", "{:.4f}".format):
         print("\n=== CRYPTO TARGET STREAM V1 ===")
+        print("\nCandidate Lineage:")
+        print(pd.DataFrame([lineage]).to_string(index=False))
         print("\nInput Audit:")
         print(audits_df.to_string(index=False))
         print("\nSelected Source:")
