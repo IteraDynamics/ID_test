@@ -49,10 +49,7 @@ CRYPTO_TARGET_COLS = {
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(
-        description="Run unified crypto + equity fund backtest with costs",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    p = argparse.ArgumentParser(description="Run unified crypto + equity fund backtest with costs", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("--crypto-targets", default=DEFAULT_CRYPTO_TARGETS)
     p.add_argument("--equity-target-book", default=DEFAULT_EQUITY_TARGET_BOOK)
     p.add_argument("--btc-data", default="data/BTC_1D.csv")
@@ -76,6 +73,16 @@ def _detect_time_col(df: pd.DataFrame) -> str:
         if name in lower:
             return str(lower[name])
     return str(df.columns[0])
+
+
+def _normalize_datetime_series(s: pd.Series) -> pd.Series:
+    dt = pd.to_datetime(s, errors="coerce")
+    try:
+        if getattr(dt.dt, "tz", None) is not None:
+            dt = dt.dt.tz_localize(None)
+    except Exception:
+        pass
+    return dt.dt.normalize()
 
 
 def _read_price(path: Path, label: str) -> pd.DataFrame:
@@ -112,25 +119,36 @@ def _read_indexed(path: Path, label: str) -> pd.DataFrame:
     if df.empty:
         raise ValueError(f"Empty required {label}: {path}")
     time_col = _detect_time_col(df)
-    df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
+    df[time_col] = _normalize_datetime_series(df[time_col])
     df = df.dropna(subset=[time_col]).set_index(time_col).sort_index()
-    if getattr(df.index, "tz", None) is not None:
-        df.index = df.index.tz_localize(None)
-    df.index = pd.to_datetime(df.index.normalize())
     return df.groupby(level=0).last()
 
 
 def _load_equity_target_book(path: Path) -> pd.DataFrame:
-    raw = _read_indexed(path, "equity MR overlay target book")
-    required = ["instrument", "target_weight"]
+    if not path.exists():
+        raise FileNotFoundError(f"Missing required equity MR overlay target book: {path}")
+    raw = pd.read_csv(path)
+    if raw.empty:
+        raise ValueError(f"Empty required equity MR overlay target book: {path}")
+    time_col = _detect_time_col(raw)
+    raw["timestamp"] = _normalize_datetime_series(raw[time_col])
+    raw = raw.dropna(subset=["timestamp"])
+    required = ["timestamp", "instrument", "target_weight"]
     missing = [c for c in required if c not in raw.columns]
     if missing:
         raise ValueError(f"Equity target book missing required columns: {missing}. Available={list(raw.columns)}")
-    pivot = raw.pivot_table(index=raw.index, columns="instrument", values="target_weight", aggfunc="last").fillna(0.0)
+    raw["instrument"] = raw["instrument"].astype(str).str.upper().str.strip()
+    raw["target_weight"] = pd.to_numeric(raw["target_weight"], errors="coerce").fillna(0.0)
+    pivot = raw.pivot_table(index="timestamp", columns="instrument", values="target_weight", aggfunc="last").fillna(0.0)
     for asset in ["SPY", "QQQ", "BIL"]:
         if asset not in pivot.columns:
             pivot[asset] = 0.0
-    return pivot[["SPY", "QQQ", "BIL"]].sort_index()
+    pivot = pivot[["SPY", "QQQ", "BIL"]].sort_index()
+    pivot["equity_total_weight"] = pivot[["SPY", "QQQ", "BIL"]].sum(axis=1)
+    bad = pivot[(pivot["equity_total_weight"] - 1.0).abs() > 1e-6]
+    if not bad.empty:
+        raise ValueError(f"Equity target book accounting failed for {len(bad)} rows. Example total={bad['equity_total_weight'].iloc[0]}")
+    return pivot[["SPY", "QQQ", "BIL"]]
 
 
 def _load_crypto_targets(path: Path) -> pd.DataFrame:
@@ -143,10 +161,7 @@ def _load_crypto_targets(path: Path) -> pd.DataFrame:
     out = pd.DataFrame(index=df.index)
     out["BTC"] = df[CRYPTO_TARGET_COLS["BTC"]].apply(pd.to_numeric, errors="coerce").fillna(0.0).sum(axis=1)
     out["ETH"] = df[CRYPTO_TARGET_COLS["ETH"]].apply(pd.to_numeric, errors="coerce").fillna(0.0).sum(axis=1)
-    if "crypto_cash_or_risk_off_weight" in df.columns:
-        out["CRYPTO_CASH"] = pd.to_numeric(df["crypto_cash_or_risk_off_weight"], errors="coerce").fillna(0.0)
-    else:
-        out["CRYPTO_CASH"] = 1.0 - out["BTC"] - out["ETH"]
+    out["CRYPTO_CASH"] = pd.to_numeric(df["crypto_cash_or_risk_off_weight"], errors="coerce").fillna(0.0) if "crypto_cash_or_risk_off_weight" in df.columns else 1.0 - out["BTC"] - out["ETH"]
     out["crypto_source_status"] = df.get("source_status", pd.Series("unknown", index=df.index)).astype(str)
     out["crypto_broker_ready"] = df.get("broker_ready", pd.Series(False, index=df.index))
     out["crypto_total_weight"] = out[["BTC", "ETH", "CRYPTO_CASH"]].sum(axis=1)
@@ -209,18 +224,7 @@ def _perf(eq: pd.Series) -> dict[str, float]:
             start = None
     if start is not None:
         max_days = max(max_days, (eq.index[-1] - start).total_seconds() / 86400.0)
-    return {
-        "total_return_pct": total * 100.0,
-        "cagr_pct": cagr * 100.0,
-        "max_drawdown_pct": max_dd * 100.0,
-        "sharpe": sharpe,
-        "sortino": sortino,
-        "calmar": calmar,
-        "ann_vol_pct": ann_vol * 100.0,
-        "worst_90d_return_pct": worst_90 * 100.0,
-        "worst_180d_return_pct": worst_180 * 100.0,
-        "max_time_underwater_days": max_days,
-    }
+    return {"total_return_pct": total * 100.0, "cagr_pct": cagr * 100.0, "max_drawdown_pct": max_dd * 100.0, "sharpe": sharpe, "sortino": sortino, "calmar": calmar, "ann_vol_pct": ann_vol * 100.0, "worst_90d_return_pct": worst_90 * 100.0, "worst_180d_return_pct": worst_180 * 100.0, "max_time_underwater_days": max_days}
 
 
 def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capital: float, equity_slip_bps: float, equity_commission_bps: float, crypto_config: ExecutionConfig) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -232,17 +236,12 @@ def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capita
     w = targets.reindex(idx)[["BTC", "ETH", "SPY", "QQQ", "BIL", "CASH"]].fillna(0.0)
     px = price_close.reindex(idx).ffill()
     atr = atr_pct.reindex(idx).ffill().fillna(0.0)
-
     nav_gross = capital
     nav_net = capital
     rows: list[dict[str, Any]] = []
     trades: list[dict[str, Any]] = []
     prev_w = pd.Series(0.0, index=w.columns)
     prev_w["CASH"] = 1.0
-
-    gross_curve = []
-    net_curve = []
-    dates = []
     for i, ts in enumerate(idx):
         if i > 0:
             prev_ts = idx[i - 1]
@@ -261,19 +260,8 @@ def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capita
                 continue
             direction = "BUY" if dw > 0 else "SELL"
             if asset in ["BTC", "ETH"]:
-                fill = compute_fill(
-                    mid_price=float(px.loc[ts, asset]),
-                    notional=notional,
-                    nav=nav_net,
-                    atr_pct=float(atr.loc[ts, asset]),
-                    direction=direction,
-                    config=crypto_config,
-                )
-                cost = fill.total_cost_usd
-                cost_bps = fill.cost_bps
-                fee_usd = fill.fee_usd
-                slippage_usd = fill.slippage_usd
-                spread_usd = fill.spread_usd
+                fill = compute_fill(float(px.loc[ts, asset]), notional, nav_net, float(atr.loc[ts, asset]), direction, crypto_config)
+                cost, cost_bps, fee_usd, slippage_usd, spread_usd = fill.total_cost_usd, fill.cost_bps, fill.fee_usd, fill.slippage_usd, fill.spread_usd
             else:
                 cost_bps = equity_slip_bps + equity_commission_bps
                 cost = notional * cost_bps / 10_000.0
@@ -282,48 +270,15 @@ def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capita
                 spread_usd = 0.0
             nav_net -= cost
             day_cost += cost
-            trades.append({
-                "timestamp": ts,
-                "asset": asset,
-                "direction": direction,
-                "delta_weight": dw,
-                "notional_usd": notional,
-                "cost_usd": cost,
-                "cost_bps": cost_bps,
-                "fee_usd": fee_usd,
-                "slippage_usd": slippage_usd,
-                "spread_usd": spread_usd,
-                "nav_after_cost": nav_net,
-            })
+            trades.append({"timestamp": ts, "asset": asset, "direction": direction, "delta_weight": dw, "notional_usd": notional, "cost_usd": cost, "cost_bps": cost_bps, "fee_usd": fee_usd, "slippage_usd": slippage_usd, "spread_usd": spread_usd, "nav_after_cost": nav_net})
         prev_w = target_w
-        dates.append(ts)
-        gross_curve.append(nav_gross)
-        net_curve.append(nav_net)
-        rows.append({
-            "timestamp": ts,
-            "gross_nav": nav_gross,
-            "net_nav": nav_net,
-            "daily_cost_usd": day_cost,
-            "daily_turnover": day_turnover,
-            "btc_weight": float(target_w["BTC"]),
-            "eth_weight": float(target_w["ETH"]),
-            "spy_weight": float(target_w["SPY"]),
-            "qqq_weight": float(target_w["QQQ"]),
-            "bil_weight": float(target_w["BIL"]),
-            "cash_weight": float(target_w["CASH"]),
-        })
+        rows.append({"timestamp": ts, "gross_nav": nav_gross, "net_nav": nav_net, "daily_cost_usd": day_cost, "daily_turnover": day_turnover, "btc_weight": float(target_w["BTC"]), "eth_weight": float(target_w["ETH"]), "spy_weight": float(target_w["SPY"]), "qqq_weight": float(target_w["QQQ"]), "bil_weight": float(target_w["BIL"]), "cash_weight": float(target_w["CASH"])})
     curves = pd.DataFrame(rows).set_index("timestamp")
     trades_df = pd.DataFrame(trades)
-    summary_rows = []
-    gross_perf = _perf(curves["gross_nav"])
-    net_perf = _perf(curves["net_nav"])
-    for label, perf in [("gross_before_costs", gross_perf), ("net_after_costs", net_perf)]:
-        row = {"series": label, **perf}
-        summary_rows.append(row)
+    summary_rows = [{"series": label, **_perf(curves[col])} for label, col in [("gross_before_costs", "gross_nav"), ("net_after_costs", "net_nav")]]
     total_cost = float(curves["daily_cost_usd"].sum())
     summary_rows.append({"series": "cost_summary", "total_cost_usd": total_cost, "total_cost_pct_start_nav": total_cost / capital * 100.0, "avg_daily_turnover_pct": float(curves["daily_turnover"].mean() * 100.0), "total_turnover": float(curves["daily_turnover"].sum())})
-    summary = pd.DataFrame(summary_rows)
-    return curves, trades_df, summary
+    return curves, trades_df, pd.DataFrame(summary_rows)
 
 
 def _md_table(df: pd.DataFrame, max_rows: int | None = None) -> str:
@@ -334,10 +289,7 @@ def _md_table(df: pd.DataFrame, max_rows: int | None = None) -> str:
     cols = [str(c) for c in df.columns]
     lines = ["| " + " | ".join(cols) + " |", "| " + " | ".join(["---"] * len(cols)) + " |"]
     for _, row in df.iterrows():
-        vals = []
-        for c in df.columns:
-            v = row[c]
-            vals.append(f"{v:.6f}" if isinstance(v, float) else str(v).replace("|", "\\|"))
+        vals = [f"{row[c]:.6f}" if isinstance(row[c], float) else str(row[c]).replace("|", "\\|") for c in df.columns]
         lines.append("| " + " | ".join(vals) + " |")
     return "\n".join(lines)
 
@@ -350,62 +302,18 @@ def main() -> None:
     equity = _load_equity_target_book(Path(args.equity_target_book))
     targets = _combine_targets(crypto, equity, args.crypto_weight, args.equity_weight, args.accounting_tolerance)
     if not bool(targets["accounting_ok"].all()):
-        raise SystemExit("Fail-closed: unified target accounting is not 100% valid")
-    prices = {
-        "BTC": _read_price(Path(args.btc_data), "BTC"),
-        "ETH": _read_price(Path(args.eth_data), "ETH"),
-        "SPY": _read_price(Path(args.spy_data), "SPY"),
-        "QQQ": _read_price(Path(args.qqq_data), "QQQ"),
-        "BIL": _read_price(Path(args.bil_data), "BIL"),
-    }
+        bad = targets.loc[~targets["accounting_ok"], ["BTC", "ETH", "SPY", "QQQ", "BIL", "CASH", "total_accounted_weight", "accounting_error"]].head(5)
+        raise SystemExit("Fail-closed: unified target accounting is not 100% valid\n" + bad.to_string())
+    prices = {"BTC": _read_price(Path(args.btc_data), "BTC"), "ETH": _read_price(Path(args.eth_data), "ETH"), "SPY": _read_price(Path(args.spy_data), "SPY"), "QQQ": _read_price(Path(args.qqq_data), "QQQ"), "BIL": _read_price(Path(args.bil_data), "BIL")}
     crypto_config = ExecutionConfig.from_env()
     curves, trades, summary = _run_backtest(targets, prices, args.capital, args.equity_slippage_bps, args.equity_commission_bps, crypto_config)
-
     targets.to_csv(out_dir / "unified_fund_targets.csv")
     curves.to_csv(out_dir / "unified_fund_curves.csv")
     trades.to_csv(out_dir / "unified_fund_trade_costs.csv", index=False)
     summary.to_csv(out_dir / "unified_fund_backtest_summary.csv", index=False)
-    payload = {
-        "research_status": "research_only_unified_fund_backtest_v1",
-        "crypto_cost_model": crypto_config.__dict__,
-        "equity_cost_model": {"equity_slippage_bps": args.equity_slippage_bps, "equity_commission_bps": args.equity_commission_bps},
-        "inputs": vars(args),
-        "outputs": {
-            "targets": str(out_dir / "unified_fund_targets.csv"),
-            "curves": str(out_dir / "unified_fund_curves.csv"),
-            "trades": str(out_dir / "unified_fund_trade_costs.csv"),
-            "summary": str(out_dir / "unified_fund_backtest_summary.csv"),
-            "summary_md": str(out_dir / "summary.md"),
-            "summary_json": str(out_dir / "summary.json"),
-        },
-        "guardrails": {"research_only": True, "broker_ready": False, "generates_orders": False, "simulates_fills": False, "mutates_target_book": False},
-    }
+    payload = {"research_status": "research_only_unified_fund_backtest_v1", "crypto_cost_model": crypto_config.__dict__, "equity_cost_model": {"equity_slippage_bps": args.equity_slippage_bps, "equity_commission_bps": args.equity_commission_bps}, "inputs": vars(args), "outputs": {"targets": str(out_dir / "unified_fund_targets.csv"), "curves": str(out_dir / "unified_fund_curves.csv"), "trades": str(out_dir / "unified_fund_trade_costs.csv"), "summary": str(out_dir / "unified_fund_backtest_summary.csv"), "summary_md": str(out_dir / "summary.md"), "summary_json": str(out_dir / "summary.json")}, "guardrails": {"research_only": True, "broker_ready": False, "generates_orders": False, "simulates_fills": False, "mutates_target_book": False}}
     (out_dir / "summary.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
-    (out_dir / "summary.md").write_text("\n".join([
-        "# Fund Unified Backtest v1",
-        "",
-        "Research-only unified crypto + equity MR overlay backtest, net of modeled costs.",
-        "",
-        "## Cost Assumptions",
-        "",
-        "```text",
-        f"Crypto ExecutionConfig: {crypto_config}",
-        f"Equity slippage bps: {args.equity_slippage_bps}",
-        f"Equity commission bps: {args.equity_commission_bps}",
-        "```",
-        "",
-        "## Summary",
-        "",
-        _md_table(summary),
-        "",
-        "## Guardrail",
-        "",
-        "```text",
-        "Research only. No target-book mutation, live trading, broker integration, paper-broker execution, order generation, runtime deployment, or dynamic allocator changes are approved.",
-        "```",
-        "",
-    ]), encoding="utf-8")
-
+    (out_dir / "summary.md").write_text("\n".join(["# Fund Unified Backtest v1", "", "Research-only unified crypto + equity MR overlay backtest, net of modeled costs.", "", "## Cost Assumptions", "", "```text", f"Crypto ExecutionConfig: {crypto_config}", f"Equity slippage bps: {args.equity_slippage_bps}", f"Equity commission bps: {args.equity_commission_bps}", "```", "", "## Summary", "", _md_table(summary), "", "## Guardrail", "", "```text", "Research only. No target-book mutation, live trading, broker integration, paper-broker execution, order generation, runtime deployment, or dynamic allocator changes are approved.", "```", ""]), encoding="utf-8")
     with pd.option_context("display.max_columns", None, "display.width", 900, "display.float_format", "{:.6f}".format):
         print("\n=== FUND UNIFIED BACKTEST V1 ===")
         print("\nCost assumptions:")
