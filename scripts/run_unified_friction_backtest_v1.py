@@ -3,21 +3,21 @@ Itera Dynamics Unified Friction Backtest v1
 Integrates Equity MR Overlay + Crypto Sleeve v2 with full friction modeling.
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from research.harness.execution_model import ExecutionConfig, compute_fill
-from research.harness.metrics import compute_metrics
 import sys
+import os
 from pathlib import Path
 
-# Identify the project root (one level up from /scripts)
+# --- PATH INJECTION ---
+# This MUST happen before any local imports like 'research'
 root = Path(__file__).resolve().parent.parent
 if str(root) not in sys.path:
-    sys.path.append(str(root))
+    sys.path.insert(0, str(root))
 
-# Existing imports from research/harness/ will now resolve correctly
-from research.harness.execution_model import ExecutionConfig, compute_fill
+import pandas as pd
+import numpy as np
+
+# Local imports now resolve correctly
+from research.harness.execution_model import ExecutionConfig
 from research.harness.metrics import compute_metrics
 
 # --- Configuration ---
@@ -43,6 +43,12 @@ ALLOCATION_SPLIT = 0.50
 REBALANCE_THRESHOLD = 0.05  # 5% Drift Buffer
 
 def run_unified_backtest():
+    # Ensure data paths exist
+    for p in [EQUITY_TARGETS_PATH, CRYPTO_TARGETS_PATH, CRYPTO_NAV_PATH]:
+        if not Path(p).exists():
+            print(f"Error: Required file not found: {p}")
+            return
+
     # 1. Load Data
     eq_df = pd.read_csv(EQUITY_TARGETS_PATH, index_col='timestamp', parse_dates=True)
     cry_df = pd.read_csv(CRYPTO_TARGETS_PATH, index_col='timestamp', parse_dates=True)
