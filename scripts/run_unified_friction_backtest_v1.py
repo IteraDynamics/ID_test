@@ -15,7 +15,7 @@ if str(root) not in sys.path:
 import pandas as pd
 import numpy as np
 
-# Local imports now resolve correctly
+# Local imports
 from research.harness.execution_model import ExecutionConfig
 from research.harness.metrics import compute_metrics
 
@@ -47,20 +47,25 @@ def run_unified_backtest():
             print(f"Error: Required file not found: {p}")
             return
 
-    # 1. Load Data (Using index_col=0 handles missing or differing headers like 'Date' vs 'timestamp')
+    # 1. Load Data
     eq_df = pd.read_csv(EQUITY_TARGETS_PATH, index_col=0, parse_dates=True)
     cry_nav = pd.read_csv(CRYPTO_NAV_PATH, index_col=0, parse_dates=True)
 
-    # Normalize indices to ensure clean inner joining (removes trailing 00:00:00 if mismatched)
+    # Clean indices
     eq_df.index = pd.to_datetime(eq_df.index).normalize()
-    cry_nav.index = pd.to_datetime(cry_nav.index).normalize()
+    cry_nav.index = pd.to_datetime(cry_nav.index)
 
-    # Calculate Crypto Sleeve Returns from NAV
-    cry_returns = cry_nav['portfolio'].pct_change().fillna(0.0)
+    # CRITICAL FIX: Downsample Crypto hourly NAV to Daily (Last observation of the day)
+    daily_cry_nav = cry_nav['portfolio'].resample('D').last().dropna()
+    
+    # Calculate returns on the purely daily data
+    cry_returns = daily_cry_nav.pct_change().fillna(0.0)
     
     # 2. Merge and Align
-    df = eq_df[['daily_return']].rename(columns={'daily_return': 'eq_return'})
-    df = df.join(cry_returns.rename('cry_return'), how='inner')
+    df = pd.DataFrame({
+        'eq_return': eq_df['daily_return'],
+        'cry_return': cry_returns
+    }).dropna()
     
     if df.empty:
         print("Error: Merged dataframe is empty. Artifact date ranges may not overlap.")
