@@ -11,12 +11,12 @@ from research.harness.metrics import compute_metrics
 import sys
 from pathlib import Path
 
-# Add project root to sys.path
-root_path = Path(__file__).parent.parent
-if str(root_path) not in sys.path:
-    sys.path.append(str(root_path))
+# Identify the project root (one level up from /scripts)
+root = Path(__file__).resolve().parent.parent
+if str(root) not in sys.path:
+    sys.path.append(str(root))
 
-# Now existing imports will work
+# Existing imports from research/harness/ will now resolve correctly
 from research.harness.execution_model import ExecutionConfig, compute_fill
 from research.harness.metrics import compute_metrics
 
