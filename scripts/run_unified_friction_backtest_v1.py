@@ -8,6 +8,17 @@ import numpy as np
 from pathlib import Path
 from research.harness.execution_model import ExecutionConfig, compute_fill
 from research.harness.metrics import compute_metrics
+import sys
+from pathlib import Path
+
+# Add project root to sys.path
+root_path = Path(__file__).parent.parent
+if str(root_path) not in sys.path:
+    sys.path.append(str(root_path))
+
+# Now existing imports will work
+from research.harness.execution_model import ExecutionConfig, compute_fill
+from research.harness.metrics import compute_metrics
 
 # --- Configuration ---
 EQUITY_TARGETS_PATH = "artifacts/equity_mr_overlay_target_book_v1/equity_mr_overlay_diagnostics.csv"
