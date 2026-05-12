@@ -8,7 +8,7 @@ Backtest mechanics:
   - Targets are closed-bar daily target weights.
   - Initial allocation is established without charging strategy friction by default.
   - Portfolio weights drift with asset returns between rebalance dates.
-  - Rebalance costs are charged only when target drift exceeds threshold.
+  - Rebalances are calendar-gated first, then threshold-gated.
   - Crypto costs use research.harness.execution_model.ExecutionConfig.
   - Equity costs use explicit fixed bps assumptions.
 
@@ -58,7 +58,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--capital", type=float, default=START_CAPITAL)
     p.add_argument("--equity-slippage-bps", type=float, default=5.0)
     p.add_argument("--equity-commission-bps", type=float, default=0.0)
-    p.add_argument("--rebalance-threshold-bps", type=float, default=25.0, help="Minimum absolute aggregate target/current weight delta before charging rebalance costs.")
+    p.add_argument("--rebalance-frequency", choices=["D", "W", "M", "Q"], default="M", help="Calendar rebalance frequency: D=daily, W=weekly last available day, M=monthly last available day, Q=quarterly last available day.")
+    p.add_argument("--rebalance-threshold-bps", type=float, default=25.0, help="Minimum aggregate target/current weight delta on scheduled rebalance dates.")
     p.add_argument("--charge-initial-costs", action="store_true", help="Charge costs on first allocation from cash. Default excludes initial deployment friction from strategy costs.")
     p.add_argument("--accounting-tolerance", type=float, default=1e-6)
     p.add_argument("--out-dir", default=DEFAULT_OUT)
@@ -193,6 +194,28 @@ def _combine_targets(crypto: pd.DataFrame, equity: pd.DataFrame, crypto_w: float
     return out
 
 
+def _rebalance_schedule(index: pd.DatetimeIndex, frequency: str) -> pd.Series:
+    schedule = pd.Series(False, index=index)
+    if len(index) == 0:
+        return schedule
+    schedule.iloc[0] = True
+    if frequency == "D":
+        schedule.loc[:] = True
+        return schedule
+    grouped_key = None
+    if frequency == "W":
+        grouped_key = index.to_period("W-FRI")
+    elif frequency == "M":
+        grouped_key = index.to_period("M")
+    elif frequency == "Q":
+        grouped_key = index.to_period("Q")
+    else:
+        raise ValueError(f"Unsupported rebalance frequency: {frequency}")
+    for _, locs in pd.Series(range(len(index)), index=index).groupby(grouped_key):
+        schedule.iloc[int(locs.iloc[-1])] = True
+    return schedule
+
+
 def _perf(eq: pd.Series) -> dict[str, float]:
     eq = eq.dropna().astype(float)
     if len(eq) < 2:
@@ -246,7 +269,7 @@ def _trade_cost(asset: str, dw: float, nav: float, px: pd.DataFrame, atr: pd.Dat
     return {"cost_usd": notional * cost_bps / 10_000.0, "cost_bps": cost_bps, "fee_usd": notional * equity_commission_bps / 10_000.0, "slippage_usd": notional * equity_slip_bps / 10_000.0, "spread_usd": 0.0}
 
 
-def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capital: float, equity_slip_bps: float, equity_commission_bps: float, crypto_config: ExecutionConfig, rebalance_threshold_bps: float, charge_initial_costs: bool) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capital: float, equity_slip_bps: float, equity_commission_bps: float, crypto_config: ExecutionConfig, rebalance_frequency: str, rebalance_threshold_bps: float, charge_initial_costs: bool) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     price_close = pd.DataFrame({asset: df["close"] for asset, df in prices.items()}).sort_index().ffill()
     atr_pct = pd.DataFrame({asset: df["atr_pct"] for asset, df in prices.items()}).sort_index().ffill().fillna(0.0)
     idx = targets.index.intersection(price_close.index).sort_values()
@@ -255,6 +278,7 @@ def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capita
     target = targets.reindex(idx)[ALL_WEIGHTS].fillna(0.0)
     px = price_close.reindex(idx).ffill()
     atr = atr_pct.reindex(idx).ffill().fillna(0.0)
+    schedule = _rebalance_schedule(idx, rebalance_frequency)
     nav_gross = capital
     nav_net = capital
     current_w_gross = target.iloc[0].copy()
@@ -268,9 +292,10 @@ def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capita
             if abs(dw) <= 1e-12:
                 continue
             cost = _trade_cost(asset, dw, nav_net, px, atr, idx[0], equity_slip_bps, equity_commission_bps, crypto_config)
+            notional = abs(dw) * nav_net
             nav_net -= cost["cost_usd"]
             initial_cost_usd += cost["cost_usd"]
-            trades.append({"timestamp": idx[0], "trade_type": "initial_allocation", "asset": asset, "direction": "BUY", "delta_weight": dw, "notional_usd": abs(dw) * nav_net, **cost, "nav_after_cost": nav_net})
+            trades.append({"timestamp": idx[0], "trade_type": "initial_allocation", "asset": asset, "direction": "BUY", "delta_weight": dw, "notional_usd": notional, **cost, "nav_after_cost": nav_net})
     threshold = rebalance_threshold_bps / 10_000.0
     for i, ts in enumerate(idx):
         if i > 0:
@@ -287,7 +312,8 @@ def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capita
         net_delta = desired - current_w_net
         gross_turnover = float(gross_delta.abs().sum())
         net_turnover = float(net_delta.abs().sum())
-        rebalance_triggered = net_turnover >= threshold
+        is_scheduled = bool(schedule.loc[ts])
+        rebalance_triggered = is_scheduled and net_turnover >= threshold
         day_cost = 0.0
         executed_turnover = 0.0
         if rebalance_triggered:
@@ -303,13 +329,13 @@ def _run_backtest(targets: pd.DataFrame, prices: dict[str, pd.DataFrame], capita
                 trades.append({"timestamp": ts, "trade_type": "rebalance", "asset": asset, "direction": "BUY" if dw > 0 else "SELL", "delta_weight": dw, "notional_usd": notional, **cost, "nav_after_cost": nav_net})
             current_w_gross = desired.copy()
             current_w_net = desired.copy()
-        rows.append({"timestamp": ts, "gross_nav": nav_gross, "net_nav": nav_net, "daily_cost_usd": day_cost, "initial_cost_usd": initial_cost_usd if i == 0 else 0.0, "rebalance_triggered": rebalance_triggered, "gross_turnover_needed": gross_turnover, "net_turnover_needed": net_turnover, "executed_turnover": executed_turnover, **{f"target_{a.lower()}_weight": float(desired[a]) for a in ALL_WEIGHTS}, **{f"actual_{a.lower()}_weight": float(current_w_net[a]) for a in ALL_WEIGHTS}})
+        rows.append({"timestamp": ts, "gross_nav": nav_gross, "net_nav": nav_net, "daily_cost_usd": day_cost, "initial_cost_usd": initial_cost_usd if i == 0 else 0.0, "rebalance_scheduled": is_scheduled, "rebalance_triggered": rebalance_triggered, "gross_turnover_needed": gross_turnover, "net_turnover_needed": net_turnover, "executed_turnover": executed_turnover, **{f"target_{a.lower()}_weight": float(desired[a]) for a in ALL_WEIGHTS}, **{f"actual_{a.lower()}_weight": float(current_w_net[a]) for a in ALL_WEIGHTS}})
     curves = pd.DataFrame(rows).set_index("timestamp")
     trades_df = pd.DataFrame(trades)
     summary_rows = [{"series": label, **_perf(curves[col])} for label, col in [("gross_before_costs", "gross_nav"), ("net_after_costs", "net_nav")]]
     total_cost = float(curves["daily_cost_usd"].sum() + curves["initial_cost_usd"].sum())
     rebalance_cost = float(curves["daily_cost_usd"].sum())
-    summary_rows.append({"series": "cost_summary", "total_cost_usd": total_cost, "initial_cost_usd": float(curves["initial_cost_usd"].sum()), "rebalance_cost_usd": rebalance_cost, "total_cost_pct_start_nav": total_cost / capital * 100.0, "avg_daily_turnover_needed_pct": float(curves["net_turnover_needed"].mean() * 100.0), "avg_executed_turnover_pct": float(curves["executed_turnover"].mean() * 100.0), "total_executed_turnover": float(curves["executed_turnover"].sum()), "rebalance_count": int(curves["rebalance_triggered"].sum())})
+    summary_rows.append({"series": "cost_summary", "total_cost_usd": total_cost, "initial_cost_usd": float(curves["initial_cost_usd"].sum()), "rebalance_cost_usd": rebalance_cost, "total_cost_pct_start_nav": total_cost / capital * 100.0, "avg_daily_turnover_needed_pct": float(curves["net_turnover_needed"].mean() * 100.0), "avg_executed_turnover_pct": float(curves["executed_turnover"].mean() * 100.0), "total_executed_turnover": float(curves["executed_turnover"].sum()), "scheduled_rebalance_count": int(curves["rebalance_scheduled"].sum()), "executed_rebalance_count": int(curves["rebalance_triggered"].sum())})
     return curves, trades_df, pd.DataFrame(summary_rows)
 
 
@@ -338,17 +364,18 @@ def main() -> None:
         raise SystemExit("Fail-closed: unified target accounting is not 100% valid\n" + bad.to_string())
     prices = {"BTC": _read_price(Path(args.btc_data), "BTC"), "ETH": _read_price(Path(args.eth_data), "ETH"), "SPY": _read_price(Path(args.spy_data), "SPY"), "QQQ": _read_price(Path(args.qqq_data), "QQQ"), "BIL": _read_price(Path(args.bil_data), "BIL")}
     crypto_config = ExecutionConfig.from_env()
-    curves, trades, summary = _run_backtest(targets, prices, args.capital, args.equity_slippage_bps, args.equity_commission_bps, crypto_config, args.rebalance_threshold_bps, args.charge_initial_costs)
+    curves, trades, summary = _run_backtest(targets, prices, args.capital, args.equity_slippage_bps, args.equity_commission_bps, crypto_config, args.rebalance_frequency, args.rebalance_threshold_bps, args.charge_initial_costs)
     targets.to_csv(out_dir / "unified_fund_targets.csv")
     curves.to_csv(out_dir / "unified_fund_curves.csv")
     trades.to_csv(out_dir / "unified_fund_trade_costs.csv", index=False)
     summary.to_csv(out_dir / "unified_fund_backtest_summary.csv", index=False)
-    payload = {"research_status": "research_only_unified_fund_backtest_v1", "crypto_cost_model": crypto_config.__dict__, "equity_cost_model": {"equity_slippage_bps": args.equity_slippage_bps, "equity_commission_bps": args.equity_commission_bps}, "execution_policy": {"rebalance_threshold_bps": args.rebalance_threshold_bps, "charge_initial_costs": args.charge_initial_costs}, "inputs": vars(args), "outputs": {"targets": str(out_dir / "unified_fund_targets.csv"), "curves": str(out_dir / "unified_fund_curves.csv"), "trades": str(out_dir / "unified_fund_trade_costs.csv"), "summary": str(out_dir / "unified_fund_backtest_summary.csv"), "summary_md": str(out_dir / "summary.md"), "summary_json": str(out_dir / "summary.json")}, "guardrails": {"research_only": True, "broker_ready": False, "generates_orders": False, "mutates_target_book": False}}
+    payload = {"research_status": "research_only_unified_fund_backtest_v1", "crypto_cost_model": crypto_config.__dict__, "equity_cost_model": {"equity_slippage_bps": args.equity_slippage_bps, "equity_commission_bps": args.equity_commission_bps}, "execution_policy": {"rebalance_frequency": args.rebalance_frequency, "rebalance_threshold_bps": args.rebalance_threshold_bps, "charge_initial_costs": args.charge_initial_costs}, "inputs": vars(args), "outputs": {"targets": str(out_dir / "unified_fund_targets.csv"), "curves": str(out_dir / "unified_fund_curves.csv"), "trades": str(out_dir / "unified_fund_trade_costs.csv"), "summary": str(out_dir / "unified_fund_backtest_summary.csv"), "summary_md": str(out_dir / "summary.md"), "summary_json": str(out_dir / "summary.json")}, "guardrails": {"research_only": True, "broker_ready": False, "generates_orders": False, "mutates_target_book": False}}
     (out_dir / "summary.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
-    (out_dir / "summary.md").write_text("\n".join(["# Fund Unified Backtest v1", "", "Research-only unified crypto + equity MR overlay backtest, net of modeled costs.", "", "## Execution Policy", "", "```text", f"Rebalance threshold bps: {args.rebalance_threshold_bps}", f"Charge initial costs: {args.charge_initial_costs}", f"Crypto ExecutionConfig: {crypto_config}", f"Equity slippage bps: {args.equity_slippage_bps}", f"Equity commission bps: {args.equity_commission_bps}", "```", "", "## Summary", "", _md_table(summary), "", "## Guardrail", "", "```text", "Research only. No target-book mutation, live trading, broker integration, paper-broker execution, order generation, runtime deployment, or dynamic allocator changes are approved.", "```", ""]), encoding="utf-8")
+    (out_dir / "summary.md").write_text("\n".join(["# Fund Unified Backtest v1", "", "Research-only unified crypto + equity MR overlay backtest, net of modeled costs.", "", "## Execution Policy", "", "```text", f"Rebalance frequency: {args.rebalance_frequency}", f"Rebalance threshold bps: {args.rebalance_threshold_bps}", f"Charge initial costs: {args.charge_initial_costs}", f"Crypto ExecutionConfig: {crypto_config}", f"Equity slippage bps: {args.equity_slippage_bps}", f"Equity commission bps: {args.equity_commission_bps}", "```", "", "## Summary", "", _md_table(summary), "", "## Guardrail", "", "```text", "Research only. No target-book mutation, live trading, broker integration, paper-broker execution, order generation, runtime deployment, or dynamic allocator changes are approved.", "```", ""]), encoding="utf-8")
     with pd.option_context("display.max_columns", None, "display.width", 900, "display.float_format", "{:.6f}".format):
         print("\n=== FUND UNIFIED BACKTEST V1 ===")
         print("\nExecution/cost assumptions:")
+        print(f"Rebalance frequency: {args.rebalance_frequency}")
         print(f"Rebalance threshold bps: {args.rebalance_threshold_bps}")
         print(f"Charge initial costs: {args.charge_initial_costs}")
         print(f"Crypto: {crypto_config}")
