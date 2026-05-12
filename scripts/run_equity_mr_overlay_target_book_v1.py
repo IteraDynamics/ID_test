@@ -1,31 +1,12 @@
 #!/usr/bin/env python
 """Equity MR Overlay Target Book v1.
 
-Research-only target-book generator for the successfully gated
-CORE_PLUS_10_MEAN_REVERSION_1D candidate.
+Research-only target-book generator for the gated CORE_PLUS_10_MEAN_REVERSION_1D
+candidate. Produces deterministic, closed-bar daily SPY/QQQ/BIL target weights
+with shadow HMM regime attribution.
 
-Purpose:
-    Move the candidate from precomputed curves to deterministic, signal-driven
-    daily targets that can later be consumed by the Argus/runtime layer.
-
-Architecture:
-    - Research harness only.
-    - Imports research modules only; never imports runtime modules.
-    - Uses closed-bar daily CSV data only.
-    - Fails closed if required data is missing, HMM attribution is unavailable,
-      or accounting is not exact within tolerance.
-
-Candidate:
-    Base Equity Core: SPY/QQQ SMA175 + BIL risk-off.
-    Overlay: Add 10% QQQ when QQQ 1D return <= -2% and QQQ > SMA200.
-
-Outputs:
-    artifacts/equity_mr_overlay_target_book_v1/
-      equity_mr_overlay_target_book.csv
-      equity_mr_overlay_diagnostics.csv
-      equity_mr_overlay_readiness_summary.csv
-      summary.md
-      summary.json
+No runtime imports, broker integration, order generation, fill simulation, or
+fund target book mutation are performed.
 """
 
 from __future__ import annotations
@@ -42,9 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import numpy as np
 import pandas as pd
-
 
 DEFAULT_OUT = "artifacts/equity_mr_overlay_target_book_v1"
 START_CAPITAL = 100_000.0
@@ -140,7 +119,7 @@ def _apply_mr_overlay(panel: pd.DataFrame, base: pd.DataFrame, args: argparse.Na
     out["qqq_sma200"] = qqq_sma200
     out["qqq_ret_1d"] = qqq_ret_1d
     out["signal_active"] = signal.fillna(False).astype(bool)
-    out["overlay_requested_weight"] = np.where(out["signal_active"], args.overlay_weight, 0.0)
+    out["overlay_requested_weight"] = out["signal_active"].astype(float) * args.overlay_weight
     out["overlay_funded_from_bil"] = 0.0
     out["overlay_funded_from_core"] = 0.0
     out["final_spy_weight"] = out["base_spy_weight"]
@@ -152,24 +131,20 @@ def _apply_mr_overlay(panel: pd.DataFrame, base: pd.DataFrame, args: argparse.Na
         bil_available = float(out.loc[ts, "final_bil_weight"])
         funded_from_bil = min(requested, bil_available)
         residual = requested - funded_from_bil
-
         if funded_from_bil > 0.0:
             out.loc[ts, "final_bil_weight"] -= funded_from_bil
             out.loc[ts, "final_qqq_weight"] += funded_from_bil
-
         funded_from_core = 0.0
         if residual > 0.0:
             core_spy = float(out.loc[ts, "final_spy_weight"])
             core_qqq = float(out.loc[ts, "final_qqq_weight"])
             risky = core_spy + core_qqq
-            if risky > 1e-12:
-                funded_from_core = min(residual, risky)
-                scale = (risky - funded_from_core) / risky
-                out.loc[ts, "final_spy_weight"] = core_spy * scale
-                out.loc[ts, "final_qqq_weight"] = core_qqq * scale + funded_from_core
-            else:
+            if risky <= 1e-12:
                 raise ValueError(f"Signal active on {ts}, but no BIL or core exposure available to fund overlay")
-
+            funded_from_core = min(residual, risky)
+            scale = (risky - funded_from_core) / risky
+            out.loc[ts, "final_spy_weight"] = core_spy * scale
+            out.loc[ts, "final_qqq_weight"] = core_qqq * scale + funded_from_core
         out.loc[ts, "overlay_funded_from_bil"] = funded_from_bil
         out.loc[ts, "overlay_funded_from_core"] = funded_from_core
 
@@ -186,11 +161,7 @@ def _price_frame(panel: pd.DataFrame) -> pd.DataFrame:
 
 
 def _weights_from_diag(diag: pd.DataFrame) -> pd.DataFrame:
-    return pd.DataFrame({
-        "SPY": diag["final_spy_weight"],
-        "QQQ": diag["final_qqq_weight"],
-        "BIL": diag["final_bil_weight"],
-    }, index=diag.index)
+    return pd.DataFrame({"SPY": diag["final_spy_weight"], "QQQ": diag["final_qqq_weight"], "BIL": diag["final_bil_weight"]}, index=diag.index)
 
 
 def _curve_from_weights(prices: pd.DataFrame, weights: pd.DataFrame, capital: float) -> tuple[pd.Series, pd.Series]:
@@ -262,26 +233,20 @@ def _fit_shadow_hmm(panel: pd.DataFrame) -> pd.Series:
         hmm_module = importlib.import_module("research.regimes.hmm_regime_v1")
     except Exception as exc:
         raise ImportError("Required research.regimes.hmm_regime_v1 module is unavailable; fail-closed per Shadow HMM requirement") from exc
-
     required_attrs = ["HMMConfig", "fit_hmm_regime", "build_hmm_features"]
-    missing_attrs = [name for name in required_attrs if not hasattr(hmm_module, name)]
-    if missing_attrs:
-        raise AttributeError(f"research.regimes.hmm_regime_v1 missing required attributes: {missing_attrs}")
-
+    missing = [name for name in required_attrs if not hasattr(hmm_module, name)]
+    if missing:
+        raise AttributeError(f"research.regimes.hmm_regime_v1 missing required attributes: {missing}")
     HMMConfig = getattr(hmm_module, "HMMConfig")
     fit_hmm_regime = getattr(hmm_module, "fit_hmm_regime")
     build_hmm_features = getattr(hmm_module, "build_hmm_features")
-
     hmm_input = pd.DataFrame({"close": panel["QQQ_close"].astype(float)}, index=panel.index)
     features = build_hmm_features(hmm_input)
     if features.empty:
         raise ValueError("Shadow HMM feature set is empty after closed-bar feature construction")
-
-    config = HMMConfig()
-    _fit_result, probs = fit_hmm_regime(features, config)
+    _, probs = fit_hmm_regime(features, HMMConfig())
     if "hmm_state_label" not in probs.columns:
         raise ValueError(f"HMM probability output missing hmm_state_label. Columns: {list(probs.columns)}")
-
     regimes = probs["hmm_state_label"].reindex(panel.index).ffill().bfill()
     if regimes.isna().any():
         raise ValueError("Shadow HMM regime output contains missing labels after alignment")
@@ -308,6 +273,23 @@ def _target_book_from_diag(diag: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _format_md_table(df: pd.DataFrame) -> str:
+    if df.empty:
+        return "_No rows._"
+    cols = [str(c) for c in df.columns]
+    lines = ["| " + " | ".join(cols) + " |", "| " + " | ".join(["---"] * len(cols)) + " |"]
+    for _, row in df.iterrows():
+        vals = []
+        for col in df.columns:
+            value = row[col]
+            if isinstance(value, float):
+                vals.append(f"{value:.6f}")
+            else:
+                vals.append(str(value).replace("|", "\\|").replace("\n", " "))
+        lines.append("| " + " | ".join(vals) + " |")
+    return "\n".join(lines)
+
+
 def _write_summary_md(path: Path, readiness: pd.DataFrame, perf: dict[str, float], signal_days: int, rows: int) -> None:
     lines = [
         "# Equity MR Overlay Target Book v1",
@@ -320,7 +302,7 @@ def _write_summary_md(path: Path, readiness: pd.DataFrame, perf: dict[str, float
         "",
         "## Readiness",
         "",
-        readiness.to_markdown(index=False),
+        _format_md_table(readiness),
         "",
         "## Performance Parity Check",
         "",
@@ -354,8 +336,7 @@ def main() -> None:
     panel = _load_panel(Path(args.spy_data), Path(args.qqq_data), Path(args.bil_data))
     base = _build_base_core(panel, args.core_window)
     diag = _apply_mr_overlay(panel, base, args)
-    shadow_hmm_regime = _fit_shadow_hmm(panel)
-    diag["shadow_hmm_regime"] = shadow_hmm_regime.reindex(diag.index)
+    diag["shadow_hmm_regime"] = _fit_shadow_hmm(panel).reindex(diag.index)
 
     fail_reasons: list[str] = []
     if diag["shadow_hmm_regime"].isna().any():
@@ -382,33 +363,29 @@ def main() -> None:
     signal_days = int(diag["signal_active"].sum())
     accounting_ok_pct = float(diag["accounting_ok"].mean() * 100.0)
 
-    readiness = pd.DataFrame([
-        {
-            "candidate_name": CANDIDATE_NAME,
-            "research_ready": research_ready,
-            "broker_ready": False,
-            "promotion_eligible": False,
-            "readiness_state": READINESS_STATE,
-            "accounting_ok_pct": accounting_ok_pct,
-            "signal_active_days": signal_days,
-            "rows": int(len(diag)),
-            "fail_reasons": ",".join(fail_reasons) if fail_reasons else "none",
-        }
-    ])
+    readiness = pd.DataFrame([{
+        "candidate_name": CANDIDATE_NAME,
+        "research_ready": research_ready,
+        "broker_ready": False,
+        "promotion_eligible": False,
+        "readiness_state": READINESS_STATE,
+        "accounting_ok_pct": accounting_ok_pct,
+        "signal_active_days": signal_days,
+        "rows": int(len(diag)),
+        "fail_reasons": ",".join(fail_reasons) if fail_reasons else "none",
+    }])
 
+    diag_out = diag.reset_index(names="timestamp")
+    readiness.to_csv(out_dir / "equity_mr_overlay_readiness_summary.csv", index=False)
     if not research_ready:
-        diag.reset_index(names="timestamp").to_csv(out_dir / "equity_mr_overlay_diagnostics.csv", index=False)
-        readiness.to_csv(out_dir / "equity_mr_overlay_readiness_summary.csv", index=False)
+        diag_out.to_csv(out_dir / "equity_mr_overlay_diagnostics.csv", index=False)
         raise SystemExit("Fail-closed readiness failure: " + ", ".join(fail_reasons))
 
     target_book = _target_book_from_diag(diag)
-    diag_out = diag.reset_index(names="timestamp")
     diag_out["equity_curve"] = curve.reindex(diag.index).to_numpy()
     diag_out["daily_return"] = rets.reindex(diag.index).to_numpy()
-
     target_book.to_csv(out_dir / "equity_mr_overlay_target_book.csv", index=False)
     diag_out.to_csv(out_dir / "equity_mr_overlay_diagnostics.csv", index=False)
-    readiness.to_csv(out_dir / "equity_mr_overlay_readiness_summary.csv", index=False)
 
     payload: dict[str, Any] = {
         "candidate_name": CANDIDATE_NAME,
