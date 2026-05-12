@@ -8,7 +8,6 @@ import os
 from pathlib import Path
 
 # --- PATH INJECTION ---
-# This MUST happen before any local imports like 'research'
 root = Path(__file__).resolve().parent.parent
 if str(root) not in sys.path:
     sys.path.insert(0, str(root))
@@ -22,7 +21,6 @@ from research.harness.metrics import compute_metrics
 
 # --- Configuration ---
 EQUITY_TARGETS_PATH = "artifacts/equity_mr_overlay_target_book_v1/equity_mr_overlay_diagnostics.csv"
-CRYPTO_TARGETS_PATH = "artifacts/crypto_target_stream_v1/crypto_target_exposure_daily.csv"
 CRYPTO_NAV_PATH = "artifacts/fund_tilted_cal_4s_2019-03-08_2025-12-31/equity_curves.csv"
 
 # Cost Assumptions
@@ -44,15 +42,18 @@ REBALANCE_THRESHOLD = 0.05  # 5% Drift Buffer
 
 def run_unified_backtest():
     # Ensure data paths exist
-    for p in [EQUITY_TARGETS_PATH, CRYPTO_TARGETS_PATH, CRYPTO_NAV_PATH]:
+    for p in [EQUITY_TARGETS_PATH, CRYPTO_NAV_PATH]:
         if not Path(p).exists():
             print(f"Error: Required file not found: {p}")
             return
 
-    # 1. Load Data
-    eq_df = pd.read_csv(EQUITY_TARGETS_PATH, index_col='timestamp', parse_dates=True)
-    cry_df = pd.read_csv(CRYPTO_TARGETS_PATH, index_col='timestamp', parse_dates=True)
-    cry_nav = pd.read_csv(CRYPTO_NAV_PATH, index_col='timestamp', parse_dates=True)
+    # 1. Load Data (Using index_col=0 handles missing or differing headers like 'Date' vs 'timestamp')
+    eq_df = pd.read_csv(EQUITY_TARGETS_PATH, index_col=0, parse_dates=True)
+    cry_nav = pd.read_csv(CRYPTO_NAV_PATH, index_col=0, parse_dates=True)
+
+    # Normalize indices to ensure clean inner joining (removes trailing 00:00:00 if mismatched)
+    eq_df.index = pd.to_datetime(eq_df.index).normalize()
+    cry_nav.index = pd.to_datetime(cry_nav.index).normalize()
 
     # Calculate Crypto Sleeve Returns from NAV
     cry_returns = cry_nav['portfolio'].pct_change().fillna(0.0)
@@ -60,6 +61,10 @@ def run_unified_backtest():
     # 2. Merge and Align
     df = eq_df[['daily_return']].rename(columns={'daily_return': 'eq_return'})
     df = df.join(cry_returns.rename('cry_return'), how='inner')
+    
+    if df.empty:
+        print("Error: Merged dataframe is empty. Artifact date ranges may not overlap.")
+        return
     
     # 3. Backtest Loop with Friction
     initial_capital = 100000.0
