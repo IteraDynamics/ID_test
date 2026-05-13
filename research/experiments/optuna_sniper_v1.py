@@ -1,9 +1,9 @@
 """Layer 3 — Bayesian optimisation of MeanReversionStrategy via Optuna.
 
 Searches the RSI / Bollinger parameter space and maximises a composite
-fitness score:
+fitness score (RoMaD — Return over Max Drawdown):
 
-    Fitness = CAGR - |MaxDrawdown| × 0.5 - TotalTrades × 0.001
+    Fitness = TotalReturn / |MaxDrawdown| - TotalTrades × 0.001
 
 Death-penalty guards enforce a participation window of 3–25 trades/year:
     n_trades <  60 → -999.0  (under-trading / "do nothing" rejected)
@@ -267,16 +267,21 @@ def _make_qqq_stub(n_bars: int = 1500, seed: int = 42) -> pd.DataFrame:
 
 # ── Fitness calculation ────────────────────────────────────────────────────────
 
-def _fitness(cagr_pct: float, max_dd_pct: float, n_trades: int) -> float:
-    """Composite fitness targeting absolute return while gating risk.
+def _fitness(total_return_pct: float, max_dd_pct: float, n_trades: int) -> float:
+    """RoMaD-based fitness for a sniper profile.
 
-    Fitness = CAGR - |MaxDrawdown| × 0.5 - TotalTrades × TRADE_PENALTY
+    Fitness = (Total Return / |MaxDrawdown|) - TotalTrades × TRADE_PENALTY
 
-    All terms are in percentage-point units so the formula rewards raw
-    CAGR, penalises drawdown at half-weight, and applies a per-trade
-    friction cost to discourage high-churn parameter sets.
+    RoMaD judges a sniper on the absolute return it produced divided by the
+    maximum risk it ever took, without annualising — a short high-conviction
+    campaign that never revisits a large drawdown scores well.  The per-trade
+    penalty prevents the optimiser gaming the ratio with a single lucky trade.
     """
-    return cagr_pct - abs(max_dd_pct) * 0.5 - n_trades * TRADE_PENALTY
+    if abs(max_dd_pct) < 0.01:
+        romad = 0.0  # zero risk taken → undefined ratio, treat as worthless
+    else:
+        romad = total_return_pct / abs(max_dd_pct)
+    return romad - n_trades * TRADE_PENALTY
 
 
 # ── Optuna objective ───────────────────────────────────────────────────────────
@@ -327,18 +332,24 @@ def _make_objective(df: pd.DataFrame):
             return -999.0
 
         score = _fitness(
-            cagr_pct=metrics.cagr_pct,
+            total_return_pct=metrics.total_return_pct,
             max_dd_pct=metrics.max_drawdown_pct,
             n_trades=metrics.n_trades,
         )
 
         # Store diagnostics for post-hoc inspection
-        trial.set_user_attr("cagr_pct", round(metrics.cagr_pct, 4))
+        romad = (
+            metrics.total_return_pct / abs(metrics.max_drawdown_pct)
+            if abs(metrics.max_drawdown_pct) >= 0.01
+            else 0.0
+        )
+        trial.set_user_attr("total_return_pct", round(metrics.total_return_pct, 4))
         trial.set_user_attr("max_drawdown_pct", round(metrics.max_drawdown_pct, 4))
+        trial.set_user_attr("romad", round(romad, 4))
         trial.set_user_attr("n_trades", metrics.n_trades)
+        trial.set_user_attr("cagr_pct", round(metrics.cagr_pct, 4))
         trial.set_user_attr("calmar", round(metrics.calmar, 4))
         trial.set_user_attr("sharpe", round(metrics.sharpe, 4))
-        trial.set_user_attr("total_return_pct", round(metrics.total_return_pct, 4))
 
         return score
 
@@ -418,12 +429,13 @@ def main(argv: list[str] | None = None) -> None:
         print(f"  {k:<20} {v}")
     print("\nDiagnostics:")
     attrs_to_show = [
-        "cagr_pct",
+        "total_return_pct",
         "max_drawdown_pct",
+        "romad",
         "n_trades",
+        "cagr_pct",
         "calmar",
         "sharpe",
-        "total_return_pct",
     ]
     for attr in attrs_to_show:
         val = best.user_attrs.get(attr, "N/A")
@@ -431,16 +443,17 @@ def main(argv: list[str] | None = None) -> None:
 
     # ── Top-5 summary ─────────────────────────────────────────────────
     print("\nTop 5 trials by fitness:")
-    print(f"  {'#':<6} {'Fitness':>10}  {'CAGR%':>8}  {'MaxDD%':>8}  {'Trades':>7}  Parameters")
+    print(f"  {'#':<6} {'Fitness':>10}  {'TotRet%':>9}  {'MaxDD%':>8}  {'RoMaD':>8}  {'Trades':>7}  Parameters")
     sorted_trials = sorted(study.trials, key=lambda t: t.value or float("-inf"), reverse=True)
     for t in sorted_trials[:5]:
         if t.value is None:
             continue
-        cagr = t.user_attrs.get("cagr_pct", "?")
+        tot_ret = t.user_attrs.get("total_return_pct", "?")
         mdd = t.user_attrs.get("max_drawdown_pct", "?")
+        romad = t.user_attrs.get("romad", "?")
         ntrades = t.user_attrs.get("n_trades", "?")
         param_str = "  ".join(f"{k}={v}" for k, v in t.params.items())
-        print(f"  {t.number:<6} {t.value:>10.4f}  {cagr:>8}  {mdd:>8}  {ntrades:>7}  {param_str}")
+        print(f"  {t.number:<6} {t.value:>10.4f}  {tot_ret:>9}  {mdd:>8}  {romad:>8}  {ntrades:>7}  {param_str}")
 
     print()
 
