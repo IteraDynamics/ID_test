@@ -1,9 +1,13 @@
 """Layer 3 — Bayesian optimisation of MeanReversionStrategy via Optuna.
 
 Searches the RSI / Bollinger parameter space and maximises a composite
-fitness score (Calmar ratio with an overtrading penalty):
+fitness score:
 
-    Fitness = Net CAGR / |Max Drawdown| - Total Trades × 0.001
+    Fitness = CAGR - |MaxDrawdown| × 0.5 - TotalTrades × 0.001
+
+Death-penalty guards enforce a participation window of 3–25 trades/year:
+    n_trades <  60 → -999.0  (under-trading / "do nothing" rejected)
+    n_trades > 500 → -999.0  (over-trading / non-sniper rejected)
 
 Usage
 -----
@@ -264,22 +268,15 @@ def _make_qqq_stub(n_bars: int = 1500, seed: int = 42) -> pd.DataFrame:
 # ── Fitness calculation ────────────────────────────────────────────────────────
 
 def _fitness(cagr_pct: float, max_dd_pct: float, n_trades: int) -> float:
-    """Composite fitness: Calmar ratio minus an overtrading penalty.
+    """Composite fitness targeting absolute return while gating risk.
 
-    Fitness = CAGR / |MaxDrawdown| - TotalTrades × TRADE_PENALTY
+    Fitness = CAGR - |MaxDrawdown| × 0.5 - TotalTrades × TRADE_PENALTY
 
-    Both CAGR and MaxDrawdown are supplied in percentage-point units so the
-    ratio is dimensionless.  A negative CAGR with zero drawdown returns a
-    large negative number via the fallback.
+    All terms are in percentage-point units so the formula rewards raw
+    CAGR, penalises drawdown at half-weight, and applies a per-trade
+    friction cost to discourage high-churn parameter sets.
     """
-    abs_dd = abs(max_dd_pct)
-    if abs_dd < 1e-6:
-        # No drawdown means either flat or extremely lucky — penalise heavily
-        # to avoid degenerate no-trade solutions gaming the ratio.
-        calmar = cagr_pct * 10.0 if cagr_pct > 0 else -100.0
-    else:
-        calmar = cagr_pct / abs_dd
-    return calmar - n_trades * TRADE_PENALTY
+    return cagr_pct - abs(max_dd_pct) * 0.5 - n_trades * TRADE_PENALTY
 
 
 # ── Optuna objective ───────────────────────────────────────────────────────────
@@ -317,6 +314,17 @@ def _make_objective(df: pd.DataFrame):
             trades=result.trades,
             params=result.params,
         )
+
+        # ── Participation guards (death penalty) ──────────────────────
+        # 21 years of daily data → valid sniper range is 3–25 trades/yr.
+        if metrics.n_trades < 60:    # < 3 trades/yr: "do nothing" system
+            trial.set_user_attr("n_trades", metrics.n_trades)
+            trial.set_user_attr("rejection", "under_trading")
+            return -999.0
+        if metrics.n_trades > 500:   # > 25 trades/yr: not a sniper
+            trial.set_user_attr("n_trades", metrics.n_trades)
+            trial.set_user_attr("rejection", "over_trading")
+            return -999.0
 
         score = _fitness(
             cagr_pct=metrics.cagr_pct,
