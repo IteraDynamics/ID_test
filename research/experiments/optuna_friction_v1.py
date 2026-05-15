@@ -19,10 +19,11 @@ Fitness
 Architecture
 ------------
 Layer 2 — Strategy signals
-    · Crypto sleeve : trend_following_v8_ecap75  (BTC daily)
-    · Equity sleeve : trend_following            (QQQ daily)
-    Both sleeve backtests run ONCE before the study. Their equity curves are
-    fixed across all 50 trials; only the allocation simulation changes.
+    · Crypto sleeve : trend_following_v8_ecap75  (BTC 1H + ETH 1H, blended 50/50)
+    · Equity sleeve : trend_following            (SPY 1D + QQQ 1D, blended 50/50)
+    All four sleeve backtests run ONCE before the study. Hourly BTC/ETH equity
+    curves are resampled to daily end-of-day NAV before blending. Equity curves
+    are fixed across all trials; only the allocation simulation changes.
 
 Layer 3 — Fund-level allocation (per-trial, O(n))
     1. Pre-compute per-bar target weights via vectorised EWM trend scores
@@ -45,12 +46,15 @@ Layer 3 live-runtime concern only.
 
 Usage
 -----
-# Synthetic stubs (default)
+# Auto-detect data files at their default paths (recommended)
 python -m research.experiments.optuna_friction_v1
 
-# Real data
+# Explicit paths
 python -m research.experiments.optuna_friction_v1 \\
-    --btc-data data/BTC_1D.csv --equity-data data/QQQ_1D.csv
+    --btc-data data/btcusd_3600s_2019-01-01_to_2025-12-30.csv \\
+    --eth-data data/ethusd_3600s_2019-01-01_to_2025-12-30.csv \\
+    --spy-data data/SPY_1D.csv \\
+    --qqq-data data/QQQ_1D.csv
 
 # Custom trial count
 python -m research.experiments.optuna_friction_v1 --n-trials 100
@@ -78,6 +82,7 @@ from research.harness.execution_model import (
     compute_atr_pct_series,
     compute_fill,
 )
+from research.harness.resampler import resample_ohlcv
 from research.strategies import REGISTRY as STRATEGY_REGISTRY
 
 # ── Logging ────────────────────────────────────────────────────────────────────
@@ -140,6 +145,80 @@ def _make_qqq_stub(n_bars: int = 1500, seed: int = 43) -> pd.DataFrame:
     df.index.name = "timestamp"
     df.attrs["asset"] = "QQQ"
     return df
+
+
+def _make_eth_stub(n_bars: int = 36_000, seed: int = 44) -> pd.DataFrame:
+    """Synthetic ETH-like hourly OHLCV (higher vol than BTC, same drift)."""
+    rng = np.random.default_rng(seed)
+    dt = 1 / (365 * 24)
+    mu, sigma = 0.45, 0.95
+    closes = 150.0 * np.exp(
+        np.cumsum((mu - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * rng.standard_normal(n_bars))
+    )
+    spread = closes * rng.uniform(0.005, 0.025, size=n_bars)
+    df = pd.DataFrame(
+        {
+            "open":   closes * (1 + rng.uniform(-0.010, 0.010, size=n_bars)),
+            "high":   closes + spread * rng.uniform(0.3, 1.0, size=n_bars),
+            "low":    closes - spread * rng.uniform(0.3, 1.0, size=n_bars),
+            "close":  closes,
+            "volume": rng.uniform(5e8, 3e9, size=n_bars),
+        },
+        index=pd.date_range("2019-01-01", periods=n_bars, freq="h"),
+    )
+    df.index.name = "timestamp"
+    df.attrs["asset"] = "ETH"
+    return df
+
+
+def _make_spy_stub(n_bars: int = 1500, seed: int = 45) -> pd.DataFrame:
+    """Synthetic SPY-like daily OHLCV (lower vol, dividend-adjusted drift)."""
+    rng = np.random.default_rng(seed)
+    dt = 1 / 252
+    mu, sigma = 0.09, 0.15
+    closes = 280.0 * np.exp(
+        np.cumsum((mu - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * rng.standard_normal(n_bars))
+    )
+    spread = closes * rng.uniform(0.001, 0.006, size=n_bars)
+    df = pd.DataFrame(
+        {
+            "open":   closes * (1 + rng.uniform(-0.003, 0.003, size=n_bars)),
+            "high":   closes + spread * rng.uniform(0.3, 1.0, size=n_bars),
+            "low":    closes - spread * rng.uniform(0.3, 1.0, size=n_bars),
+            "close":  closes,
+            "volume": rng.uniform(6e7, 2e8, size=n_bars),
+        },
+        index=pd.date_range("2019-01-01", periods=n_bars, freq="B"),
+    )
+    df.index.name = "timestamp"
+    df.attrs["asset"] = "SPY"
+    return df
+
+
+# ── Sleeve blending ────────────────────────────────────────────────────────────
+
+def _blend_sleeve_navs(
+    nav_a: pd.Series,
+    nav_b: pd.Series,
+    weight_a: float = 0.5,
+) -> pd.Series:
+    """Combine two NAV curves into a single sleeve NAV by return-averaging.
+
+    Both curves are normalised to 1.0 at the start of the common period so
+    that capital-weighting is symmetric regardless of their absolute levels.
+    The returned series starts at 1.0 and represents blended daily returns.
+    """
+    common_idx = nav_a.index.intersection(nav_b.index)
+    a = nav_a.reindex(common_idx).ffill()
+    b = nav_b.reindex(common_idx).ffill()
+
+    ret_a = (a / float(a.iloc[0])).pct_change().fillna(0.0)
+    ret_b = (b / float(b.iloc[0])).pct_change().fillna(0.0)
+
+    blended = weight_a * ret_a + (1.0 - weight_a) * ret_b
+    nav = (1.0 + blended).cumprod()
+    nav.name = "blended_nav"
+    return nav
 
 
 # ── Vectorised allocator signal (replicated from itera_allocator_v1) ───────────
@@ -374,21 +453,44 @@ def _make_objective(
 
 # ── CLI entry point ────────────────────────────────────────────────────────────
 
+def _load_data(path_arg: str | None, stub_fn, asset: str, label: str) -> pd.DataFrame:
+    """Load a dataset from path_arg if provided, else auto-detect default path or stub."""
+    candidates = [Path(path_arg)] if path_arg else []
+    candidates += [
+        Path(f"data/btcusd_3600s_2019-01-01_to_2025-12-30.csv") if asset == "BTC" else None,
+        Path(f"data/ethusd_3600s_2019-01-01_to_2025-12-30.csv") if asset == "ETH" else None,
+        Path("data/SPY_1D.csv") if asset == "SPY" else None,
+        Path("data/QQQ_1D.csv") if asset == "QQQ" else None,
+    ]
+    for p in candidates:
+        if p is not None and p.exists():
+            print(f"  {label}: loading from {p}")
+            df = load_ohlcv(str(p), asset=asset)
+            print(f"    {len(df)} bars  {df.index[0].date()} → {df.index[-1].date()}")
+            return df
+    print(f"  {label}: file not found — using synthetic stub")
+    return stub_fn()
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Bayesian optimisation of the PortfolioAllocator rebalance_threshold."
+        description="Friction Shield: Bayesian optimisation of cross-asset rebalance_threshold."
     )
     parser.add_argument(
-        "--btc-data",
-        type=str,
-        default=None,
-        help="Path to BTC daily OHLCV CSV. Uses synthetic stub if omitted.",
+        "--btc-data", type=str, default=None,
+        help="BTC hourly CSV (default: data/btcusd_3600s_2019-01-01_to_2025-12-30.csv).",
     )
     parser.add_argument(
-        "--equity-data",
-        type=str,
-        default=None,
-        help="Path to QQQ daily OHLCV CSV. Uses synthetic stub if omitted.",
+        "--eth-data", type=str, default=None,
+        help="ETH hourly CSV (default: data/ethusd_3600s_2019-01-01_to_2025-12-30.csv).",
+    )
+    parser.add_argument(
+        "--spy-data", type=str, default=None,
+        help="SPY daily CSV (default: data/SPY_1D.csv).",
+    )
+    parser.add_argument(
+        "--qqq-data", type=str, default=None,
+        help="QQQ daily CSV (default: data/QQQ_1D.csv).",
     )
     parser.add_argument(
         "--n-trials", type=int, default=50,
@@ -400,78 +502,87 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = parser.parse_args(argv)
 
-    # ── Load / stub data ──────────────────────────────────────────────
-    if args.btc_data:
-        p = Path(args.btc_data)
-        if not p.exists():
-            print(f"[ERROR] BTC data not found: {p}", file=sys.stderr)
-            sys.exit(1)
-        print(f"Loading BTC data from {p} ...")
-        btc_df = load_ohlcv(str(p), asset="BTC")
-    else:
-        print("No --btc-data supplied. Using synthetic BTC stub (n=1500 daily bars).")
-        btc_df = _make_btc_stub(seed=args.seed)
+    # ── Load all four datasets ────────────────────────────────────────
+    print("Loading datasets...")
+    btc_df = _load_data(args.btc_data, lambda: _make_btc_stub(seed=args.seed),       "BTC", "BTC 1H")
+    eth_df = _load_data(args.eth_data, lambda: _make_eth_stub(seed=args.seed + 1),   "ETH", "ETH 1H")
+    spy_df = _load_data(args.spy_data, lambda: _make_spy_stub(seed=args.seed + 2),   "SPY", "SPY 1D")
+    qqq_df = _load_data(args.qqq_data, lambda: _make_qqq_stub(seed=args.seed + 3),   "QQQ", "QQQ 1D")
 
-    if args.equity_data:
-        p = Path(args.equity_data)
-        if not p.exists():
-            print(f"[ERROR] Equity data not found: {p}", file=sys.stderr)
-            sys.exit(1)
-        print(f"Loading equity data from {p} ...")
-        qqq_df = load_ohlcv(str(p), asset="QQQ")
-    else:
-        print("No --equity-data supplied. Using synthetic QQQ stub (n=1500 daily bars).")
-        qqq_df = _make_qqq_stub(seed=args.seed + 1)
-
-    print(
-        f"  BTC  : {len(btc_df)} bars  {btc_df.index[0].date()} → {btc_df.index[-1].date()}\n"
-        f"  QQQ  : {len(qqq_df)} bars  {qqq_df.index[0].date()} → {qqq_df.index[-1].date()}"
-    )
-
-    # ── Run sleeve backtests once (outside trial loop) ────────────────
+    # ── Run all four sleeve backtests (once, shared across all trials) ─
     print("\nRunning sleeve backtests (once, shared across all trials)...")
-
     exec_config = ExecutionConfig()
 
-    crypto_result = run_backtest(
+    crypto_capital = INITIAL_CAPITAL * INITIAL_CRYPTO_WEIGHT          # $70k
+    equity_capital = INITIAL_CAPITAL * (1.0 - INITIAL_CRYPTO_WEIGHT)  # $30k
+
+    btc_result = run_backtest(
         df=btc_df,
         strategy_module=STRATEGY_REGISTRY[CRYPTO_STRATEGY_KEY],
         asset="BTC",
-        initial_capital=INITIAL_CAPITAL * INITIAL_CRYPTO_WEIGHT,
+        initial_capital=crypto_capital * 0.5,   # 50% of crypto sleeve
         exec_config=exec_config,
     )
-    equity_result = run_backtest(
+    eth_result = run_backtest(
+        df=eth_df,
+        strategy_module=STRATEGY_REGISTRY[CRYPTO_STRATEGY_KEY],
+        asset="ETH",
+        initial_capital=crypto_capital * 0.5,   # 50% of crypto sleeve
+        exec_config=exec_config,
+    )
+    spy_result = run_backtest(
+        df=spy_df,
+        strategy_module=STRATEGY_REGISTRY[EQUITY_STRATEGY_KEY],
+        asset="SPY",
+        initial_capital=equity_capital * 0.5,   # 50% of equity sleeve
+        exec_config=exec_config,
+    )
+    qqq_result = run_backtest(
         df=qqq_df,
         strategy_module=STRATEGY_REGISTRY[EQUITY_STRATEGY_KEY],
         asset="QQQ",
-        initial_capital=INITIAL_CAPITAL * (1.0 - INITIAL_CRYPTO_WEIGHT),
+        initial_capital=equity_capital * 0.5,   # 50% of equity sleeve
         exec_config=exec_config,
     )
     print(
-        f"  Crypto sleeve : {crypto_result.n_trades} trades  "
-        f"final equity ${crypto_result.final_equity:,.0f}\n"
-        f"  Equity sleeve : {equity_result.n_trades} trades  "
-        f"final equity ${equity_result.final_equity:,.0f}"
+        f"  BTC : {btc_result.n_trades:>4} trades  final ${btc_result.final_equity:>10,.0f}\n"
+        f"  ETH : {eth_result.n_trades:>4} trades  final ${eth_result.final_equity:>10,.0f}\n"
+        f"  SPY : {spy_result.n_trades:>4} trades  final ${spy_result.final_equity:>10,.0f}\n"
+        f"  QQQ : {qqq_result.n_trades:>4} trades  final ${qqq_result.final_equity:>10,.0f}"
     )
 
-    # ── Align equity curves to a common daily index ───────────────────
-    common_index = crypto_result.equity_curve.index.intersection(
-        equity_result.equity_curve.index
-    )
+    # ── Resample hourly crypto curves to daily end-of-day NAV ─────────
+    # Equity curves from hourly backtests are indexed hourly; the allocator
+    # and fund simulation work on daily bars.
+    btc_eq_daily = btc_result.equity_curve.resample("D").last().dropna()
+    eth_eq_daily = eth_result.equity_curve.resample("D").last().dropna()
+
+    # SPY/QQQ equity curves are already daily
+    spy_eq_daily = spy_result.equity_curve
+    qqq_eq_daily = qqq_result.equity_curve
+
+    # ── Blend each pair into a single sleeve NAV (normalised to 1.0) ──
+    crypto_sleeve_nav = _blend_sleeve_navs(btc_eq_daily, eth_eq_daily, weight_a=0.5)
+    equity_sleeve_nav = _blend_sleeve_navs(spy_eq_daily, qqq_eq_daily, weight_a=0.5)
+
+    # ── Align both sleeve NAVs to a common daily index ────────────────
+    common_index = crypto_sleeve_nav.index.intersection(equity_sleeve_nav.index)
     if len(common_index) < 250:
         print("[ERROR] Common data period too short for allocation study.", file=sys.stderr)
         sys.exit(1)
 
-    crypto_nav = crypto_result.equity_curve.reindex(common_index).ffill()
-    equity_nav = equity_result.equity_curve.reindex(common_index).ffill()
+    crypto_nav = crypto_sleeve_nav.reindex(common_index).ffill()
+    equity_nav = equity_sleeve_nav.reindex(common_index).ffill()
 
-    # Daily pct-change returns for fund simulation
     crypto_daily_ret = crypto_nav.pct_change().fillna(0.0)
     equity_daily_ret = equity_nav.pct_change().fillna(0.0)
 
-    # BTC prices and ATR% aligned to the common index (for rebalance cost model)
-    btc_close   = btc_df["close"].reindex(common_index, method="ffill")
-    btc_atr_pct = compute_atr_pct_series(btc_df).reindex(common_index, method="ffill")
+    # ── BTC daily price + ATR% for the rebalance cost model ───────────
+    # Resample hourly BTC OHLCV to daily so compute_fill receives a
+    # price and ATR that match the daily simulation timestep.
+    btc_daily_ohlcv = resample_ohlcv(btc_df, "1D")
+    btc_close   = btc_daily_ohlcv["close"].reindex(common_index, method="ffill")
+    btc_atr_pct = compute_atr_pct_series(btc_daily_ohlcv).reindex(common_index, method="ffill")
 
     # ── Precompute raw target weights (vectorised, once per study) ────
     print("\nPrecomputing allocator target weights (vectorised)...")
