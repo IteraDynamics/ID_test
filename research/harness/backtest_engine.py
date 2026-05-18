@@ -202,9 +202,10 @@ def run_backtest(
         regime = regime_labels[i]
         ctx = StrategyContext(
             regime=regime,
-            current_exposure_frac=min(1.0, max(0.0, current_exposure)),
+            current_exposure_frac=min(1.0, abs(current_exposure)),
             asset=asset,
             bar_index=i,
+            meta={"signed_exposure": current_exposure},
         )
 
         # Pass only data up to bar i (closed-bar, no lookahead)
@@ -212,12 +213,14 @@ def run_backtest(
         intent = strategy_module.generate_intent(df_slice, ctx, closed_only=True)
         intents.append(intent)
 
-        # ── Determine target exposure ─────────────────────────────────
-        if intent.action in (Action.EXIT_LONG, Action.FLAT):
+        # ── Determine target exposure (signed: positive=long, negative=short) ──
+        if intent.action in (Action.EXIT_LONG, Action.EXIT_SHORT, Action.FLAT):
             target_exposure = 0.0
         elif intent.action == Action.HOLD:
             target_exposure = current_exposure
-        else:
+        elif intent.action == Action.ENTER_SHORT:
+            target_exposure = -min(intent.desired_exposure_frac, max_exposure)
+        else:  # ENTER_LONG
             target_exposure = min(intent.desired_exposure_frac, max_exposure)
 
         # ── Cooldown check ────────────────────────────────────────────
@@ -241,18 +244,20 @@ def run_backtest(
                 config=exec_config,
             )
 
-            # Update position
-            # Cash: deduct/receive notional at mid + fee (slippage embedded in units)
+            # Update position (position_units is signed: positive=long, negative=short)
             if direction == "BUY":
                 units_traded = trade_notional / fill.effective_price
                 position_units += units_traded
                 cash -= trade_notional + fill.fee_usd
             else:
                 units_traded = trade_notional / fill.effective_price
-                position_units = max(0.0, position_units - units_traded)
+                position_units -= units_traded
+                # For non-short targets, clamp to 0 to avoid floating-point dust
+                if target_exposure >= 0:
+                    position_units = max(0.0, position_units)
                 cash += trade_notional - fill.fee_usd
 
-            # Re-mark after trade
+            # Re-mark after trade (current_exposure is signed: negative for shorts)
             nav = cash + position_units * close_price
             prev_exposure = current_exposure
             current_exposure = (position_units * close_price) / nav if nav > 0 else 0.0
