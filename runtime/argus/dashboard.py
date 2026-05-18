@@ -1,12 +1,14 @@
-"""Itera Dynamics — Unified Fund v1 Live Dashboard (v2).
+"""Itera Dynamics — Unified Fund v1 Live Dashboard (v3).
 
-Reads RuntimeState JSON files for both sleeves and unified_fund_live_state.json.
+Reads RuntimeState JSON files for all four independent sleeves:
+  BTC, ETH (crypto), SPY, QQQ (equity), plus unified_fund_live_state.json.
 
 Usage:
     streamlit run runtime/argus/dashboard.py
 
     # Optional env overrides:
-    CRYPTO_STATE_PATH=... EQUITY_STATE_PATH=... FUND_ENV=LIVE streamlit run ...
+    BTC_STATE_PATH=... ETH_STATE_PATH=... SPY_STATE_PATH=... QQQ_STATE_PATH=...
+    FUND_ENV=LIVE streamlit run ...
 """
 
 from __future__ import annotations
@@ -31,7 +33,8 @@ except ImportError:
 
 BTC_STATE_PATH           = os.getenv("BTC_STATE_PATH",           "runtime/argus/state/BTC_live_state.json")
 ETH_STATE_PATH           = os.getenv("ETH_STATE_PATH",           "runtime/argus/state/ETH_live_state.json")
-EQUITY_STATE_PATH        = os.getenv("EQUITY_STATE_PATH",        "runtime/argus/state/EQUITY_COMPOSITE_live_state.json")
+SPY_STATE_PATH           = os.getenv("SPY_STATE_PATH",           "runtime/argus/state/spy_state.json")
+QQQ_STATE_PATH           = os.getenv("QQQ_STATE_PATH",           "runtime/argus/state/qqq_state.json")
 CRYPTO_DETAIL_STATE_PATH = os.getenv("CRYPTO_DETAIL_STATE_PATH", "runtime/argus/state/crypto_detail_state.json")
 EQUITY_DETAIL_STATE_PATH = os.getenv("EQUITY_DETAIL_STATE_PATH", "runtime/argus/state/equity_detail_state.json")
 FUND_STATE_PATH          = os.getenv("FUND_STATE_PATH",          "runtime/argus/state/unified_fund_live_state.json")
@@ -39,11 +42,11 @@ REBALANCE_LOG_PATH       = os.getenv("REBALANCE_LOG_PATH",       "runtime/argus/
 FILLS_LOG_PATH           = os.getenv("FILLS_LOG_PATH",           "runtime/argus/state/unified_fund_fills.jsonl")
 SIGNAL_LOG_PATH          = os.getenv("SIGNAL_LOG_PATH",          "runtime/argus/state/unified_fund_signals.jsonl")
 
-REFRESH_SECS  = int(os.getenv("DASHBOARD_REFRESH_SECS", "30"))
-DRIFT_BUFFER  = 0.05
-_VERSION      = "2.0.0"
-_ENV_LABEL    = os.getenv("FUND_ENV", "PAPER")   # set FUND_ENV=LIVE in production
-_STALE_MULT   = 3                                  # warn after this many missed cycles
+REFRESH_SECS = int(os.getenv("DASHBOARD_REFRESH_SECS", "30"))
+DRIFT_BUFFER = 0.05
+_VERSION     = "3.0.0"
+_ENV_LABEL   = os.getenv("FUND_ENV", "PAPER")
+_STALE_MULT  = 3
 
 # ── Page config (must be first Streamlit call) ─────────────────────────────────
 st.set_page_config(
@@ -219,12 +222,6 @@ def _usd(v: float) -> str:
 
 
 def _delta_usd(v: float, pct: float | None = None) -> str:
-    """Format a dollar P&L value for use as a Streamlit metric delta.
-
-    Streamlit detects arrow direction by looking for a leading '-' character.
-    The plain _usd() helper formats negatives as '$-X.XX' (dollar sign first),
-    which Streamlit misreads as positive.  This helper always puts the sign first.
-    """
     sign = "+" if v >= 0 else "-"
     base = f"{sign}${abs(v):,.2f}"
     if pct is not None:
@@ -238,9 +235,9 @@ def _time_ago(ts_str: str) -> str:
         if ts.tzinfo is None:
             ts = ts.replace(tzinfo=timezone.utc)
         secs = int((datetime.now(timezone.utc) - ts).total_seconds())
-        if secs < 60:   return f"{secs}s ago"
-        if secs < 3600: return f"{secs // 60}m ago"
-        if secs < 86400:return f"{secs // 3600}h {(secs % 3600) // 60}m ago"
+        if secs < 60:    return f"{secs}s ago"
+        if secs < 3600:  return f"{secs // 60}m ago"
+        if secs < 86400: return f"{secs // 3600}h {(secs % 3600) // 60}m ago"
         return f"{secs // 86400}d ago"
     except Exception:
         return "—"
@@ -330,14 +327,11 @@ def _compute_perf(sig_df: pd.DataFrame) -> dict:
     elapsed = (t1 - t0).total_seconds() if pd.notna(t0) and pd.notna(t1) else 0
     years   = elapsed / (365.25 * 86400) if elapsed > 0 else None
 
-    # Annualized return requires at least 30 days of history; shorter periods
-    # produce astronomically large exponents that overflow to nonsense values.
     _MIN_YEARS_ANN = 30 / 365.25
     ann_return = None
     if years and years >= _MIN_YEARS_ANN:
         ann_return = (1 + total_return) ** (1 / years) - 1
 
-    # Vol and Sharpe require ≥30 observations for meaningful statistics.
     returns = nav_df["total_nav"].pct_change().dropna()
     vol_ann, sharpe = None, None
     if len(returns) >= 30 and elapsed > 0:
@@ -372,15 +366,11 @@ def _sleeve_health(state: dict) -> dict:
     cash   = float(state.get("cash", 0.0))
     nav    = float(state.get("nav", 0.0))
     avg_ep = float(state.get("average_entry_price", 0.0))
-    # A position exists as long as units are held — avg_ep may be stale (0.0)
-    # if the orchestrator restarted without rehydrating fill history.
     in_pos = units > 1e-10
     mark   = (nav - cash) / units if in_pos else None
-    # Compute PnL from first principles; don't trust the persisted field which
-    # is zeroed out whenever avg_entry is stale.
     cost   = avg_ep * units if (in_pos and avg_ep > 0) else 0.0
     unreal = (mark - avg_ep) * units if (in_pos and mark is not None and avg_ep > 0) else 0.0
-    avg_ep_stale = in_pos and avg_ep <= 0   # true when runner hasn't rehydrated yet
+    avg_ep_stale = in_pos and avg_ep <= 0
     return dict(
         units=units, cash=cash, nav=nav, avg_ep=avg_ep, unreal=unreal,
         in_pos=in_pos, mark=mark,
@@ -412,32 +402,28 @@ def _render_sleeve_detail(
     sl_bar    = state.get("last_bar_timestamp", "—")
     sl_units  = float(state.get("position_units", 0.0))
     sl_avg_ep = float(state.get("average_entry_price", 0.0))
-    sl_unreal = float(state.get("unrealized_pnl_usd", 0.0))
 
     r1, r2, r3, r4 = st.columns(4)
-    r1.metric("Sleeve NAV",    _usd(sl_nav))
-    r2.metric("vs HWM",        _pct(sl_dd),
+    r1.metric("Sleeve NAV",  _usd(sl_nav))
+    r2.metric("vs HWM",      _pct(sl_dd),
               delta_color="normal" if sl_dd >= 0 else "inverse",
               help=f"HWM: {_usd(sl_hwm)}")
-    r3.metric("Cash",          _usd(sl_cash))
-    r4.metric("Total Fills",   sl_fills)
+    r3.metric("Cash",        _usd(sl_cash))
+    r4.metric("Total Fills", sl_fills)
 
-    # Exposure progress bar
     st.caption("**Gross Exposure**")
     st.progress(float(min(max(sl_exp, 0.0), 1.0)), text=f"{sl_exp * 100:.1f}%")
 
-    # DD governor status badge
     if sl_halted:
         st.markdown('<span class="badge-err">⛔ DD GOVERNOR HALTED</span>', unsafe_allow_html=True)
     else:
         st.markdown('<span class="badge-ok">✓ DD Governor Active</span>', unsafe_allow_html=True)
 
-    # Position detail
     if sl_units > 1e-10:
-        cur_price  = (sl_nav - sl_cash) / sl_units
+        cur_price = (sl_nav - sl_cash) / sl_units
         if sl_avg_ep > 0:
             cost_basis = sl_avg_ep * sl_units
-            sl_unreal  = (cur_price - sl_avg_ep) * sl_units   # recompute; don't trust stale field
+            sl_unreal  = (cur_price - sl_avg_ep) * sl_units
             unreal_pct = sl_unreal / cost_basis if cost_basis > 0 else 0.0
             colour     = "green" if sl_unreal >= 0 else "red"
             st.markdown(
@@ -456,7 +442,6 @@ def _render_sleeve_detail(
     else:
         st.markdown("**Position:** FLAT")
 
-    # Last trade
     if last_trade:
         lt_side  = last_trade.get("side", "")
         lt_qty   = last_trade.get("qty", 0)
@@ -473,21 +458,23 @@ def _render_sleeve_detail(
 
 # ── Data loading ───────────────────────────────────────────────────────────────
 
-btc_state      = _load_json(BTC_STATE_PATH)
-eth_state      = _load_json(ETH_STATE_PATH)
-equity_state   = _load_json(EQUITY_STATE_PATH)
-crypto_detail  = _load_json(CRYPTO_DETAIL_STATE_PATH)
-equity_detail  = _load_json(EQUITY_DETAIL_STATE_PATH)
-fund_state     = _load_json(FUND_STATE_PATH)
+btc_state     = _load_json(BTC_STATE_PATH)
+eth_state     = _load_json(ETH_STATE_PATH)
+spy_state     = _load_json(SPY_STATE_PATH)
+qqq_state     = _load_json(QQQ_STATE_PATH)
+crypto_detail = _load_json(CRYPTO_DETAIL_STATE_PATH)
+equity_detail = _load_json(EQUITY_DETAIL_STATE_PATH)
+fund_state    = _load_json(FUND_STATE_PATH)
 
 _missing = [
     name for name, path, data in [
-        ("BTC sleeve",    BTC_STATE_PATH,    btc_state),
-        ("ETH sleeve",    ETH_STATE_PATH,    eth_state),
-        ("Equity sleeve", EQUITY_STATE_PATH, equity_state),
-        ("Fund state",    FUND_STATE_PATH,   fund_state),
+        ("BTC sleeve",  BTC_STATE_PATH,  btc_state),
+        ("ETH sleeve",  ETH_STATE_PATH,  eth_state),
+        ("SPY sleeve",  SPY_STATE_PATH,  spy_state),
+        ("QQQ sleeve",  QQQ_STATE_PATH,  qqq_state),
+        ("Fund state",  FUND_STATE_PATH, fund_state),
     ]
-    if data is None
+    if not data
 ]
 if _missing:
     st.warning(
@@ -496,12 +483,14 @@ if _missing:
         "Start the runner to generate state."
     )
 
-# Combined crypto NAV = BTC NAV + ETH NAV (fund_state is authoritative if present)
-_btc_nav_raw  = float(btc_state.get("nav",  0.0)) if btc_state  else 0.0
-_eth_nav_raw  = float(eth_state.get("nav",  0.0)) if eth_state  else 0.0
-crypto_nav    = float(fund_state.get("crypto_nav",  _btc_nav_raw + _eth_nav_raw))
-equity_nav    = float(fund_state.get("equity_nav",  equity_state.get("nav", 0.0) if equity_state else 0.0))
-total_nav     = float(fund_state.get("total_nav",   crypto_nav + equity_nav))
+_btc_nav_raw = float(btc_state.get("nav", 0.0)) if btc_state else 0.0
+_eth_nav_raw = float(eth_state.get("nav", 0.0)) if eth_state else 0.0
+_spy_nav_raw = float(spy_state.get("nav", 0.0)) if spy_state else 0.0
+_qqq_nav_raw = float(qqq_state.get("nav", 0.0)) if qqq_state else 0.0
+
+crypto_nav    = float(fund_state.get("crypto_nav",   _btc_nav_raw + _eth_nav_raw))
+equity_nav    = float(fund_state.get("equity_nav",   _spy_nav_raw + _qqq_nav_raw))
+total_nav     = float(fund_state.get("total_nav",    crypto_nav + equity_nav))
 fund_hwm      = float(fund_state.get("high_water_mark", total_nav or 1.0))
 drawdown_frac = float(fund_state.get("drawdown_frac",
     (total_nav / fund_hwm - 1.0) if fund_hwm > 0 else 0.0))
@@ -512,30 +501,32 @@ equity_frac   = float(fund_state.get("equity_frac",
 fund_cycle    = int(fund_state.get("cycle", 0))
 last_updated  = fund_state.get("timestamp", "")
 
-sig_df    = _load_signals(SIGNAL_LOG_PATH, n_cycles=200)
-fills_df  = _load_fills(FILLS_LOG_PATH, n=100)
-rebal_df  = _load_rebalance_df(REBALANCE_LOG_PATH, n=25)
-perf      = _compute_perf(sig_df)
+sig_df      = _load_signals(SIGNAL_LOG_PATH, n_cycles=200)
+fills_df    = _load_fills(FILLS_LOG_PATH, n=100)
+rebal_df    = _load_rebalance_df(REBALANCE_LOG_PATH, n=25)
+perf        = _compute_perf(sig_df)
 last_trades = _last_trade_per_sleeve(fills_df)
 
-btc_health    = _sleeve_health(btc_state)  if btc_state  else {}
-eth_health    = _sleeve_health(eth_state)  if eth_state  else {}
-equity_health = _sleeve_health(equity_state) if equity_state else {}
+btc_health = _sleeve_health(btc_state) if btc_state else {}
+eth_health = _sleeve_health(eth_state) if eth_state else {}
+spy_health = _sleeve_health(spy_state) if spy_state else {}
+qqq_health = _sleeve_health(qqq_state) if qqq_state else {}
 
-# Crypto sleeve combined health (used for KPI row)
 _crypto_unreal = btc_health.get("unreal", 0.0) + eth_health.get("unreal", 0.0)
-_crypto_cost   = (
+_equity_unreal = spy_health.get("unreal", 0.0) + qqq_health.get("unreal", 0.0)
+total_unrealized = _crypto_unreal + _equity_unreal
+
+_crypto_cost = (
     btc_health.get("avg_ep", 0.0) * btc_health.get("units", 0.0)
     + eth_health.get("avg_ep", 0.0) * eth_health.get("units", 0.0)
 )
-total_unrealized = _crypto_unreal + equity_health.get("unreal", 0.0)
-_total_cost = (
-    _crypto_cost
-    + equity_health.get("avg_ep", 0.0) * equity_health.get("units", 0.0)
+_equity_cost = (
+    spy_health.get("avg_ep", 0.0) * spy_health.get("units", 0.0)
+    + qqq_health.get("avg_ep", 0.0) * qqq_health.get("units", 0.0)
 )
+_total_cost = _crypto_cost + _equity_cost
 total_unreal_pct = total_unrealized / _total_cost if _total_cost > 0 else None
 
-# cycle-over-cycle NAV delta
 _prev_nav: float | None = None
 if not sig_df.empty and "total_nav" in sig_df.columns:
     _navs = (
@@ -571,8 +562,7 @@ with h_right:
 
 # ── Staleness warning ──────────────────────────────────────────────────────────
 if last_updated:
-    stale = _staleness_secs(last_updated)
-    # estimate cycle period from signal log
+    stale    = _staleness_secs(last_updated)
     est_cycle = 3600.0
     if not sig_df.empty:
         _ts_sorted = (
@@ -599,7 +589,7 @@ k1.metric(
     "Total Fund NAV",
     _usd(total_nav),
     delta=_usd(total_nav - _prev_nav) if _prev_nav is not None else None,
-    help="Crypto sleeve NAV + Equity sleeve NAV",
+    help="Crypto NAV (BTC+ETH) + Equity NAV (SPY+QQQ)",
 )
 k2.metric(
     "Fund Drawdown",
@@ -627,12 +617,11 @@ k6.metric(
     _usd(total_unrealized),
     delta=f"{total_unreal_pct * 100:+.2f}%" if total_unreal_pct is not None else None,
     delta_color="normal",
-    help="Total unrealized PnL across both sleeves vs. cost basis",
+    help="Total unrealized PnL across all four sleeves vs. cost basis",
 )
 
 # ── Position Health Strip ─────────────────────────────────────────────────────
 
-# Helper: sniper status → badge html
 _SNIPER_BADGE = {
     "ARMED":   ('<span style="background:#b45309;color:#fff;padding:2px 8px;'
                 'border-radius:3px;font-size:0.72rem;font-weight:700">⚡ ARMED</span>'),
@@ -644,294 +633,168 @@ _SNIPER_BADGE = {
                 'border-radius:3px;font-size:0.72rem;font-weight:700">… WARMUP</span>'),
 }
 
-if btc_health or eth_health or equity_health:
+if btc_health or eth_health or spy_health or qqq_health:
     _phc1, _phc2 = st.columns(2)
 
     # ── Crypto card (BTC + ETH sub-sleeves) ──────────────────────────────────
     with _phc1:
         with st.container(border=True):
             _cd = crypto_detail
-            # Regime label: prefer btc (primary) regime
             _cd_btc_regime = (_cd.get("btc_regime") if _cd else None) or ""
             _cr_regime_tag = f" · `{_cd_btc_regime}`" if _cd_btc_regime else ""
             st.caption(f"**CRYPTO SLEEVE** (BTC + ETH){_cr_regime_tag}")
 
-            # ── Price row: live mark when in position, last bar close when flat ─
             _btc_close = _cd.get("btc_close") if _cd else None
             _eth_close = _cd.get("eth_close") if _cd else None
-            # NAV-derived mark is always current; bar-close is only updated each cycle.
             _btc_price = btc_health.get("mark") if btc_health.get("in_pos") else _btc_close
             _eth_price = eth_health.get("mark") if eth_health.get("in_pos") else _eth_close
             if _btc_price is not None or _eth_price is not None:
                 _cp1, _cp2 = st.columns(2)
                 if _btc_price is not None:
-                    _btc_help = ("Live mark — (NAV − cash) ÷ units."
-                                 if btc_health.get("in_pos")
-                                 else "Last bar close — updates each runner cycle.")
-                    _cp1.metric("BTC-USD", _usd(_btc_price), help=_btc_help)
+                    _cp1.metric("BTC-USD", _usd(_btc_price),
+                                help=("Live mark — (NAV − cash) ÷ units."
+                                      if btc_health.get("in_pos")
+                                      else "Last bar close."))
                 if _eth_price is not None:
-                    _eth_help = ("Live mark — (NAV − cash) ÷ units."
-                                 if eth_health.get("in_pos")
-                                 else "Last bar close — updates each runner cycle.")
-                    _cp2.metric("ETH-USD", _usd(_eth_price), help=_eth_help)
+                    _cp2.metric("ETH-USD", _usd(_eth_price),
+                                help=("Live mark — (NAV − cash) ÷ units."
+                                      if eth_health.get("in_pos")
+                                      else "Last bar close."))
             else:
-                st.caption(
-                    ":gray[BTC/ETH prices pending — runner restart required]"
-                    if _cd else ":gray[Prices unavailable — runner not started]"
-                )
+                st.caption(":gray[BTC/ETH prices pending — runner not started]")
 
-            # ── BTC sub-sleeve position ───────────────────────────────────
+            # BTC sub-sleeve
             _btc = btc_health
             if _btc.get("in_pos"):
                 _btc_stale = _btc.get("avg_ep_stale", False)
                 _bm1, _bm2, _bm3, _bm4 = st.columns(4)
                 _bm1.metric("BTC Mark",  _usd(_btc["mark"]))
-                _bm2.metric(
-                    "BTC Entry",
-                    "⚠ stale" if _btc_stale else _usd(_btc["avg_ep"]),
-                    help="Restart runner to restore avg entry." if _btc_stale else None,
-                )
+                _bm2.metric("BTC Entry", "⚠ stale" if _btc_stale else _usd(_btc["avg_ep"]))
                 _bm3.metric("BTC Units", f"{_btc['units']:.6f}")
                 if _btc_stale:
-                    _bm4.metric("BTC PnL", "⚠ stale",
-                                help="Cannot compute without valid avg entry.")
+                    _bm4.metric("BTC PnL", "⚠ stale")
                 else:
-                    _bm4.metric(
-                        "BTC PnL",
-                        _usd(_btc["unreal"]),
-                        delta=f"{_btc['unreal_pct'] * 100:+.2f}%",
-                        delta_color="normal",
-                    )
+                    _bm4.metric("BTC PnL", _usd(_btc["unreal"]),
+                                delta=f"{_btc['unreal_pct'] * 100:+.2f}%",
+                                delta_color="normal")
             else:
                 _bc1, _bc2 = st.columns([1, 3])
                 _bc1.metric("BTC Cash", _usd(_btc.get("cash", 0.0)))
-                _bc2.markdown(
-                    "<br><span style='color:#6b7280'>BTC — FLAT</span>",
-                    unsafe_allow_html=True,
-                )
+                _bc2.markdown("<br><span style='color:#6b7280'>BTC — FLAT</span>",
+                              unsafe_allow_html=True)
 
-            # ── ETH sub-sleeve position ───────────────────────────────────
+            # ETH sub-sleeve
             _eth = eth_health
             if _eth.get("in_pos"):
                 _eth_stale = _eth.get("avg_ep_stale", False)
                 _em1, _em2, _em3, _em4 = st.columns(4)
                 _em1.metric("ETH Mark",  _usd(_eth["mark"]))
-                _em2.metric(
-                    "ETH Entry",
-                    "⚠ stale" if _eth_stale else _usd(_eth["avg_ep"]),
-                    help="Restart runner to restore avg entry." if _eth_stale else None,
-                )
+                _em2.metric("ETH Entry", "⚠ stale" if _eth_stale else _usd(_eth["avg_ep"]))
                 _em3.metric("ETH Units", f"{_eth['units']:.6f}")
                 if _eth_stale:
-                    _em4.metric("ETH PnL", "⚠ stale",
-                                help="Cannot compute without valid avg entry.")
+                    _em4.metric("ETH PnL", "⚠ stale")
                 else:
-                    _em4.metric(
-                        "ETH PnL",
-                        _usd(_eth["unreal"]),
-                        delta=f"{_eth['unreal_pct'] * 100:+.2f}%",
-                        delta_color="normal",
-                    )
+                    _em4.metric("ETH PnL", _usd(_eth["unreal"]),
+                                delta=f"{_eth['unreal_pct'] * 100:+.2f}%",
+                                delta_color="normal")
             else:
                 _ec1, _ec2 = st.columns([1, 3])
                 _ec1.metric("ETH Cash", _usd(_eth.get("cash", 0.0)))
-                _ec2.markdown(
-                    "<br><span style='color:#6b7280'>ETH — FLAT</span>",
-                    unsafe_allow_html=True,
-                )
+                _ec2.markdown("<br><span style='color:#6b7280'>ETH — FLAT</span>",
+                              unsafe_allow_html=True)
 
-    # ── Equity card ──────────────────────────────────────────────────────────
+    # ── Equity card (SPY + QQQ sub-sleeves) ──────────────────────────────────
     with _phc2:
         with st.container(border=True):
-            _eq = equity_health
             _ed = equity_detail
-            _eq_regime = _ed.get("regime") or _eq.get("regime", "")
-            _eq_regime_tag = f" · `{_eq_regime}`" if _eq_regime else ""
-            st.caption(f"**{equity_state.get('asset', 'EQUITY_COMPOSITE')}**{_eq_regime_tag}")
+            _spy_regime = (_ed.get("spy_regime") if _ed else None) or spy_health.get("regime", "")
+            _qqq_regime = (_ed.get("qqq_regime") if _ed else None) or qqq_health.get("regime", "")
+            _eq_regime_tag = f" · SPY `{_spy_regime}` / QQQ `{_qqq_regime}`" if (_spy_regime or _qqq_regime) else ""
+            st.caption(f"**EQUITY SLEEVE** (SPY + QQQ){_eq_regime_tag}")
 
-            # Per-asset price + position breakdown (SPY / QQQ)
-            _ed_live   = _ed and _ed.get("spy_close") is not None
-            _eq_in_pos = _eq.get("in_pos", False)
-            _eq_stale  = _eq.get("avg_ep_stale", False)
-            if _ed_live:
-                _spy_close  = float(_ed["spy_close"])
-                _qqq_close  = float(_ed["qqq_close"])
-                _spy_active = _ed.get("spy_active", False)
-                _qqq_active = _ed.get("qqq_active", False)
-                _spy_sma    = _ed.get("spy_sma")
-                _qqq_sma    = _ed.get("qqq_sma")
-                _spy_wt     = float(_ed.get("spy_weight", 0.5))
-                _qqq_wt     = float(_ed.get("qqq_weight", 0.5))
+            # Live equity price quotes
+            _live_quotes = _fetch_live_equity_quotes()
+            _mkt_open    = _is_market_open()
 
-                # Bar-date staleness badge
-                _eq_bar_ts   = equity_state.get("last_bar_timestamp", "")
-                _eq_bar_date = _eq_bar_ts[:10] if _eq_bar_ts else ""
-                _eq_bar_age  = 0
-                if _eq_bar_date:
-                    try:
-                        _bar_d      = datetime.strptime(_eq_bar_date, "%Y-%m-%d")
-                        _today_d    = datetime.now(timezone.utc).replace(tzinfo=None)
-                        _eq_bar_age = max(0, (_today_d - _bar_d).days)
-                    except Exception:
-                        pass
-                # Fetch live quotes (cached 25 s); resolve display prices
-                _live_quotes = _fetch_live_equity_quotes()
-                _mkt_open    = _is_market_open()
-                if _live_quotes:
-                    _disp_spy  = _live_quotes["SPY"]
-                    _disp_qqq  = _live_quotes["QQQ"]
-                    _price_tag = "LIVE" if _mkt_open else "QUOTE"
-                else:
-                    _disp_spy  = _spy_close
-                    _disp_qqq  = _qqq_close
-                    _price_tag = None
+            _ed_spy_close = float(_ed["spy_close"]) if (_ed and _ed.get("spy_close") is not None) else None
+            _ed_qqq_close = float(_ed["qqq_close"]) if (_ed and _ed.get("qqq_close") is not None) else None
 
-                _bar_colour = "#f59e0b" if _eq_bar_age >= 1 else "#6b7280"
-                _bar_badge  = f"⚠ {_eq_bar_age}d stale" if _eq_bar_age >= 1 else "current"
-                if _live_quotes and not _eq_bar_age:
-                    _live_badge = (
-                        '<span style="color:#22c55e;font-size:0.72rem;margin-left:6px;">'
-                        "⚡ LIVE</span>" if _mkt_open else
-                        '<span style="color:#6b7280;font-size:0.72rem;margin-left:6px;">'
-                        "QUOTE</span>"
-                    )
-                else:
-                    _live_badge = ""
-                st.markdown(
-                    f'<span style="color:{_bar_colour};font-size:0.72rem;">'
-                    f"Prices as of {_eq_bar_date or '—'} ({_bar_badge})</span>"
-                    f"{_live_badge}",
-                    unsafe_allow_html=True,
-                )
+            _disp_spy = (_live_quotes["SPY"] if _live_quotes else None) or _ed_spy_close
+            _disp_qqq = (_live_quotes["QQQ"] if _live_quotes else None) or _ed_qqq_close
+            _price_tag = ("LIVE" if _mkt_open else "QUOTE") if _live_quotes else None
 
-                if _eq_in_pos and not _eq_stale and _eq.get("mark"):
-                    _disp_comp   = _spy_wt * _disp_spy + _qqq_wt * _disp_qqq
-                    _eq_notional = _eq["units"] * _disp_comp
-                    _total_cost  = _eq["avg_ep"] * _eq["units"]
-                    _total_pnl   = _eq_notional - _total_cost
-                    _total_pnl_pct = _total_pnl / _total_cost if _total_cost > 0 else 0.0
-                    _pnl_label   = "Live PnL" if _live_quotes else "PnL"
-                    _tag_sfx     = f"  [{_price_tag}]" if _price_tag else ""
-
-                    # ── Composite-level P&L ──────────────────────────────────
-                    _ep1, _ep2, _ep3, _ep4 = st.columns(4)
+            if _disp_spy is not None or _disp_qqq is not None:
+                _ep1, _ep2 = st.columns(2)
+                if _disp_spy is not None:
+                    _tag_sfx = f"  [{_price_tag}]" if _price_tag else ""
                     _ep1.metric(
-                        f"Composite{_tag_sfx}",
-                        _usd(_disp_comp),
-                        help=f"1 unit = SPY×{_spy_wt:.0%} + QQQ×{_qqq_wt:.0%}",
+                        f"SPY-USD{_tag_sfx}", _usd(_disp_spy),
+                        delta="above SMA" if (_ed and _ed.get("spy_active")) else "below SMA",
+                        delta_color="normal" if (_ed and _ed.get("spy_active")) else "off",
+                        help=f"Last bar: {_usd(_ed_spy_close)}" if (_live_quotes and _ed_spy_close) else None,
                     )
-                    _ep2.metric("Avg Entry", _usd(_eq["avg_ep"]))
-                    _ep3.metric("Units", f"{_eq['units']:.4f}")
-                    _ep4.metric(
-                        _pnl_label,
-                        _usd(_total_pnl),
-                        delta=_delta_usd(_total_pnl, _total_pnl_pct),
-                        delta_color="normal",
+                if _disp_qqq is not None:
+                    _tag_sfx = f"  [{_price_tag}]" if _price_tag else ""
+                    _ep2.metric(
+                        f"QQQ-USD{_tag_sfx}", _usd(_disp_qqq),
+                        delta="above SMA" if (_ed and _ed.get("qqq_active")) else "below SMA",
+                        delta_color="normal" if (_ed and _ed.get("qqq_active")) else "off",
+                        help=f"Last bar: {_usd(_ed_qqq_close)}" if (_live_quotes and _ed_qqq_close) else None,
                     )
-                    st.caption(
-                        f"1 unit = SPY×{_spy_wt:.0%} + QQQ×{_qqq_wt:.0%}  ·  "
-                        f"Cost basis: {_usd(_total_cost)}  ·  Notional: {_usd(_eq_notional)}"
-                    )
-                    st.divider()
-
-                    # ── SPY / QQQ as signal references (no fake split P&L) ──
-                    _ea1, _ea2 = st.columns(2)
-                    with _ea1:
-                        _spy_icon    = "✅" if _spy_active else "⬜"
-                        _spy_sma_str = f"SMA {_usd(_spy_sma)}" if _spy_sma else "SMA —"
-                        st.metric(
-                            f"{_spy_icon} SPY{_tag_sfx}",
-                            _usd(_disp_spy),
-                            delta="above SMA" if _spy_active else "below SMA",
-                            delta_color="normal" if _spy_active else "off",
-                            help=(
-                                f"Signal: {'above' if _spy_active else 'below'} {_spy_sma_str} "
-                                f"→ {'allocated' if _spy_active else 'cash'}."
-                                + (f"  Last bar: {_usd(_spy_close)}" if _live_quotes else "")
-                            ),
-                        )
-                    with _ea2:
-                        _qqq_icon    = "✅" if _qqq_active else "⬜"
-                        _qqq_sma_str = f"SMA {_usd(_qqq_sma)}" if _qqq_sma else "SMA —"
-                        st.metric(
-                            f"{_qqq_icon} QQQ{_tag_sfx}",
-                            _usd(_disp_qqq),
-                            delta="above SMA" if _qqq_active else "below SMA",
-                            delta_color="normal" if _qqq_active else "off",
-                            help=(
-                                f"Signal: {'above' if _qqq_active else 'below'} {_qqq_sma_str} "
-                                f"→ {'allocated' if _qqq_active else 'cash'}."
-                                + (f"  Last bar: {_usd(_qqq_close)}" if _live_quotes else "")
-                            ),
-                        )
-                else:
-                    # Flat or stale avg_entry: show signal status only, no PnL
-                    _ea1, _ea2 = st.columns(2)
-                    with _ea1:
-                        _spy_icon = "✅" if _spy_active else "⬜"
-                        _spy_vs   = f"  vs SMA {_usd(_spy_sma)}" if _spy_sma else ""
-                        st.metric(
-                            f"{_spy_icon} SPY",
-                            _usd(_spy_close),
-                            delta="above SMA" if _spy_active else "below SMA",
-                            delta_color="normal" if _spy_active else "off",
-                            help=f"Last bar close. SPY above SMA = allocated, below = cash.{_spy_vs}",
-                        )
-                    with _ea2:
-                        _qqq_icon = "✅" if _qqq_active else "⬜"
-                        _qqq_vs   = f"  vs SMA {_usd(_qqq_sma)}" if _qqq_sma else ""
-                        st.metric(
-                            f"{_qqq_icon} QQQ",
-                            _usd(_qqq_close),
-                            delta="above SMA" if _qqq_active else "below SMA",
-                            delta_color="normal" if _qqq_active else "off",
-                            help=f"Last bar close. QQQ above SMA = allocated, below = cash.{_qqq_vs}",
-                        )
-                    if _eq_in_pos and _eq_stale:
-                        st.markdown(
-                            f"**Position:** {_eq.get('units', 0.0):.6f} composite units &nbsp;|&nbsp; "
-                            f"**Avg Entry:** ⚠ stale (restart runner) &nbsp;|&nbsp; "
-                            f"**Unrealized PnL:** ⚠ stale"
-                        )
-                    elif not _eq_in_pos:
-                        _ec1, _ec2 = st.columns([1, 3])
-                        _ec1.metric("Cash", _usd(_eq.get("cash", 0.0)))
-                        _ec2.markdown(
-                            "<br><span style='color:#6b7280'>FLAT — no open position</span>",
-                            unsafe_allow_html=True,
-                        )
             else:
-                st.caption(
-                    ":gray[SPY/QQQ prices pending — runner restart required to populate live data]"
-                    if _ed else ":gray[Asset detail unavailable — runner not yet started]"
-                )
-                if _eq_in_pos:
-                    _em1, _em2, _em3 = st.columns(3)
-                    _em1.metric("Mark Price", _usd(_eq["mark"]))
-                    _em2.metric(
-                        "Avg Entry",
-                        "⚠ stale" if _eq_stale else _usd(_eq["avg_ep"]),
-                        help="Restart runner to restore avg entry." if _eq_stale else None,
-                    )
-                    if _eq_stale:
-                        _em3.metric("Unrealized PnL", "⚠ stale",
-                                    help="Cannot compute without valid avg entry. Restart runner.")
-                    else:
-                        _em3.metric(
-                            "Unrealized PnL",
-                            _usd(_eq["unreal"]),
-                            delta=f"{_eq['unreal_pct'] * 100:+.2f}%",
-                            delta_color="normal",
-                        )
-                else:
-                    _ec1, _ec2 = st.columns([1, 3])
-                    _ec1.metric("Cash", _usd(_eq.get("cash", 0.0)))
-                    _ec2.markdown(
-                        "<br><span style='color:#6b7280'>FLAT — no open position</span>",
-                        unsafe_allow_html=True,
-                    )
+                st.caption(":gray[SPY/QQQ prices pending — runner not started]")
 
-            # Overlay status row
+            # SPY sub-sleeve
+            _spy = spy_health
+            if _spy.get("in_pos"):
+                _spy_stale = _spy.get("avg_ep_stale", False)
+                _sm1, _sm2, _sm3, _sm4 = st.columns(4)
+                _spy_mark = _disp_spy if _disp_spy else _spy.get("mark")
+                _sm1.metric("SPY Mark",  _usd(_spy_mark) if _spy_mark else "—")
+                _sm2.metric("SPY Entry", "⚠ stale" if _spy_stale else _usd(_spy["avg_ep"]))
+                _sm3.metric("SPY Units", f"{_spy['units']:.4f}")
+                if _spy_stale:
+                    _sm4.metric("SPY PnL", "⚠ stale")
+                else:
+                    _spy_mark_for_pnl = _spy_mark if _spy_mark else _spy.get("mark", 0.0)
+                    _spy_pnl = (_spy_mark_for_pnl - _spy["avg_ep"]) * _spy["units"] if _spy_mark_for_pnl else _spy["unreal"]
+                    _spy_cost = _spy["avg_ep"] * _spy["units"]
+                    _spy_pnl_pct = _spy_pnl / _spy_cost if _spy_cost > 0 else 0.0
+                    _sm4.metric("SPY PnL", _usd(_spy_pnl),
+                                delta=f"{_spy_pnl_pct * 100:+.2f}%",
+                                delta_color="normal")
+            else:
+                _sc1, _sc2 = st.columns([1, 3])
+                _sc1.metric("SPY Cash", _usd(_spy.get("cash", 0.0)))
+                _sc2.markdown("<br><span style='color:#6b7280'>SPY — FLAT</span>",
+                              unsafe_allow_html=True)
+
+            # QQQ sub-sleeve
+            _qqq = qqq_health
+            if _qqq.get("in_pos"):
+                _qqq_stale = _qqq.get("avg_ep_stale", False)
+                _qm1, _qm2, _qm3, _qm4 = st.columns(4)
+                _qqq_mark = _disp_qqq if _disp_qqq else _qqq.get("mark")
+                _qm1.metric("QQQ Mark",  _usd(_qqq_mark) if _qqq_mark else "—")
+                _qm2.metric("QQQ Entry", "⚠ stale" if _qqq_stale else _usd(_qqq["avg_ep"]))
+                _qm3.metric("QQQ Units", f"{_qqq['units']:.4f}")
+                if _qqq_stale:
+                    _qm4.metric("QQQ PnL", "⚠ stale")
+                else:
+                    _qqq_mark_for_pnl = _qqq_mark if _qqq_mark else _qqq.get("mark", 0.0)
+                    _qqq_pnl = (_qqq_mark_for_pnl - _qqq["avg_ep"]) * _qqq["units"] if _qqq_mark_for_pnl else _qqq["unreal"]
+                    _qqq_cost = _qqq["avg_ep"] * _qqq["units"]
+                    _qqq_pnl_pct = _qqq_pnl / _qqq_cost if _qqq_cost > 0 else 0.0
+                    _qm4.metric("QQQ PnL", _usd(_qqq_pnl),
+                                delta=f"{_qqq_pnl_pct * 100:+.2f}%",
+                                delta_color="normal")
+            else:
+                _qc1, _qc2 = st.columns([1, 3])
+                _qc1.metric("QQQ Cash", _usd(_qqq.get("cash", 0.0)))
+                _qc2.markdown("<br><span style='color:#6b7280'>QQQ — FLAT</span>",
+                              unsafe_allow_html=True)
+
+            # SMA-band overlay status
             if _ed:
                 st.divider()
                 _active_assets = " + ".join(
@@ -943,7 +806,7 @@ if btc_health or eth_health or equity_health:
                 _sniper_mom    = _ed.get("sniper_long_momentum")
                 _sniper_mom_str = f" · mom {_sniper_mom:+.2%}" if _sniper_mom is not None else ""
                 st.markdown(
-                    f"**Core Beta:** `{_eq_regime}` → **{_active_assets}**"
+                    f"**Core Beta:** → **{_active_assets}**"
                     f"&nbsp;&nbsp;|&nbsp;&nbsp;"
                     f"**Sniper Overlay:** {_sniper_badge}{_sniper_mom_str}",
                     unsafe_allow_html=True,
@@ -1038,7 +901,6 @@ with tab_overview:
             .dropna(subset=["total_nav"])
         )
 
-        # NAV chart
         st.subheader("Fund NAV")
         if _PLOTLY and len(_chart_df) > 1:
             _fig_nav = go.Figure()
@@ -1063,7 +925,6 @@ with tab_overview:
         else:
             st.line_chart(_chart_df.set_index("timestamp")[["total_nav"]])
 
-        # Drawdown chart
         if "drawdown" in _chart_df.columns:
             st.subheader("Drawdown")
             if _PLOTLY and len(_chart_df) > 1:
@@ -1090,11 +951,10 @@ with tab_overview:
             else:
                 st.line_chart(_chart_df.set_index("timestamp")[["drawdown"]])
 
-        # Allocation drift chart
         if "crypto_frac" in _chart_df.columns:
             st.subheader("Crypto Allocation Over Time")
             if _PLOTLY and len(_chart_df) > 1:
-                _cf_vals  = _chart_df["crypto_frac"].fillna(0.5) * 100
+                _cf_vals   = _chart_df["crypto_frac"].fillna(0.5) * 100
                 _fig_alloc = go.Figure()
                 _fig_alloc.add_hrect(
                     y0=_lo_pct, y1=_hi_pct,
@@ -1132,30 +992,30 @@ with tab_overview:
 # ─────────────────────────────────────────────────────
 with tab_positions:
 
-    st.subheader("Live Positions")
+    st.subheader("Live Positions — all four sleeves")
 
     _pos_rows = []
     for _sl_state, _sl_label in [
-        (btc_state,    btc_state.get("asset",    "BTC")            if btc_state    else "BTC"),
-        (eth_state,    eth_state.get("asset",    "ETH")            if eth_state    else "ETH"),
-        (equity_state, equity_state.get("asset", "EQUITY_COMPOSITE") if equity_state else "EQUITY_COMPOSITE"),
+        (btc_state, btc_state.get("asset", "BTC") if btc_state else "BTC"),
+        (eth_state, eth_state.get("asset", "ETH") if eth_state else "ETH"),
+        (spy_state, spy_state.get("asset", "SPY") if spy_state else "SPY"),
+        (qqq_state, qqq_state.get("asset", "QQQ") if qqq_state else "QQQ"),
     ]:
         if not _sl_state:
             continue
-        _units    = float(_sl_state.get("position_units", 0.0))
-        _cash_sl  = float(_sl_state.get("cash", 0.0))
-        _nav_sl   = float(_sl_state.get("nav", 0.0))
-        _avg_ep   = float(_sl_state.get("average_entry_price", 0.0))
-        _unreal   = float(_sl_state.get("unrealized_pnl_usd", 0.0))
-        _hwm_sl   = float(_sl_state.get("high_water_mark") or _nav_sl or 1.0)
-        _sl_dd    = (_nav_sl / _hwm_sl - 1.0) if _hwm_sl > 0 else 0.0
+        _units   = float(_sl_state.get("position_units", 0.0))
+        _cash_sl = float(_sl_state.get("cash", 0.0))
+        _nav_sl  = float(_sl_state.get("nav", 0.0))
+        _avg_ep  = float(_sl_state.get("average_entry_price", 0.0))
+        _hwm_sl  = float(_sl_state.get("high_water_mark") or _nav_sl or 1.0)
+        _sl_dd   = (_nav_sl / _hwm_sl - 1.0) if _hwm_sl > 0 else 0.0
 
         if _units > 1e-10:
             _cur_price  = (_nav_sl - _cash_sl) / _units
             _weight_pct = (_units * _cur_price) / total_nav * 100 if total_nav > 0 else 0.0
             if _avg_ep > 0:
                 _cost_basis = _avg_ep * _units
-                _unreal     = (_cur_price - _avg_ep) * _units   # derive; don't trust stale field
+                _unreal     = (_cur_price - _avg_ep) * _units
                 _unreal_pct = _unreal / _cost_basis if _cost_basis > 0 else 0.0
             else:
                 _unreal = _unreal_pct = 0.0
@@ -1163,22 +1023,22 @@ with tab_positions:
             _cur_price = _unreal = _unreal_pct = _weight_pct = 0.0
 
         _pos_rows.append({
-            "Asset":            _sl_label,
-            "Units":            round(_units, 6),
-            "Avg Entry":        round(_avg_ep, 4) if _avg_ep > 0 else float("nan"),
-            "Mark Price":       round(_cur_price, 4) if _cur_price > 0 else 0.0,
-            "Unreal PnL $":     round(_unreal, 2),
-            "Unreal PnL %":     round(_unreal_pct * 100, 3),
-            "Sleeve NAV":       round(_nav_sl, 2),
-            "Sleeve HWM":       round(_hwm_sl, 2),
-            "Sleeve DD %":      round(_sl_dd * 100, 3),
-            "Weight %":         round(_weight_pct, 2),
+            "Asset":        _sl_label,
+            "Units":        round(_units, 6),
+            "Avg Entry":    round(_avg_ep, 4) if _avg_ep > 0 else float("nan"),
+            "Mark Price":   round(_cur_price, 4) if _cur_price > 0 else 0.0,
+            "Unreal PnL $": round(_unreal, 2),
+            "Unreal PnL %": round(_unreal_pct * 100, 3),
+            "Sleeve NAV":   round(_nav_sl, 2),
+            "Sleeve HWM":   round(_hwm_sl, 2),
+            "Sleeve DD %":  round(_sl_dd * 100, 3),
+            "Weight %":     round(_weight_pct, 2),
         })
 
     if _pos_rows:
         def _col_signed(v: float) -> str:
-            if v > 0:  return "color: #22c55e; font-weight: 600"
-            if v < 0:  return "color: #ef4444; font-weight: 600"
+            if v > 0: return "color: #22c55e; font-weight: 600"
+            if v < 0: return "color: #ef4444; font-weight: 600"
             return "color: #6b7280"
 
         _pos_df = pd.DataFrame(_pos_rows)
@@ -1186,22 +1046,22 @@ with tab_positions:
             _pos_df.style
             .map(_col_signed, subset=["Unreal PnL $", "Unreal PnL %", "Sleeve DD %"])
             .format({
-                "Units":       "{:.6f}",
-                "Avg Entry":   "${:,.4f}",
-                "Mark Price":  "${:,.4f}",
+                "Units":        "{:.6f}",
+                "Avg Entry":    "${:,.4f}",
+                "Mark Price":   "${:,.4f}",
                 "Unreal PnL $": "${:+,.2f}",
                 "Unreal PnL %": "{:+.3f}%",
-                "Sleeve NAV":  "${:,.2f}",
-                "Sleeve HWM":  "${:,.2f}",
-                "Sleeve DD %": "{:+.3f}%",
-                "Weight %":    "{:.2f}%",
+                "Sleeve NAV":   "${:,.2f}",
+                "Sleeve HWM":   "${:,.2f}",
+                "Sleeve DD %":  "{:+.3f}%",
+                "Weight %":     "{:.2f}%",
             })
         )
         st.dataframe(_styled, use_container_width=True, hide_index=True)
 
-        _all_flat   = all(r["Units"] == 0.0 for r in _pos_rows)
-        _wt_sum     = sum(r["Weight %"] for r in _pos_rows)
-        pc1, pc2    = st.columns(2)
+        _all_flat = all(r["Units"] == 0.0 for r in _pos_rows)
+        _wt_sum   = sum(r["Weight %"] for r in _pos_rows)
+        pc1, pc2  = st.columns(2)
         pc1.caption(
             "All positions: **FLAT**" if _all_flat
             else f"Total position weight: **{_wt_sum:.2f}%** of fund NAV"
@@ -1213,67 +1073,40 @@ with tab_positions:
         st.info("No sleeve state available.")
 
     st.divider()
-    st.subheader("Sleeve Detail")
+    st.subheader("Sleeve Detail — individual governors & fills")
 
-    sc1, sc2, sc3 = st.columns(3)
+    sc1, sc2, sc3, sc4 = st.columns(4)
     with sc1:
         st.markdown("**BTC Sub-Sleeve**")
-        _render_sleeve_detail(
-            btc_state, "BTC", total_nav,
-            last_trade=last_trades.get("BTC"),
-        )
+        _render_sleeve_detail(btc_state, "BTC", total_nav, last_trade=last_trades.get("BTC"))
     with sc2:
         st.markdown("**ETH Sub-Sleeve**")
-        _render_sleeve_detail(
-            eth_state, "ETH", total_nav,
-            last_trade=last_trades.get("ETH"),
-        )
+        _render_sleeve_detail(eth_state, "ETH", total_nav, last_trade=last_trades.get("ETH"))
     with sc3:
-        st.markdown("**Equity Sleeve — EQUITY_COMPOSITE**")
-        _render_sleeve_detail(
-            equity_state, "EQUITY_COMPOSITE", total_nav,
-            last_trade=last_trades.get("EQUITY_COMPOSITE"),
-        )
-        _ed2      = equity_detail
-        _eh2      = equity_health
-        _ed2_live = _ed2 and _ed2.get("spy_close") is not None
-        if _ed2_live and _eh2.get("in_pos") and not _eh2.get("avg_ep_stale") and _eh2.get("mark"):
-            st.caption("**Component Reference**")
-            _sw2 = float(_ed2.get("spy_weight", 0.5))
-            _qw2 = float(_ed2.get("qqq_weight", 0.5))
-            _sc2 = float(_ed2["spy_close"])
-            _qc2 = float(_ed2["qqq_close"])
-            _ss2 = _ed2.get("spy_sma")
-            _qs2 = _ed2.get("qqq_sma")
-            _sa2 = bool(_ed2.get("spy_active", False))
-            _qa2 = bool(_ed2.get("qqq_active", False))
-            _ref_df = pd.DataFrame([
-                {
-                    "Asset":      "SPY",
-                    "Weight":     f"{_sw2:.0%}",
-                    "Last Bar $": round(_sc2, 2),
-                    "SMA $":      round(float(_ss2), 2) if _ss2 else None,
-                    "Signal":     "above SMA" if _sa2 else "below SMA",
-                },
-                {
-                    "Asset":      "QQQ",
-                    "Weight":     f"{_qw2:.0%}",
-                    "Last Bar $": round(_qc2, 2),
-                    "SMA $":      round(float(_qs2), 2) if _qs2 else None,
-                    "Signal":     "above SMA" if _qa2 else "below SMA",
-                },
-            ])
-            st.dataframe(
-                _ref_df.style.format({
-                    "Last Bar $": "${:,.2f}",
-                    "SMA $":      "${:,.2f}",
-                }),
-                use_container_width=True,
-                hide_index=True,
-            )
+        st.markdown("**SPY Sub-Sleeve**")
+        _render_sleeve_detail(spy_state, "SPY", total_nav, last_trade=last_trades.get("SPY"))
+        # SMA-band signal reference for SPY
+        _ed2 = equity_detail
+        if _ed2 and _ed2.get("spy_close") is not None:
+            _spy_sma2 = _ed2.get("spy_sma")
+            _spy_act2 = bool(_ed2.get("spy_active", False))
             st.caption(
-                f"1 unit = SPY×{_sw2:.0%} + QQQ×{_qw2:.0%}. "
-                "P&L tracked at composite level — see sleeve overview above."
+                f"SMA signal: {'✅ above' if _spy_act2 else '⬜ below'} "
+                + (f"SMA {_usd(float(_spy_sma2))}" if _spy_sma2 else "SMA —")
+            )
+    with sc4:
+        st.markdown("**QQQ Sub-Sleeve**")
+        _render_sleeve_detail(qqq_state, "QQQ", total_nav, last_trade=last_trades.get("QQQ"))
+        # SMA-band signal reference for QQQ
+        _ed3 = equity_detail
+        if _ed3 and _ed3.get("qqq_close") is not None:
+            _qqq_sma3 = _ed3.get("qqq_sma")
+            _qqq_act3 = bool(_ed3.get("qqq_active", False))
+            _sniper3  = _ed3.get("sniper_status", "POLLING")
+            st.caption(
+                f"SMA signal: {'✅ above' if _qqq_act3 else '⬜ below'} "
+                + (f"SMA {_usd(float(_qqq_sma3))}" if _qqq_sma3 else "SMA —")
+                + f"  ·  Sniper: {_sniper3}"
             )
 
 
@@ -1324,7 +1157,6 @@ with tab_blotter:
                    if "Side" in _bview.columns else _bview.style
         st.dataframe(_bstyled, use_container_width=True, hide_index=True)
 
-        # Summary
         n_buys     = int((fills_df["side"] == "BUY").sum())  if "side"         in fills_df.columns else 0
         n_sells    = int((fills_df["side"] == "SELL").sum()) if "side"         in fills_df.columns else 0
         total_fees = fills_df["fee"].sum()                   if "fee"          in fills_df.columns else 0.0
@@ -1332,11 +1164,11 @@ with tab_blotter:
         avg_bps    = fills_df["cost_bps"].mean()             if "cost_bps"     in fills_df.columns else 0.0
 
         bs1, bs2, bs3, bs4, bs5 = st.columns(5)
-        bs1.metric("Total Fills",     len(fills_df))
-        bs2.metric("Buys",            n_buys)
-        bs3.metric("Sells",           n_sells)
-        bs4.metric("Total Fees",      f"${total_fees:.2f}")
-        bs5.metric("Avg Cost (bps)",  f"{avg_bps:.1f}")
+        bs1.metric("Total Fills",    len(fills_df))
+        bs2.metric("Buys",           n_buys)
+        bs3.metric("Sells",          n_sells)
+        bs4.metric("Total Fees",     f"${total_fees:.2f}")
+        bs5.metric("Avg Cost (bps)", f"{avg_bps:.1f}")
         st.caption(f"Total slippage: {_usd(total_slip)}")
     else:
         st.info("No fills recorded yet. Fills appear here as trades execute.")
@@ -1347,7 +1179,7 @@ with tab_blotter:
 # ─────────────────────────────────────────────────────
 with tab_signals:
 
-    st.subheader("Signal History — all decisions (last 200 cycles)")
+    st.subheader("Signal History — all decisions (last 200 cycles, 4 sleeves)")
 
     if not sig_df.empty:
         sf1, sf2, _ = st.columns([1, 1, 4])
@@ -1404,10 +1236,10 @@ with tab_signals:
         )
         st.dataframe(_sstyled, use_container_width=True, hide_index=True)
 
-        _total_cyc    = sig_df["cycle"].nunique()
-        _fill_rows    = sig_df[sig_df["event"].str.startswith("FILL_",     na=False)]
-        _reject_rows  = sig_df[sig_df["event"].str.startswith("REJECTED_", na=False)]
-        _hold_rows    = sig_df[sig_df["event"] == "HOLD"]
+        _total_cyc   = sig_df["cycle"].nunique()
+        _fill_rows   = sig_df[sig_df["event"].str.startswith("FILL_",     na=False)]
+        _reject_rows = sig_df[sig_df["event"].str.startswith("REJECTED_", na=False)]
+        _hold_rows   = sig_df[sig_df["event"] == "HOLD"]
 
         sc1, sc2, sc3, sc4 = st.columns(4)
         sc1.metric("Cycles logged", _total_cyc)
@@ -1438,8 +1270,8 @@ with tab_rebalances:
             "crypto_split_after":  "Crypto % After",
             "equity_split_after":  "Equity % After",
         }
-        _rp     = [c for c in _rcols if c in rebal_df.columns]
-        _rview  = rebal_df[_rp].rename(columns=_rcols)
+        _rp    = [c for c in _rcols if c in rebal_df.columns]
+        _rview = rebal_df[_rp].rename(columns=_rcols)
 
         _rfmt: dict[str, str] = {}
         for _col in ["Transfer $", "Crypto NAV Before", "Equity NAV Before", "Total NAV Before"]:
@@ -1458,7 +1290,10 @@ with tab_rebalances:
         if "Direction" in _rview.columns:
             _rstyled = _rstyled.map(_col_direction, subset=["Direction"])
         st.dataframe(_rstyled, use_container_width=True, hide_index=True)
-        st.caption(f"{len(rebal_df)} rebalance event(s) shown (sub-$1 skipped events excluded).")
+        st.caption(
+            f"{len(rebal_df)} rebalance event(s) shown (sub-$1 skipped events excluded). "
+            "Capital flows split 50/50 within each macro sleeve (BTC/ETH and SPY/QQQ)."
+        )
     else:
         st.info("No rebalance events recorded yet.")
 
@@ -1478,11 +1313,6 @@ st.markdown(
 
 # ══════════════════════════════════════════════════════════════════════════════
 # AUTO-REFRESH
-# Each render sleeps ≤5 s then checks whether the interval has elapsed.
-# Install streamlit-autorefresh for a non-blocking alternative:
-#   pip install streamlit-autorefresh
-#   from streamlit_autorefresh import st_autorefresh
-#   st_autorefresh(interval=REFRESH_SECS * 1000, key="auto")
 # ══════════════════════════════════════════════════════════════════════════════
 _remaining = st.session_state.next_refresh - time.time()
 if _remaining <= 0:
