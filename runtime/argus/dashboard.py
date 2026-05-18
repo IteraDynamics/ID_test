@@ -1,13 +1,15 @@
-"""Itera Dynamics — Unified Fund v1 Live Dashboard (v3).
+"""Itera Dynamics — Unified Fund v1 Live Dashboard (v4).
 
-Reads RuntimeState JSON files for all four independent sleeves:
-  BTC, ETH (crypto), SPY, QQQ (equity), plus unified_fund_live_state.json.
+Reads RuntimeState JSON files for all six independent sleeves:
+  BTC_1H, BTC_4H, ETH_1H, ETH_4H (crypto), SPY, QQQ (equity),
+  plus unified_fund_live_state.json.
 
 Usage:
     streamlit run runtime/argus/dashboard.py
 
     # Optional env overrides:
-    BTC_STATE_PATH=... ETH_STATE_PATH=... SPY_STATE_PATH=... QQQ_STATE_PATH=...
+    BTC_1H_STATE_PATH=... BTC_4H_STATE_PATH=... ETH_1H_STATE_PATH=...
+    ETH_4H_STATE_PATH=... SPY_STATE_PATH=... QQQ_STATE_PATH=...
     FUND_ENV=LIVE streamlit run ...
 """
 
@@ -31,8 +33,10 @@ except ImportError:
 
 # ── Constants & paths ──────────────────────────────────────────────────────────
 
-BTC_STATE_PATH           = os.getenv("BTC_STATE_PATH",           "runtime/argus/state/BTC_live_state.json")
-ETH_STATE_PATH           = os.getenv("ETH_STATE_PATH",           "runtime/argus/state/ETH_live_state.json")
+BTC_1H_STATE_PATH        = os.getenv("BTC_1H_STATE_PATH",        "runtime/argus/state/BTC_1H_live_state.json")
+BTC_4H_STATE_PATH        = os.getenv("BTC_4H_STATE_PATH",        "runtime/argus/state/BTC_4H_live_state.json")
+ETH_1H_STATE_PATH        = os.getenv("ETH_1H_STATE_PATH",        "runtime/argus/state/ETH_1H_live_state.json")
+ETH_4H_STATE_PATH        = os.getenv("ETH_4H_STATE_PATH",        "runtime/argus/state/ETH_4H_live_state.json")
 SPY_STATE_PATH           = os.getenv("SPY_STATE_PATH",           "runtime/argus/state/spy_state.json")
 QQQ_STATE_PATH           = os.getenv("QQQ_STATE_PATH",           "runtime/argus/state/qqq_state.json")
 CRYPTO_DETAIL_STATE_PATH = os.getenv("CRYPTO_DETAIL_STATE_PATH", "runtime/argus/state/crypto_detail_state.json")
@@ -44,7 +48,7 @@ SIGNAL_LOG_PATH          = os.getenv("SIGNAL_LOG_PATH",          "runtime/argus/
 
 REFRESH_SECS = int(os.getenv("DASHBOARD_REFRESH_SECS", "30"))
 DRIFT_BUFFER = 0.05
-_VERSION     = "3.0.0"
+_VERSION     = "4.0.0"
 _ENV_LABEL   = os.getenv("FUND_ENV", "PAPER")
 _STALE_MULT  = 3
 
@@ -458,8 +462,10 @@ def _render_sleeve_detail(
 
 # ── Data loading ───────────────────────────────────────────────────────────────
 
-btc_state     = _load_json(BTC_STATE_PATH)
-eth_state     = _load_json(ETH_STATE_PATH)
+btc_1h_state  = _load_json(BTC_1H_STATE_PATH)
+btc_4h_state  = _load_json(BTC_4H_STATE_PATH)
+eth_1h_state  = _load_json(ETH_1H_STATE_PATH)
+eth_4h_state  = _load_json(ETH_4H_STATE_PATH)
 spy_state     = _load_json(SPY_STATE_PATH)
 qqq_state     = _load_json(QQQ_STATE_PATH)
 crypto_detail = _load_json(CRYPTO_DETAIL_STATE_PATH)
@@ -468,11 +474,13 @@ fund_state    = _load_json(FUND_STATE_PATH)
 
 _missing = [
     name for name, path, data in [
-        ("BTC sleeve",  BTC_STATE_PATH,  btc_state),
-        ("ETH sleeve",  ETH_STATE_PATH,  eth_state),
-        ("SPY sleeve",  SPY_STATE_PATH,  spy_state),
-        ("QQQ sleeve",  QQQ_STATE_PATH,  qqq_state),
-        ("Fund state",  FUND_STATE_PATH, fund_state),
+        ("BTC_1H sleeve", BTC_1H_STATE_PATH, btc_1h_state),
+        ("BTC_4H sleeve", BTC_4H_STATE_PATH, btc_4h_state),
+        ("ETH_1H sleeve", ETH_1H_STATE_PATH, eth_1h_state),
+        ("ETH_4H sleeve", ETH_4H_STATE_PATH, eth_4h_state),
+        ("SPY sleeve",    SPY_STATE_PATH,    spy_state),
+        ("QQQ sleeve",    QQQ_STATE_PATH,    qqq_state),
+        ("Fund state",    FUND_STATE_PATH,   fund_state),
     ]
     if not data
 ]
@@ -483,13 +491,18 @@ if _missing:
         "Start the runner to generate state."
     )
 
-_btc_nav_raw = float(btc_state.get("nav", 0.0)) if btc_state else 0.0
-_eth_nav_raw = float(eth_state.get("nav", 0.0)) if eth_state else 0.0
+_btc_1h_nav = float(btc_1h_state.get("nav", 0.0)) if btc_1h_state else 0.0
+_btc_4h_nav = float(btc_4h_state.get("nav", 0.0)) if btc_4h_state else 0.0
+_eth_1h_nav = float(eth_1h_state.get("nav", 0.0)) if eth_1h_state else 0.0
+_eth_4h_nav = float(eth_4h_state.get("nav", 0.0)) if eth_4h_state else 0.0
 _spy_nav_raw = float(spy_state.get("nav", 0.0)) if spy_state else 0.0
 _qqq_nav_raw = float(qqq_state.get("nav", 0.0)) if qqq_state else 0.0
 
-crypto_nav    = float(fund_state.get("crypto_nav",   _btc_nav_raw + _eth_nav_raw))
-equity_nav    = float(fund_state.get("equity_nav",   _spy_nav_raw + _qqq_nav_raw))
+_raw_crypto = _btc_1h_nav + _btc_4h_nav + _eth_1h_nav + _eth_4h_nav
+_raw_equity = _spy_nav_raw + _qqq_nav_raw
+
+crypto_nav    = float(fund_state.get("crypto_nav",   _raw_crypto))
+equity_nav    = float(fund_state.get("equity_nav",   _raw_equity))
 total_nav     = float(fund_state.get("total_nav",    crypto_nav + equity_nav))
 fund_hwm      = float(fund_state.get("high_water_mark", total_nav or 1.0))
 drawdown_frac = float(fund_state.get("drawdown_frac",
@@ -507,10 +520,38 @@ rebal_df    = _load_rebalance_df(REBALANCE_LOG_PATH, n=25)
 perf        = _compute_perf(sig_df)
 last_trades = _last_trade_per_sleeve(fills_df)
 
-btc_health = _sleeve_health(btc_state) if btc_state else {}
-eth_health = _sleeve_health(eth_state) if eth_state else {}
-spy_health = _sleeve_health(spy_state) if spy_state else {}
-qqq_health = _sleeve_health(qqq_state) if qqq_state else {}
+btc_1h_health = _sleeve_health(btc_1h_state) if btc_1h_state else {}
+btc_4h_health = _sleeve_health(btc_4h_state) if btc_4h_state else {}
+eth_1h_health = _sleeve_health(eth_1h_state) if eth_1h_state else {}
+eth_4h_health = _sleeve_health(eth_4h_state) if eth_4h_state else {}
+spy_health    = _sleeve_health(spy_state) if spy_state else {}
+qqq_health    = _sleeve_health(qqq_state) if qqq_state else {}
+
+# Aggregate health views used by the health card (BTC = 1H+4H, ETH = 1H+4H)
+def _agg_crypto_health(h1: dict, h4: dict) -> dict:
+    return {
+        "units":     h1.get("units", 0.0) + h4.get("units", 0.0),
+        "cash":      h1.get("cash",  0.0) + h4.get("cash",  0.0),
+        "nav":       h1.get("nav",   0.0) + h4.get("nav",   0.0),
+        "avg_ep":    h1.get("avg_ep", 0.0) or h4.get("avg_ep", 0.0),
+        "unreal":    h1.get("unreal", 0.0) + h4.get("unreal", 0.0),
+        "in_pos":    h1.get("in_pos", False) or h4.get("in_pos", False),
+        "mark":      h1.get("mark") or h4.get("mark"),
+        "unreal_pct": 0.0,
+        "regime":    h1.get("regime", "") or h4.get("regime", ""),
+        "avg_ep_stale": h1.get("avg_ep_stale", False) and h4.get("avg_ep_stale", False),
+    }
+
+btc_health = _agg_crypto_health(btc_1h_health, btc_4h_health)
+eth_health = _agg_crypto_health(eth_1h_health, eth_4h_health)
+
+_btc_cost = btc_health["avg_ep"] * btc_health["units"]
+if _btc_cost > 0:
+    btc_health["unreal_pct"] = btc_health["unreal"] / _btc_cost
+
+_eth_cost = eth_health["avg_ep"] * eth_health["units"]
+if _eth_cost > 0:
+    eth_health["unreal_pct"] = eth_health["unreal"] / _eth_cost
 
 _crypto_unreal = btc_health.get("unreal", 0.0) + eth_health.get("unreal", 0.0)
 _equity_unreal = spy_health.get("unreal", 0.0) + qqq_health.get("unreal", 0.0)
@@ -589,7 +630,7 @@ k1.metric(
     "Total Fund NAV",
     _usd(total_nav),
     delta=_usd(total_nav - _prev_nav) if _prev_nav is not None else None,
-    help="Crypto NAV (BTC+ETH) + Equity NAV (SPY+QQQ)",
+    help="Crypto NAV (BTC_1H+BTC_4H+ETH_1H+ETH_4H) + Equity NAV (SPY+QQQ)",
 )
 k2.metric(
     "Fund Drawdown",
@@ -617,7 +658,7 @@ k6.metric(
     _usd(total_unrealized),
     delta=f"{total_unreal_pct * 100:+.2f}%" if total_unreal_pct is not None else None,
     delta_color="normal",
-    help="Total unrealized PnL across all four sleeves vs. cost basis",
+    help="Total unrealized PnL across all six sleeves vs. cost basis",
 )
 
 # ── Position Health Strip ─────────────────────────────────────────────────────
@@ -633,16 +674,36 @@ _SNIPER_BADGE = {
                 'border-radius:3px;font-size:0.72rem;font-weight:700">… WARMUP</span>'),
 }
 
-if btc_health or eth_health or spy_health or qqq_health:
+if btc_1h_health or btc_4h_health or eth_1h_health or eth_4h_health or spy_health or qqq_health:
     _phc1, _phc2 = st.columns(2)
 
-    # ── Crypto card (BTC + ETH sub-sleeves) ──────────────────────────────────
+    def _render_crypto_sub_sleeve(label: str, h: dict, price: float | None) -> None:
+        if h.get("in_pos"):
+            _stale = h.get("avg_ep_stale", False)
+            _m1, _m2, _m3, _m4 = st.columns(4)
+            _m1.metric(f"{label} Mark",  _usd(h["mark"]) if h.get("mark") else "—")
+            _m2.metric(f"{label} Entry", "⚠ stale" if _stale else _usd(h["avg_ep"]))
+            _m3.metric(f"{label} Units", f"{h['units']:.6f}")
+            if _stale:
+                _m4.metric(f"{label} PnL", "⚠ stale")
+            else:
+                _m4.metric(f"{label} PnL", _usd(h["unreal"]),
+                           delta=f"{h['unreal_pct'] * 100:+.2f}%",
+                           delta_color="normal")
+        else:
+            _c1, _c2 = st.columns([1, 3])
+            _c1.metric(f"{label} Cash", _usd(h.get("cash", 0.0)))
+            _c2.markdown(f"<br><span style='color:#6b7280'>{label} — FLAT</span>",
+                         unsafe_allow_html=True)
+
+    # ── Crypto card (BTC_1H + BTC_4H + ETH_1H + ETH_4H sub-sleeves) ─────────
     with _phc1:
         with st.container(border=True):
             _cd = crypto_detail
-            _cd_btc_regime = (_cd.get("btc_regime") if _cd else None) or ""
-            _cr_regime_tag = f" · `{_cd_btc_regime}`" if _cd_btc_regime else ""
-            st.caption(f"**CRYPTO SLEEVE** (BTC + ETH){_cr_regime_tag}")
+            _cd_btc_1h_regime = (_cd.get("btc_1h_regime") if _cd else None) or (_cd.get("btc_regime") if _cd else None) or ""
+            _cd_btc_4h_regime = (_cd.get("btc_4h_regime") if _cd else None) or ""
+            _cr_regime_tag = f" · BTC `{_cd_btc_1h_regime}`/`{_cd_btc_4h_regime}`" if (_cd_btc_1h_regime or _cd_btc_4h_regime) else ""
+            st.caption(f"**CRYPTO SLEEVE** (BTC_1H + BTC_4H + ETH_1H + ETH_4H){_cr_regime_tag}")
 
             _btc_close = _cd.get("btc_close") if _cd else None
             _eth_close = _cd.get("eth_close") if _cd else None
@@ -652,56 +713,18 @@ if btc_health or eth_health or spy_health or qqq_health:
                 _cp1, _cp2 = st.columns(2)
                 if _btc_price is not None:
                     _cp1.metric("BTC-USD", _usd(_btc_price),
-                                help=("Live mark — (NAV − cash) ÷ units."
-                                      if btc_health.get("in_pos")
-                                      else "Last bar close."))
+                                help=f"1H NAV: {_usd(_btc_1h_nav)}  |  4H NAV: {_usd(_btc_4h_nav)}")
                 if _eth_price is not None:
                     _cp2.metric("ETH-USD", _usd(_eth_price),
-                                help=("Live mark — (NAV − cash) ÷ units."
-                                      if eth_health.get("in_pos")
-                                      else "Last bar close."))
+                                help=f"1H NAV: {_usd(_eth_1h_nav)}  |  4H NAV: {_usd(_eth_4h_nav)}")
             else:
                 st.caption(":gray[BTC/ETH prices pending — runner not started]")
 
-            # BTC sub-sleeve
-            _btc = btc_health
-            if _btc.get("in_pos"):
-                _btc_stale = _btc.get("avg_ep_stale", False)
-                _bm1, _bm2, _bm3, _bm4 = st.columns(4)
-                _bm1.metric("BTC Mark",  _usd(_btc["mark"]))
-                _bm2.metric("BTC Entry", "⚠ stale" if _btc_stale else _usd(_btc["avg_ep"]))
-                _bm3.metric("BTC Units", f"{_btc['units']:.6f}")
-                if _btc_stale:
-                    _bm4.metric("BTC PnL", "⚠ stale")
-                else:
-                    _bm4.metric("BTC PnL", _usd(_btc["unreal"]),
-                                delta=f"{_btc['unreal_pct'] * 100:+.2f}%",
-                                delta_color="normal")
-            else:
-                _bc1, _bc2 = st.columns([1, 3])
-                _bc1.metric("BTC Cash", _usd(_btc.get("cash", 0.0)))
-                _bc2.markdown("<br><span style='color:#6b7280'>BTC — FLAT</span>",
-                              unsafe_allow_html=True)
-
-            # ETH sub-sleeve
-            _eth = eth_health
-            if _eth.get("in_pos"):
-                _eth_stale = _eth.get("avg_ep_stale", False)
-                _em1, _em2, _em3, _em4 = st.columns(4)
-                _em1.metric("ETH Mark",  _usd(_eth["mark"]))
-                _em2.metric("ETH Entry", "⚠ stale" if _eth_stale else _usd(_eth["avg_ep"]))
-                _em3.metric("ETH Units", f"{_eth['units']:.6f}")
-                if _eth_stale:
-                    _em4.metric("ETH PnL", "⚠ stale")
-                else:
-                    _em4.metric("ETH PnL", _usd(_eth["unreal"]),
-                                delta=f"{_eth['unreal_pct'] * 100:+.2f}%",
-                                delta_color="normal")
-            else:
-                _ec1, _ec2 = st.columns([1, 3])
-                _ec1.metric("ETH Cash", _usd(_eth.get("cash", 0.0)))
-                _ec2.markdown("<br><span style='color:#6b7280'>ETH — FLAT</span>",
-                              unsafe_allow_html=True)
+            # Four crypto sub-sleeves
+            _render_crypto_sub_sleeve("BTC_1H", btc_1h_health, _btc_price)
+            _render_crypto_sub_sleeve("BTC_4H", btc_4h_health, _btc_price)
+            _render_crypto_sub_sleeve("ETH_1H", eth_1h_health, _eth_price)
+            _render_crypto_sub_sleeve("ETH_4H", eth_4h_health, _eth_price)
 
     # ── Equity card (SPY + QQQ sub-sleeves) ──────────────────────────────────
     with _phc2:
@@ -992,14 +1015,16 @@ with tab_overview:
 # ─────────────────────────────────────────────────────
 with tab_positions:
 
-    st.subheader("Live Positions — all four sleeves")
+    st.subheader("Live Positions — all six sleeves")
 
     _pos_rows = []
     for _sl_state, _sl_label in [
-        (btc_state, btc_state.get("asset", "BTC") if btc_state else "BTC"),
-        (eth_state, eth_state.get("asset", "ETH") if eth_state else "ETH"),
-        (spy_state, spy_state.get("asset", "SPY") if spy_state else "SPY"),
-        (qqq_state, qqq_state.get("asset", "QQQ") if qqq_state else "QQQ"),
+        (btc_1h_state, "BTC_1H"),
+        (btc_4h_state, "BTC_4H"),
+        (eth_1h_state, "ETH_1H"),
+        (eth_4h_state, "ETH_4H"),
+        (spy_state,    spy_state.get("asset", "SPY") if spy_state else "SPY"),
+        (qqq_state,    qqq_state.get("asset", "QQQ") if qqq_state else "QQQ"),
     ]:
         if not _sl_state:
             continue
@@ -1075,17 +1100,26 @@ with tab_positions:
     st.divider()
     st.subheader("Sleeve Detail — individual governors & fills")
 
+    # Row 1: four crypto sub-sleeves
     sc1, sc2, sc3, sc4 = st.columns(4)
     with sc1:
-        st.markdown("**BTC Sub-Sleeve**")
-        _render_sleeve_detail(btc_state, "BTC", total_nav, last_trade=last_trades.get("BTC"))
+        st.markdown("**BTC_1H Sub-Sleeve**")
+        _render_sleeve_detail(btc_1h_state, "BTC_1H", total_nav, last_trade=last_trades.get("BTC_1H"))
     with sc2:
-        st.markdown("**ETH Sub-Sleeve**")
-        _render_sleeve_detail(eth_state, "ETH", total_nav, last_trade=last_trades.get("ETH"))
+        st.markdown("**BTC_4H Sub-Sleeve**")
+        _render_sleeve_detail(btc_4h_state, "BTC_4H", total_nav, last_trade=last_trades.get("BTC_4H"))
     with sc3:
+        st.markdown("**ETH_1H Sub-Sleeve**")
+        _render_sleeve_detail(eth_1h_state, "ETH_1H", total_nav, last_trade=last_trades.get("ETH_1H"))
+    with sc4:
+        st.markdown("**ETH_4H Sub-Sleeve**")
+        _render_sleeve_detail(eth_4h_state, "ETH_4H", total_nav, last_trade=last_trades.get("ETH_4H"))
+
+    # Row 2: two equity sub-sleeves
+    se1, se2, _se3, _se4 = st.columns(4)
+    with se1:
         st.markdown("**SPY Sub-Sleeve**")
         _render_sleeve_detail(spy_state, "SPY", total_nav, last_trade=last_trades.get("SPY"))
-        # SMA-band signal reference for SPY
         _ed2 = equity_detail
         if _ed2 and _ed2.get("spy_close") is not None:
             _spy_sma2 = _ed2.get("spy_sma")
@@ -1094,10 +1128,9 @@ with tab_positions:
                 f"SMA signal: {'✅ above' if _spy_act2 else '⬜ below'} "
                 + (f"SMA {_usd(float(_spy_sma2))}" if _spy_sma2 else "SMA —")
             )
-    with sc4:
+    with se2:
         st.markdown("**QQQ Sub-Sleeve**")
         _render_sleeve_detail(qqq_state, "QQQ", total_nav, last_trade=last_trades.get("QQQ"))
-        # SMA-band signal reference for QQQ
         _ed3 = equity_detail
         if _ed3 and _ed3.get("qqq_close") is not None:
             _qqq_sma3 = _ed3.get("qqq_sma")
@@ -1179,7 +1212,7 @@ with tab_blotter:
 # ─────────────────────────────────────────────────────
 with tab_signals:
 
-    st.subheader("Signal History — all decisions (last 200 cycles, 4 sleeves)")
+    st.subheader("Signal History — all decisions (last 200 cycles, 6 sleeves)")
 
     if not sig_df.empty:
         sf1, sf2, _ = st.columns([1, 1, 4])
@@ -1292,7 +1325,8 @@ with tab_rebalances:
         st.dataframe(_rstyled, use_container_width=True, hide_index=True)
         st.caption(
             f"{len(rebal_df)} rebalance event(s) shown (sub-$1 skipped events excluded). "
-            "Capital flows split 50/50 within each macro sleeve (BTC/ETH and SPY/QQQ)."
+            "Crypto drain: 25% each from BTC_1H/BTC_4H/ETH_1H/ETH_4H. "
+            "Equity drain: 50% each from SPY/QQQ."
         )
     else:
         st.info("No rebalance events recorded yet.")

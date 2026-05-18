@@ -1,24 +1,34 @@
-"""Unified Fund v1 — four-sleeve live runner.
+"""Unified Fund v1 — six-sleeve live runner.
 
-Layer 3 Allocator Wrapper: runs four independent Orchestrators
-(BTC + ETH crypto sub-sleeves, SPY equity sub-sleeve, QQQ equity sub-sleeve)
+Layer 3 Allocator Wrapper: runs six independent Orchestrators
+(BTC_1H, BTC_4H, ETH_1H, ETH_4H crypto sub-sleeves + SPY + QQQ equity sub-sleeves)
 and applies a ±5% drift buffer to maintain the 50/50 crypto/equity fund split.
 
 Architecture:
-  - BTC sleeve:  trend_following (50%) + volatility_breakout (30%) + mean_reversion (20%)
-  - ETH sleeve:  trend_following (50%) + volatility_breakout (30%) + mean_reversion (20%)
-  - SPY sleeve:  equity_spy_qqq_sma_band_v1 (100%) — raw SPY daily bars
-  - QQQ sleeve:  equity_spy_qqq_sma_band_v1 (100%) — raw QQQ daily bars
-  - Crypto NAV  = BTC NAV + ETH NAV
-  - Equity NAV  = SPY NAV + QQQ NAV
-  - Drift check compares (Crypto NAV) vs (Equity NAV) vs 50/50 target.
-  - Master loop steps all four orchestrators per bar, then checks allocation drift.
+  - BTC_1H sleeve:  trend_following (50%) + volatility_breakout (30%) + mean_reversion (20%) — hourly bars
+  - BTC_4H sleeve:  same strategies — 4-hour resampled bars
+  - ETH_1H sleeve:  same strategies — hourly bars
+  - ETH_4H sleeve:  same strategies — 4-hour resampled bars
+  - SPY sleeve:     equity_spy_qqq_sma_band_v1 (100%) — daily bars
+  - QQQ sleeve:     equity_spy_qqq_sma_band_v1 (100%) — daily bars
+  - Crypto NAV  = BTC_1H + BTC_4H + ETH_1H + ETH_4H
+  - Equity NAV  = SPY + QQQ
+  - Drift check compares (Crypto NAV) vs (Equity NAV) vs 50/50 target ±5%.
+  - Master loop steps each orchestrator only when its timeframe produces a new bar.
+
+Capital split (default $100k total):
+  - Crypto 50% ($50k): BTC_1H=12.5%, BTC_4H=12.5%, ETH_1H=12.5%, ETH_4H=12.5%
+  - Equity 50% ($50k): SPY=25%, QQQ=25%
+
+4H crypto providers fetch 1H data from Coinbase and resample via
+research.harness.resampler.resample_ohlcv — strictly backward-looking, no
+lookahead bias.
 
 Capital-flow semantics (cross-asset rebalance):
-  - Crypto → Equity: drain BTC_WEIGHT from BTC, ETH_WEIGHT from ETH;
-    inject SPY_WEIGHT to SPY, QQQ_WEIGHT to QQQ.
-  - Equity → Crypto: drain SPY_WEIGHT from SPY, QQQ_WEIGHT from QQQ;
-    inject BTC_WEIGHT to BTC, ETH_WEIGHT to ETH.
+  - Crypto → Equity: drain 25% each from BTC_1H/BTC_4H/ETH_1H/ETH_4H;
+    inject 50% each to SPY/QQQ.
+  - Equity → Crypto: drain 50% each from SPY/QQQ;
+    inject 25% each to BTC_1H/BTC_4H/ETH_1H/ETH_4H.
 
 Constraints enforced:
   - Orchestrator is NOT modified; this wrapper calls it as-is.
@@ -60,6 +70,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from research.harness.execution_model import ExecutionConfig
+from research.harness.resampler import resample_ohlcv
 from research.regimes.baseline_engine import BaselineRegimeEngine
 from research.regimes.contracts import RegimeLabel
 from research.strategies import (
@@ -89,7 +100,7 @@ log = logging.getLogger("argus.unified_fund")
 
 COINBASE_CANDLES_URL = "https://api.exchange.coinbase.com/products/{product}/candles"
 YAHOO_CHART_URL      = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
-TARGET_1H_BARS       = 900   # enough for 4H resampling headroom if ever needed
+TARGET_1H_BARS       = 900   # enough for 4H resampling headroom (≈225 4H bars)
 
 BTC_ASSET = "BTC"
 ETH_ASSET = "ETH"
@@ -99,13 +110,20 @@ QQQ_ASSET = "QQQ"
 TARGET_SPLIT = 0.50   # target crypto fraction of total fund NAV
 DRIFT_BUFFER = 0.05   # ±5 pp: rebalance if crypto fraction leaves [45%, 55%]
 
-BTC_WEIGHT = 0.50     # fraction of crypto sleeve capital allocated to BTC
-ETH_WEIGHT = 0.50     # fraction of crypto sleeve capital allocated to ETH
-SPY_WEIGHT = 0.50     # fraction of equity sleeve capital allocated to SPY
-QQQ_WEIGHT = 0.50     # fraction of equity sleeve capital allocated to QQQ
+# Within crypto sleeve (each 25% of crypto capital = 12.5% of total fund)
+BTC_1H_WEIGHT = 0.25
+BTC_4H_WEIGHT = 0.25
+ETH_1H_WEIGHT = 0.25
+ETH_4H_WEIGHT = 0.25
 
-BTC_STATE_PATH           = "runtime/argus/state/BTC_live_state.json"
-ETH_STATE_PATH           = "runtime/argus/state/ETH_live_state.json"
+# Within equity sleeve
+SPY_WEIGHT = 0.50
+QQQ_WEIGHT = 0.50
+
+BTC_1H_STATE_PATH        = "runtime/argus/state/BTC_1H_live_state.json"
+BTC_4H_STATE_PATH        = "runtime/argus/state/BTC_4H_live_state.json"
+ETH_1H_STATE_PATH        = "runtime/argus/state/ETH_1H_live_state.json"
+ETH_4H_STATE_PATH        = "runtime/argus/state/ETH_4H_live_state.json"
 SPY_STATE_PATH           = "runtime/argus/state/spy_state.json"
 QQQ_STATE_PATH           = "runtime/argus/state/qqq_state.json"
 CRYPTO_DETAIL_STATE_PATH = "runtime/argus/state/crypto_detail_state.json"
@@ -156,8 +174,6 @@ def _rehydrate_broker(broker: PaperBroker, state_path: str) -> None:
     broker._positions = {state.asset: state.position_units}
     broker._initial_cash = state.cash + (state.position_units * state.average_entry_price)
 
-    # Restore fill history so get_average_entry_price() returns the correct cost
-    # basis after a restart.
     if state.position_units > 1e-10 and state.average_entry_price > 0:
         broker._fill_history = [Fill(
             order_id="__rehydrated__",
@@ -188,7 +204,7 @@ def _rehydrate_dd_governor(orch: Orchestrator, state_path: str) -> None:
 
 
 def _build_crypto_orchestrator(asset: str, state_path: str, initial_cash: float) -> Orchestrator:
-    """Shared factory for BTC and ETH crypto sub-sleeves."""
+    """Shared factory for all crypto sub-sleeves (BTC_1H, BTC_4H, ETH_1H, ETH_4H)."""
     broker = PaperBroker(
         initial_cash=initial_cash,
         exec_config=_crypto_exec_config(),
@@ -212,21 +228,24 @@ def _build_crypto_orchestrator(asset: str, state_path: str, initial_cash: float)
     return orch
 
 
-def build_btc_orchestrator(initial_cash: float) -> Orchestrator:
-    return _build_crypto_orchestrator(BTC_ASSET, BTC_STATE_PATH, initial_cash)
+def build_btc_1h_orchestrator(initial_cash: float) -> Orchestrator:
+    return _build_crypto_orchestrator(BTC_ASSET, BTC_1H_STATE_PATH, initial_cash)
 
 
-def build_eth_orchestrator(initial_cash: float) -> Orchestrator:
-    return _build_crypto_orchestrator(ETH_ASSET, ETH_STATE_PATH, initial_cash)
+def build_btc_4h_orchestrator(initial_cash: float) -> Orchestrator:
+    return _build_crypto_orchestrator(BTC_ASSET, BTC_4H_STATE_PATH, initial_cash)
+
+
+def build_eth_1h_orchestrator(initial_cash: float) -> Orchestrator:
+    return _build_crypto_orchestrator(ETH_ASSET, ETH_1H_STATE_PATH, initial_cash)
+
+
+def build_eth_4h_orchestrator(initial_cash: float) -> Orchestrator:
+    return _build_crypto_orchestrator(ETH_ASSET, ETH_4H_STATE_PATH, initial_cash)
 
 
 def _build_equity_orchestrator(asset: str, state_path: str, initial_cash: float) -> Orchestrator:
-    """Shared factory for SPY and QQQ equity sub-sleeves.
-
-    Both sleeves receive a DataFrame that contains raw per-asset OHLCV (close
-    set to the asset's own close price) plus the combined spy_close/qqq_close
-    columns needed by equity_spy_qqq_sma_band_v1.
-    """
+    """Shared factory for SPY and QQQ equity sub-sleeves."""
     broker = PaperBroker(
         initial_cash=initial_cash,
         exec_config=_equity_exec_config(),
@@ -271,7 +290,7 @@ def _fetch_coinbase_paginated(
     granularity: int = 3600,
     n_candles: int = TARGET_1H_BARS,
 ) -> pd.DataFrame:
-    """Paginate the Coinbase public candle API — mirrors run_fund_v1_live.py logic."""
+    """Paginate the Coinbase public candle API."""
     all_frames: list[pd.DataFrame] = []
     end_time: datetime | None = None
     remaining = n_candles
@@ -354,31 +373,46 @@ def _build_combined_equity_df(spy: pd.DataFrame, qqq: pd.DataFrame) -> pd.DataFr
 
 # ── Data providers ─────────────────────────────────────────────────────────────
 
-def build_live_btc_provider() -> Callable[[], pd.DataFrame]:
-    """Live BTC provider: BTC-USD hourly bars via Coinbase public API."""
+def build_live_btc_1h_provider() -> Callable[[], pd.DataFrame]:
+    """Live BTC 1H provider: BTC-USD hourly bars via Coinbase public API."""
     def _provider() -> pd.DataFrame:
         df = _fetch_coinbase_paginated("BTC-USD", granularity=3600, n_candles=TARGET_1H_BARS)
-        log.debug("BTC provider: %d bars fetched (latest: %s)", len(df), df.index[-1])
+        log.debug("BTC_1H provider: %d bars fetched (latest: %s)", len(df), df.index[-1])
         return df
     return _provider
 
 
-def build_live_eth_provider() -> Callable[[], pd.DataFrame]:
-    """Live ETH provider: ETH-USD hourly bars via Coinbase public API."""
+def build_live_btc_4h_provider() -> Callable[[], pd.DataFrame]:
+    """Live BTC 4H provider: fetches hourly bars and resamples to 4H."""
+    def _provider() -> pd.DataFrame:
+        raw = _fetch_coinbase_paginated("BTC-USD", granularity=3600, n_candles=TARGET_1H_BARS)
+        df = resample_ohlcv(raw, "4h")
+        log.debug("BTC_4H provider: %d bars (latest: %s)", len(df), df.index[-1])
+        return df
+    return _provider
+
+
+def build_live_eth_1h_provider() -> Callable[[], pd.DataFrame]:
+    """Live ETH 1H provider: ETH-USD hourly bars via Coinbase public API."""
     def _provider() -> pd.DataFrame:
         df = _fetch_coinbase_paginated("ETH-USD", granularity=3600, n_candles=TARGET_1H_BARS)
-        log.debug("ETH provider: %d bars fetched (latest: %s)", len(df), df.index[-1])
+        log.debug("ETH_1H provider: %d bars fetched (latest: %s)", len(df), df.index[-1])
+        return df
+    return _provider
+
+
+def build_live_eth_4h_provider() -> Callable[[], pd.DataFrame]:
+    """Live ETH 4H provider: fetches hourly bars and resamples to 4H."""
+    def _provider() -> pd.DataFrame:
+        raw = _fetch_coinbase_paginated("ETH-USD", granularity=3600, n_candles=TARGET_1H_BARS)
+        df = resample_ohlcv(raw, "4h")
+        log.debug("ETH_4H provider: %d bars (latest: %s)", len(df), df.index[-1])
         return df
     return _provider
 
 
 def build_live_spy_provider() -> Callable[[], pd.DataFrame]:
-    """Live SPY provider: raw SPY daily bars with combined spy_close/qqq_close columns.
-
-    The DataFrame has close=spy_close so the SPY orchestrator tracks SPY share
-    price for NAV and position sizing.  The qqq_close column is included so
-    equity_spy_qqq_sma_band_v1 can compute cross-asset SMA signals.
-    """
+    """Live SPY provider: raw SPY daily bars with combined spy_close/qqq_close columns."""
     def _provider() -> pd.DataFrame:
         spy = _fetch_yahoo_daily("SPY")
         qqq = _fetch_yahoo_daily("QQQ")
@@ -394,11 +428,7 @@ def build_live_spy_provider() -> Callable[[], pd.DataFrame]:
 
 
 def build_live_qqq_provider() -> Callable[[], pd.DataFrame]:
-    """Live QQQ provider: raw QQQ daily bars with combined spy_close/qqq_close columns.
-
-    The DataFrame has close=qqq_close so the QQQ orchestrator tracks QQQ share
-    price for NAV and position sizing.
-    """
+    """Live QQQ provider: raw QQQ daily bars with combined spy_close/qqq_close columns."""
     def _provider() -> pd.DataFrame:
         spy = _fetch_yahoo_daily("SPY")
         qqq = _fetch_yahoo_daily("QQQ")
@@ -416,7 +446,7 @@ def build_live_qqq_provider() -> Callable[[], pd.DataFrame]:
 # ── Mock providers (--mode mock; integration testing only) ────────────────────
 
 def build_mock_crypto_provider(path: str, asset: str = "BTC", lookback: int = 500) -> Callable[[], pd.DataFrame]:
-    """Mock provider for a single crypto asset (BTC or ETH) from CSV."""
+    """Mock 1H provider for a single crypto asset from CSV."""
     from research.harness.data_loader import load_ohlcv
     df = load_ohlcv(path)
 
@@ -426,8 +456,31 @@ def build_mock_crypto_provider(path: str, asset: str = "BTC", lookback: int = 50
 
         def __call__(self) -> pd.DataFrame:
             if self._idx > len(df):
-                raise StopIteration(f"End of {asset} mock data.")
+                raise StopIteration(f"End of {asset} 1H mock data.")
             window = df.iloc[: self._idx]
+            self._idx += 1
+            return window
+
+    return _Provider()
+
+
+def build_mock_crypto_4h_provider(path: str, asset: str = "BTC", lookback: int = 125) -> Callable[[], pd.DataFrame]:
+    """Mock 4H provider: loads 1H CSV, resamples to 4H, uses rolling window.
+
+    lookback default of 125 corresponds to ~500 hours of 1H data resampled to 4H.
+    """
+    from research.harness.data_loader import load_ohlcv
+    df_1h = load_ohlcv(path)
+    df_4h = resample_ohlcv(df_1h, "4h")
+
+    class _Provider:
+        def __init__(self) -> None:
+            self._idx = lookback
+
+        def __call__(self) -> pd.DataFrame:
+            if self._idx > len(df_4h):
+                raise StopIteration(f"End of {asset} 4H mock data.")
+            window = df_4h.iloc[: self._idx]
             self._idx += 1
             return window
 
@@ -491,23 +544,30 @@ def build_mock_qqq_provider(spy_path: str, qqq_path: str, lookback: int = 500) -
 # ── NAV helpers ────────────────────────────────────────────────────────────────
 
 def _sleeve_navs(
-    btc_orch: Orchestrator,
-    eth_orch: Orchestrator,
+    btc1h_orch: Orchestrator,
+    btc4h_orch: Orchestrator,
+    eth1h_orch: Orchestrator,
+    eth4h_orch: Orchestrator,
     spy_orch: Orchestrator,
     qqq_orch: Orchestrator,
     btc_price: float,
     eth_price: float,
     spy_price: float,
     qqq_price: float,
-) -> tuple[float, float, float, float, float, float, float]:
-    """Return (btc_nav, eth_nav, spy_nav, qqq_nav, crypto_nav, equity_nav, total_nav)."""
-    btc_nav    = btc_orch.broker.get_nav(BTC_ASSET, btc_price)
-    eth_nav    = eth_orch.broker.get_nav(ETH_ASSET, eth_price)
-    spy_nav    = spy_orch.broker.get_nav(SPY_ASSET, spy_price)
-    qqq_nav    = qqq_orch.broker.get_nav(QQQ_ASSET, qqq_price)
+) -> tuple[float, float, float, float, float, float, float, float, float, float, float]:
+    """Return (btc1h_nav, btc4h_nav, eth1h_nav, eth4h_nav, spy_nav, qqq_nav,
+               btc_nav, eth_nav, crypto_nav, equity_nav, total_nav)."""
+    btc1h_nav = btc1h_orch.broker.get_nav(BTC_ASSET, btc_price)
+    btc4h_nav = btc4h_orch.broker.get_nav(BTC_ASSET, btc_price)
+    eth1h_nav = eth1h_orch.broker.get_nav(ETH_ASSET, eth_price)
+    eth4h_nav = eth4h_orch.broker.get_nav(ETH_ASSET, eth_price)
+    spy_nav   = spy_orch.broker.get_nav(SPY_ASSET, spy_price)
+    qqq_nav   = qqq_orch.broker.get_nav(QQQ_ASSET, qqq_price)
+    btc_nav    = btc1h_nav + btc4h_nav
+    eth_nav    = eth1h_nav + eth4h_nav
     crypto_nav = btc_nav + eth_nav
     equity_nav = spy_nav + qqq_nav
-    return btc_nav, eth_nav, spy_nav, qqq_nav, crypto_nav, equity_nav, crypto_nav + equity_nav
+    return btc1h_nav, btc4h_nav, eth1h_nav, eth4h_nav, spy_nav, qqq_nav, btc_nav, eth_nav, crypto_nav, equity_nav, crypto_nav + equity_nav
 
 
 # ── Drift buffer ───────────────────────────────────────────────────────────────
@@ -517,11 +577,7 @@ def check_drift(
     equity_nav: float,
     total_nav: float,
 ) -> tuple[bool, float, float]:
-    """Return (drift_triggered, crypto_frac, equity_frac).
-
-    Drift is triggered when the crypto sleeve fraction moves outside
-    [TARGET_SPLIT - DRIFT_BUFFER, TARGET_SPLIT + DRIFT_BUFFER].
-    """
+    """Return (drift_triggered, crypto_frac, equity_frac)."""
     if total_nav <= 0:
         return False, TARGET_SPLIT, 1.0 - TARGET_SPLIT
     crypto_frac = crypto_nav / total_nav
@@ -531,8 +587,10 @@ def check_drift(
 
 
 def cross_asset_rebalance(
-    btc_orch: Orchestrator,
-    eth_orch: Orchestrator,
+    btc1h_orch: Orchestrator,
+    btc4h_orch: Orchestrator,
+    eth1h_orch: Orchestrator,
+    eth4h_orch: Orchestrator,
     spy_orch: Orchestrator,
     qqq_orch: Orchestrator,
     btc_price: float,
@@ -540,20 +598,22 @@ def cross_asset_rebalance(
     spy_price: float,
     qqq_price: float,
 ) -> dict:
-    """Transfer capital between the four sleeve paper brokers to restore 50/50.
+    """Transfer capital between sub-sleeve paper brokers to restore 50/50 crypto/equity.
 
     Capital-flow logic:
-      Crypto → Equity: drain BTC_WEIGHT from BTC cash and ETH_WEIGHT from ETH cash;
-        inject SPY_WEIGHT of the transferred amount to SPY and QQQ_WEIGHT to QQQ.
-      Equity → Crypto: drain SPY_WEIGHT from SPY cash and QQQ_WEIGHT from QQQ cash;
-        inject BTC_WEIGHT of the transferred amount to BTC and ETH_WEIGHT to ETH.
+      Crypto → Equity: drain 25% each from BTC_1H/BTC_4H/ETH_1H/ETH_4H;
+        inject 50% each to SPY and QQQ.
+      Equity → Crypto: drain 50% each from SPY/QQQ;
+        inject 25% each to BTC_1H/BTC_4H/ETH_1H/ETH_4H.
 
-    process_capital_flow() is called on both the broker and the RuntimeState for
-    every sleeve so that High-Water Marks scale proportionally and the Drawdown
-    Governor does not misinterpret the cash adjustment as a drawdown breach.
+    process_capital_flow() is called on both the broker and RuntimeState for every
+    sleeve so that High-Water Marks scale proportionally and DD governors don't
+    misinterpret the cash transfer as a drawdown breach.
     """
-    btc_nav, eth_nav, spy_nav, qqq_nav, crypto_nav, equity_nav, total_nav = _sleeve_navs(
-        btc_orch, eth_orch, spy_orch, qqq_orch,
+    (btc1h_nav, btc4h_nav, eth1h_nav, eth4h_nav,
+     spy_nav, qqq_nav, btc_nav, eth_nav,
+     crypto_nav, equity_nav, total_nav) = _sleeve_navs(
+        btc1h_orch, btc4h_orch, eth1h_orch, eth4h_orch, spy_orch, qqq_orch,
         btc_price, eth_price, spy_price, qqq_price,
     )
     target_each = total_nav * TARGET_SPLIT
@@ -562,39 +622,38 @@ def cross_asset_rebalance(
     if abs(crypto_excess) < 1.0:
         return {"type": "cross_asset_rebalance", "action": "skipped_below_1usd_threshold"}
 
+    crypto_orchs = (btc1h_orch, btc4h_orch, eth1h_orch, eth4h_orch)
+    crypto_weights = (BTC_1H_WEIGHT, BTC_4H_WEIGHT, ETH_1H_WEIGHT, ETH_4H_WEIGHT)
+
     if crypto_excess > 0:
-        # Drain from crypto → inject into equity (split by SPY_WEIGHT / QQQ_WEIGHT)
-        btc_avail = max(0.0, btc_orch.broker._cash)
-        eth_avail = max(0.0, eth_orch.broker._cash)
-        drain_btc = min(crypto_excess * BTC_WEIGHT, btc_avail)
-        drain_eth = min(crypto_excess * ETH_WEIGHT, eth_avail)
-        transfer_usd = drain_btc + drain_eth
+        # Drain from crypto (25% each sub-sleeve) → inject into equity (50/50 SPY/QQQ)
+        avail = [max(0.0, o.broker._cash) for o in crypto_orchs]
+        drains = [min(crypto_excess * w, a) for w, a in zip(crypto_weights, avail)]
+        transfer_usd = sum(drains)
 
         if transfer_usd < crypto_excess - 1.0:
             log.warning(
-                "cross_asset_rebalance: needed to drain $%.2f but only $%.2f cash "
-                "available (BTC=$%.2f ETH=$%.2f). Crypto sleeves are likely fully "
-                "invested. Allocation drift will persist until positions are liquidated.",
-                crypto_excess, transfer_usd, btc_avail, eth_avail,
+                "cross_asset_rebalance: needed to drain $%.2f from crypto but only "
+                "$%.2f cash available. Crypto sleeves likely fully invested.",
+                crypto_excess, transfer_usd,
             )
 
         inject_spy = transfer_usd * SPY_WEIGHT
         inject_qqq = transfer_usd * QQQ_WEIGHT
 
-        btc_orch.broker.process_capital_flow(-drain_btc)
-        eth_orch.broker.process_capital_flow(-drain_eth)
+        for orch, drain in zip(crypto_orchs, drains):
+            orch.broker.process_capital_flow(-drain)
+            orch._state.process_capital_flow(-drain)
+
         spy_orch.broker.process_capital_flow(inject_spy)
         qqq_orch.broker.process_capital_flow(inject_qqq)
-
-        btc_orch._state.process_capital_flow(-drain_btc)
-        eth_orch._state.process_capital_flow(-drain_eth)
         spy_orch._state.process_capital_flow(inject_spy)
         qqq_orch._state.process_capital_flow(inject_qqq)
 
         direction = "crypto_to_equity"
 
     else:
-        # Drain from equity (split by SPY_WEIGHT / QQQ_WEIGHT) → inject into crypto
+        # Drain from equity (50/50 SPY/QQQ) → inject into crypto (25% each sub-sleeve)
         spy_avail = max(0.0, spy_orch.broker._cash)
         qqq_avail = max(0.0, qqq_orch.broker._cash)
         drain_spy = min(-crypto_excess * SPY_WEIGHT, spy_avail)
@@ -604,38 +663,38 @@ def cross_asset_rebalance(
         if transfer_usd < -crypto_excess - 1.0:
             log.warning(
                 "cross_asset_rebalance: needed to drain $%.2f from equity but only "
-                "$%.2f cash available (SPY=$%.2f QQQ=$%.2f). Equity sleeves are "
-                "likely fully invested.",
+                "$%.2f cash available (SPY=$%.2f QQQ=$%.2f). Equity sleeves likely "
+                "fully invested.",
                 -crypto_excess, transfer_usd, spy_avail, qqq_avail,
             )
 
         spy_orch.broker.process_capital_flow(-drain_spy)
         qqq_orch.broker.process_capital_flow(-drain_qqq)
-        btc_orch.broker.process_capital_flow(transfer_usd * BTC_WEIGHT)
-        eth_orch.broker.process_capital_flow(transfer_usd * ETH_WEIGHT)
-
         spy_orch._state.process_capital_flow(-drain_spy)
         qqq_orch._state.process_capital_flow(-drain_qqq)
-        btc_orch._state.process_capital_flow(transfer_usd * BTC_WEIGHT)
-        eth_orch._state.process_capital_flow(transfer_usd * ETH_WEIGHT)
+
+        for orch, w in zip(crypto_orchs, crypto_weights):
+            inject = transfer_usd * w
+            orch.broker.process_capital_flow(inject)
+            orch._state.process_capital_flow(inject)
 
         direction = "equity_to_crypto"
 
-    # Sync in-memory DD governor HWMs for all four sleeves so the cash
-    # adjustment does not register as a drawdown breach on the next cycle.
-    for _orch in (btc_orch, eth_orch, spy_orch, qqq_orch):
+    # Sync in-memory DD governor HWMs for all six sleeves.
+    for _orch in (*crypto_orchs, spy_orch, qqq_orch):
         _orch.allocator.dd_gov.load_state({
             "high_water_mark": _orch._state.high_water_mark,
             "is_halted":       _orch._state.drawdown_governor_halted,
         })
 
     # Persist updated sleeve states immediately.
-    for _orch in (btc_orch, eth_orch, spy_orch, qqq_orch):
+    for _orch in (*crypto_orchs, spy_orch, qqq_orch):
         if _orch.state_path:
             _orch._state.save(_orch.state_path)
 
-    _, _, _, _, crypto_nav_after, equity_nav_after, total_after = _sleeve_navs(
-        btc_orch, eth_orch, spy_orch, qqq_orch,
+    (_, _, _, _, _, _,
+     _, _, crypto_nav_after, equity_nav_after, total_after) = _sleeve_navs(
+        btc1h_orch, btc4h_orch, eth1h_orch, eth4h_orch, spy_orch, qqq_orch,
         btc_price, eth_price, spy_price, qqq_price,
     )
     return {
@@ -659,14 +718,18 @@ def cross_asset_rebalance(
 
 def _save_fund_state(
     cycle: int,
-    btc_nav: float,
-    eth_nav: float,
+    btc1h_nav: float,
+    btc4h_nav: float,
+    eth1h_nav: float,
+    eth4h_nav: float,
     spy_nav: float,
     qqq_nav: float,
     crypto_frac: float,
     equity_frac: float,
     high_water_mark: float,
 ) -> None:
+    btc_nav    = btc1h_nav + btc4h_nav
+    eth_nav    = eth1h_nav + eth4h_nav
     crypto_nav = btc_nav + eth_nav
     equity_nav = spy_nav + qqq_nav
     total_nav  = crypto_nav + equity_nav
@@ -678,7 +741,11 @@ def _save_fund_state(
         "crypto_nav":     round(crypto_nav, 4),
         "equity_nav":     round(equity_nav, 4),
         "btc_nav":        round(btc_nav, 4),
+        "btc_1h_nav":     round(btc1h_nav, 4),
+        "btc_4h_nav":     round(btc4h_nav, 4),
         "eth_nav":        round(eth_nav, 4),
+        "eth_1h_nav":     round(eth1h_nav, 4),
+        "eth_4h_nav":     round(eth4h_nav, 4),
         "spy_nav":        round(spy_nav, 4),
         "qqq_nav":        round(qqq_nav, 4),
         "crypto_frac":    round(crypto_frac, 6),
@@ -778,18 +845,22 @@ def _sleeve_signal_entry(asset: str, record: dict, nav: float) -> dict:
 
 def _append_signal_log(
     cycle: int,
-    btc_record: dict,
-    eth_record: dict,
+    btc1h_record: dict,
+    btc4h_record: dict,
+    eth1h_record: dict,
+    eth4h_record: dict,
     spy_record: dict,
     qqq_record: dict,
-    btc_nav: float,
-    eth_nav: float,
+    btc1h_nav: float,
+    btc4h_nav: float,
+    eth1h_nav: float,
+    eth4h_nav: float,
     spy_nav: float,
     qqq_nav: float,
     total_nav: float,
     drawdown_frac: float,
 ) -> None:
-    crypto_nav = btc_nav + eth_nav
+    crypto_nav = btc1h_nav + btc4h_nav + eth1h_nav + eth4h_nav
     equity_nav = spy_nav + qqq_nav
     entry = {
         "timestamp": datetime.utcnow().isoformat(),
@@ -801,8 +872,10 @@ def _append_signal_log(
             "drawdown_frac": round(drawdown_frac, 6),
         },
         "sleeves": [
-            _sleeve_signal_entry(BTC_ASSET, btc_record, btc_nav),
-            _sleeve_signal_entry(ETH_ASSET, eth_record, eth_nav),
+            _sleeve_signal_entry("BTC_1H", btc1h_record, btc1h_nav),
+            _sleeve_signal_entry("BTC_4H", btc4h_record, btc4h_nav),
+            _sleeve_signal_entry("ETH_1H", eth1h_record, eth1h_nav),
+            _sleeve_signal_entry("ETH_4H", eth4h_record, eth4h_nav),
             _sleeve_signal_entry(SPY_ASSET, spy_record, spy_nav),
             _sleeve_signal_entry(QQQ_ASSET, qqq_record, qqq_nav),
         ],
@@ -818,16 +891,22 @@ def _append_signal_log(
 def _save_crypto_detail_state(
     btc_df: pd.DataFrame,
     eth_df: pd.DataFrame,
-    btc_record: dict,
-    eth_record: dict,
+    btc1h_record: dict,
+    btc4h_record: dict,
+    eth1h_record: dict,
+    eth4h_record: dict,
 ) -> None:
-    """Write per-asset breakdown for the crypto sleeve (BTC + ETH)."""
+    """Write per-asset breakdown for the crypto sleeve (all four sub-sleeves)."""
     detail = {
-        "timestamp":  datetime.utcnow().isoformat(),
-        "btc_regime": btc_record.get("regime", ""),
-        "eth_regime": eth_record.get("regime", ""),
-        "btc_close":  round(float(btc_df["close"].iloc[-1]), 2),
-        "eth_close":  round(float(eth_df["close"].iloc[-1]), 2),
+        "timestamp":      datetime.utcnow().isoformat(),
+        "btc_regime":     btc1h_record.get("regime", ""),
+        "eth_regime":     eth1h_record.get("regime", ""),
+        "btc_close":      round(float(btc_df["close"].iloc[-1]), 2),
+        "eth_close":      round(float(eth_df["close"].iloc[-1]), 2),
+        "btc_1h_regime":  btc1h_record.get("regime", ""),
+        "btc_4h_regime":  btc4h_record.get("regime", ""),
+        "eth_1h_regime":  eth1h_record.get("regime", ""),
+        "eth_4h_regime":  eth4h_record.get("regime", ""),
     }
     p = Path(CRYPTO_DETAIL_STATE_PATH)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -844,11 +923,9 @@ def _save_equity_detail_state(
     """Write per-asset breakdown + sniper overlay status for the equity sleeve.
 
     equity_df must be the combined wide DataFrame (spy_close + qqq_close columns).
-    Pass the SPY provider's DataFrame directly — it already contains both columns.
     """
     sma = _sma_band_signal(equity_df)
 
-    # Sniper overlay uses QQQ regime and exposure (sniper targets QQQ momentum).
     regime_str = qqq_record.get("regime", "UNKNOWN")
     try:
         regime = RegimeLabel(regime_str)
@@ -884,8 +961,7 @@ def _save_equity_detail_state(
         "timestamp":  datetime.utcnow().isoformat(),
         "spy_regime": spy_record.get("regime", ""),
         "qqq_regime": regime_str,
-        "regime":     regime_str,  # backward compat — dashboard reads this key
-        # Core beta
+        "regime":     regime_str,
         "spy_close":  round(sma.spy_close, 4) if sma.spy_close is not None else None,
         "qqq_close":  round(sma.qqq_close, 4) if sma.qqq_close is not None else None,
         "spy_sma":    round(sma.spy_sma,   4) if sma.spy_sma   is not None else None,
@@ -896,7 +972,6 @@ def _save_equity_detail_state(
         "qqq_weight": sma.target_weights.get("QQQ", 0.0),
         "gross_exposure": sma.gross_exposure,
         "sma_warmup": sma.warmup,
-        # Sniper overlay
         "sniper_status":          sniper_status,
         "sniper_entry_confirmed": bool(sm.get("entry_confirmed", False)),
         "sniper_exit_confirmed":  bool(sm.get("exit_confirmed", False)),
@@ -917,72 +992,99 @@ def _bar_is_new(orch: Orchestrator, df: pd.DataFrame) -> bool:
     return str(df.index[-1]) != orch._state.last_bar_timestamp
 
 
+def _step_if_new(orch: Orchestrator, df: pd.DataFrame) -> dict | None:
+    """Call orch.step(df) only when the latest bar is new; return None otherwise.
+
+    This prevents the orchestrator from re-processing the same bar, which would
+    trigger duplicate strategy evaluations and potential duplicate fills.
+    """
+    if _bar_is_new(orch, df):
+        return orch.step(df)
+    return None
+
+
 def run_fund(
-    btc_orch: Orchestrator,
-    eth_orch: Orchestrator,
+    btc1h_orch: Orchestrator,
+    btc4h_orch: Orchestrator,
+    eth1h_orch: Orchestrator,
+    eth4h_orch: Orchestrator,
     spy_orch: Orchestrator,
     qqq_orch: Orchestrator,
-    btc_provider: Callable[[], pd.DataFrame],
-    eth_provider: Callable[[], pd.DataFrame],
+    btc1h_provider: Callable[[], pd.DataFrame],
+    btc4h_provider: Callable[[], pd.DataFrame],
+    eth1h_provider: Callable[[], pd.DataFrame],
+    eth4h_provider: Callable[[], pd.DataFrame],
     spy_provider: Callable[[], pd.DataFrame],
     qqq_provider: Callable[[], pd.DataFrame],
     poll_interval_seconds: int = 3600,
     max_cycles: int | None = None,
 ) -> None:
     log.info(
-        "Unified Fund v1 starting. 4 sleeves: BTC + ETH (crypto) + SPY + QQQ (equity). "
-        "Target split=50/50, drift_buffer=±%.0f%%, "
-        "crypto: BTC(%.0f%%) ETH(%.0f%%), equity: SPY(%.0f%%) QQQ(%.0f%%)",
+        "Unified Fund v1 starting. 6 sleeves: BTC_1H + BTC_4H + ETH_1H + ETH_4H (crypto) "
+        "+ SPY + QQQ (equity). Target split=50/50, drift_buffer=±%.0f%%.",
         DRIFT_BUFFER * 100,
-        BTC_WEIGHT * 100, ETH_WEIGHT * 100,
-        SPY_WEIGHT * 100, QQQ_WEIGHT * 100,
     )
 
     cycle    = 0
     fund_hwm = 0.0
     total_nav = 0.0
 
+    # Sentinel records used when a sleeve's bar hasn't changed this cycle.
+    _NO_STEP: dict = {
+        "timestamp": "", "regime": "", "price": 0.0, "nav": 0.0,
+        "exposure": 0.0, "decision_action": "HOLD", "decision_approved": False,
+        "decision_reason": "no_new_bar", "fill": None,
+    }
+
     while True:
         try:
-            btc_df = btc_provider()
-            eth_df = eth_provider()
-            spy_df = spy_provider()
-            qqq_df = qqq_provider()
+            btc1h_df = btc1h_provider()
+            btc4h_df = btc4h_provider()
+            eth1h_df = eth1h_provider()
+            eth4h_df = eth4h_provider()
+            spy_df   = spy_provider()
+            qqq_df   = qqq_provider()
 
-            if not (
-                _bar_is_new(btc_orch, btc_df)
-                or _bar_is_new(eth_orch, eth_df)
-                or _bar_is_new(spy_orch, spy_df)
-                or _bar_is_new(qqq_orch, qqq_df)
-            ):
-                log.info(
-                    "Cycle %d | All bars already processed — skipping (restart dedup).",
-                    cycle,
-                )
+            any_new = any([
+                _bar_is_new(btc1h_orch, btc1h_df),
+                _bar_is_new(btc4h_orch, btc4h_df),
+                _bar_is_new(eth1h_orch, eth1h_df),
+                _bar_is_new(eth4h_orch, eth4h_df),
+                _bar_is_new(spy_orch,   spy_df),
+                _bar_is_new(qqq_orch,   qqq_df),
+            ])
+            if not any_new:
+                log.info("Cycle %d | All bars already processed — skipping.", cycle)
                 time.sleep(poll_interval_seconds)
                 continue
 
-            btc_record = btc_orch.step(btc_df)
-            eth_record = eth_orch.step(eth_df)
-            spy_record = spy_orch.step(spy_df)
-            qqq_record = qqq_orch.step(qqq_df)
+            btc1h_record = _step_if_new(btc1h_orch, btc1h_df) or {**_NO_STEP, "price": float(btc1h_df["close"].iloc[-1])}
+            btc4h_record = _step_if_new(btc4h_orch, btc4h_df) or {**_NO_STEP, "price": float(btc4h_df["close"].iloc[-1])}
+            eth1h_record = _step_if_new(eth1h_orch, eth1h_df) or {**_NO_STEP, "price": float(eth1h_df["close"].iloc[-1])}
+            eth4h_record = _step_if_new(eth4h_orch, eth4h_df) or {**_NO_STEP, "price": float(eth4h_df["close"].iloc[-1])}
+            spy_record   = _step_if_new(spy_orch,   spy_df)   or {**_NO_STEP, "price": float(spy_df["close"].iloc[-1])}
+            qqq_record   = _step_if_new(qqq_orch,   qqq_df)   or {**_NO_STEP, "price": float(qqq_df["close"].iloc[-1])}
 
-            btc_price = float(btc_record["price"])
-            eth_price = float(eth_record["price"])
-            spy_price = float(spy_record["price"])
-            qqq_price = float(qqq_record["price"])
+            btc_price = float(btc1h_df["close"].iloc[-1])
+            eth_price = float(eth1h_df["close"].iloc[-1])
+            spy_price = float(spy_df["close"].iloc[-1])
+            qqq_price = float(qqq_df["close"].iloc[-1])
 
-            _append_fills_log(cycle, BTC_ASSET, btc_orch, btc_record)
-            _append_fills_log(cycle, ETH_ASSET, eth_orch, eth_record)
-            _append_fills_log(cycle, SPY_ASSET, spy_orch, spy_record)
-            _append_fills_log(cycle, QQQ_ASSET, qqq_orch, qqq_record)
+            _append_fills_log(cycle, "BTC_1H", btc1h_orch, btc1h_record)
+            _append_fills_log(cycle, "BTC_4H", btc4h_orch, btc4h_record)
+            _append_fills_log(cycle, "ETH_1H", eth1h_orch, eth1h_record)
+            _append_fills_log(cycle, "ETH_4H", eth4h_orch, eth4h_record)
+            _append_fills_log(cycle, SPY_ASSET, spy_orch,   spy_record)
+            _append_fills_log(cycle, QQQ_ASSET, qqq_orch,   qqq_record)
 
-            _save_crypto_detail_state(btc_df, eth_df, btc_record, eth_record)
+            _save_crypto_detail_state(btc1h_df, eth1h_df, btc1h_record, btc4h_record, eth1h_record, eth4h_record)
             # spy_df contains both spy_close and qqq_close — pass directly for SMA/sniper calc
             _save_equity_detail_state(spy_df, spy_record, qqq_record)
 
-            btc_nav, eth_nav, spy_nav, qqq_nav, crypto_nav, equity_nav, total_nav = _sleeve_navs(
-                btc_orch, eth_orch, spy_orch, qqq_orch,
+            (btc1h_nav, btc4h_nav, eth1h_nav, eth4h_nav,
+             spy_nav, qqq_nav, btc_nav, eth_nav,
+             crypto_nav, equity_nav, total_nav) = _sleeve_navs(
+                btc1h_orch, btc4h_orch, eth1h_orch, eth4h_orch, spy_orch, qqq_orch,
                 btc_price, eth_price, spy_price, qqq_price,
             )
 
@@ -1000,15 +1102,17 @@ def run_fund(
                     cycle, crypto_frac * 100, equity_frac * 100,
                 )
                 cmd = cross_asset_rebalance(
-                    btc_orch, eth_orch, spy_orch, qqq_orch,
+                    btc1h_orch, btc4h_orch, eth1h_orch, eth4h_orch, spy_orch, qqq_orch,
                     btc_price, eth_price, spy_price, qqq_price,
                 )
                 log.info("Rebalance executed: %s", json.dumps(cmd))
                 _append_rebalance_log(cmd)
 
                 # Re-read NAVs after cash transfer
-                btc_nav, eth_nav, spy_nav, qqq_nav, crypto_nav, equity_nav, total_nav = _sleeve_navs(
-                    btc_orch, eth_orch, spy_orch, qqq_orch,
+                (btc1h_nav, btc4h_nav, eth1h_nav, eth4h_nav,
+                 spy_nav, qqq_nav, btc_nav, eth_nav,
+                 crypto_nav, equity_nav, total_nav) = _sleeve_navs(
+                    btc1h_orch, btc4h_orch, eth1h_orch, eth4h_orch, spy_orch, qqq_orch,
                     btc_price, eth_price, spy_price, qqq_price,
                 )
                 crypto_frac = crypto_nav / total_nav if total_nav > 0 else TARGET_SPLIT
@@ -1016,23 +1120,26 @@ def run_fund(
 
             dd_frac = (total_nav / fund_hwm - 1.0) if fund_hwm > 0 else 0.0
             _save_fund_state(
-                cycle, btc_nav, eth_nav, spy_nav, qqq_nav,
+                cycle,
+                btc1h_nav, btc4h_nav, eth1h_nav, eth4h_nav, spy_nav, qqq_nav,
                 crypto_frac, equity_frac, fund_hwm,
             )
             _append_signal_log(
                 cycle,
-                btc_record, eth_record, spy_record, qqq_record,
-                btc_nav, eth_nav, spy_nav, qqq_nav,
+                btc1h_record, btc4h_record, eth1h_record, eth4h_record,
+                spy_record, qqq_record,
+                btc1h_nav, btc4h_nav, eth1h_nav, eth4h_nav, spy_nav, qqq_nav,
                 total_nav, dd_frac,
             )
 
             log.info(
                 "Cycle %d | NAV=$%.2f | Crypto=$%.2f (%.1f%%) "
-                "[BTC=$%.2f ETH=$%.2f] | Equity=$%.2f (%.1f%%) "
-                "[SPY=$%.2f QQQ=$%.2f] | DD=%.2f%%",
+                "[BTC=$%.2f (1H=$%.2f 4H=$%.2f) ETH=$%.2f (1H=$%.2f 4H=$%.2f)] "
+                "| Equity=$%.2f (%.1f%%) [SPY=$%.2f QQQ=$%.2f] | DD=%.2f%%",
                 cycle, total_nav,
                 crypto_nav, crypto_frac * 100,
-                btc_nav, eth_nav,
+                btc_nav, btc1h_nav, btc4h_nav,
+                eth_nav, eth1h_nav, eth4h_nav,
                 equity_nav, equity_frac * 100,
                 spy_nav, qqq_nav,
                 dd_frac * 100,
@@ -1060,12 +1167,12 @@ def run_fund(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Unified Fund v1 — four-sleeve live runner (BTC, ETH, SPY, QQQ)",
+        description="Unified Fund v1 — six-sleeve live runner (BTC_1H, BTC_4H, ETH_1H, ETH_4H, SPY, QQQ)",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "--capital", type=float, default=100_000.0,
-        help="Total fund capital in USD (split 50/50 crypto/equity, then 50/50 within each)",
+        help="Total fund capital in USD (50%% crypto split into 4 equal sub-sleeves, 50%% equity split 50/50)",
     )
     parser.add_argument(
         "--poll", type=int, default=3600,
@@ -1082,34 +1189,40 @@ def main() -> None:
             "mock  = rolling-window CSV providers for integration testing"
         ),
     )
-    parser.add_argument("--btc-data",  default=None, help="[mock] Path to BTC OHLCV CSV")
-    parser.add_argument("--eth-data",  default=None, help="[mock] Path to ETH OHLCV CSV")
-    parser.add_argument("--spy-data",  default=None, help="[mock] Path to SPY OHLCV CSV")
-    parser.add_argument("--qqq-data",  default=None, help="[mock] Path to QQQ OHLCV CSV")
+    parser.add_argument("--btc-data",  default=None, help="[mock] Path to BTC 1H OHLCV CSV")
+    parser.add_argument("--eth-data",  default=None, help="[mock] Path to ETH 1H OHLCV CSV")
+    parser.add_argument("--spy-data",  default=None, help="[mock] Path to SPY daily OHLCV CSV")
+    parser.add_argument("--qqq-data",  default=None, help="[mock] Path to QQQ daily OHLCV CSV")
     args = parser.parse_args()
 
-    # Each macro sleeve (crypto / equity) gets 50% of capital.
-    # Within each macro sleeve, sub-sleeves split equally.
-    sleeve_capital   = args.capital / 2.0          # $50k crypto, $50k equity
-    crypto_per_asset = sleeve_capital * BTC_WEIGHT  # $25k BTC, $25k ETH
-    equity_per_asset = sleeve_capital * SPY_WEIGHT  # $25k SPY, $25k QQQ
+    # Capital allocation:
+    #   Crypto 50%: BTC_1H=12.5%, BTC_4H=12.5%, ETH_1H=12.5%, ETH_4H=12.5%
+    #   Equity 50%: SPY=25%, QQQ=25%
+    crypto_sleeve   = args.capital * 0.50
+    equity_sleeve   = args.capital * 0.50
+    crypto_per_sub  = crypto_sleeve / 4.0   # 12.5% of total fund per crypto sub-sleeve
+    equity_per_sub  = equity_sleeve * 0.50  # 25% of total fund per equity sub-sleeve
 
     log.info(
         "Building orchestrators: "
-        "$%.2f crypto ($%.2f BTC + $%.2f ETH), "
-        "$%.2f equity ($%.2f SPY + $%.2f QQQ)",
-        sleeve_capital, crypto_per_asset, sleeve_capital - crypto_per_asset,
-        sleeve_capital, equity_per_asset, sleeve_capital - equity_per_asset,
+        "$%.2f crypto ($%.2f × 4 sub-sleeves: BTC_1H, BTC_4H, ETH_1H, ETH_4H), "
+        "$%.2f equity ($%.2f × 2 sub-sleeves: SPY, QQQ)",
+        crypto_sleeve, crypto_per_sub,
+        equity_sleeve, equity_per_sub,
     )
 
-    btc_orch = build_btc_orchestrator(crypto_per_asset)
-    eth_orch = build_eth_orchestrator(sleeve_capital - crypto_per_asset)
-    spy_orch = build_spy_orchestrator(equity_per_asset)
-    qqq_orch = build_qqq_orchestrator(sleeve_capital - equity_per_asset)
+    btc1h_orch = build_btc_1h_orchestrator(crypto_per_sub)
+    btc4h_orch = build_btc_4h_orchestrator(crypto_per_sub)
+    eth1h_orch = build_eth_1h_orchestrator(crypto_per_sub)
+    eth4h_orch = build_eth_4h_orchestrator(crypto_per_sub)
+    spy_orch   = build_spy_orchestrator(equity_per_sub)
+    qqq_orch   = build_qqq_orchestrator(equity_per_sub)
 
     log.info(
-        "RuntimeState files: %s | %s | %s | %s",
-        BTC_STATE_PATH, ETH_STATE_PATH, SPY_STATE_PATH, QQQ_STATE_PATH,
+        "RuntimeState files: %s | %s | %s | %s | %s | %s",
+        BTC_1H_STATE_PATH, BTC_4H_STATE_PATH,
+        ETH_1H_STATE_PATH, ETH_4H_STATE_PATH,
+        SPY_STATE_PATH, QQQ_STATE_PATH,
     )
 
     if args.mode == "mock":
@@ -1121,24 +1234,32 @@ def main() -> None:
         ] if not v]
         if missing:
             raise SystemExit(f"--mode mock requires: {', '.join(missing)}")
-        btc_provider = build_mock_crypto_provider(args.btc_data, asset="BTC")
-        eth_provider = build_mock_crypto_provider(args.eth_data, asset="ETH")
-        spy_provider = build_mock_spy_provider(args.spy_data, args.qqq_data)
-        qqq_provider = build_mock_qqq_provider(args.spy_data, args.qqq_data)
-        log.info("Mock CSV providers loaded.")
+        btc1h_provider = build_mock_crypto_provider(args.btc_data, asset="BTC")
+        btc4h_provider = build_mock_crypto_4h_provider(args.btc_data, asset="BTC")
+        eth1h_provider = build_mock_crypto_provider(args.eth_data, asset="ETH")
+        eth4h_provider = build_mock_crypto_4h_provider(args.eth_data, asset="ETH")
+        spy_provider   = build_mock_spy_provider(args.spy_data, args.qqq_data)
+        qqq_provider   = build_mock_qqq_provider(args.spy_data, args.qqq_data)
+        log.info("Mock CSV providers loaded (4H providers derived from 1H data via resample_ohlcv).")
     else:
-        btc_provider = build_live_btc_provider()
-        eth_provider = build_live_eth_provider()
-        spy_provider = build_live_spy_provider()
-        qqq_provider = build_live_qqq_provider()
+        btc1h_provider = build_live_btc_1h_provider()
+        btc4h_provider = build_live_btc_4h_provider()
+        eth1h_provider = build_live_eth_1h_provider()
+        eth4h_provider = build_live_eth_4h_provider()
+        spy_provider   = build_live_spy_provider()
+        qqq_provider   = build_live_qqq_provider()
 
     run_fund(
-        btc_orch=btc_orch,
-        eth_orch=eth_orch,
+        btc1h_orch=btc1h_orch,
+        btc4h_orch=btc4h_orch,
+        eth1h_orch=eth1h_orch,
+        eth4h_orch=eth4h_orch,
         spy_orch=spy_orch,
         qqq_orch=qqq_orch,
-        btc_provider=btc_provider,
-        eth_provider=eth_provider,
+        btc1h_provider=btc1h_provider,
+        btc4h_provider=btc4h_provider,
+        eth1h_provider=eth1h_provider,
+        eth4h_provider=eth4h_provider,
         spy_provider=spy_provider,
         qqq_provider=qqq_provider,
         poll_interval_seconds=args.poll,
