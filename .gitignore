@@ -45,4 +45,16 @@ desktop.ini
 .vscode/
 *.iml
 
-runtime/argus/state/live_state.json
+# Runtime live-state and logs — machine-specific, not source
+runtime/argus/state/*.json
+runtime/argus/state/*.jsonl
+
+# Editor/tool backup files
+*.bak
+*.bak_*
+
+# Runtime logs
+logs/
+
+# Training data (large, not source)
+data/calib_train/

@@ -28,8 +28,16 @@ from research.strategies import trend_following_v8_ecap60
 from research.strategies import trend_following_v8_ecap60_add80
 from research.strategies import trend_following_v8_ecap50
 from research.strategies import trend_following_v8_ecap50_add70
+from research.strategies import trend_following_short
+from research.strategies import trend_following_short_v2
+from research.strategies import crash_short_v1
+from research.strategies import crash_short_v2
 from research.strategies import volatility_breakout
 from research.strategies import mean_reversion
+from research.strategies import post_capitulation_long_v1
+from research.strategies import post_capitulation_long_v2
+from research.strategies import equity_spy_qqq_sma_band_v1
+from research.strategies import equity_qqq_trend_v1
 
 REGISTRY: dict[str, object] = {
     "trend_following": trend_following,
@@ -50,8 +58,16 @@ REGISTRY: dict[str, object] = {
     "trend_following_v8_ecap60_add80": trend_following_v8_ecap60_add80,
     "trend_following_v8_ecap50": trend_following_v8_ecap50,
     "trend_following_v8_ecap50_add70": trend_following_v8_ecap50_add70,
+    "trend_following_short": trend_following_short,
+    "trend_following_short_v2": trend_following_short_v2,
+    "crash_short_v1": crash_short_v1,
+    "crash_short_v2": crash_short_v2,
     "volatility_breakout": volatility_breakout,
     "mean_reversion": mean_reversion,
+    "post_capitulation_long_v1": post_capitulation_long_v1,
+    "post_capitulation_long_v2": post_capitulation_long_v2,
+    "equity_spy_qqq_sma_band_v1": equity_spy_qqq_sma_band_v1,
+    "equity_qqq_trend_v1": equity_qqq_trend_v1,
 }
 
 __all__ = [
@@ -76,7 +92,15 @@ __all__ = [
     "trend_following_v8_ecap60_add80",
     "trend_following_v8_ecap50",
     "trend_following_v8_ecap50_add70",
+    "trend_following_short",
+    "trend_following_short_v2",
+    "crash_short_v1",
+    "crash_short_v2",
     "volatility_breakout",
     "mean_reversion",
+    "post_capitulation_long_v1",
+    "post_capitulation_long_v2",
+    "equity_spy_qqq_sma_band_v1",
+    "equity_qqq_trend_v1",
     "REGISTRY",
 ]

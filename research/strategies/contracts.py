@@ -23,14 +23,19 @@ class Action(str, Enum):
 
     ENTER_LONG = "ENTER_LONG"
     EXIT_LONG = "EXIT_LONG"
+    ENTER_SHORT = "ENTER_SHORT"
+    EXIT_SHORT = "EXIT_SHORT"
     HOLD = "HOLD"
     FLAT = "FLAT"
 
     def is_bullish(self) -> bool:
         return self == Action.ENTER_LONG
 
+    def is_bearish(self) -> bool:
+        return self == Action.ENTER_SHORT
+
     def is_risk_off(self) -> bool:
-        return self in (Action.EXIT_LONG, Action.FLAT)
+        return self in (Action.EXIT_LONG, Action.EXIT_SHORT, Action.FLAT)
 
 
 @dataclass(frozen=False)
@@ -111,11 +116,11 @@ class StrategyIntent:
 
     @property
     def is_entry(self) -> bool:
-        return self.action == Action.ENTER_LONG
+        return self.action in (Action.ENTER_LONG, Action.ENTER_SHORT)
 
     @property
     def is_exit(self) -> bool:
-        return self.action in (Action.EXIT_LONG, Action.FLAT)
+        return self.action in (Action.EXIT_LONG, Action.EXIT_SHORT, Action.FLAT)
 
     @property
     def is_hold(self) -> bool:

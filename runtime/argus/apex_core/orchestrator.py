@@ -206,6 +206,10 @@ class Orchestrator:
         new_exposure = (new_units * current_price) / new_nav if new_nav > 0 else 0.0
         balance = self.broker.get_balance()
 
+        _avg_entry_fn = getattr(self.broker, "get_average_entry_price", None)
+        avg_entry = _avg_entry_fn(self.asset) if _avg_entry_fn else 0.0
+        unrealized_pnl = (current_price - avg_entry) * new_units if new_units > 0 and avg_entry > 0 else 0.0
+
         self._state.update_from_broker(
             asset=self.asset,
             position_units=new_units,
@@ -213,6 +217,8 @@ class Orchestrator:
             nav=new_nav,
             exposure_frac=new_exposure,
             bar_timestamp=timestamp,
+            average_entry_price=avg_entry,
+            unrealized_pnl_usd=unrealized_pnl,
         )
         self._state.drawdown_governor_halted = not self.allocator.dd_gov.is_buy_allowed()
         if self.state_path:

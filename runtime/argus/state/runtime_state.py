@@ -56,6 +56,8 @@ class RuntimeState:
     last_bar_timestamp: str = ""
     last_updated: str = ""
     fill_count: int = 0
+    average_entry_price: float = 0.0
+    unrealized_pnl_usd: float = 0.0
     meta: dict[str, Any] = field(default_factory=dict)
 
     # ── Persistence ────────────────────────────────────────────────────────────
@@ -94,6 +96,8 @@ class RuntimeState:
         nav: float,
         exposure_frac: float,
         bar_timestamp: str,
+        average_entry_price: float = 0.0,
+        unrealized_pnl_usd: float = 0.0,
     ) -> None:
         """Update state from a fresh broker snapshot."""
         self.asset = asset
@@ -102,9 +106,31 @@ class RuntimeState:
         self.nav = nav
         self.exposure_frac = exposure_frac
         self.last_bar_timestamp = bar_timestamp
+        self.average_entry_price = average_entry_price
+        self.unrealized_pnl_usd = unrealized_pnl_usd
 
         if self.high_water_mark is None or nav > self.high_water_mark:
             self.high_water_mark = nav
+
+    def process_capital_flow(self, amount: float) -> None:
+        """Adjust state for a fund-level capital transfer — not a trade.
+
+        Parameters
+        ----------
+        amount : float
+            Positive = capital inflow, negative = capital outflow.
+
+        For outflows the HWM is scaled by the same retention ratio applied to
+        NAV so the drawdown percentage is identical before and after the
+        transfer.  Dollar-for-dollar subtraction would spike the percentage
+        drawdown when the sleeve is not at its HWM (e.g. withdrawing $4k from
+        a sleeve at NAV=$8k / HWM=$10k raises DD from 20% → 33% incorrectly).
+        """
+        if amount < 0 and self.nav > 0 and self.high_water_mark is not None:
+            retention_ratio = max(0.0, self.nav + amount) / self.nav
+            self.high_water_mark = self.high_water_mark * retention_ratio
+        self.cash = max(0.0, self.cash + amount)
+        self.nav  = max(0.0, self.nav  + amount)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
