@@ -331,7 +331,7 @@ def _run_portfolio_rebalancer(
         eq = s.result.equity_curve
         if eq.empty:
             continue
-        # For hourly/4H curves: resample to last bar of each business day
+        # For intraday curves: resample to last bar of each business day
         d = eq.resample("B").last().ffill()
         daily[s.label] = d
 
@@ -520,11 +520,13 @@ def main() -> None:
     spy_df = _build_equity_asset_view(equity_combined, "SPY")
     qqq_df = _build_equity_asset_view(equity_combined, "QQQ")
 
+    print(f"  BTC  1H : {len(btc_1h):>6} bars  {btc_1h.index[0].date()} → {btc_1h.index[-1].date()}")
     print(f"  BTC  4H : {len(btc_4h):>6} bars  {btc_4h.index[0].date()} → {btc_4h.index[-1].date()}")
+    print(f"  ETH  1H : {len(eth_1h):>6} bars  {eth_1h.index[0].date()} → {eth_1h.index[-1].date()}")
     print(f"  ETH  4H : {len(eth_4h):>6} bars  {eth_4h.index[0].date()} → {eth_4h.index[-1].date()}")
     print(f"  SPY  1D : {len(spy_raw):>6} bars  {spy_raw.index[0].date()} → {spy_raw.index[-1].date()}")
     print(f"  QQQ  1D : {len(qqq_raw):>6} bars  {qqq_raw.index[0].date()} → {qqq_raw.index[-1].date()}")
-    print(f"  Note: all crypto sleeves run on 4H bars for holdout speed (~10-15 min vs ~90 min on 1H)")
+    print("  Note: full-fidelity crypto holdout uses true 1H bars for 1H sleeves and true 4H bars for 4H sleeves.")
     print(f"\nRunning 6 sleeve backtests with frozen parameters...\n")
 
     # ── Build strategy modules ────────────────────────────────────────
@@ -532,13 +534,13 @@ def main() -> None:
     eth_blend = _build_crypto_blend("ETH")
 
     # ── Run all sleeves ───────────────────────────────────────────────
-    # All crypto sleeves use 4H-resampled data. The 1H/4H distinction is a
-    # live-execution timing concern; for a research holdout producing daily
-    # equity curves, 4H resolution is sufficient and cuts runtime ~16×.
+    # Preserve the actual bar physics of each production sleeve. The 1H
+    # sleeves must run on 1H bars and the 4H sleeves must run on 4H bars;
+    # otherwise the holdout double-counts duplicated 4H curves under 1H labels.
     sleeve_specs = [
-        ("BTC_1H", "BTC", "4H", btc_4h, btc_blend,             cap_crypto, CRYPTO_EXEC),
+        ("BTC_1H", "BTC", "1H", btc_1h, btc_blend,             cap_crypto, CRYPTO_EXEC),
         ("BTC_4H", "BTC", "4H", btc_4h, btc_blend,             cap_crypto, CRYPTO_EXEC),
-        ("ETH_1H", "ETH", "4H", eth_4h, eth_blend,             cap_crypto, CRYPTO_EXEC),
+        ("ETH_1H", "ETH", "1H", eth_1h, eth_blend,             cap_crypto, CRYPTO_EXEC),
         ("ETH_4H", "ETH", "4H", eth_4h, eth_blend,             cap_crypto, CRYPTO_EXEC),
         ("SPY",    "SPY", "1D", spy_df, equity_spy_qqq_sma_band_v1, cap_equity, EQUITY_EXEC),
         ("QQQ",    "QQQ", "1D", qqq_df, equity_spy_qqq_sma_band_v1, cap_equity, EQUITY_EXEC),
