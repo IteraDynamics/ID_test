@@ -17,10 +17,10 @@ Rebalance frictional shield : drift threshold = 12%
 
 Usage
 -----
-python research/experiments/unified_holdout_validation.py \\
-  --btc-data  data/btcusd_3600s_2019-01-01_to_2025-12-30.csv \\
-  --eth-data  data/ethusd_3600s_2019-01-01_to_2025-12-30.csv \\
-  --spy-data  data/SPY_1D.csv \\
+python research/experiments/unified_holdout_validation.py \
+  --btc-data  data/btcusd_3600s_2019-01-01_to_2025-12-30.csv \
+  --eth-data  data/ethusd_3600s_2019-01-01_to_2025-12-30.csv \
+  --spy-data  data/SPY_1D.csv \
   --qqq-data  data/QQQ_1D.csv
 """
 
@@ -213,6 +213,33 @@ def _build_equity_combined(spy_df: pd.DataFrame, qqq_df: pd.DataFrame) -> pd.Dat
         how="inner",
     )
     return combined
+
+
+def _build_equity_asset_view(equity_combined: pd.DataFrame, asset: str) -> pd.DataFrame:
+    """Return a single-asset OHLCV view that still carries the full equity book.
+
+    The equity strategy needs the wide `spy_close`/`qqq_close` columns so each
+    sleeve can evaluate the same SPY/QQQ book. The generic backtest harness and
+    regime engine, however, are asset-local and require plain OHLCV columns
+    (`open`, `high`, `low`, `close`, `volume`). This adapter keeps both views in
+    one frame so the equity strategy and OHLCV-dependent infrastructure can run
+    together without special-casing the regime/backtest layers.
+    """
+    prefix = asset.lower()
+    required = [f"{prefix}_{c}" for c in ("open", "high", "low", "close", "volume")]
+    missing = [c for c in required if c not in equity_combined.columns]
+    if missing:
+        raise ValueError(
+            f"Cannot build {asset} equity asset view; missing columns={missing}; "
+            f"available columns={list(equity_combined.columns)}"
+        )
+
+    df = equity_combined.copy()
+    for col in ("open", "high", "low", "close", "volume"):
+        src = f"{prefix}_{col}"
+        df[col] = pd.to_numeric(df[src], errors="coerce")
+
+    return df.dropna(subset=["open", "high", "low", "close"])
 
 
 # ── Sleeve runner ────────────────────────────────────────────────────────────────
@@ -490,8 +517,8 @@ def main() -> None:
     qqq_raw = _load_equity(args.qqq_data, "QQQ")
     equity_combined = _build_equity_combined(spy_raw, qqq_raw)
 
-    spy_df = equity_combined.assign(close=equity_combined["spy_close"])
-    qqq_df = equity_combined.assign(close=equity_combined["qqq_close"])
+    spy_df = _build_equity_asset_view(equity_combined, "SPY")
+    qqq_df = _build_equity_asset_view(equity_combined, "QQQ")
 
     print(f"  BTC  4H : {len(btc_4h):>6} bars  {btc_4h.index[0].date()} → {btc_4h.index[-1].date()}")
     print(f"  ETH  4H : {len(eth_4h):>6} bars  {eth_4h.index[0].date()} → {eth_4h.index[-1].date()}")
