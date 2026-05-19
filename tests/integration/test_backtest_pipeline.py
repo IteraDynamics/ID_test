@@ -26,9 +26,18 @@ from research.harness.data_loader import make_synthetic_ohlcv
 from research.harness.backtest_engine import run_backtest, BacktestResult
 from research.harness.metrics import compute_metrics, BacktestMetrics
 from research.harness.artifacts import save_artifacts
-from research.strategies import trend_following, volatility_breakout, mean_reversion
+from research.strategies import (
+    equity_qqq_sma_band_v1,
+    equity_qqq_trend_v1,
+    equity_spy_sma_band_v1,
+    mean_reversion,
+    trend_following,
+    volatility_breakout,
+)
 from research.portfolio.blend import run_portfolio_backtest, SleeveConfig
 from research.regimes.baseline_engine import BaselineRegimeEngine
+from research.regimes.contracts import RegimeLabel
+from research.strategies.contracts import Action, StrategyContext
 
 
 @pytest.fixture
@@ -101,6 +110,57 @@ class TestSingleStrategyBacktest:
         assert abs(
             float(r_full.equity_curve.iloc[50]) - float(r_short.equity_curve.iloc[50])
         ) < 1.0, "Lookahead detected: equity at bar 50 differs between full and truncated runs"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Research-only equity sleeves
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestResearchEquitySleeves:
+    def test_spy_sma_sleeve_enters_when_close_above_sma(self):
+        df = make_synthetic_ohlcv(n_bars=220, seed=11)
+        df["close"] = np.linspace(100.0, 150.0, len(df))
+        df["open"] = df["close"]
+        df["high"] = df["close"] * 1.01
+        df["low"] = df["close"] * 0.99
+        ctx = StrategyContext(regime=RegimeLabel.TREND_UP, asset="SPY")
+
+        intent = equity_spy_sma_band_v1.generate_intent(df, ctx)
+
+        assert intent.action == Action.ENTER_LONG
+        assert intent.desired_exposure_frac == 1.0
+        assert intent.meta["single_asset_sleeve"] is True
+        assert "target_weights" not in intent.meta
+
+    def test_qqq_sma_sleeve_exits_when_close_below_sma(self):
+        df = make_synthetic_ohlcv(n_bars=220, seed=12)
+        df["close"] = np.linspace(150.0, 100.0, len(df))
+        df["open"] = df["close"]
+        df["high"] = df["close"] * 1.01
+        df["low"] = df["close"] * 0.99
+        ctx = StrategyContext(
+            regime=RegimeLabel.TREND_DOWN,
+            asset="QQQ",
+            current_exposure_frac=1.0,
+        )
+
+        intent = equity_qqq_sma_band_v1.generate_intent(df, ctx)
+
+        assert intent.action == Action.EXIT_LONG
+        assert intent.desired_exposure_frac == 0.0
+        assert intent.meta["single_asset_sleeve"] is True
+        assert "target_weights" not in intent.meta
+
+    def test_qqq_growth_sleeve_runs_in_backtest(self, df_500):
+        result = run_backtest(
+            df_500,
+            equity_qqq_trend_v1,
+            initial_capital=25_000,
+            asset="QQQ",
+        )
+        assert isinstance(result, BacktestResult)
+        assert len(result.equity_curve) == len(df_500)
+        assert (result.equity_curve > 0).all()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
