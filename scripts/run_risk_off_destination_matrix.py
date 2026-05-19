@@ -101,6 +101,30 @@ def _build_fund_v1_curve(cached: dict[str, SleeveRun], capital: float) -> pd.Ser
     return out
 
 
+def _save_baseline_cache(baseline: pd.Series, path: str | None) -> None:
+    if not path:
+        return
+    cache_path = Path(path)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    baseline.to_frame("baseline").to_csv(cache_path)
+    log.info("Saved baseline cache: %s", cache_path)
+
+
+def _load_baseline_cache(path: str) -> pd.Series:
+    cache_path = Path(path)
+    if not cache_path.exists():
+        raise FileNotFoundError(f"Baseline cache not found: {cache_path}")
+    df = pd.read_csv(cache_path, index_col=0, parse_dates=True)
+    if "baseline" not in df.columns:
+        raise ValueError(f"Baseline cache must include a 'baseline' column: {cache_path}")
+    baseline = pd.to_numeric(df["baseline"], errors="coerce").dropna()
+    baseline.name = "baseline"
+    if len(baseline) < 2:
+        raise ValueError(f"Baseline cache has insufficient rows: {cache_path}")
+    log.info("Loaded baseline cache: %s (%d rows)", cache_path, len(baseline))
+    return baseline
+
+
 def _buy_hold_curve(df: pd.DataFrame, capital: float, label: str) -> pd.Series:
     close = pd.to_numeric(df["close"], errors="coerce").dropna()
     out = capital * (close / float(close.iloc[0]))
@@ -197,6 +221,15 @@ def _build_cached_crypto(args: argparse.Namespace) -> dict[str, SleeveRun]:
     }
 
 
+def _get_baseline(args: argparse.Namespace) -> pd.Series:
+    if args.load_baseline_cache:
+        return _load_baseline_cache(args.load_baseline_cache)
+    cached = _build_cached_crypto(args)
+    baseline = _build_fund_v1_curve(cached, args.capital)
+    _save_baseline_cache(baseline, args.save_baseline_cache)
+    return baseline
+
+
 def _load_destination_curves(specs: list[DestinationSpec], args: argparse.Namespace) -> dict[str, pd.Series]:
     curves: dict[str, pd.Series] = {}
     for spec in specs:
@@ -286,8 +319,8 @@ def _write_outputs(rows: list[dict[str, Any]], curves: dict[str, pd.Series], ris
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Research-only risk-off destination matrix runner")
-    p.add_argument("--btc-data", required=True)
-    p.add_argument("--eth-data", required=True)
+    p.add_argument("--btc-data", required=False, help="BTC hourly CSV; required unless --load-baseline-cache is used")
+    p.add_argument("--eth-data", required=False, help="ETH hourly CSV; required unless --load-baseline-cache is used")
     p.add_argument("--destination", action="append", default=[], help="Destination in TICKER=path form. Repeatable.")
     p.add_argument("--capital", type=float, default=100_000.0)
     p.add_argument("--start", default=None)
@@ -298,11 +331,16 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--stress-start", default="2022-01-01")
     p.add_argument("--stress-end", default="2022-12-31")
     p.add_argument("--out-dir", default="artifacts/risk_off_destination_matrix")
+    p.add_argument("--save-baseline-cache", default="artifacts/risk_off_destination_matrix/baseline_cache.csv")
+    p.add_argument("--load-baseline-cache", default=None)
     return p.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    if not args.load_baseline_cache and (not args.btc_data or not args.eth_data):
+        raise ValueError("--btc-data and --eth-data are required unless --load-baseline-cache is used")
+
     destination_specs = _parse_destinations(args.destination)
 
     print("\nRisk-Off Destination Matrix Runner")
@@ -311,10 +349,11 @@ def main() -> None:
     print("Fund v1 paper-trading impact: none")
     print(f"Risk-off rule: prior-day Fund v1 drawdown <= {args.trigger_dd:.0%}; release >= {args.release_dd:.0%}")
     print(f"Risk-off crypto scale: {args.crypto_scale:.0%}; destination scale: {1 - args.crypto_scale:.0%}")
-    print(f"Destinations: {', '.join(spec.ticker for spec in destination_specs) if destination_specs else 'cash only'}\n")
+    print(f"Destinations: {', '.join(spec.ticker for spec in destination_specs) if destination_specs else 'cash only'}")
+    print(f"Baseline cache load: {args.load_baseline_cache or 'none'}")
+    print(f"Baseline cache save: {args.save_baseline_cache if not args.load_baseline_cache else 'disabled because load cache is active'}\n")
 
-    cached = _build_cached_crypto(args)
-    baseline = _build_fund_v1_curve(cached, args.capital)
+    baseline = _get_baseline(args)
     risk_off = _risk_off_state(baseline, args.trigger_dd, args.release_dd)
     destinations = _load_destination_curves(destination_specs, args)
 
