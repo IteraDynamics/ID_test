@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -42,6 +43,30 @@ from scripts.run_risk_off_trigger_sweep import (
     _normalized_returns,
     _overlay_curve,
 )
+
+
+def _fmt_pct(value: Any) -> str:
+    if value is None:
+        return "n/a"
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return "n/a"
+    if math.isnan(v):
+        return "n/a"
+    return f"{v:.2f}%"
+
+
+def _fmt_num(value: Any, digits: int = 2) -> str:
+    if value is None:
+        return "n/a"
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return "n/a"
+    if math.isnan(v):
+        return "n/a"
+    return f"{v:.{digits}f}"
 
 
 def _episode_table(risk_off: pd.Series) -> pd.DataFrame:
@@ -82,6 +107,15 @@ def _max_dd(series: pd.Series) -> float | None:
     return float(dd.min()) * 100.0
 
 
+def _valid_return(value: Any) -> bool:
+    if value is None:
+        return False
+    try:
+        return not math.isnan(float(value))
+    except (TypeError, ValueError):
+        return False
+
+
 def _annotate_episodes(
     episodes: pd.DataFrame,
     baseline: pd.Series,
@@ -89,6 +123,7 @@ def _annotate_episodes(
     overlay: pd.Series,
     btc_close: pd.Series,
     btc_sma_window: int,
+    min_episode_days: int,
 ) -> pd.DataFrame:
     if episodes.empty:
         return episodes
@@ -100,6 +135,7 @@ def _annotate_episodes(
     for row in episodes.to_dict("records"):
         start = pd.Timestamp(row["start"])
         end = pd.Timestamp(row["end"])
+        days = int((end - start).days) + 1
         b = baseline.loc[(baseline.index >= start) & (baseline.index <= end)]
         d = destination.loc[(destination.index >= start) & (destination.index <= end)]
         o = overlay.loc[(overlay.index >= start) & (overlay.index <= end)]
@@ -109,16 +145,20 @@ def _annotate_episodes(
         baseline_ret = _ret(b)
         dest_ret = _ret(d)
         overlay_ret = _ret(o)
+        delta = None if baseline_ret is None or dest_ret is None else dest_ret - baseline_ret
+        include = days >= min_episode_days and _valid_return(baseline_ret) and _valid_return(dest_ret)
+
         rows.append(
             {
                 "episode": row["episode"],
                 "start": start.date().isoformat(),
                 "end": end.date().isoformat(),
-                "days": int((end - start).days) + 1,
+                "days": days,
+                "included_in_attribution": include,
                 "baseline_return_pct": None if baseline_ret is None else round(baseline_ret, 4),
                 "destination_return_pct": None if dest_ret is None else round(dest_ret, 4),
                 "overlay_return_pct": None if overlay_ret is None else round(overlay_ret, 4),
-                "return_delta_dest_vs_baseline_pct": None if baseline_ret is None or dest_ret is None else round(dest_ret - baseline_ret, 4),
+                "return_delta_dest_vs_baseline_pct": None if delta is None else round(delta, 4),
                 "baseline_episode_maxdd_pct": None if _max_dd(b) is None else round(_max_dd(b), 4),
                 "destination_episode_maxdd_pct": None if _max_dd(d) is None else round(_max_dd(d), 4),
                 "overlay_episode_maxdd_pct": None if _max_dd(o) is None else round(_max_dd(o), 4),
@@ -132,10 +172,58 @@ def _annotate_episodes(
     return pd.DataFrame(rows)
 
 
+def _episode_attribution(episode_df: pd.DataFrame, min_episode_days: int) -> dict[str, Any]:
+    if episode_df.empty:
+        return {
+            "total_episodes": 0,
+            "included_episodes": 0,
+            "ignored_episodes": 0,
+            "min_episode_days": min_episode_days,
+        }
+
+    included = episode_df[episode_df["included_in_attribution"]].copy()
+    ignored = episode_df[~episode_df["included_in_attribution"]].copy()
+    if included.empty:
+        return {
+            "total_episodes": int(len(episode_df)),
+            "included_episodes": 0,
+            "ignored_episodes": int(len(ignored)),
+            "min_episode_days": min_episode_days,
+        }
+
+    deltas = pd.to_numeric(included["return_delta_dest_vs_baseline_pct"], errors="coerce").dropna()
+    baseline_rets = pd.to_numeric(included["baseline_return_pct"], errors="coerce").dropna()
+    dest_rets = pd.to_numeric(included["destination_return_pct"], errors="coerce").dropna()
+    wins = int((deltas > 0).sum())
+    losses = int((deltas < 0).sum())
+    flats = int((deltas == 0).sum())
+    biggest_win = included.loc[pd.to_numeric(included["return_delta_dest_vs_baseline_pct"], errors="coerce").idxmax()].to_dict()
+    biggest_loss = included.loc[pd.to_numeric(included["return_delta_dest_vs_baseline_pct"], errors="coerce").idxmin()].to_dict()
+
+    return {
+        "total_episodes": int(len(episode_df)),
+        "included_episodes": int(len(included)),
+        "ignored_episodes": int(len(ignored)),
+        "min_episode_days": min_episode_days,
+        "win_count": wins,
+        "loss_count": losses,
+        "flat_count": flats,
+        "win_rate_pct": round(wins / max(len(deltas), 1) * 100.0, 4),
+        "sum_delta_pct_points": round(float(deltas.sum()), 4),
+        "mean_delta_pct_points": round(float(deltas.mean()), 4),
+        "median_delta_pct_points": round(float(deltas.median()), 4),
+        "sum_baseline_episode_returns_pct": round(float(baseline_rets.sum()), 4),
+        "sum_destination_episode_returns_pct": round(float(dest_rets.sum()), 4),
+        "biggest_win": biggest_win,
+        "biggest_loss": biggest_loss,
+    }
+
+
 def _write_outputs(
     args: argparse.Namespace,
     summary_row: dict[str, Any],
     episode_df: pd.DataFrame,
+    attribution: dict[str, Any],
     baseline: pd.Series,
     destination: pd.Series,
     overlay: pd.Series,
@@ -145,11 +233,12 @@ def _write_outputs(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     pd.DataFrame([summary_row]).to_csv(out_dir / "candidate_summary.csv", index=False)
+    pd.DataFrame([attribution]).to_csv(out_dir / "episode_attribution_summary.csv", index=False)
     episode_df.to_csv(out_dir / "risk_off_episodes.csv", index=False)
     pd.DataFrame({"baseline": baseline, args.destination_label.lower(): destination, "overlay": overlay}).dropna(how="all").to_csv(out_dir / "candidate_equity_curves.csv")
     risk_off.astype(int).to_csv(out_dir / "risk_off_state.csv", header=True)
 
-    payload = {"candidate": summary_row, "episodes": episode_df.to_dict("records")}
+    payload = {"candidate": summary_row, "episode_attribution": attribution, "episodes": episode_df.to_dict("records")}
     with open(out_dir / "candidate_diagnostic.json", "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, default=str)
 
@@ -164,6 +253,7 @@ def _write_outputs(
         f.write(f"- BTC SMA window: `{args.btc_sma_window}`\n")
         f.write(f"- Release mode: `{args.release_mode}`\n")
         f.write(f"- Crypto scale while risk-off: `{args.crypto_scale:.0%}`\n")
+        f.write(f"- Minimum episode days for attribution: `{args.min_episode_days}`\n")
         f.write("\n## Portfolio Summary\n\n")
         f.write("| CAGR | MaxDD | Sharpe | Calmar | Stress | RiskOff Days | RiskOff % |\n")
         f.write("|---:|---:|---:|---:|---:|---:|---:|\n")
@@ -174,14 +264,28 @@ def _write_outputs(
             f"{'n/a' if stress is None else f'{stress:.2f}%'} | {summary_row['risk_off_days']} | "
             f"{summary_row['risk_off_pct_days']:.1f}% |\n"
         )
+        f.write("\n## Episode Attribution Summary\n\n")
+        f.write("| Total Episodes | Included | Ignored | Wins | Losses | Win Rate | Sum Delta | Median Delta | Biggest Win | Biggest Loss |\n")
+        f.write("|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n")
+        biggest_win = attribution.get("biggest_win", {}) or {}
+        biggest_loss = attribution.get("biggest_loss", {}) or {}
+        f.write(
+            f"| {attribution.get('total_episodes', 0)} | {attribution.get('included_episodes', 0)} | "
+            f"{attribution.get('ignored_episodes', 0)} | {attribution.get('win_count', 0)} | "
+            f"{attribution.get('loss_count', 0)} | {_fmt_pct(attribution.get('win_rate_pct'))} | "
+            f"{_fmt_pct(attribution.get('sum_delta_pct_points'))} | {_fmt_pct(attribution.get('median_delta_pct_points'))} | "
+            f"{_fmt_pct(biggest_win.get('return_delta_dest_vs_baseline_pct'))} | "
+            f"{_fmt_pct(biggest_loss.get('return_delta_dest_vs_baseline_pct'))} |\n"
+        )
         f.write("\n## Risk-Off Episodes\n\n")
-        f.write("| # | Start | End | Days | Fund v1 Ret | Dest Ret | Delta | BTC Ret |\n")
-        f.write("|---:|---|---|---:|---:|---:|---:|---:|\n")
+        f.write("| # | Include | Start | End | Days | Fund v1 Ret | Dest Ret | Delta | BTC Ret |\n")
+        f.write("|---:|---|---|---|---:|---:|---:|---:|---:|\n")
         for r in episode_df.to_dict("records"):
             f.write(
-                f"| {r['episode']} | {r['start']} | {r['end']} | {r['days']} | "
-                f"{r['baseline_return_pct']:.2f}% | {r['destination_return_pct']:.2f}% | "
-                f"{r['return_delta_dest_vs_baseline_pct']:.2f}% | {r['btc_return_pct']:.2f}% |\n"
+                f"| {r['episode']} | {'YES' if r['included_in_attribution'] else 'NO'} | "
+                f"{r['start']} | {r['end']} | {r['days']} | "
+                f"{_fmt_pct(r.get('baseline_return_pct'))} | {_fmt_pct(r.get('destination_return_pct'))} | "
+                f"{_fmt_pct(r.get('return_delta_dest_vs_baseline_pct'))} | {_fmt_pct(r.get('btc_return_pct'))} |\n"
             )
     return md
 
@@ -199,6 +303,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--crypto-scale", type=float, default=0.0)
     p.add_argument("--btc-sma-window", type=int, default=200)
     p.add_argument("--release-mode", choices=["either", "both"], default="either")
+    p.add_argument("--min-episode-days", type=int, default=2)
     p.add_argument("--stress-start", default="2022-01-01")
     p.add_argument("--stress-end", default="2022-12-31")
     p.add_argument("--out-dir", default="artifacts/state_confirmed_candidate_diagnostic")
@@ -235,8 +340,17 @@ def main() -> None:
         baseline_metrics=baseline_metrics,
         args=args,
     )
-    episodes = _annotate_episodes(_episode_table(risk_off), baseline, destination, overlay, btc_close, args.btc_sma_window)
-    md = _write_outputs(args, summary_row, episodes, baseline, destination, overlay, risk_off)
+    episodes = _annotate_episodes(
+        _episode_table(risk_off),
+        baseline,
+        destination,
+        overlay,
+        btc_close,
+        args.btc_sma_window,
+        args.min_episode_days,
+    )
+    attribution = _episode_attribution(episodes, args.min_episode_days)
+    md = _write_outputs(args, summary_row, episodes, attribution, baseline, destination, overlay, risk_off)
 
     print("=" * 132)
     print("  STATE-CONFIRMED CANDIDATE DIAGNOSTIC")
@@ -245,6 +359,7 @@ def main() -> None:
     print(f"  Trigger / Release: {args.trigger_dd:.0%} / {args.release_dd:.0%}")
     print(f"  BTC trend filter : SMA{args.btc_sma_window}, release={args.release_mode}")
     print(f"  Crypto scale     : {args.crypto_scale:.0%}")
+    print(f"  Min episode days : {args.min_episode_days}")
     print("-" * 132)
     print(
         f"  CAGR={summary_row['cagr_pct']:.2f}%  MaxDD={summary_row['max_drawdown_pct']:.2f}%  "
@@ -252,13 +367,27 @@ def main() -> None:
         f"Stress={summary_row['stress_return_pct']:.2f}%  RiskOff={summary_row['risk_off_pct_days']:.1f}%"
     )
     print("-" * 132)
-    print(f"  Episodes: {len(episodes)}")
+    print(
+        f"  Episodes: {attribution.get('total_episodes', 0)} total | "
+        f"{attribution.get('included_episodes', 0)} included | {attribution.get('ignored_episodes', 0)} ignored"
+    )
+    if attribution.get("included_episodes", 0):
+        print(
+            f"  Episode attribution: wins={attribution.get('win_count', 0)} losses={attribution.get('loss_count', 0)} "
+            f"win_rate={_fmt_pct(attribution.get('win_rate_pct'))} "
+            f"sum_delta={_fmt_pct(attribution.get('sum_delta_pct_points'))} "
+            f"median_delta={_fmt_pct(attribution.get('median_delta_pct_points'))}"
+        )
+    print("-" * 132)
     if not episodes.empty:
         for r in episodes.to_dict("records"):
+            include = "Y" if r["included_in_attribution"] else "N"
             print(
-                f"  #{r['episode']:>2} {r['start']} -> {r['end']} ({r['days']:>4}d)  "
-                f"FundV1={r['baseline_return_pct']:>8.2f}%  {args.destination_label}={r['destination_return_pct']:>8.2f}%  "
-                f"Delta={r['return_delta_dest_vs_baseline_pct']:>8.2f}%  BTC={r['btc_return_pct']:>8.2f}%"
+                f"  #{r['episode']:>2} [{include}] {r['start']} -> {r['end']} ({r['days']:>4}d)  "
+                f"FundV1={_fmt_pct(r.get('baseline_return_pct')):>8}  "
+                f"{args.destination_label}={_fmt_pct(r.get('destination_return_pct')):>8}  "
+                f"Delta={_fmt_pct(r.get('return_delta_dest_vs_baseline_pct')):>8}  "
+                f"BTC={_fmt_pct(r.get('btc_return_pct')):>8}"
             )
     print("=" * 132)
     print(f"  Summary: {md}")
