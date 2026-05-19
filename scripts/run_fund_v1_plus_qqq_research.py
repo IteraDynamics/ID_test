@@ -4,6 +4,14 @@
 Compares the current 4-sleeve crypto Fund v1 baseline against static allocations
 that add QQQ_1D equity_sma_band_v1 as a separate, tradeable equity sleeve.
 
+Efficiency note
+---------------
+The expensive sleeve backtests are run once at full notional and then recombined
+at static weights. This is valid for this research pass because each sleeve's
+strategy decisions are exposure-fraction based and the execution model is scale
+consistent for a fixed notional/NAV ratio. The blend does not feed portfolio
+state back into individual sleeves.
+
 This script does not modify runtime, paper trading, brokers, allocators,
 governors, or Fund v1 behavior.
 """
@@ -34,6 +42,7 @@ log = logging.getLogger("fund_v1_plus_qqq")
 
 FUND_V1_STRATEGY = "trend_following_v8_ecap60_add80"
 QQQ_STRATEGY = "equity_qqq_sma_band_v1"
+FULL_CAPITAL = 100_000.0
 
 CRYPTO_EXEC = ExecutionConfig.from_env()
 QQQ_EXEC = ExecutionConfig(
@@ -56,6 +65,7 @@ QQQ_EXEC = ExecutionConfig(
 class SleeveRun:
     label: str
     asset: str
+    strategy_name: str
     result: BacktestResult
     metrics: BacktestMetrics
 
@@ -67,25 +77,99 @@ def _load(path: str, asset: str, start: str | None, end: str | None) -> pd.DataF
     return df
 
 
-def _run_sleeve(label: str, asset: str, df: pd.DataFrame, strategy_name: str, capital: float, exec_config: ExecutionConfig) -> SleeveRun:
+def _run_sleeve(
+    label: str,
+    asset: str,
+    df: pd.DataFrame,
+    strategy_name: str,
+    exec_config: ExecutionConfig,
+) -> SleeveRun:
     strategy = STRATEGY_REGISTRY[strategy_name]
-    log.info("Running %s — $%.0f on %d bars", label, capital, len(df))
-    result = run_backtest(df=df, strategy_module=strategy, asset=asset, initial_capital=capital, exec_config=exec_config)
-    metrics = compute_metrics(result.equity_curve, result.trades, {"strategy_id": strategy_name, "asset": asset, "initial_capital": capital})
-    return SleeveRun(label=label, asset=asset, result=result, metrics=metrics)
+    log.info("Running cached sleeve %s — $%.0f on %d bars", label, FULL_CAPITAL, len(df))
+    result = run_backtest(
+        df=df,
+        strategy_module=strategy,
+        asset=asset,
+        initial_capital=FULL_CAPITAL,
+        exec_config=exec_config,
+    )
+    metrics = compute_metrics(
+        result.equity_curve,
+        result.trades,
+        {"strategy_id": strategy_name, "asset": asset, "initial_capital": FULL_CAPITAL},
+    )
+    return SleeveRun(label=label, asset=asset, strategy_name=strategy_name, result=result, metrics=metrics)
 
 
 def _daily_equity(series: pd.Series) -> pd.Series:
     return series.resample("1D").last().ffill().dropna()
 
 
-def _blend_metrics(sleeves: list[SleeveRun], capital: float, label: str) -> tuple[pd.Series, BacktestMetrics]:
-    daily = pd.DataFrame({s.label: _daily_equity(s.result.equity_curve) for s in sleeves}).dropna(how="any")
+def _scaled_daily_return_curve(run: SleeveRun, weight: float, capital: float) -> pd.Series:
+    base = _daily_equity(run.result.equity_curve)
+    normalized = base / float(base.iloc[0])
+    scaled = normalized * (capital * weight)
+    scaled.name = run.label
+    return scaled
+
+
+def _scaled_costs(run: SleeveRun, weight: float, capital: float) -> float:
+    scale = (capital * weight) / FULL_CAPITAL
+    return round((run.metrics.total_fees_paid + run.metrics.total_slippage_cost) * scale, 2)
+
+
+def _scaled_trades(run: SleeveRun, weight: float) -> int:
+    return run.metrics.n_trades if weight > 0 else 0
+
+
+def _build_cached_sleeves(args: argparse.Namespace) -> dict[str, SleeveRun]:
+    btc_1h = _load(args.btc_data, "BTC", args.start, args.end)
+    eth_1h = _load(args.eth_data, "ETH", args.start, args.end)
+    qqq_1d = _load(args.qqq_data, "QQQ", args.start, args.end)
+
+    return {
+        "BTC_1H": _run_sleeve("BTC_1H", "BTC", btc_1h, FUND_V1_STRATEGY, CRYPTO_EXEC),
+        "BTC_4H": _run_sleeve("BTC_4H", "BTC", resample_ohlcv(btc_1h, "4h"), FUND_V1_STRATEGY, CRYPTO_EXEC),
+        "ETH_1H": _run_sleeve("ETH_1H", "ETH", eth_1h, FUND_V1_STRATEGY, CRYPTO_EXEC),
+        "ETH_4H": _run_sleeve("ETH_4H", "ETH", resample_ohlcv(eth_1h, "4h"), FUND_V1_STRATEGY, CRYPTO_EXEC),
+        "QQQ_1D": _run_sleeve("QQQ_1D", "QQQ", qqq_1d, QQQ_STRATEGY, QQQ_EXEC),
+    }
+
+
+def _blend_from_cache(
+    cached: dict[str, SleeveRun],
+    qqq_weight: float,
+    capital: float,
+    label: str,
+) -> tuple[pd.Series, BacktestMetrics, int, float]:
+    crypto_weight_each = (1.0 - qqq_weight) / 4.0
+    weights = {
+        "BTC_1H": crypto_weight_each,
+        "BTC_4H": crypto_weight_each,
+        "ETH_1H": crypto_weight_each,
+        "ETH_4H": crypto_weight_each,
+        "QQQ_1D": qqq_weight,
+    }
+
+    curves = {
+        sleeve: _scaled_daily_return_curve(cached[sleeve], weight, capital)
+        for sleeve, weight in weights.items()
+        if weight > 0
+    }
+    daily = pd.DataFrame(curves).dropna(how="any")
     portfolio = daily.sum(axis=1)
     portfolio.name = label
-    trades = [t for s in sleeves for t in s.result.trades]
-    metrics = compute_metrics(portfolio, trades, {"strategy_id": label, "asset": "PORTFOLIO", "initial_capital": capital})
-    return portfolio, metrics
+
+    # Compute portfolio shape from the scaled equity curve. Costs/trade count are
+    # scaled separately because compute_metrics only sees raw TradeRecord objects.
+    metrics = compute_metrics(
+        portfolio,
+        trades=[],
+        params={"strategy_id": label, "asset": "PORTFOLIO", "initial_capital": capital},
+    )
+    trades = sum(_scaled_trades(cached[sleeve], weight) for sleeve, weight in weights.items())
+    costs = sum(_scaled_costs(cached[sleeve], weight, capital) for sleeve, weight in weights.items())
+    return portfolio, metrics, trades, round(costs, 2)
 
 
 def _slice_return(equity: pd.Series, start: str, end: str) -> float | None:
@@ -95,30 +179,16 @@ def _slice_return(equity: pd.Series, start: str, end: str) -> float | None:
     return round((float(s.iloc[-1]) / float(s.iloc[0]) - 1.0) * 100.0, 4)
 
 
-def _run_all_sleeves(args: argparse.Namespace, qqq_weight: float) -> tuple[list[SleeveRun], pd.Series, BacktestMetrics]:
-    crypto_weight = 1.0 - qqq_weight
-    crypto_cap = args.capital * crypto_weight / 4.0
-    qqq_cap = args.capital * qqq_weight
-
-    btc_1h = _load(args.btc_data, "BTC", args.start, args.end)
-    eth_1h = _load(args.eth_data, "ETH", args.start, args.end)
-    qqq_1d = _load(args.qqq_data, "QQQ", args.start, args.end)
-
-    sleeves = [
-        _run_sleeve("BTC_1H", "BTC", btc_1h, FUND_V1_STRATEGY, crypto_cap, CRYPTO_EXEC),
-        _run_sleeve("BTC_4H", "BTC", resample_ohlcv(btc_1h, "4h"), FUND_V1_STRATEGY, crypto_cap, CRYPTO_EXEC),
-        _run_sleeve("ETH_1H", "ETH", eth_1h, FUND_V1_STRATEGY, crypto_cap, CRYPTO_EXEC),
-        _run_sleeve("ETH_4H", "ETH", resample_ohlcv(eth_1h, "4h"), FUND_V1_STRATEGY, crypto_cap, CRYPTO_EXEC),
-    ]
-    if qqq_weight > 0:
-        sleeves.append(_run_sleeve("QQQ_1D", "QQQ", qqq_1d, QQQ_STRATEGY, qqq_cap, QQQ_EXEC))
-
-    label = f"fund_v1_plus_qqq_{int(round(qqq_weight * 100))}pct"
-    equity, metrics = _blend_metrics(sleeves, args.capital, label)
-    return sleeves, equity, metrics
-
-
-def _row(label: str, qqq_weight: float, equity: pd.Series, metrics: BacktestMetrics, args: argparse.Namespace, baseline: pd.Series | None) -> dict[str, Any]:
+def _row(
+    label: str,
+    qqq_weight: float,
+    equity: pd.Series,
+    metrics: BacktestMetrics,
+    trades: int,
+    costs: float,
+    args: argparse.Namespace,
+    baseline: pd.Series | None,
+) -> dict[str, Any]:
     corr = None
     if baseline is not None:
         joined = pd.concat([baseline.pct_change(), equity.pct_change()], axis=1).dropna()
@@ -132,8 +202,8 @@ def _row(label: str, qqq_weight: float, equity: pd.Series, metrics: BacktestMetr
         "max_drawdown_pct": metrics.max_drawdown_pct,
         "sharpe": metrics.sharpe,
         "calmar": metrics.calmar,
-        "trades": metrics.n_trades,
-        "costs_usd": round(metrics.total_fees_paid + metrics.total_slippage_cost, 2),
+        "trades": trades,
+        "costs_usd": costs,
         "stress_return_pct": _slice_return(equity, args.stress_start, args.stress_end),
         "corr_to_baseline": corr,
         "start": metrics.start,
@@ -150,7 +220,7 @@ def _write_outputs(rows: list[dict[str, Any]], curves: dict[str, pd.Series], out
     md = out_dir / "summary.md"
     with open(md, "w", encoding="utf-8") as f:
         f.write("# Fund v1 + QQQ SMA Research Summary\n\n")
-        f.write("Research-only static-weight portfolio blend test.\n\n")
+        f.write("Research-only static-weight portfolio blend test. Sleeve runs are cached once and recombined at weights.\n\n")
         f.write("| Label | QQQ Wt | CAGR | MaxDD | Sharpe | Calmar | Stress | Trades | Costs | Corr vs Base |\n")
         f.write("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n")
         for r in rows:
@@ -180,19 +250,22 @@ def main() -> None:
     print("\nFund v1 + QQQ SMA Research Runner")
     print("Role: portfolio blend research")
     print("Runtime impact: none")
-    print("Fund v1 paper-trading impact: none\n")
+    print("Fund v1 paper-trading impact: none")
+    print("Execution mode: cached sleeve runs + static recombination\n")
+
+    cached = _build_cached_sleeves(args)
 
     rows: list[dict[str, Any]] = []
     curves: dict[str, pd.Series] = {}
     baseline_curve: pd.Series | None = None
 
     for weight in args.qqq_weights:
-        sleeves, equity, metrics = _run_all_sleeves(args, weight)
         label = f"qqq_{int(round(weight * 100))}pct"
+        equity, metrics, trades, costs = _blend_from_cache(cached, weight, args.capital, label)
         if weight == 0:
             baseline_curve = equity
         curves[label] = equity
-        rows.append(_row(label, weight, equity, metrics, args, baseline_curve if weight > 0 else None))
+        rows.append(_row(label, weight, equity, metrics, trades, costs, args, baseline_curve if weight > 0 else None))
 
     summary = _write_outputs(rows, curves, Path(args.out_dir))
 
