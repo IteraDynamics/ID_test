@@ -183,12 +183,26 @@ def _row(
     }
 
 
+def _max_allowed_drawdown_pct(args: argparse.Namespace) -> float:
+    """Return max drawdown guardrail in percentage-point units.
+
+    BacktestMetrics.max_drawdown_pct is expressed as percentage points, e.g.
+    -29.35 for a -29.35% drawdown. CLI risk values in this repo are normally
+    decimal fractions, e.g. --max-allowed-drawdown -0.30 for -30%.
+    Accept both forms defensively:
+    - values between -1 and 0 are interpreted as decimal fractions
+    - values less than -1 are interpreted as already percentage points
+    """
+    raw = float(args.max_allowed_drawdown)
+    return raw * 100.0 if -1.0 <= raw <= 0.0 else raw
+
+
 def _passes_guardrails(row: dict[str, Any], args: argparse.Namespace) -> bool:
     return (
         row["calmar"] >= args.min_calmar
         and row["risk_off_pct_days"] <= args.max_risk_off_pct
         and row["risk_off_pct_days"] >= args.min_risk_off_pct
-        and row["max_drawdown_pct"] >= args.max_allowed_drawdown
+        and row["max_drawdown_pct"] >= _max_allowed_drawdown_pct(args)
     )
 
 
@@ -221,7 +235,7 @@ def _write_outputs(rows: list[dict[str, Any]], out_dir: Path, args: argparse.Nam
         f.write("## Guardrails\n\n")
         f.write(f"- Minimum Calmar: `{args.min_calmar}`\n")
         f.write(f"- Risk-off active range: `{args.min_risk_off_pct}%` to `{args.max_risk_off_pct}%` of days\n")
-        f.write(f"- Max allowed drawdown: `{args.max_allowed_drawdown:.0%}`\n\n")
+        f.write(f"- Max allowed drawdown: `{_max_allowed_drawdown_pct(args):.2f}%`\n\n")
         f.write("| Dest | Trigger | Release | Crypto Scale | CAGR | MaxDD | Sharpe | Calmar | Stress | RiskOff | dCalmar | Pass |\n")
         f.write("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|\n")
         for r in sorted_rows[: args.report_top_n]:
