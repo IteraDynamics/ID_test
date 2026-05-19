@@ -38,6 +38,7 @@ from research.strategies import post_capitulation_long_v1
 from research.strategies import post_capitulation_long_v2
 from research.strategies import equity_qqq_trend_v1
 from research.strategies import equity_spy_sma_band_v1
+from research.strategies import equity_qqq_sma_band_v1
 
 REGISTRY: dict[str, object] = {
     "trend_following": trend_following,
@@ -67,7 +68,9 @@ REGISTRY: dict[str, object] = {
     "post_capitulation_long_v1": post_capitulation_long_v1,
     "post_capitulation_long_v2": post_capitulation_long_v2,
     "equity_qqq_trend_v1": equity_qqq_trend_v1,
+    "equity_qqq_trend_v1b": equity_qqq_trend_v1,
     "equity_spy_sma_band_v1": equity_spy_sma_band_v1,
+    "equity_qqq_sma_band_v1": equity_qqq_sma_band_v1,
 }
 
 __all__ = [
@@ -102,5 +105,6 @@ __all__ = [
     "post_capitulation_long_v2",
     "equity_qqq_trend_v1",
     "equity_spy_sma_band_v1",
+    "equity_qqq_sma_band_v1",
     "REGISTRY",
 ]
