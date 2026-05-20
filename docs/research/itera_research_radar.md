@@ -32,6 +32,19 @@ GLD-only remains the highest-return but more destination-specific alternative.
 BIL-only remains a conservative benchmark / fallback.
 ```
 
+The next broader research-system question is:
+
+```text
+How should Itera continuously source new research ideas across crypto, macro, equities, sectors, factors, volatility, commodities, and execution/cost lanes?
+```
+
+Current answer:
+
+```text
+Use AI-fund as an idea intake source.
+AI-fund outputs are not trades; they are research prompts that must pass Itera triage.
+```
+
 ---
 
 ## Active Validated Candidates
@@ -286,6 +299,50 @@ Keep BIL-only as benchmark / fallback.
 
 ---
 
+## AI-Fund Idea Intake
+
+AI-fund is now recognized as an idea intake source for Itera research.
+
+Rule:
+
+```text
+AI-fund outputs are not trades.
+AI-fund outputs are research prompts.
+```
+
+Current intake cycle:
+
+```text
+2026-05-20 AI-fund MVP desktop run
+```
+
+Accepted into radar:
+
+```text
+Duration-filtered bond destination
+AI infrastructure / semiconductor ETF risk-on basket
+```
+
+Archived:
+
+```text
+Stale duplicate TLT macro long
+```
+
+Reference protocol:
+
+```text
+docs/research/ai_fund_idea_intake.md
+```
+
+Reference intake log:
+
+```text
+docs/research/ai_fund_idea_intake_log.md
+```
+
+---
+
 ## Validation Queue
 
 ### 1. Deployability Review
@@ -324,10 +381,16 @@ Needed decisions:
 - What artifacts/logs must be produced for auditability?
 - What paper-trading simulation must exist before live integration?
 
+Status:
+
+```text
+COMPLETE — architecture_memo.md and decision.md now exist for the candidate.
+```
+
 Priority:
 
 ```text
-High
+Completed for current candidate; revisit before implementation branch.
 ```
 
 ---
@@ -460,9 +523,15 @@ Role:
 Conditional capital destination.
 ```
 
+Source:
+
+```text
+AI-fund intake: TLT macro long translated into deterministic Itera research candidate.
+```
+
 Hypothesis:
 
-IEF/TLT performed poorly as simple risk-off destinations, but may work only when bond trend is favorable or yields are falling.
+IEF/TLT performed poorly as simple risk-off destinations, but may work only when duration trend is favorable or yields are falling.
 
 First test:
 
@@ -573,7 +642,7 @@ Medium
 
 ---
 
-#### Growth / AI Infrastructure Risk-On Basket
+#### AI Infrastructure / Semiconductor Risk-On Basket
 
 Role:
 
@@ -581,11 +650,18 @@ Role:
 Potential risk-on enhancer, not defensive destination.
 ```
 
+Source:
+
+```text
+AI-fund intake: ASML long translated into ETF / sector research candidate.
+```
+
 Candidate instruments:
 
 ```text
-XLK
 SMH
+SOXX if added
+XLK
 IGV
 QQQ
 QQQE
@@ -600,7 +676,17 @@ Only after defensive allocator research stabilizes. Test as risk-on allocation d
 Priority:
 
 ```text
-Low for now
+Low-medium
+```
+
+---
+
+#### Growth / AI Infrastructure Risk-On Basket
+
+Status:
+
+```text
+MERGED INTO AI Infrastructure / Semiconductor Risk-On Basket
 ```
 
 ---
@@ -743,32 +829,52 @@ Unfiltered duration assets were hurt badly in the 2022 rate shock and performed 
 
 ---
 
-## Highest-Value Next Tests
+### Stale Duplicate TLT Macro Long
 
-### 1. Deployability Review
+Status:
+
+```text
+ARCHIVE
+```
+
+Source:
+
+```text
+AI-fund intake cycle 2026-05-20
+```
 
 Reason:
 
-The candidate is now strong enough that the next blocker is not another backtest; it is whether the capital movement can be represented safely and realistically in Itera architecture.
+The idea used stale macro data as support for a current trade and duplicated the fresher duration-filtered bond destination concept.
+
+---
+
+## Highest-Value Next Tests
+
+### 1. Deployability Review / Paper-Design Spec
+
+Reason:
+
+The GLD/BIL candidate is now strong enough that the next blocker is not another backtest; it is whether the capital movement can be represented safely and realistically in Itera architecture.
 
 Command target:
 
 ```text
-design memo before any runtime changes
+docs/research/candidates/state_confirmed_gld_bil_allocator_v1/paper_design_spec.md
 ```
 
 ---
 
-### 2. Candidate Architecture Memo
+### 2. Duration-Filtered Bond Destination
 
 Reason:
 
-Need to decide whether this belongs as a Layer 3 defensive governor, separate cross-asset sleeve, or portfolio overlay before implementation.
+AI-fund independently surfaced TLT as a macro idea. Itera already found unfiltered TLT/IEF weak, but a trend-filtered duration destination remains a valid research candidate.
 
 Command target:
 
 ```text
-docs/research/candidates/state_confirmed_gld_bil_allocator_v1/architecture_memo.md
+state-confirmed destination matrix with TLT/IEF trend filters
 ```
 
 ---
@@ -801,18 +907,32 @@ state-confirmed destination matrix with XLU, XLP, XLV, USMV, SPLV
 
 ---
 
+### 5. AI Infrastructure / Semiconductor Risk-On Basket
+
+Reason:
+
+AI-fund surfaced ASML as a single-name long idea. Itera translation is not a discretionary ASML trade; it is a possible ETF-based risk-on enhancer research lane.
+
+Command target:
+
+```text
+risk-on regime test with SMH / XLK / IGV / QQQ / QQQE
+```
+
+---
+
 ## Current Research Decision
 
 The next immediate action is:
 
 ```text
-Write deployability / architecture memo for state-confirmed GLD/BIL allocator before any runtime changes.
+Write paper-design specification for DefensiveDestinationAllocator.
 ```
 
 The next structural build remains:
 
 ```text
-Use artifacts/research_radar/context_pack.md as the seed for future radar updates.
+Use artifacts/research_radar/context_pack.md and AI-fund idea intake logs as seeds for future radar updates.
 ```
 
 ---
