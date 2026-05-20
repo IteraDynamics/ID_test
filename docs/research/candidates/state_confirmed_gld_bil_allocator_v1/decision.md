@@ -6,26 +6,27 @@
 State-confirmed GLD/BIL defensive destination allocator
 ```
 
-## Decision
+## Updated Decision
 
 ```text
-PROCEED TO PAPER-DESIGN PHASE
+PARTIAL PASS — WATCHLISTED DEFENSIVE OVERLAY
 NOT APPROVED FOR LIVE RUNTIME
 NOT APPROVED FOR BROKER INTEGRATION
+NOT APPROVED FOR ADAPTIVE OPTIMIZATION
 NOT APPROVED FOR AGENTIC OVERRIDES
 ```
 
 ## Status
 
 ```text
-VALIDATED RESEARCH CANDIDATE
+FIXED-RULE DEFENSIVE OVERLAY CANDIDATE
 ```
 
-The candidate has sufficient research evidence to justify paper-design and architecture work, but it is not production-ready and must not be wired into live execution.
+The candidate has useful defensive-overlay evidence, especially for drawdown reduction. However, rolling out-of-sample validation was mixed, so it should not be promoted as a production runtime feature or adaptive allocator.
 
 ---
 
-## Recommended Default Profile
+## Recommended Reference Profile
 
 ```text
 50% GLD / 50% BIL
@@ -33,13 +34,13 @@ The candidate has sufficient research evidence to justify paper-design and archi
 
 Rationale:
 
-- best risk-adjusted profile in the current research set
-- strongest Calmar among the tested blend candidates
-- materially lower drawdown than GLD-only
-- maintains the same episode win rate as GLD-only in the current diagnostic
+- strongest fixed-rule defensive profile in the current research set
+- improves drawdown materially versus baseline in chronological subperiods
+- improves Calmar in all fixed-rule chronological subperiods
+- simpler and more defensible than rolling parameter optimization
 - reduces reliance on one destination asset
 
-Representative result:
+Representative full-sample research result:
 
 ```text
 Trigger: -18%
@@ -68,10 +69,10 @@ Episode sum delta: +18.37 percentage points
 
 Rationale:
 
-- higher CAGR than 50/50
+- higher CAGR than 50/50 in the original blend review
 - higher episode delta than 50/50
 - slightly lower Calmar and higher drawdown than 50/50
-- useful if Itera chooses a more return-preserving defensive destination
+- useful as a comparison profile if this candidate is revisited
 
 Representative result:
 
@@ -94,60 +95,9 @@ Episode sum delta: +29.36 percentage points
 
 ---
 
-## Higher-Return Alternative
-
-```text
-GLD-only
-```
-
-Rationale:
-
-- highest CAGR among the current defensive destination candidates
-- highest episode sum delta
-- more destination-specific risk than blended GLD/BIL
-- lower Calmar than the 50/50 blend after blend review
-
-Representative cost-adjusted result:
-
-```text
-CAGR:    41.98%
-MaxDD:  -26.56%
-Sharpe:  1.309
-Calmar:  1.581
-```
-
----
-
-## Conservative Benchmark
-
-```text
-BIL-only
-```
-
-Rationale:
-
-- useful conservative fallback / cash-like benchmark
-- protects in major stress episodes
-- underperforms when crypto rebounds while risk-off remains active
-- weaker episode attribution than GLD or GLD/BIL blends
-
-Representative result:
-
-```text
-CAGR:    34.04%
-MaxDD:  -25.91%
-Sharpe:  1.149
-Calmar:  1.313
-Stress: +1.42%
-Episode win rate: 42.86%
-Episode sum delta: -3.96 percentage points
-```
-
----
-
 ## Evidence Summary
 
-The candidate family passed the current research sequence:
+The candidate family passed several historical research checks:
 
 ```text
 state-confirmed sweep
@@ -158,52 +108,50 @@ GLD/BIL blend review
 concentration review
 blend robustness sweep
 architecture / deployability memo
+paper replay prototype
+research-vs-paper reconciliation
 ```
 
-### Robustness Sweep Read
+The candidate then received a more conservative walk-forward review.
 
-The robustness sweep tested 81 nearby combinations across:
+---
+
+## Walk-Forward Review
+
+Reference:
 
 ```text
-trigger_dds: -18%, -20%, -22%
-release_dds: -8%, -10%, -12%
-BTC SMA windows: 180, 200, 220
-GLD/BIL weights: 75/25, 50/50, 25/75
+docs/research/candidates/state_confirmed_gld_bil_allocator_v1/walk_forward_review.md
 ```
 
-The top cluster centered around:
+### Fixed-Rule Chronological Validation
+
+The fixed 50/50 GLD/BIL rule improved Calmar and drawdown in all tested chronological subperiods.
 
 ```text
-Trigger: -18%
-BTC SMA: 200
-Release: -8% to -12%
-Blend: 50/50 and 75/25 GLD/BIL
-RiskOff: approximately 29.6%
-```
-
-Interpretation:
-
-```text
-The result does not appear to be a one-row accident.
-The strongest rows form a coherent nearby cluster.
-```
-
-### Concentration Review Read
-
-The candidate remained strong after excluding major contribution windows.
-
-Excluding both 2022 and late-2025:
-
-```text
-Baseline Calmar:      1.007
-GLD-only Calmar:      1.837
-50/50 blend Calmar:   1.720
+Fixed-rule Calmar win rate: 100.0%
+Fixed-rule drawdown improvement: 100.0%
 ```
 
 Interpretation:
 
 ```text
-The 50/50 blend does not appear to be dependent only on 2022 or late-2025.
+The fixed rule is useful as a defensive overlay and is not obviously dependent on one full-sample period.
+```
+
+### Rolling Walk-Forward Parameter Selection
+
+Rolling out-of-sample validation was mixed.
+
+```text
+Rolling OOS Calmar win rate: 50.0%
+Rolling OOS drawdown improvement rate: 75.0%
+```
+
+Interpretation:
+
+```text
+The allocator appears more reliable as a fixed-rule drawdown-control mechanism than as a rolling-optimized return enhancer.
 ```
 
 ---
@@ -224,116 +172,44 @@ Layer 2 alpha strategy
 standalone discretionary macro trade
 agent-operated trading system
 live broker directive
+adaptive optimizer
 ```
 
 Reason:
 
-The candidate does not produce alpha from GLD/BIL independently. It redirects a governed capital budget when Fund v1 is in a crypto-hostile state.
+The candidate does not produce independent alpha from GLD/BIL. It redirects a governed capital budget when Fund v1 is in a crypto-hostile state.
 
 ---
 
-## Open Blocking Questions Before Implementation
+## Current Interpretation
 
-### Governed Capital Budget
-
-The largest unresolved design question is:
+The candidate is best understood as:
 
 ```text
-Does crypto_scale = 0% mean full liquidation of all crypto sleeves,
-or only rerouting a defined governed defensive-overlay allocation budget?
+portfolio insurance / capital-preservation overlay
 ```
 
-Decision in architecture memo:
+Not as:
 
 ```text
-Use a defined governed allocation budget.
-Do not implicitly liquidate all runtime crypto positions.
+new alpha sleeve
+adaptive asset allocator
+production-ready runtime governor
 ```
 
-This must be enforced in design before implementation.
-
-### Cross-Asset Rails
-
-The candidate crosses:
-
-```text
-crypto exposure
-ETF exposure
-```
-
-Open questions:
-
-- Can the intended account/broker structure hold both crypto and ETFs?
-- If not, is this paper-only until multi-asset execution exists?
-- How are ETF market hours handled against 24/7 crypto markets?
-- What is the next available execution window after state transition?
-- Can capital move between crypto and ETF rails without manual transfer?
-
-### Paper Trading
-
-Before runtime integration, a paper model must represent:
-
-```text
-multi-asset positions
-cash
-crypto exposure
-GLD exposure
-BIL exposure
-state changes
-transition costs
-weekend / holiday behavior
-allocation intents
-simulated fills
-```
-
----
-
-## Promotion Gates
-
-### Already Passed
-
-```text
-candidate diagnostic
-BIL comparison
-transition/cost first pass
-blend review
-concentration review
-robustness sweep
-architecture memo
-```
-
-### Still Required
-
-```text
-paper-design memo
-state-machine unit tests
-historical replay harness
-paper-trading representation
-runtime logging design
-manual review before live branch
-```
-
-### Optional Future Research
-
-```text
-UUP dollar confirmation filter
-higher-friction sensitivity
-chronological subperiod / walk-forward style validation
-defensive sector comparison
-crypto scale sensitivity
-```
+The research evidence supports retaining it as a watchlisted defensive overlay candidate. It does not support immediate runtime promotion.
 
 ---
 
 ## Implementation Boundary
 
-Allowed next work:
+Allowed future work:
 
 ```text
-paper-design documentation
-state-machine design
-replay harness design
-paper-only allocator prototype on a separate branch
+paper-only monitoring
+additional validation if needed
+comparison against future defensive candidates
+manual review if live multi-asset infrastructure becomes available
 ```
 
 Not allowed from this decision:
@@ -343,6 +219,7 @@ live broker changes
 runtime execution changes
 production governor changes
 automated agent overrides
+adaptive optimization
 capital allocation changes without human approval
 ```
 
@@ -351,17 +228,20 @@ capital allocation changes without human approval
 ## Final Decision
 
 ```text
-PROCEED TO PAPER-DESIGN PHASE
+RETAIN AS WATCHLISTED DEFENSIVE OVERLAY
+STOP ACTIVE PARAMETER TUNING
+DO NOT PROMOTE TO LIVE RUNTIME
+PIVOT TO RETURN-ENGINE RESEARCH
 ```
 
-The 50/50 GLD/BIL allocator is the current risk-adjusted defensive destination candidate.
-
-The 75/25 GLD/BIL allocator is retained as the higher-return sibling.
-
-No live runtime promotion is approved.
-
-Next recommended work:
+Recommended next research target:
 
 ```text
-Create a paper-design specification for a DefensiveDestinationAllocator.
+BTC/ETH relative-strength allocator
+```
+
+Reason:
+
+```text
+GLD/BIL answered a defensive capital-preservation question. Itera now needs return-engine research that stays inside the core crypto universe and tests whether dynamic BTC/ETH selection can create timing/selection alpha beyond static exposure.
 ```
