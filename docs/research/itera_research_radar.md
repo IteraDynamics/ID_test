@@ -22,6 +22,13 @@ The most important current research question is:
 When Fund v1 enters a crypto-hostile state, where should capital go?
 ```
 
+Current answer:
+
+```text
+GLD is the primary validated candidate.
+BIL is a conservative benchmark / fallback candidate.
+```
+
 ---
 
 ## Active Validated Candidates
@@ -31,7 +38,7 @@ When Fund v1 enters a crypto-hostile state, where should capital go?
 Status:
 
 ```text
-VALIDATED CANDIDATE — needs additional validation before promotion.
+VALIDATED CANDIDATE — primary non-crypto allocator candidate; needs capital/cost review before promotion consideration.
 ```
 
 Portfolio role:
@@ -91,44 +98,110 @@ Known cautions:
 - Large positive contribution from 2022 and late 2025.
 - False positives in periods where crypto recovered while the allocator was defensive.
 - Requires capital/cost/deployability review.
-- Requires BIL comparison before promotion.
 - Requires transition-count and rebalance-friction review.
+- Requires comparison to GLD/BIL blend before promotion consideration.
 
 Next status target:
 
 ```text
-NEEDS RISK REVIEW + NEEDS CAPITAL REVIEW
+NEEDS CAPITAL REVIEW + NEEDS RISK REVIEW
+```
+
+---
+
+### 2. State-Confirmed BIL Risk-Off Allocator
+
+Status:
+
+```text
+VALIDATED BENCHMARK — useful conservative fallback, not primary candidate.
+```
+
+Portfolio role:
+
+```text
+Cash-like defensive capital destination.
+```
+
+Candidate rule tested:
+
+```text
+Risk-off when:
+  Fund v1 prior-day drawdown <= -18%
+  AND BTC prior-day close < BTC SMA200
+
+Release when:
+  Fund v1 drawdown recovers to >= -12%
+  OR BTC recovers above SMA200
+
+Destination:
+  BIL
+
+Crypto scale during risk-off:
+  0%
+```
+
+Current evidence:
+
+```text
+CAGR:    34.04%
+MaxDD:  -25.91%
+Sharpe:  1.149
+Calmar:  1.313
+Stress: +1.42%
+RiskOff: 29.6%
+```
+
+Episode attribution:
+
+```text
+18 total episodes
+14 included episodes
+4 ignored short/no-return episodes
+6 wins
+8 losses
+Win rate: 42.86%
+Sum delta versus Fund v1: -3.96 percentage points
+Median delta: -0.11 percentage points
+```
+
+Interpretation:
+
+BIL provides cleaner drawdown reduction and strong stress protection, but gives up substantial upside during recovery episodes. It is useful as the cash-like benchmark and conservative fallback, but the episode attribution does not justify choosing it over GLD as the primary destination candidate.
+
+Known cautions:
+
+- BIL protects in major bear/stress episodes.
+- BIL underperforms when crypto rebounds while the risk-off state remains active.
+- BIL may still be useful in a blended GLD/BIL destination.
+
+---
+
+## Current GLD vs BIL Read
+
+```text
+GLD:
+  Higher CAGR, higher Sharpe, higher Calmar, positive episode attribution.
+  Better productive diversifier.
+
+BIL:
+  Lower drawdown, slightly better stress window, weaker episode attribution.
+  Better conservative benchmark / cash-like fallback.
+```
+
+Decision:
+
+```text
+Proceed with GLD as the primary candidate.
+Keep BIL as benchmark and blend component.
+Do not promote BIL-only over GLD-only at this stage.
 ```
 
 ---
 
 ## Validation Queue
 
-### 1. BIL Diagnostic Comparison
-
-Purpose:
-
-Compare GLD against a conservative cash-like destination.
-
-Candidate:
-
-```text
-BIL
-Trigger / release: -18% / -12%
-BTC trend filter: SMA200
-Release mode: either
-Crypto scale: 0% and 25%
-```
-
-Question:
-
-```text
-Does BIL provide enough drawdown reduction and stress protection to justify choosing it over GLD, despite lower upside?
-```
-
----
-
-### 2. GLD Capital / Cost Review
+### 1. GLD Capital / Cost Review
 
 Purpose:
 
@@ -142,6 +215,40 @@ Needed checks:
 - whether crypto scale 0% means full sleeve exit or partial fund-level state shift
 - GLD deployability in intended brokerage/runtime
 - tax/accounting implications if relevant later
+
+Priority:
+
+```text
+Highest
+```
+
+---
+
+### 2. GLD/BIL Blend Test
+
+Purpose:
+
+Test whether a blended destination can keep much of GLD's upside while reducing destination-specific risk.
+
+Candidate blends:
+
+```text
+75% GLD / 25% BIL
+50% GLD / 50% BIL
+25% GLD / 75% BIL
+```
+
+Question:
+
+```text
+Can a blend preserve GLD's positive episode attribution while improving drawdown/stress behavior?
+```
+
+Priority:
+
+```text
+High
+```
 
 ---
 
@@ -160,6 +267,12 @@ Needed checks:
 - episode-level drawdown improvement
 - false positive review
 
+Priority:
+
+```text
+High
+```
+
 ---
 
 ### 4. Robustness Around Best Cluster
@@ -168,7 +281,7 @@ Purpose:
 
 Confirm that the candidate survives nearby parameters.
 
-Already promising cluster:
+Promising cluster:
 
 ```text
 Trigger: -18% to -20%
@@ -179,10 +292,11 @@ Crypto scale: 0%
 RiskOff: approximately 27% to 30%
 ```
 
-Next test:
+Priority:
 
-- keep a record of cluster robustness in candidate memo
-- avoid over-optimizing to a single top row
+```text
+Medium-high
+```
 
 ---
 
@@ -267,7 +381,7 @@ Compare GLD allocator with and without UUP filter.
 Priority:
 
 ```text
-High after BIL diagnostic and GLD cost review.
+High after GLD cost review and GLD/BIL blend test.
 ```
 
 ---
@@ -477,7 +591,7 @@ Compare to GLD-only and BIL-only.
 Priority:
 
 ```text
-High after BIL diagnostic.
+High
 ```
 
 ---
@@ -535,7 +649,7 @@ Count transitions, estimate turnover, apply conservative ETF and crypto trading 
 Priority:
 
 ```text
-High
+Highest
 ```
 
 ---
@@ -586,21 +700,7 @@ Unfiltered duration assets were hurt badly in the 2022 rate shock and performed 
 
 ## Highest-Value Next Tests
 
-### 1. BIL Candidate Diagnostic
-
-Reason:
-
-Needed to compare GLD against the conservative benchmark.
-
-Command target:
-
-```text
-run_state_confirmed_candidate_diagnostic.py with BIL destination
-```
-
----
-
-### 2. GLD Transition / Cost Review
+### 1. GLD Transition / Cost Review
 
 Reason:
 
@@ -614,16 +714,30 @@ new or extended diagnostic to count transitions and estimate friction
 
 ---
 
-### 3. GLD/BIL Blend Test
+### 2. GLD/BIL Blend Test
 
 Reason:
 
-May reduce reliance on GLD while preserving diversification value.
+BIL diagnostic confirms BIL is not better than GLD as a standalone destination, but it may still be useful as a stabilizing blend component.
 
 Command target:
 
 ```text
 risk-off overlay with destination blend
+```
+
+---
+
+### 3. GLD Episode Concentration Review
+
+Reason:
+
+Need to confirm GLD does not depend too heavily on 2022 and late 2025.
+
+Command target:
+
+```text
+candidate diagnostic with exclusion windows / contribution attribution
 ```
 
 ---
@@ -658,16 +772,16 @@ state-confirmed destination matrix with XLU, XLP, XLV, USMV, SPLV
 
 ## Current Research Decision
 
-The next immediate action remains:
+The next immediate action is:
 
 ```text
-Run BIL candidate diagnostic when available.
+Build or extend diagnostics for GLD transition/cost review.
 ```
 
-The next structural build is:
+The next structural build remains:
 
 ```text
-Generate a research radar context-pack script so future radar updates can be seeded from repo state and artifacts instead of chat memory.
+Use artifacts/research_radar/context_pack.md as the seed for future radar updates.
 ```
 
 ---
