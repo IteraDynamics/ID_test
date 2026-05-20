@@ -27,6 +27,7 @@ Current answer:
 ```text
 GLD is the primary validated candidate.
 BIL is a conservative benchmark / fallback candidate.
+Transition friction does not appear to invalidate GLD under the first cost review.
 ```
 
 ---
@@ -38,7 +39,7 @@ BIL is a conservative benchmark / fallback candidate.
 Status:
 
 ```text
-VALIDATED CANDIDATE — primary non-crypto allocator candidate; needs capital/cost review before promotion consideration.
+VALIDATED CANDIDATE — primary non-crypto allocator candidate; transition/cost review passed under first assumption; still needs concentration review and blend comparison before promotion consideration.
 ```
 
 Portfolio role:
@@ -65,7 +66,7 @@ Crypto scale during risk-off:
   0%
 ```
 
-Current evidence:
+Current evidence before transition costs:
 
 ```text
 CAGR:    42.68%
@@ -74,6 +75,19 @@ Sharpe:  1.325
 Calmar:  1.612
 Stress: +0.78%
 RiskOff: 29.6%
+```
+
+Transition/cost review at 10 bps per changed notional:
+
+```text
+Transitions:     33
+Gross turnover:  $23,153,306.69
+Estimated cost:  $23,153.31
+
+Cost-adjusted CAGR:   41.98%
+Cost-adjusted MaxDD: -26.56%
+Cost-adjusted Sharpe: 1.309
+Cost-adjusted Calmar: 1.581
 ```
 
 Episode attribution:
@@ -91,20 +105,20 @@ Median delta: +1.37 percentage points
 
 Interpretation:
 
-GLD is currently the strongest non-crypto candidate found in this branch. It appears to act as a productive diversifier during crypto-hostile regimes, not merely as a cash substitute.
+GLD is currently the strongest non-crypto candidate found in this branch. It appears to act as a productive diversifier during crypto-hostile regimes, not merely as a cash substitute. The first transition/cost review did not invalidate the candidate: Calmar only moved from 1.612 to 1.581 under a 10 bps friction assumption.
 
 Known cautions:
 
 - Large positive contribution from 2022 and late 2025.
 - False positives in periods where crypto recovered while the allocator was defensive.
-- Requires capital/cost/deployability review.
-- Requires transition-count and rebalance-friction review.
-- Requires comparison to GLD/BIL blend before promotion consideration.
+- Requires GLD/BIL blend comparison before promotion consideration.
+- Requires concentration review excluding major contribution windows.
+- Requires final deployability review before any runtime integration.
 
 Next status target:
 
 ```text
-NEEDS CAPITAL REVIEW + NEEDS RISK REVIEW
+NEEDS RISK REVIEW — episode concentration and false-positive review remain open.
 ```
 
 ---
@@ -183,6 +197,7 @@ Known cautions:
 GLD:
   Higher CAGR, higher Sharpe, higher Calmar, positive episode attribution.
   Better productive diversifier.
+  Still strong after first transition-cost review.
 
 BIL:
   Lower drawdown, slightly better stress window, weaker episode attribution.
@@ -201,30 +216,7 @@ Do not promote BIL-only over GLD-only at this stage.
 
 ## Validation Queue
 
-### 1. GLD Capital / Cost Review
-
-Purpose:
-
-Determine whether the GLD allocator remains attractive after practical capital movement assumptions.
-
-Needed checks:
-
-- transition count
-- approximate rebalance friction
-- capital moved per transition
-- whether crypto scale 0% means full sleeve exit or partial fund-level state shift
-- GLD deployability in intended brokerage/runtime
-- tax/accounting implications if relevant later
-
-Priority:
-
-```text
-Highest
-```
-
----
-
-### 2. GLD/BIL Blend Test
+### 1. GLD/BIL Blend Test
 
 Purpose:
 
@@ -247,12 +239,12 @@ Can a blend preserve GLD's positive episode attribution while improving drawdown
 Priority:
 
 ```text
-High
+Highest
 ```
 
 ---
 
-### 3. GLD Episode Concentration Review
+### 2. GLD Episode Concentration Review
 
 Purpose:
 
@@ -271,6 +263,27 @@ Priority:
 
 ```text
 High
+```
+
+---
+
+### 3. GLD Deployability Review
+
+Purpose:
+
+Confirm that the candidate can be mapped cleanly into intended runtime/broker constraints if eventually promoted.
+
+Needed checks:
+
+- whether GLD is available in the intended brokerage/runtime path
+- whether crypto scale 0% means full sleeve exit or partial fund-level state shift
+- whether capital can move between crypto and ETF rails in the actual operating structure
+- whether paper trading and live infrastructure can represent the cross-asset state change
+
+Priority:
+
+```text
+High, but after blend/concentration research.
 ```
 
 ---
@@ -381,7 +394,7 @@ Compare GLD allocator with and without UUP filter.
 Priority:
 
 ```text
-High after GLD cost review and GLD/BIL blend test.
+High after GLD/BIL blend and concentration review.
 ```
 
 ---
@@ -591,7 +604,7 @@ Compare to GLD-only and BIL-only.
 Priority:
 
 ```text
-High
+Highest
 ```
 
 ---
@@ -630,26 +643,31 @@ Medium
 
 #### Transition Cost and Rebalance Review
 
-Role:
+Status:
 
 ```text
-CFO-style capital practicality review.
+FIRST PASS COMPLETE
 ```
 
-Hypothesis:
-
-The GLD allocator's apparent improvement may be reduced by transition friction and state changes.
-
-First test:
+Result:
 
 ```text
-Count transitions, estimate turnover, apply conservative ETF and crypto trading friction to overlay returns.
+10 bps transition cost assumption did not invalidate GLD candidate.
+Cost-adjusted Calmar remained 1.581 versus baseline 0.929.
+```
+
+Next execution/cost questions:
+
+```text
+- Test higher friction assumptions if desired.
+- Confirm deployability across crypto and ETF rails.
+- Confirm runtime representation of cross-asset capital movement.
 ```
 
 Priority:
 
 ```text
-Highest
+Open only for deployability review, not immediate research blocker.
 ```
 
 ---
@@ -700,25 +718,11 @@ Unfiltered duration assets were hurt badly in the 2022 rate shock and performed 
 
 ## Highest-Value Next Tests
 
-### 1. GLD Transition / Cost Review
+### 1. GLD/BIL Blend Test
 
 Reason:
 
-Needed before moving from validated candidate to promotion consideration.
-
-Command target:
-
-```text
-new or extended diagnostic to count transitions and estimate friction
-```
-
----
-
-### 2. GLD/BIL Blend Test
-
-Reason:
-
-BIL diagnostic confirms BIL is not better than GLD as a standalone destination, but it may still be useful as a stabilizing blend component.
+BIL is not better than GLD as a standalone destination, but it may still be useful as a stabilizing blend component.
 
 Command target:
 
@@ -728,7 +732,7 @@ risk-off overlay with destination blend
 
 ---
 
-### 3. GLD Episode Concentration Review
+### 2. GLD Episode Concentration Review
 
 Reason:
 
@@ -738,6 +742,20 @@ Command target:
 
 ```text
 candidate diagnostic with exclusion windows / contribution attribution
+```
+
+---
+
+### 3. GLD Deployability Review
+
+Reason:
+
+The capital movement is conceptually cross-asset. Before runtime integration, confirm how crypto-to-ETF capital routing can be represented.
+
+Command target:
+
+```text
+design memo before any runtime changes
 ```
 
 ---
@@ -775,7 +793,7 @@ state-confirmed destination matrix with XLU, XLP, XLV, USMV, SPLV
 The next immediate action is:
 
 ```text
-Build or extend diagnostics for GLD transition/cost review.
+Build GLD/BIL blend test.
 ```
 
 The next structural build remains:
