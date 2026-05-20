@@ -25,8 +25,10 @@ When Fund v1 enters a crypto-hostile state, where should capital go?
 Current answer:
 
 ```text
-A 50% GLD / 50% BIL destination blend is the current risk-adjusted leader.
-GLD-only remains the higher-return candidate.
+The robust candidate family is a state-confirmed GLD/BIL risk-off allocator.
+50% GLD / 50% BIL is the current risk-adjusted leader.
+75% GLD / 25% BIL is the higher-return sibling inside the same robust cluster.
+GLD-only remains the highest-return but more destination-specific alternative.
 BIL-only remains a conservative benchmark / fallback.
 ```
 
@@ -39,7 +41,7 @@ BIL-only remains a conservative benchmark / fallback.
 Status:
 
 ```text
-VALIDATED CANDIDATE — current risk-adjusted leader; needs concentration review and deployability review before promotion consideration.
+VALIDATED CANDIDATE — current risk-adjusted leader; concentration and robustness reviews passed; deployability review remains open before promotion consideration.
 ```
 
 Portfolio role:
@@ -78,55 +80,91 @@ Episode win rate: 71.43%
 Episode sum delta: +18.37 percentage points
 ```
 
+Robustness evidence:
+
+```text
+Top row in robustness sweep:
+  Trigger: -18%
+  Release: -12%
+  BTC SMA: 200
+  GLD weight: 50%
+  CAGR: 37.73%
+  MaxDD: -22.80%
+  Sharpe: 1.233
+  Calmar: 1.655
+  Stress: +1.28%
+  RiskOff: 29.6%
+  Episode win rate: 71.43%
+  Episode sum delta: +18.37 percentage points
+```
+
 Interpretation:
 
-The 50/50 GLD/BIL blend is the current best risk-adjusted candidate. It gives up return versus GLD-only, but materially improves drawdown and Calmar. It preserves the same 71.43% episode win rate as GLD-only while reducing reliance on GLD as a single destination asset.
+The 50/50 GLD/BIL blend is the current best risk-adjusted candidate. It gives up return versus GLD-only and 75/25 GLD/BIL, but materially improves drawdown and Calmar. The robustness sweep confirmed this was not an isolated one-row result: nearby 50/50 and 75/25 combinations around the -18% trigger and SMA200 confirmation also passed guardrails.
 
 Known cautions:
 
-- Lower CAGR than GLD-only.
-- Still requires concentration review.
+- Lower CAGR than GLD-only and 75/25 GLD/BIL.
 - Still requires deployability review for cross-asset capital movement.
-- Needs confirmation that the blend remains robust around nearby trigger/release/SMA parameters.
+- Needs a design decision on whether runtime should use 50/50 as default or expose the blend as a configurable defensive destination.
 
 Next status target:
 
 ```text
-NEEDS RISK REVIEW — episode concentration and false-positive review remain open.
+NEEDS DEPLOYABILITY REVIEW — research candidate is now strong enough to require architecture review before any runtime work.
 ```
 
 ---
 
-### 2. State-Confirmed GLD Risk-Off Allocator
+### 2. State-Confirmed 75/25 GLD/BIL Risk-Off Allocator
 
 Status:
 
 ```text
-VALIDATED CANDIDATE — highest-return non-crypto allocator candidate; not current risk-adjusted leader after blend review.
+VALIDATED CANDIDATE — higher-return sibling of the 50/50 blend; not current risk-adjusted leader.
+```
+
+Portfolio role:
+
+```text
+Layer 3 defensive capital destination / return-preserving blended allocator.
+```
+
+Representative robustness result:
+
+```text
+Trigger: -18%
+Release: -12%
+BTC SMA: 200
+Destination: 75% GLD / 25% BIL
+CAGR: 39.87%
+MaxDD: -24.36%
+Sharpe: 1.274
+Calmar: 1.637
+Stress: +1.05%
+RiskOff: 29.6%
+Episode win rate: 71.43%
+Episode sum delta: +29.36 percentage points
+```
+
+Interpretation:
+
+The 75/25 GLD/BIL blend offers more return and more episode upside than 50/50 while keeping risk-adjusted metrics strong. It is a serious alternative if Itera chooses a more return-preserving risk-off destination.
+
+---
+
+### 3. State-Confirmed GLD Risk-Off Allocator
+
+Status:
+
+```text
+VALIDATED CANDIDATE — highest-return non-crypto allocator candidate; not current risk-adjusted leader after blend and robustness review.
 ```
 
 Portfolio role:
 
 ```text
 Layer 3 defensive capital destination / cross-asset allocator.
-```
-
-Current candidate rule:
-
-```text
-Risk-off when:
-  Fund v1 prior-day drawdown <= -18%
-  AND BTC prior-day close < BTC SMA200
-
-Release when:
-  Fund v1 drawdown recovers to >= -12%
-  OR BTC recovers above SMA200
-
-Destination:
-  GLD
-
-Crypto scale during risk-off:
-  0%
 ```
 
 Pre-cost evidence:
@@ -165,18 +203,11 @@ Median delta: +1.37 percentage points
 
 Interpretation:
 
-GLD-only remains the highest-return candidate and the strongest productive diversifier. However, the 50/50 GLD/BIL blend now has better cost-adjusted Calmar and materially lower drawdown.
-
-Known cautions:
-
-- Larger reliance on GLD-specific returns.
-- Larger drawdown than 50/50 blend.
-- Large positive contribution from 2022 and late 2025.
-- False positives in periods where crypto recovered while the allocator was defensive.
+GLD-only remains the highest-return candidate and the strongest productive diversifier. However, the 50/50 GLD/BIL blend has better cost-adjusted Calmar and materially lower drawdown.
 
 ---
 
-### 3. State-Confirmed BIL Risk-Off Allocator
+### 4. State-Confirmed BIL Risk-Off Allocator
 
 Status:
 
@@ -229,6 +260,11 @@ BIL provides cleaner drawdown reduction and strong stress protection, but gives 
   Maintains 71.43% episode win rate.
   Current risk-adjusted leader.
 
+75/25 GLD/BIL:
+  Higher CAGR and episode delta than 50/50.
+  Slightly lower Calmar and higher drawdown than 50/50.
+  Strong return-preserving alternative.
+
 GLD-only:
   Highest CAGR and strongest episode sum delta.
   Better productive diversifier.
@@ -243,6 +279,7 @@ Decision:
 
 ```text
 Proceed with 50/50 GLD/BIL as the current risk-adjusted candidate.
+Keep 75/25 GLD/BIL as a serious return-preserving alternative.
 Keep GLD-only as the higher-return alternative.
 Keep BIL-only as benchmark / fallback.
 ```
@@ -251,63 +288,7 @@ Keep BIL-only as benchmark / fallback.
 
 ## Validation Queue
 
-### 1. Episode Concentration Review For 50/50 Blend And GLD-Only
-
-Purpose:
-
-Determine whether the edge is too concentrated in one or two periods.
-
-Needed checks:
-
-- contribution excluding 2022
-- contribution excluding late 2025
-- contribution excluding both
-- median and mean episode delta
-- episode-level drawdown improvement
-- false positive review
-
-Priority:
-
-```text
-Highest
-```
-
----
-
-### 2. Blend Robustness Around Best Cluster
-
-Purpose:
-
-Confirm that the 50/50 blend survives nearby parameters.
-
-Promising base rule:
-
-```text
-Trigger: -18%
-Release: -12%
-BTC SMA: 200
-Destination: 50% GLD / 50% BIL
-Crypto scale: 0%
-```
-
-Next robustness area:
-
-```text
-Trigger: -18% to -20%
-Release: -8% to -12%
-BTC SMA: 180 / 200 / 220
-GLD/BIL weights: 75/25, 50/50, 25/75
-```
-
-Priority:
-
-```text
-High
-```
-
----
-
-### 3. Deployability Review
+### 1. Deployability Review
 
 Purpose:
 
@@ -319,11 +300,68 @@ Needed checks:
 - whether crypto scale 0% means full sleeve exit or partial fund-level state shift
 - whether capital can move between crypto and ETF rails in the actual operating structure
 - whether paper trading and live infrastructure can represent the cross-asset state change
+- whether this should be modeled as a destination allocator, defensive sleeve, or portfolio-level overlay
 
 Priority:
 
 ```text
-High, but after concentration and robustness review.
+Highest
+```
+
+---
+
+### 2. Candidate Architecture Memo
+
+Purpose:
+
+Turn the validated research candidate into a design proposal before touching runtime code.
+
+Needed decisions:
+
+- Is the allocator a Layer 3 defensive governor or a separate cross-asset sleeve?
+- What is the promoted default destination: 50/50, 75/25, or configurable GLD/BIL blend?
+- What exact state variables are allowed in runtime?
+- What artifacts/logs must be produced for auditability?
+- What paper-trading simulation must exist before live integration?
+
+Priority:
+
+```text
+High
+```
+
+---
+
+### 3. Optional UUP Dollar Filter
+
+Purpose:
+
+Test whether an additional dollar-strength confirmation improves false-positive behavior.
+
+Question:
+
+```text
+Does adding UUP above SMA200 improve the GLD/BIL allocator, or does it overfilter and reduce the useful defensive response?
+```
+
+Priority:
+
+```text
+Medium-high, but after deployability/architecture memo.
+```
+
+---
+
+### 4. Defensive Sector Matrix
+
+Purpose:
+
+Test whether defensive sectors provide a better or worse defensive destination than GLD/BIL.
+
+Priority:
+
+```text
+Medium
 ```
 
 ---
@@ -409,7 +447,7 @@ Compare GLD/BIL allocator with and without UUP filter.
 Priority:
 
 ```text
-High after concentration and robustness review.
+Medium-high after deployability/architecture review.
 ```
 
 ---
@@ -641,7 +679,7 @@ Result:
 
 ```text
 10 bps transition cost assumption did not invalidate the GLD-only candidate.
-The GLD/BIL blend review included the same 10 bps transition-cost assumption.
+The GLD/BIL blend and robustness reviews included the same 10 bps transition-cost assumption.
 50/50 GLD/BIL remained the best Calmar result after costs.
 ```
 
@@ -707,39 +745,11 @@ Unfiltered duration assets were hurt badly in the 2022 rate shock and performed 
 
 ## Highest-Value Next Tests
 
-### 1. Episode Concentration Review For 50/50 Blend And GLD-Only
+### 1. Deployability Review
 
 Reason:
 
-Need to confirm the blended candidate does not depend too heavily on 2022 and late 2025, and compare concentration profile against GLD-only.
-
-Command target:
-
-```text
-candidate diagnostic with exclusion windows / contribution attribution
-```
-
----
-
-### 2. Blend Robustness Sweep
-
-Reason:
-
-The 50/50 blend won the first blend review. It needs validation around nearby triggers, releases, SMA windows, and blend weights.
-
-Command target:
-
-```text
-state-confirmed destination blend review across nearby parameter cluster
-```
-
----
-
-### 3. Deployability Review
-
-Reason:
-
-The capital movement is conceptually cross-asset. Before runtime integration, confirm how crypto-to-ETF capital routing can be represented.
+The candidate is now strong enough that the next blocker is not another backtest; it is whether the capital movement can be represented safely and realistically in Itera architecture.
 
 Command target:
 
@@ -749,11 +759,25 @@ design memo before any runtime changes
 
 ---
 
-### 4. UUP Dollar Filter
+### 2. Candidate Architecture Memo
 
 Reason:
 
-May improve macro confirmation and reduce false positives.
+Need to decide whether this belongs as a Layer 3 defensive governor, separate cross-asset sleeve, or portfolio overlay before implementation.
+
+Command target:
+
+```text
+docs/research/candidates/state_confirmed_gld_bil_allocator_v1/architecture_memo.md
+```
+
+---
+
+### 3. Optional UUP Dollar Filter
+
+Reason:
+
+May improve macro confirmation and reduce false positives, but could also overfilter.
 
 Command target:
 
@@ -763,7 +787,7 @@ state-confirmed sweep with additional UUP condition
 
 ---
 
-### 5. Defensive Sector Matrix
+### 4. Defensive Sector Matrix
 
 Reason:
 
@@ -782,7 +806,7 @@ state-confirmed destination matrix with XLU, XLP, XLV, USMV, SPLV
 The next immediate action is:
 
 ```text
-Build episode concentration / exclusion-window review for 50/50 GLD/BIL and GLD-only.
+Write deployability / architecture memo for state-confirmed GLD/BIL allocator before any runtime changes.
 ```
 
 The next structural build remains:
