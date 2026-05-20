@@ -1,26 +1,10 @@
 #!/usr/bin/env python
 """Paper-only replay prototype for DefensiveDestinationAllocator.
 
-This script implements an isolated historical replay of the validated
+This script performs an isolated historical replay of the validated
 state-confirmed GLD/BIL defensive destination allocator. It emits paper artifacts
 only and does not import or invoke runtime brokers, live governors, or execution
 code.
-
-Default candidate:
-- trigger_dd: -18%
-- release_dd: -12%
-- BTC SMA: 200
-- destination: 50% GLD / 50% BIL
-- crypto_scale: 0%
-- friction: 10 bps per changed notional
-
-Primary outputs:
-    artifacts/defensive_destination_allocator/state_evaluations.jsonl
-    artifacts/defensive_destination_allocator/allocation_intents.jsonl
-    artifacts/defensive_destination_allocator/paper_fills.jsonl
-    artifacts/defensive_destination_allocator/equity_curves.csv
-    artifacts/defensive_destination_allocator/replay_summary.md
-    artifacts/defensive_destination_allocator/replay_summary.json
 """
 
 from __future__ import annotations
@@ -30,7 +14,7 @@ import hashlib
 import json
 import math
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
@@ -42,7 +26,6 @@ import pandas as pd
 from research.harness.metrics import compute_metrics
 from scripts.run_risk_off_trigger_sweep import _buy_hold_curve, _load_baseline_cache, _normalized_returns
 from scripts.run_state_confirmed_risk_off_sweep import _load_close
-
 
 State = Literal["NORMAL", "RISK_OFF_DESTINATION"]
 EvalResult = Literal[
@@ -133,8 +116,7 @@ class PaperFill:
 
 def _stable_id(prefix: str, payload: dict[str, Any]) -> str:
     blob = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
-    digest = hashlib.sha256(blob).hexdigest()[:16]
-    return f"{prefix}_{digest}"
+    return f"{prefix}_{hashlib.sha256(blob).hexdigest()[:16]}"
 
 
 def _fmt_pct(value: Any) -> str:
@@ -144,9 +126,7 @@ def _fmt_pct(value: Any) -> str:
         v = float(value)
     except (TypeError, ValueError):
         return "n/a"
-    if math.isnan(v):
-        return "n/a"
-    return f"{v:.2f}%"
+    return "n/a" if math.isnan(v) else f"{v:.2f}%"
 
 
 def _fmt_money(value: Any) -> str:
@@ -156,17 +136,7 @@ def _fmt_money(value: Any) -> str:
         v = float(value)
     except (TypeError, ValueError):
         return "n/a"
-    if math.isnan(v):
-        return "n/a"
-    return f"${v:,.2f}"
-
-
-def _iso_date(ts: Any) -> str:
-    return pd.Timestamp(ts).date().isoformat()
-
-
-def _iso_ts(ts: Any) -> str:
-    return pd.Timestamp(ts).strftime("%Y-%m-%dT00:00:00Z")
+    return "n/a" if math.isnan(v) else f"${v:,.2f}"
 
 
 def _as_float(value: Any) -> float | None:
@@ -174,14 +144,28 @@ def _as_float(value: Any) -> float | None:
         v = float(value)
     except (TypeError, ValueError):
         return None
-    if math.isnan(v):
-        return None
-    return v
+    return None if math.isnan(v) else v
+
+
+def _day(ts: Any) -> pd.Timestamp:
+    """Return a timezone-naive midnight Timestamp used as the replay key."""
+    return pd.Timestamp(ts).tz_localize(None).normalize()
+
+
+def _iso_date(ts: Any) -> str:
+    return _day(ts).date().isoformat()
+
+
+def _iso_ts(ts: Any) -> str:
+    return _day(ts).strftime("%Y-%m-%dT00:00:00Z")
+
+
+def _parse_replay_ts(ts: str) -> pd.Timestamp:
+    return _day(ts)
 
 
 def _compute_drawdown(nav: pd.Series) -> pd.Series:
-    peak = nav.cummax()
-    return nav / peak - 1.0
+    return nav / nav.cummax() - 1.0
 
 
 def _target_weights_for_state(state: State, cfg: AllocatorConfig) -> dict[str, float]:
@@ -194,19 +178,18 @@ def _target_weights_for_state(state: State, cfg: AllocatorConfig) -> dict[str, f
     }
 
 
-def _validate_weights(cfg: AllocatorConfig) -> None:
+def _validate_config(cfg: AllocatorConfig) -> None:
     if cfg.mode != "paper":
-        raise ValueError("DefensiveDestinationAllocator replay only supports mode='paper'")
+        raise ValueError("Paper replay only supports mode='paper'")
     if cfg.enabled:
         raise ValueError("Paper replay config must remain enabled=false")
     if cfg.release_mode != "either":
         raise ValueError("Prototype currently supports release_mode='either' only")
-    if cfg.crypto_scale < 0.0 or cfg.crypto_scale > 1.0:
+    if not 0.0 <= cfg.crypto_scale <= 1.0:
         raise ValueError("crypto_scale must be in [0, 1]")
     if cfg.gld_weight < 0.0 or cfg.bil_weight < 0.0:
         raise ValueError("destination weights must be non-negative")
-    total_dest = cfg.gld_weight + cfg.bil_weight
-    if abs(total_dest - 1.0) > 1e-9:
+    if abs(cfg.gld_weight + cfg.bil_weight - 1.0) > 1e-9:
         raise ValueError("gld_weight + bil_weight must equal 1.0")
     for state in ("NORMAL", "RISK_OFF_DESTINATION"):
         weights = _target_weights_for_state(state, cfg)  # type: ignore[arg-type]
@@ -215,10 +198,10 @@ def _validate_weights(cfg: AllocatorConfig) -> None:
 
 
 def _next_execution_date(eval_ts: pd.Timestamp, etf_calendar: pd.Index) -> pd.Timestamp | None:
-    candidates = etf_calendar[etf_calendar >= eval_ts]
-    if len(candidates) == 0:
-        return None
-    return pd.Timestamp(candidates[0])
+    eval_day = _day(eval_ts)
+    calendar = pd.DatetimeIndex([_day(x) for x in etf_calendar]).sort_values().unique()
+    candidates = calendar[calendar >= eval_day]
+    return None if len(candidates) == 0 else pd.Timestamp(candidates[0])
 
 
 def _evaluate_state_machine(
@@ -230,32 +213,24 @@ def _evaluate_state_machine(
     cfg: AllocatorConfig,
     etf_calendar: pd.Index,
 ) -> tuple[list[StateEvaluation], list[AllocationIntent], pd.Series]:
+    dates = pd.DatetimeIndex([_day(x) for x in dates]).sort_values().unique()
     evaluations: list[StateEvaluation] = []
     intents: list[AllocationIntent] = []
     state: State = "NORMAL"
     effective_state: list[State] = []
-
     prior_peak = baseline.cummax()
 
-    for ts in dates:
-        ts = pd.Timestamp(ts)
-        source_cutoff = None
+    for idx, ts in enumerate(dates):
         prior_state = state
         new_state = state
-        result: EvalResult
-        reason: str
+        source_cutoff = None
+        fund_nav = fund_peak = fund_dd = btc_c = btc_s = None
 
-        loc = dates.get_loc(ts)
-        if isinstance(loc, slice):
-            raise ValueError("duplicate dates are not supported")
-        prior_ts = dates[loc - 1] if loc > 0 else None
-
-        if prior_ts is None:
-            result = "NO_ACTION_DATA_UNAVAILABLE"
+        if idx == 0:
+            result: EvalResult = "NO_ACTION_DATA_UNAVAILABLE"
             reason = "no_prior_confirmed_bar"
-            fund_nav = fund_peak = fund_dd = btc_c = btc_s = None
         else:
-            prior_ts = pd.Timestamp(prior_ts)
+            prior_ts = pd.Timestamp(dates[idx - 1])
             source_cutoff = _iso_date(prior_ts)
             fund_nav = _as_float(baseline.loc[prior_ts]) if prior_ts in baseline.index else None
             fund_peak = _as_float(prior_peak.loc[prior_ts]) if prior_ts in prior_peak.index else None
@@ -318,48 +293,49 @@ def _evaluate_state_machine(
             target_weights = _target_weights_for_state(new_state, cfg)
             payload = {
                 "timestamp": _iso_ts(ts),
+                "execution_timestamp": _iso_ts(execution_ts),
                 "new_state": new_state,
                 "source_data_cutoff": source_cutoff,
                 "target_weights": target_weights,
             }
-            intent = AllocationIntent(
-                intent_id=_stable_id("intent", payload),
-                timestamp=_iso_ts(ts),
-                execution_timestamp=_iso_ts(execution_ts),
-                mode=cfg.mode,
-                allocator_id=cfg.allocator_id,
-                governed_budget_id=cfg.governed_budget_id,
-                prior_state=prior_state,
-                new_state=new_state,
-                reason=reason,
-                source_data_cutoff=source_cutoff,
-                target_weights=target_weights,
-                execution_policy={
-                    "venue_mode": cfg.mode,
-                    "fill_timing": cfg.fill_timing,
-                    "allow_weekend_etf_fills": cfg.allow_weekend_etf_fills,
-                },
-                inputs={
-                    "fund_nav": fund_nav,
-                    "fund_peak_nav": fund_peak,
-                    "fund_drawdown": fund_dd,
-                    "btc_close": btc_c,
-                    "btc_sma": btc_s,
-                },
-                parameters={
-                    "trigger_dd": cfg.trigger_dd,
-                    "release_dd": cfg.release_dd,
-                    "release_mode": cfg.release_mode,
-                    "crypto_scale": cfg.crypto_scale,
-                    "btc_sma_window": cfg.btc_sma_window,
-                    "gld_weight": cfg.gld_weight,
-                    "bil_weight": cfg.bil_weight,
-                },
+            intents.append(
+                AllocationIntent(
+                    intent_id=_stable_id("intent", payload),
+                    timestamp=_iso_ts(ts),
+                    execution_timestamp=_iso_ts(execution_ts),
+                    mode=cfg.mode,
+                    allocator_id=cfg.allocator_id,
+                    governed_budget_id=cfg.governed_budget_id,
+                    prior_state=prior_state,
+                    new_state=new_state,
+                    reason=reason,
+                    source_data_cutoff=source_cutoff,
+                    target_weights=target_weights,
+                    execution_policy={
+                        "venue_mode": cfg.mode,
+                        "fill_timing": cfg.fill_timing,
+                        "allow_weekend_etf_fills": cfg.allow_weekend_etf_fills,
+                    },
+                    inputs={
+                        "fund_nav": fund_nav,
+                        "fund_peak_nav": fund_peak,
+                        "fund_drawdown": fund_dd,
+                        "btc_close": btc_c,
+                        "btc_sma": btc_s,
+                    },
+                    parameters={
+                        "trigger_dd": cfg.trigger_dd,
+                        "release_dd": cfg.release_dd,
+                        "release_mode": cfg.release_mode,
+                        "crypto_scale": cfg.crypto_scale,
+                        "btc_sma_window": cfg.btc_sma_window,
+                        "gld_weight": cfg.gld_weight,
+                        "bil_weight": cfg.bil_weight,
+                    },
+                )
             )
-            intents.append(intent)
 
-    state_series = pd.Series(effective_state, index=dates, name="state")
-    return evaluations, intents, state_series
+    return evaluations, intents, pd.Series(effective_state, index=dates, name="state")
 
 
 def _simulate_paper_replay(
@@ -373,6 +349,7 @@ def _simulate_paper_replay(
     cfg: AllocatorConfig,
     capital: float,
 ) -> tuple[pd.DataFrame, list[PaperFill]]:
+    dates = pd.DatetimeIndex([_day(x) for x in dates]).sort_values().unique()
     returns = pd.DataFrame(
         {
             "fund_v1_exposure": _normalized_returns(baseline),
@@ -383,7 +360,7 @@ def _simulate_paper_replay(
 
     intent_by_exec: dict[pd.Timestamp, list[AllocationIntent]] = {}
     for intent in intents:
-        exec_ts = pd.Timestamp(intent.execution_timestamp)
+        exec_ts = _parse_replay_ts(intent.execution_timestamp)
         intent_by_exec.setdefault(exec_ts, []).append(intent)
 
     current_weights = _target_weights_for_state("NORMAL", cfg)
@@ -414,8 +391,8 @@ def _simulate_paper_replay(
                         price = _as_float(gld_close.loc[ts])
                     elif symbol == "BIL" and ts in bil_close.index:
                         price = _as_float(bil_close.loc[ts])
-                    elif symbol == "fund_v1_exposure":
-                        price = _as_float(baseline.loc[ts]) if ts in baseline.index else None
+                    elif symbol == "fund_v1_exposure" and ts in baseline.index:
+                        price = _as_float(baseline.loc[ts])
                     fill_payload = {
                         "intent_id": intent.intent_id,
                         "timestamp": _iso_ts(ts),
@@ -455,8 +432,10 @@ def _simulate_paper_replay(
         )
         nav = nav_after_cost
 
-    df = pd.DataFrame(rows).set_index("timestamp")
-    return df, fills
+    if intents and not fills:
+        raise RuntimeError("Replay generated allocation intents but no paper fills. Check execution timestamp alignment.")
+
+    return pd.DataFrame(rows).set_index("timestamp"), fills
 
 
 def _write_jsonl(path: Path, rows: list[Any]) -> None:
@@ -489,12 +468,10 @@ def _render_summary(
     baseline_aligned = baseline.reindex(paper_nav.index).dropna()
     paper_nav = paper_nav.reindex(baseline_aligned.index).dropna()
     baseline_aligned = baseline_aligned.reindex(paper_nav.index)
-
     baseline_metrics = compute_metrics(baseline_aligned, trades=[], params={"strategy_id": "baseline", "asset": "PORTFOLIO", "initial_capital": args.capital})
     paper_metrics = compute_metrics(paper_nav, trades=[], params={"strategy_id": cfg.allocator_id, "asset": "PORTFOLIO", "initial_capital": args.capital})
     total_friction = sum(fill.estimated_friction for fill in fills)
-    unique_intents = len(intents)
-    transition_count = sum(1 for e in evaluations if e.result in {"ENTER_RISK_OFF_DESTINATION", "EXIT_RISK_OFF_DESTINATION"})
+    transitions = sum(1 for e in evaluations if e.result in {"ENTER_RISK_OFF_DESTINATION", "EXIT_RISK_OFF_DESTINATION"})
     risk_off_days = int((paper["weight_GLD"] + paper["weight_BIL"] > 0).sum())
     risk_off_pct = risk_off_days / max(len(paper), 1) * 100.0
 
@@ -525,55 +502,48 @@ def _render_summary(
         },
         "counts": {
             "evaluations": len(evaluations),
-            "state_transitions": transition_count,
-            "allocation_intents": unique_intents,
+            "state_transitions": transitions,
+            "allocation_intents": len(intents),
             "paper_fills": len(fills),
             "risk_off_days": risk_off_days,
             "risk_off_pct_days": risk_off_pct,
         },
-        "costs": {
-            "total_estimated_friction": total_friction,
-        },
+        "costs": {"total_estimated_friction": total_friction},
     }
 
-    md = []
-    md.append("# DefensiveDestinationAllocator Paper Replay Summary\n")
-    md.append("This is a paper-only replay artifact. It is not a trading instruction and does not approve live runtime integration.\n")
-    md.append("## Configuration\n")
-    md.append(f"- Allocator: `{cfg.allocator_id}`")
-    md.append(f"- Mode: `{cfg.mode}`")
-    md.append(f"- Enabled: `{cfg.enabled}`")
-    md.append(f"- Governed budget: `{cfg.governed_budget_id}`")
-    md.append(f"- Trigger / release: `{cfg.trigger_dd:.0%}` / `{cfg.release_dd:.0%}`")
-    md.append(f"- BTC SMA window: `{cfg.btc_sma_window}`")
-    md.append(f"- Crypto scale: `{cfg.crypto_scale:.0%}`")
-    md.append(f"- Destination: `{cfg.gld_weight:.0%} GLD / {cfg.bil_weight:.0%} BIL`")
-    md.append(f"- Friction: `{cfg.friction_bps:.2f}` bps per changed notional\n")
-    md.append("## Metrics\n")
-    md.append("| Label | Final NAV | CAGR | MaxDD | Sharpe | Calmar |")
-    md.append("|---|---:|---:|---:|---:|---:|")
-    md.append(
-        f"| Baseline | {_fmt_money(summary['baseline']['final_nav'])} | {_fmt_pct(summary['baseline']['cagr_pct'])} | "
-        f"{_fmt_pct(summary['baseline']['max_drawdown_pct'])} | {summary['baseline']['sharpe']:.3f} | {summary['baseline']['calmar']:.3f} |"
-    )
-    md.append(
-        f"| Paper allocator | {_fmt_money(summary['paper']['final_nav'])} | {_fmt_pct(summary['paper']['cagr_pct'])} | "
-        f"{_fmt_pct(summary['paper']['max_drawdown_pct'])} | {summary['paper']['sharpe']:.3f} | {summary['paper']['calmar']:.3f} |\n"
-    )
-    md.append("## Counts\n")
-    md.append(f"- State evaluations: `{len(evaluations)}`")
-    md.append(f"- State transitions: `{transition_count}`")
-    md.append(f"- Allocation intents: `{unique_intents}`")
-    md.append(f"- Paper fills: `{len(fills)}`")
-    md.append(f"- Risk-off days: `{risk_off_days}` / `{len(paper)}` (`{risk_off_pct:.2f}%`)")
-    md.append(f"- Total estimated friction: `{_fmt_money(total_friction)}`\n")
-    md.append("## Boundary\n")
-    md.append("```text")
-    md.append("PAPER ONLY")
-    md.append("NO LIVE BROKER")
-    md.append("NO RUNTIME STATE MUTATION")
-    md.append("NO AGENTIC OVERRIDES")
-    md.append("```\n")
+    md = [
+        "# DefensiveDestinationAllocator Paper Replay Summary\n",
+        "This is a paper-only replay artifact. It is not a trading instruction and does not approve live runtime integration.\n",
+        "## Configuration\n",
+        f"- Allocator: `{cfg.allocator_id}`",
+        f"- Mode: `{cfg.mode}`",
+        f"- Enabled: `{cfg.enabled}`",
+        f"- Governed budget: `{cfg.governed_budget_id}`",
+        f"- Trigger / release: `{cfg.trigger_dd:.0%}` / `{cfg.release_dd:.0%}`",
+        f"- BTC SMA window: `{cfg.btc_sma_window}`",
+        f"- Crypto scale: `{cfg.crypto_scale:.0%}`",
+        f"- Destination: `{cfg.gld_weight:.0%} GLD / {cfg.bil_weight:.0%} BIL`",
+        f"- Friction: `{cfg.friction_bps:.2f}` bps per changed notional\n",
+        "## Metrics\n",
+        "| Label | Final NAV | CAGR | MaxDD | Sharpe | Calmar |",
+        "|---|---:|---:|---:|---:|---:|",
+        f"| Baseline | {_fmt_money(summary['baseline']['final_nav'])} | {_fmt_pct(summary['baseline']['cagr_pct'])} | {_fmt_pct(summary['baseline']['max_drawdown_pct'])} | {summary['baseline']['sharpe']:.3f} | {summary['baseline']['calmar']:.3f} |",
+        f"| Paper allocator | {_fmt_money(summary['paper']['final_nav'])} | {_fmt_pct(summary['paper']['cagr_pct'])} | {_fmt_pct(summary['paper']['max_drawdown_pct'])} | {summary['paper']['sharpe']:.3f} | {summary['paper']['calmar']:.3f} |\n",
+        "## Counts\n",
+        f"- State evaluations: `{len(evaluations)}`",
+        f"- State transitions: `{transitions}`",
+        f"- Allocation intents: `{len(intents)}`",
+        f"- Paper fills: `{len(fills)}`",
+        f"- Risk-off days: `{risk_off_days}` / `{len(paper)}` (`{risk_off_pct:.2f}%`)",
+        f"- Total estimated friction: `{_fmt_money(total_friction)}`\n",
+        "## Boundary\n",
+        "```text",
+        "PAPER ONLY",
+        "NO LIVE BROKER",
+        "NO RUNTIME STATE MUTATION",
+        "NO AGENTIC OVERRIDES",
+        "```\n",
+    ]
     return "\n".join(md), summary
 
 
@@ -588,12 +558,10 @@ def _write_outputs(
 ) -> Path:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-
     _write_jsonl(out_dir / "state_evaluations.jsonl", evaluations)
     _write_jsonl(out_dir / "allocation_intents.jsonl", intents)
     _write_jsonl(out_dir / "paper_fills.jsonl", fills)
-
-    equity = pd.DataFrame(
+    pd.DataFrame(
         {
             "baseline": baseline.reindex(paper.index),
             "paper_allocator_nav": paper["nav"],
@@ -602,9 +570,7 @@ def _write_outputs(
             "weight_GLD": paper["weight_GLD"],
             "weight_BIL": paper["weight_BIL"],
         }
-    )
-    equity.to_csv(out_dir / "equity_curves.csv")
-
+    ).to_csv(out_dir / "equity_curves.csv")
     md, summary = _render_summary(args, cfg, baseline, paper, evaluations, intents, fills)
     (out_dir / "replay_summary.md").write_text(md, encoding="utf-8")
     (out_dir / "replay_summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
@@ -650,16 +616,16 @@ def main() -> None:
         fill_timing="next_etf_daily_close_proxy",
         allow_weekend_etf_fills=False,
     )
-    _validate_weights(cfg)
+    _validate_config(cfg)
 
     baseline, btc_close_raw, gld_close_raw, bil_close_raw, gld_curve_raw, bil_curve_raw = _load_inputs(args)
-
-    common_dates = baseline.index.intersection(gld_curve_raw.index).intersection(bil_curve_raw.index)
-    common_dates = common_dates.sort_values()
+    common_dates = baseline.index.intersection(gld_curve_raw.index).intersection(bil_curve_raw.index).sort_values()
+    common_dates = pd.DatetimeIndex([_day(x) for x in common_dates]).sort_values().unique()
     baseline = baseline.reindex(common_dates).dropna()
-    gld_curve = gld_curve_raw.reindex(baseline.index).dropna()
-    bil_curve = bil_curve_raw.reindex(baseline.index).dropna()
-    common_dates = baseline.index.intersection(gld_curve.index).intersection(bil_curve.index)
+    common_dates = baseline.index
+    gld_curve = gld_curve_raw.reindex(common_dates).dropna()
+    bil_curve = bil_curve_raw.reindex(common_dates).dropna()
+    common_dates = baseline.index.intersection(gld_curve.index).intersection(bil_curve.index).sort_values()
 
     baseline = baseline.reindex(common_dates)
     gld_curve = gld_curve.reindex(common_dates)
@@ -670,28 +636,9 @@ def main() -> None:
     btc_sma = btc_close_raw.rolling(cfg.btc_sma_window, min_periods=cfg.btc_sma_window).mean().reindex(common_dates).ffill()
     drawdown = _compute_drawdown(baseline)
 
-    evaluations, intents, state_series = _evaluate_state_machine(
-        common_dates,
-        baseline,
-        drawdown,
-        btc_close,
-        btc_sma,
-        cfg,
-        common_dates,
-    )
-    paper, fills = _simulate_paper_replay(
-        common_dates,
-        baseline,
-        gld_curve,
-        bil_curve,
-        gld_close,
-        bil_close,
-        intents,
-        cfg,
-        args.capital,
-    )
+    evaluations, intents, state_series = _evaluate_state_machine(common_dates, baseline, drawdown, btc_close, btc_sma, cfg, common_dates)
+    paper, fills = _simulate_paper_replay(common_dates, baseline, gld_curve, bil_curve, gld_close, bil_close, intents, cfg, args.capital)
     paper["state"] = state_series.reindex(paper.index)
-
     summary_path = _write_outputs(args, cfg, baseline, paper, evaluations, intents, fills)
 
     paper_nav = paper["nav"]
@@ -711,19 +658,13 @@ def main() -> None:
     print("-" * 132)
     print(f"  {'Label':<18} {'Final NAV':>14} {'CAGR%':>9} {'MaxDD%':>9} {'Sharpe':>8} {'Calmar':>8}")
     print("  " + "-" * 130)
-    print(
-        f"  {'baseline':<18} {_fmt_money(float(baseline.iloc[-1])):>14} {baseline_metrics.cagr_pct:>8.2f}% "
-        f"{baseline_metrics.max_drawdown_pct:>8.2f}% {baseline_metrics.sharpe:>8.3f} {baseline_metrics.calmar:>8.3f}"
-    )
-    print(
-        f"  {'paper_allocator':<18} {_fmt_money(float(paper_nav.iloc[-1])):>14} {paper_metrics.cagr_pct:>8.2f}% "
-        f"{paper_metrics.max_drawdown_pct:>8.2f}% {paper_metrics.sharpe:>8.3f} {paper_metrics.calmar:>8.3f}"
-    )
+    print(f"  {'baseline':<18} {_fmt_money(float(baseline.iloc[-1])):>14} {baseline_metrics.cagr_pct:>8.2f}% {baseline_metrics.max_drawdown_pct:>8.2f}% {baseline_metrics.sharpe:>8.3f} {baseline_metrics.calmar:>8.3f}")
+    print(f"  {'paper_allocator':<18} {_fmt_money(float(paper_nav.iloc[-1])):>14} {paper_metrics.cagr_pct:>8.2f}% {paper_metrics.max_drawdown_pct:>8.2f}% {paper_metrics.sharpe:>8.3f} {paper_metrics.calmar:>8.3f}")
     print("-" * 132)
-    print(f"  Evaluations      : {len(evaluations)}")
-    print(f"  Transitions      : {transitions}")
+    print(f"  Evaluations       : {len(evaluations)}")
+    print(f"  Transitions       : {transitions}")
     print(f"  Allocation intents: {len(intents)}")
-    print(f"  Paper fills      : {len(fills)}")
+    print(f"  Paper fills       : {len(fills)}")
     print(f"  Estimated friction: {_fmt_money(total_friction)}")
     print("=" * 132)
     print(f"  Summary: {summary_path}")
