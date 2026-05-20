@@ -35,6 +35,7 @@ EvalResult = Literal[
     "ENTER_RISK_OFF_DESTINATION",
     "EXIT_RISK_OFF_DESTINATION",
 ]
+CostModel = Literal["full_reallocation", "destination_only"]
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,7 @@ class AllocatorConfig:
     gld_weight: float
     bil_weight: float
     friction_bps: float
+    cost_model: CostModel
     fill_timing: str
     allow_weekend_etf_fills: bool
 
@@ -108,9 +110,11 @@ class PaperFill:
     target_weight: float
     weight_delta: float
     notional: float
+    charged_notional: float
     fill_price: float | None
     friction_bps: float
     estimated_friction: float
+    cost_model: CostModel
     mode: str
 
 
@@ -178,6 +182,14 @@ def _target_weights_for_state(state: State, cfg: AllocatorConfig) -> dict[str, f
     }
 
 
+def _charged_notional(symbol: str, notional: float, cfg: AllocatorConfig) -> float:
+    if cfg.cost_model == "full_reallocation":
+        return notional
+    if cfg.cost_model == "destination_only":
+        return notional if symbol in {"GLD", "BIL"} else 0.0
+    raise ValueError(f"Unsupported cost_model={cfg.cost_model}")
+
+
 def _validate_config(cfg: AllocatorConfig) -> None:
     if cfg.mode != "paper":
         raise ValueError("Paper replay only supports mode='paper'")
@@ -185,6 +197,8 @@ def _validate_config(cfg: AllocatorConfig) -> None:
         raise ValueError("Paper replay config must remain enabled=false")
     if cfg.release_mode != "either":
         raise ValueError("Prototype currently supports release_mode='either' only")
+    if cfg.cost_model not in {"full_reallocation", "destination_only"}:
+        raise ValueError("cost_model must be full_reallocation or destination_only")
     if not 0.0 <= cfg.crypto_scale <= 1.0:
         raise ValueError("crypto_scale must be in [0, 1]")
     if cfg.gld_weight < 0.0 or cfg.bil_weight < 0.0:
@@ -331,6 +345,7 @@ def _evaluate_state_machine(
                         "btc_sma_window": cfg.btc_sma_window,
                         "gld_weight": cfg.gld_weight,
                         "bil_weight": cfg.bil_weight,
+                        "cost_model": cfg.cost_model,
                     },
                 )
             )
@@ -360,8 +375,7 @@ def _simulate_paper_replay(
 
     intent_by_exec: dict[pd.Timestamp, list[AllocationIntent]] = {}
     for intent in intents:
-        exec_ts = _parse_replay_ts(intent.execution_timestamp)
-        intent_by_exec.setdefault(exec_ts, []).append(intent)
+        intent_by_exec.setdefault(_parse_replay_ts(intent.execution_timestamp), []).append(intent)
 
     current_weights = _target_weights_for_state("NORMAL", cfg)
     nav = capital
@@ -384,7 +398,8 @@ def _simulate_paper_replay(
                     if abs(weight_delta) <= 1e-12:
                         continue
                     notional = nav_after_cost * abs(weight_delta)
-                    friction = notional * (cfg.friction_bps / 10_000.0)
+                    charged_notional = _charged_notional(symbol, notional, cfg)
+                    friction = charged_notional * (cfg.friction_bps / 10_000.0)
                     nav_after_cost -= friction
                     price = None
                     if symbol == "GLD" and ts in gld_close.index:
@@ -399,6 +414,7 @@ def _simulate_paper_replay(
                         "symbol": symbol,
                         "target_weight": target_weight,
                         "notional": round(notional, 6),
+                        "cost_model": cfg.cost_model,
                     }
                     fills.append(
                         PaperFill(
@@ -411,9 +427,11 @@ def _simulate_paper_replay(
                             target_weight=target_weight,
                             weight_delta=weight_delta,
                             notional=notional,
+                            charged_notional=charged_notional,
                             fill_price=price,
                             friction_bps=cfg.friction_bps,
                             estimated_friction=friction,
+                            cost_model=cfg.cost_model,
                             mode=cfg.mode,
                         )
                     )
@@ -471,6 +489,8 @@ def _render_summary(
     baseline_metrics = compute_metrics(baseline_aligned, trades=[], params={"strategy_id": "baseline", "asset": "PORTFOLIO", "initial_capital": args.capital})
     paper_metrics = compute_metrics(paper_nav, trades=[], params={"strategy_id": cfg.allocator_id, "asset": "PORTFOLIO", "initial_capital": args.capital})
     total_friction = sum(fill.estimated_friction for fill in fills)
+    charged_notional = sum(fill.charged_notional for fill in fills)
+    gross_notional = sum(fill.notional for fill in fills)
     transitions = sum(1 for e in evaluations if e.result in {"ENTER_RISK_OFF_DESTINATION", "EXIT_RISK_OFF_DESTINATION"})
     risk_off_days = int((paper["weight_GLD"] + paper["weight_BIL"] > 0).sum())
     risk_off_pct = risk_off_days / max(len(paper), 1) * 100.0
@@ -508,7 +528,12 @@ def _render_summary(
             "risk_off_days": risk_off_days,
             "risk_off_pct_days": risk_off_pct,
         },
-        "costs": {"total_estimated_friction": total_friction},
+        "costs": {
+            "cost_model": cfg.cost_model,
+            "gross_fill_notional": gross_notional,
+            "charged_notional": charged_notional,
+            "total_estimated_friction": total_friction,
+        },
     }
 
     md = [
@@ -523,18 +548,21 @@ def _render_summary(
         f"- BTC SMA window: `{cfg.btc_sma_window}`",
         f"- Crypto scale: `{cfg.crypto_scale:.0%}`",
         f"- Destination: `{cfg.gld_weight:.0%} GLD / {cfg.bil_weight:.0%} BIL`",
-        f"- Friction: `{cfg.friction_bps:.2f}` bps per changed notional\n",
+        f"- Cost model: `{cfg.cost_model}`",
+        f"- Friction: `{cfg.friction_bps:.2f}` bps per charged notional\n",
         "## Metrics\n",
         "| Label | Final NAV | CAGR | MaxDD | Sharpe | Calmar |",
         "|---|---:|---:|---:|---:|---:|",
         f"| Baseline | {_fmt_money(summary['baseline']['final_nav'])} | {_fmt_pct(summary['baseline']['cagr_pct'])} | {_fmt_pct(summary['baseline']['max_drawdown_pct'])} | {summary['baseline']['sharpe']:.3f} | {summary['baseline']['calmar']:.3f} |",
         f"| Paper allocator | {_fmt_money(summary['paper']['final_nav'])} | {_fmt_pct(summary['paper']['cagr_pct'])} | {_fmt_pct(summary['paper']['max_drawdown_pct'])} | {summary['paper']['sharpe']:.3f} | {summary['paper']['calmar']:.3f} |\n",
-        "## Counts\n",
+        "## Counts And Costs\n",
         f"- State evaluations: `{len(evaluations)}`",
         f"- State transitions: `{transitions}`",
         f"- Allocation intents: `{len(intents)}`",
         f"- Paper fills: `{len(fills)}`",
         f"- Risk-off days: `{risk_off_days}` / `{len(paper)}` (`{risk_off_pct:.2f}%`)",
+        f"- Gross fill notional: `{_fmt_money(gross_notional)}`",
+        f"- Charged notional: `{_fmt_money(charged_notional)}`",
         f"- Total estimated friction: `{_fmt_money(total_friction)}`\n",
         "## Boundary\n",
         "```text",
@@ -594,6 +622,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--crypto-scale", type=float, default=0.0)
     p.add_argument("--gld-weight", type=float, default=0.50)
     p.add_argument("--friction-bps", type=float, default=10.0)
+    p.add_argument("--cost-model", choices=["full_reallocation", "destination_only"], default="full_reallocation")
     p.add_argument("--out-dir", default="artifacts/defensive_destination_allocator")
     return p.parse_args()
 
@@ -613,6 +642,7 @@ def main() -> None:
         gld_weight=args.gld_weight,
         bil_weight=1.0 - args.gld_weight,
         friction_bps=args.friction_bps,
+        cost_model=args.cost_model,
         fill_timing="next_etf_daily_close_proxy",
         allow_weekend_etf_fills=False,
     )
@@ -645,6 +675,8 @@ def main() -> None:
     baseline_metrics = compute_metrics(baseline.reindex(paper_nav.index), trades=[], params={"strategy_id": "baseline", "asset": "PORTFOLIO", "initial_capital": args.capital})
     paper_metrics = compute_metrics(paper_nav, trades=[], params={"strategy_id": cfg.allocator_id, "asset": "PORTFOLIO", "initial_capital": args.capital})
     total_friction = sum(fill.estimated_friction for fill in fills)
+    charged_notional = sum(fill.charged_notional for fill in fills)
+    gross_notional = sum(fill.notional for fill in fills)
     transitions = sum(1 for e in evaluations if e.result in {"ENTER_RISK_OFF_DESTINATION", "EXIT_RISK_OFF_DESTINATION"})
 
     print("=" * 132)
@@ -654,7 +686,8 @@ def main() -> None:
     print(f"  Trigger / Release: {cfg.trigger_dd:.0%} / {cfg.release_dd:.0%}")
     print(f"  BTC SMA          : {cfg.btc_sma_window}")
     print(f"  Crypto scale     : {cfg.crypto_scale:.0%}")
-    print(f"  Friction         : {cfg.friction_bps:.2f} bps per changed notional")
+    print(f"  Cost model       : {cfg.cost_model}")
+    print(f"  Friction         : {cfg.friction_bps:.2f} bps per charged notional")
     print("-" * 132)
     print(f"  {'Label':<18} {'Final NAV':>14} {'CAGR%':>9} {'MaxDD%':>9} {'Sharpe':>8} {'Calmar':>8}")
     print("  " + "-" * 130)
@@ -665,6 +698,8 @@ def main() -> None:
     print(f"  Transitions       : {transitions}")
     print(f"  Allocation intents: {len(intents)}")
     print(f"  Paper fills       : {len(fills)}")
+    print(f"  Gross fill notional: {_fmt_money(gross_notional)}")
+    print(f"  Charged notional  : {_fmt_money(charged_notional)}")
     print(f"  Estimated friction: {_fmt_money(total_friction)}")
     print("=" * 132)
     print(f"  Summary: {summary_path}")
