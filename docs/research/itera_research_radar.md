@@ -25,21 +25,84 @@ When Fund v1 enters a crypto-hostile state, where should capital go?
 Current answer:
 
 ```text
-GLD is the primary validated candidate.
-BIL is a conservative benchmark / fallback candidate.
-Transition friction does not appear to invalidate GLD under the first cost review.
+A 50% GLD / 50% BIL destination blend is the current risk-adjusted leader.
+GLD-only remains the higher-return candidate.
+BIL-only remains a conservative benchmark / fallback.
 ```
 
 ---
 
 ## Active Validated Candidates
 
-### 1. State-Confirmed GLD Risk-Off Allocator
+### 1. State-Confirmed 50/50 GLD/BIL Risk-Off Allocator
 
 Status:
 
 ```text
-VALIDATED CANDIDATE — primary non-crypto allocator candidate; transition/cost review passed under first assumption; still needs concentration review and blend comparison before promotion consideration.
+VALIDATED CANDIDATE — current risk-adjusted leader; needs concentration review and deployability review before promotion consideration.
+```
+
+Portfolio role:
+
+```text
+Layer 3 defensive capital destination / blended cross-asset allocator.
+```
+
+Current candidate rule:
+
+```text
+Risk-off when:
+  Fund v1 prior-day drawdown <= -18%
+  AND BTC prior-day close < BTC SMA200
+
+Release when:
+  Fund v1 drawdown recovers to >= -12%
+  OR BTC recovers above SMA200
+
+Destination during risk-off:
+  50% GLD / 50% BIL
+
+Crypto scale during risk-off:
+  0%
+```
+
+Cost-adjusted evidence at 10 bps per changed notional:
+
+```text
+CAGR:    37.73%
+MaxDD:  -22.80%
+Sharpe:  1.233
+Calmar:  1.655
+Stress: +1.28%
+Episode win rate: 71.43%
+Episode sum delta: +18.37 percentage points
+```
+
+Interpretation:
+
+The 50/50 GLD/BIL blend is the current best risk-adjusted candidate. It gives up return versus GLD-only, but materially improves drawdown and Calmar. It preserves the same 71.43% episode win rate as GLD-only while reducing reliance on GLD as a single destination asset.
+
+Known cautions:
+
+- Lower CAGR than GLD-only.
+- Still requires concentration review.
+- Still requires deployability review for cross-asset capital movement.
+- Needs confirmation that the blend remains robust around nearby trigger/release/SMA parameters.
+
+Next status target:
+
+```text
+NEEDS RISK REVIEW — episode concentration and false-positive review remain open.
+```
+
+---
+
+### 2. State-Confirmed GLD Risk-Off Allocator
+
+Status:
+
+```text
+VALIDATED CANDIDATE — highest-return non-crypto allocator candidate; not current risk-adjusted leader after blend review.
 ```
 
 Portfolio role:
@@ -66,7 +129,7 @@ Crypto scale during risk-off:
   0%
 ```
 
-Current evidence before transition costs:
+Pre-cost evidence:
 
 ```text
 CAGR:    42.68%
@@ -77,17 +140,14 @@ Stress: +0.78%
 RiskOff: 29.6%
 ```
 
-Transition/cost review at 10 bps per changed notional:
+Cost-adjusted evidence at 10 bps per changed notional:
 
 ```text
-Transitions:     33
-Gross turnover:  $23,153,306.69
-Estimated cost:  $23,153.31
-
 Cost-adjusted CAGR:   41.98%
 Cost-adjusted MaxDD: -26.56%
 Cost-adjusted Sharpe: 1.309
 Cost-adjusted Calmar: 1.581
+Estimated cost:       $23,153.31
 ```
 
 Episode attribution:
@@ -105,25 +165,18 @@ Median delta: +1.37 percentage points
 
 Interpretation:
 
-GLD is currently the strongest non-crypto candidate found in this branch. It appears to act as a productive diversifier during crypto-hostile regimes, not merely as a cash substitute. The first transition/cost review did not invalidate the candidate: Calmar only moved from 1.612 to 1.581 under a 10 bps friction assumption.
+GLD-only remains the highest-return candidate and the strongest productive diversifier. However, the 50/50 GLD/BIL blend now has better cost-adjusted Calmar and materially lower drawdown.
 
 Known cautions:
 
+- Larger reliance on GLD-specific returns.
+- Larger drawdown than 50/50 blend.
 - Large positive contribution from 2022 and late 2025.
 - False positives in periods where crypto recovered while the allocator was defensive.
-- Requires GLD/BIL blend comparison before promotion consideration.
-- Requires concentration review excluding major contribution windows.
-- Requires final deployability review before any runtime integration.
-
-Next status target:
-
-```text
-NEEDS RISK REVIEW — episode concentration and false-positive review remain open.
-```
 
 ---
 
-### 2. State-Confirmed BIL Risk-Off Allocator
+### 3. State-Confirmed BIL Risk-Off Allocator
 
 Status:
 
@@ -135,24 +188,6 @@ Portfolio role:
 
 ```text
 Cash-like defensive capital destination.
-```
-
-Candidate rule tested:
-
-```text
-Risk-off when:
-  Fund v1 prior-day drawdown <= -18%
-  AND BTC prior-day close < BTC SMA200
-
-Release when:
-  Fund v1 drawdown recovers to >= -12%
-  OR BTC recovers above SMA200
-
-Destination:
-  BIL
-
-Crypto scale during risk-off:
-  0%
 ```
 
 Current evidence:
@@ -181,70 +216,42 @@ Median delta: -0.11 percentage points
 
 Interpretation:
 
-BIL provides cleaner drawdown reduction and strong stress protection, but gives up substantial upside during recovery episodes. It is useful as the cash-like benchmark and conservative fallback, but the episode attribution does not justify choosing it over GLD as the primary destination candidate.
-
-Known cautions:
-
-- BIL protects in major bear/stress episodes.
-- BIL underperforms when crypto rebounds while the risk-off state remains active.
-- BIL may still be useful in a blended GLD/BIL destination.
+BIL provides cleaner drawdown reduction and strong stress protection, but gives up substantial upside during recovery episodes. It is useful as the cash-like benchmark and conservative fallback, but the episode attribution does not justify choosing it over GLD or the GLD/BIL blend as the primary destination candidate.
 
 ---
 
-## Current GLD vs BIL Read
+## Current GLD / BIL / Blend Read
 
 ```text
-GLD:
-  Higher CAGR, higher Sharpe, higher Calmar, positive episode attribution.
-  Better productive diversifier.
-  Still strong after first transition-cost review.
+50/50 GLD/BIL:
+  Best cost-adjusted Calmar.
+  Lowest drawdown among the top candidates.
+  Maintains 71.43% episode win rate.
+  Current risk-adjusted leader.
 
-BIL:
-  Lower drawdown, slightly better stress window, weaker episode attribution.
-  Better conservative benchmark / cash-like fallback.
+GLD-only:
+  Highest CAGR and strongest episode sum delta.
+  Better productive diversifier.
+  More destination-specific risk.
+
+BIL-only:
+  Conservative benchmark / fallback.
+  Lower return and weak episode attribution.
 ```
 
 Decision:
 
 ```text
-Proceed with GLD as the primary candidate.
-Keep BIL as benchmark and blend component.
-Do not promote BIL-only over GLD-only at this stage.
+Proceed with 50/50 GLD/BIL as the current risk-adjusted candidate.
+Keep GLD-only as the higher-return alternative.
+Keep BIL-only as benchmark / fallback.
 ```
 
 ---
 
 ## Validation Queue
 
-### 1. GLD/BIL Blend Test
-
-Purpose:
-
-Test whether a blended destination can keep much of GLD's upside while reducing destination-specific risk.
-
-Candidate blends:
-
-```text
-75% GLD / 25% BIL
-50% GLD / 50% BIL
-25% GLD / 75% BIL
-```
-
-Question:
-
-```text
-Can a blend preserve GLD's positive episode attribution while improving drawdown/stress behavior?
-```
-
-Priority:
-
-```text
-Highest
-```
-
----
-
-### 2. GLD Episode Concentration Review
+### 1. Episode Concentration Review For 50/50 Blend And GLD-Only
 
 Purpose:
 
@@ -262,12 +269,45 @@ Needed checks:
 Priority:
 
 ```text
+Highest
+```
+
+---
+
+### 2. Blend Robustness Around Best Cluster
+
+Purpose:
+
+Confirm that the 50/50 blend survives nearby parameters.
+
+Promising base rule:
+
+```text
+Trigger: -18%
+Release: -12%
+BTC SMA: 200
+Destination: 50% GLD / 50% BIL
+Crypto scale: 0%
+```
+
+Next robustness area:
+
+```text
+Trigger: -18% to -20%
+Release: -8% to -12%
+BTC SMA: 180 / 200 / 220
+GLD/BIL weights: 75/25, 50/50, 25/75
+```
+
+Priority:
+
+```text
 High
 ```
 
 ---
 
-### 3. GLD Deployability Review
+### 3. Deployability Review
 
 Purpose:
 
@@ -275,7 +315,7 @@ Confirm that the candidate can be mapped cleanly into intended runtime/broker co
 
 Needed checks:
 
-- whether GLD is available in the intended brokerage/runtime path
+- whether GLD and BIL are available in the intended brokerage/runtime path
 - whether crypto scale 0% means full sleeve exit or partial fund-level state shift
 - whether capital can move between crypto and ETF rails in the actual operating structure
 - whether paper trading and live infrastructure can represent the cross-asset state change
@@ -283,32 +323,7 @@ Needed checks:
 Priority:
 
 ```text
-High, but after blend/concentration research.
-```
-
----
-
-### 4. Robustness Around Best Cluster
-
-Purpose:
-
-Confirm that the candidate survives nearby parameters.
-
-Promising cluster:
-
-```text
-Trigger: -18% to -20%
-Release: -8% to -12%
-BTC SMA: 180 / 200 / 220
-Destination: GLD
-Crypto scale: 0%
-RiskOff: approximately 27% to 30%
-```
-
-Priority:
-
-```text
-Medium-high
+High, but after concentration and robustness review.
 ```
 
 ---
@@ -382,19 +397,19 @@ Defensive governor / regime confirmation.
 
 Hypothesis:
 
-A strong dollar may confirm crypto-hostile regimes and reduce false positives in the GLD allocator.
+A strong dollar may confirm crypto-hostile regimes and reduce false positives in the GLD/BIL allocator.
 
 First test:
 
 ```text
 Add UUP above SMA200 as an additional confirmation condition.
-Compare GLD allocator with and without UUP filter.
+Compare GLD/BIL allocator with and without UUP filter.
 ```
 
 Priority:
 
 ```text
-High after GLD/BIL blend and concentration review.
+High after concentration and robustness review.
 ```
 
 ---
@@ -415,7 +430,7 @@ First test:
 
 ```text
 Test IEF/TLT only when ETF is above SMA200 or duration trend is positive.
-Benchmark against BIL and GLD.
+Benchmark against BIL and GLD/BIL blend.
 ```
 
 Priority:
@@ -443,7 +458,7 @@ USMV/SPLV and defensive sectors may offer equity-market participation with lower
 First test:
 
 ```text
-Risk-off destination matrix using USMV, SPLV, XLU, XLP, XLV versus GLD, BIL, and cash.
+Risk-off destination matrix using USMV, SPLV, XLU, XLP, XLV versus GLD/BIL, GLD, BIL, and cash.
 ```
 
 Priority:
@@ -509,7 +524,7 @@ XLV
 First test:
 
 ```text
-Compare defensive sectors against GLD and BIL during state-confirmed risk-off windows.
+Compare defensive sectors against GLD/BIL, GLD, and BIL during state-confirmed risk-off windows.
 ```
 
 Priority:
@@ -582,33 +597,6 @@ Medium-high
 
 ### Portfolio Construction Lane
 
-#### GLD/BIL Blend During Risk-Off
-
-Role:
-
-```text
-Capital destination blend.
-```
-
-Hypothesis:
-
-A blend of GLD and BIL may preserve much of GLD's upside while reducing destination-specific risk.
-
-First test:
-
-```text
-During state-confirmed risk-off, allocate 50/50 or 75/25 between GLD and BIL.
-Compare to GLD-only and BIL-only.
-```
-
-Priority:
-
-```text
-Highest
-```
-
----
-
 #### Crypto Scale Sensitivity
 
 Role:
@@ -623,12 +611,12 @@ Full crypto exit during risk-off may be too aggressive; partial exposure may red
 
 Current evidence:
 
-Top GLD candidates favored crypto scale 0%, but 25% variants remain interesting.
+Top GLD and GLD/BIL candidates favored crypto scale 0%, but 25% variants remain interesting.
 
 First test:
 
 ```text
-Candidate diagnostic comparison for crypto_scale 0%, 25%, and 50%.
+Candidate diagnostic comparison for crypto_scale 0%, 25%, and 50% using 50/50 GLD/BIL destination.
 ```
 
 Priority:
@@ -652,8 +640,9 @@ FIRST PASS COMPLETE
 Result:
 
 ```text
-10 bps transition cost assumption did not invalidate GLD candidate.
-Cost-adjusted Calmar remained 1.581 versus baseline 0.929.
+10 bps transition cost assumption did not invalidate the GLD-only candidate.
+The GLD/BIL blend review included the same 10 bps transition-cost assumption.
+50/50 GLD/BIL remained the best Calmar result after costs.
 ```
 
 Next execution/cost questions:
@@ -698,7 +687,7 @@ LOW PRIORITY
 
 Reason:
 
-Simple broad-equity destination logic did not beat cash, BIL, or GLD for the specific role of crypto risk-off parking.
+Simple broad-equity destination logic did not beat cash, BIL, GLD, or the GLD/BIL blend for the specific role of crypto risk-off parking.
 
 ---
 
@@ -718,25 +707,11 @@ Unfiltered duration assets were hurt badly in the 2022 rate shock and performed 
 
 ## Highest-Value Next Tests
 
-### 1. GLD/BIL Blend Test
+### 1. Episode Concentration Review For 50/50 Blend And GLD-Only
 
 Reason:
 
-BIL is not better than GLD as a standalone destination, but it may still be useful as a stabilizing blend component.
-
-Command target:
-
-```text
-risk-off overlay with destination blend
-```
-
----
-
-### 2. GLD Episode Concentration Review
-
-Reason:
-
-Need to confirm GLD does not depend too heavily on 2022 and late 2025.
+Need to confirm the blended candidate does not depend too heavily on 2022 and late 2025, and compare concentration profile against GLD-only.
 
 Command target:
 
@@ -746,7 +721,21 @@ candidate diagnostic with exclusion windows / contribution attribution
 
 ---
 
-### 3. GLD Deployability Review
+### 2. Blend Robustness Sweep
+
+Reason:
+
+The 50/50 blend won the first blend review. It needs validation around nearby triggers, releases, SMA windows, and blend weights.
+
+Command target:
+
+```text
+state-confirmed destination blend review across nearby parameter cluster
+```
+
+---
+
+### 3. Deployability Review
 
 Reason:
 
@@ -793,7 +782,7 @@ state-confirmed destination matrix with XLU, XLP, XLV, USMV, SPLV
 The next immediate action is:
 
 ```text
-Build GLD/BIL blend test.
+Build episode concentration / exclusion-window review for 50/50 GLD/BIL and GLD-only.
 ```
 
 The next structural build remains:
