@@ -85,9 +85,16 @@ def load_prices(data_dir: Path, symbols: list[str], start: str, end: str) -> dic
     return prices
 
 
-def _entry_index(signal_i: int, delay_days: int, max_i: int) -> int | None:
-    idx = signal_i + delay_days
-    return idx if idx <= max_i else None
+def _enter_position(
+    *,
+    nav: float,
+    px: float,
+    dt: pd.Timestamp,
+    signal_dt: pd.Timestamp,
+    fee_bps: float,
+) -> tuple[float, bool, float, pd.Timestamp, pd.Timestamp, int, float]:
+    nav *= 1.0 - fee_bps / 10000.0
+    return nav, True, px, dt, signal_dt, 0, px
 
 
 def simulate(
@@ -120,13 +127,13 @@ def simulate(
     nav = capital
     in_pos = False
     entry_px = 0.0
-    entry_dt = None
-    signal_dt = None
+    entry_dt: pd.Timestamp | None = None
+    signal_dt: pd.Timestamp | None = None
     held = 0
     peak_px = 0.0
     pos_days = 0
     pending_entry_i: int | None = None
-    pending_signal_dt = None
+    pending_signal_dt: pd.Timestamp | None = None
     nav_rows = []
     trades: list[dict[str, Any]] = []
 
@@ -155,9 +162,9 @@ def simulate(
                         "label": label,
                         "asset": asset,
                         "signal_date": signal_dt.date().isoformat() if signal_dt is not None else "",
-                        "entry_date": entry_dt.date().isoformat(),
+                        "entry_date": entry_dt.date().isoformat() if entry_dt is not None else "",
                         "exit_date": dt.date().isoformat(),
-                        "entry_year": int(entry_dt.year),
+                        "entry_year": int(entry_dt.year) if entry_dt is not None else None,
                         "exit_year": int(dt.year),
                         "entry_price": entry_px,
                         "exit_price": px,
@@ -176,24 +183,37 @@ def simulate(
                 pending_entry_i = None
                 pending_signal_dt = None
 
+        # Delayed entries execute after today's close-return has already been handled.
+        # d1 therefore means: signal on prior close, enter on today's close, earn returns from next bar.
         if not in_pos and pending_entry_i is not None and i >= pending_entry_i:
-            nav *= 1.0 - fee_bps / 10000.0
-            in_pos = True
-            entry_px = px
-            entry_dt = dt
-            signal_dt = pending_signal_dt
-            peak_px = px
-            held = 0
+            nav, in_pos, entry_px, entry_dt, signal_dt, held, peak_px = _enter_position(
+                nav=nav,
+                px=px,
+                dt=dt,
+                signal_dt=pending_signal_dt if pending_signal_dt is not None else dt,
+                fee_bps=fee_bps,
+            )
             pending_entry_i = None
             pending_signal_dt = None
 
         if not in_pos and pending_entry_i is None:
             signal = pd.notna(high.loc[dt]) and bool(compression_recent.loc[dt]) and px > float(high.loc[dt])
             if signal:
-                eidx = _entry_index(i, entry_delay_days, len(dates) - 1)
-                if eidx is not None:
-                    pending_entry_i = eidx
-                    pending_signal_dt = dt
+                if entry_delay_days <= 0:
+                    # d0 means: form the signal on today's close and enter at that same close.
+                    # The strategy does not receive today's return; returns begin on the next bar.
+                    nav, in_pos, entry_px, entry_dt, signal_dt, held, peak_px = _enter_position(
+                        nav=nav,
+                        px=px,
+                        dt=dt,
+                        signal_dt=dt,
+                        fee_bps=fee_bps,
+                    )
+                else:
+                    target_i = i + entry_delay_days
+                    if target_i < len(dates):
+                        pending_entry_i = target_i
+                        pending_signal_dt = dt
 
         nav_rows.append((dt, nav))
 
@@ -219,7 +239,7 @@ def trade_stats(trades: list[dict[str, Any]]) -> dict[str, Any]:
 def yearly_trade_summary(trades: list[dict[str, Any]]) -> pd.DataFrame:
     if not trades:
         return pd.DataFrame(columns=["label", "asset", "entry_year", "trade_count", "win_rate_pct", "sum_return_pct", "avg_return_pct", "median_return_pct", "avg_hold_days"])
-    df = pd.DataFrame(trades)
+    df = pd.DataFrame(trades).dropna(subset=["entry_year"])
     rows = []
     for (label, asset, year), g in df.groupby(["label", "asset", "entry_year"]):
         rets = g["return_pct"].astype(float)
