@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """Equity volatility-compression breakout research runner.
 
-First-pass equity alpha test. Applies a post-compression breakout structure to
-ETF data and compares the resulting trade profiles against equity benchmarks.
+First-pass equity alpha test plus mechanics audit. Applies a post-compression
+breakout structure to ETF data and compares the resulting trade profiles against
+equity benchmarks.
 
 Research-only. No runtime, broker, or live execution code.
 """
@@ -84,6 +85,11 @@ def load_prices(data_dir: Path, symbols: list[str], start: str, end: str) -> dic
     return prices
 
 
+def _entry_index(signal_i: int, delay_days: int, max_i: int) -> int | None:
+    idx = signal_i + delay_days
+    return idx if idx <= max_i else None
+
+
 def simulate(
     close: pd.Series,
     asset: str,
@@ -94,10 +100,12 @@ def simulate(
     max_hold: int,
     stop: float,
     memory: int,
+    entry_delay_days: int,
     capital: float,
     fee_bps: float,
 ) -> tuple[pd.Series, list[dict[str, Any]], float]:
     close = close.dropna()
+    dates = list(close.index)
     rets = close.pct_change(fill_method=None).fillna(0.0)
     vol = rets.rolling(vol_window, min_periods=vol_window).std() * math.sqrt(252.0)
     vol_rank = vol.rolling(rank_window, min_periods=rank_window).rank(pct=True)
@@ -105,19 +113,26 @@ def simulate(
     high = close.shift(1).rolling(channel, min_periods=channel).max()
     low = close.shift(1).rolling(channel, min_periods=channel).min()
 
-    label = f"{asset}_evcb_v{vol_window}_r{rank_window}_p{int(pctile*100)}_ch{channel}_h{max_hold}_s{int(abs(stop)*100)}_m{memory}"
+    label = (
+        f"{asset}_evcb_v{vol_window}_r{rank_window}_p{int(pctile*100)}_"
+        f"ch{channel}_h{max_hold}_s{int(abs(stop)*100)}_m{memory}_d{entry_delay_days}"
+    )
     nav = capital
     in_pos = False
     entry_px = 0.0
     entry_dt = None
+    signal_dt = None
     held = 0
     peak_px = 0.0
     pos_days = 0
+    pending_entry_i: int | None = None
+    pending_signal_dt = None
     nav_rows = []
     trades: list[dict[str, Any]] = []
 
-    for dt in close.index:
+    for i, dt in enumerate(dates):
         px = float(close.loc[dt])
+
         if in_pos:
             nav *= 1.0 + float(rets.loc[dt])
             held += 1
@@ -139,28 +154,46 @@ def simulate(
                     {
                         "label": label,
                         "asset": asset,
+                        "signal_date": signal_dt.date().isoformat() if signal_dt is not None else "",
                         "entry_date": entry_dt.date().isoformat(),
                         "exit_date": dt.date().isoformat(),
+                        "entry_year": int(entry_dt.year),
+                        "exit_year": int(dt.year),
                         "entry_price": entry_px,
                         "exit_price": px,
                         "return_pct": trade_ret,
                         "hold_days": held,
                         "exit_reason": exit_reason,
+                        "entry_delay_days": entry_delay_days,
                     }
                 )
                 in_pos = False
                 held = 0
                 entry_px = 0.0
                 entry_dt = None
+                signal_dt = None
                 peak_px = 0.0
+                pending_entry_i = None
+                pending_signal_dt = None
 
-        if not in_pos and pd.notna(high.loc[dt]) and bool(compression_recent.loc[dt]) and px > float(high.loc[dt]):
+        if not in_pos and pending_entry_i is not None and i >= pending_entry_i:
             nav *= 1.0 - fee_bps / 10000.0
             in_pos = True
             entry_px = px
             entry_dt = dt
+            signal_dt = pending_signal_dt
             peak_px = px
             held = 0
+            pending_entry_i = None
+            pending_signal_dt = None
+
+        if not in_pos and pending_entry_i is None:
+            signal = pd.notna(high.loc[dt]) and bool(compression_recent.loc[dt]) and px > float(high.loc[dt])
+            if signal:
+                eidx = _entry_index(i, entry_delay_days, len(dates) - 1)
+                if eidx is not None:
+                    pending_entry_i = eidx
+                    pending_signal_dt = dt
 
         nav_rows.append((dt, nav))
 
@@ -183,6 +216,30 @@ def trade_stats(trades: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def yearly_trade_summary(trades: list[dict[str, Any]]) -> pd.DataFrame:
+    if not trades:
+        return pd.DataFrame(columns=["label", "asset", "entry_year", "trade_count", "win_rate_pct", "sum_return_pct", "avg_return_pct", "median_return_pct", "avg_hold_days"])
+    df = pd.DataFrame(trades)
+    rows = []
+    for (label, asset, year), g in df.groupby(["label", "asset", "entry_year"]):
+        rets = g["return_pct"].astype(float)
+        holds = g["hold_days"].astype(float)
+        rows.append(
+            {
+                "label": label,
+                "asset": asset,
+                "entry_year": int(year),
+                "trade_count": int(len(g)),
+                "win_rate_pct": float((rets > 0).mean() * 100.0),
+                "sum_return_pct": float(rets.sum()),
+                "avg_return_pct": float(rets.mean()),
+                "median_return_pct": float(rets.median()),
+                "avg_hold_days": float(holds.mean()),
+            }
+        )
+    return pd.DataFrame(rows).sort_values(["label", "entry_year"])
+
+
 def add_windows(row: dict[str, Any], eq: pd.Series, args: argparse.Namespace) -> dict[str, Any]:
     row["crash_2020_pct"] = window_return(eq, args.crash_2020_start, args.crash_2020_end)
     row["bear_2022_pct"] = window_return(eq, args.bear_2022_start, args.bear_2022_end)
@@ -201,11 +258,11 @@ def rank(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def print_rows(rows: list[dict[str, Any]], limit: int) -> None:
-    print(f"  {'Rank':>4} {'Label':<64} {'Final NAV':>14} {'CAGR%':>9} {'MaxDD%':>9} {'Sharpe':>8} {'Calmar':>8} {'Trades':>7} {'Win%':>8} {'AvgTr%':>8} {'Expo%':>8}")
-    print("  " + "-" * 158)
+    print(f"  {'Rank':>4} {'Label':<67} {'Final NAV':>14} {'CAGR%':>9} {'MaxDD%':>9} {'Sharpe':>8} {'Calmar':>8} {'Trades':>7} {'Win%':>8} {'AvgTr%':>8} {'Expo%':>8}")
+    print("  " + "-" * 162)
     for i, r in enumerate(rows[:limit], start=1):
         print(
-            f"  {i:>4} {r['label']:<64} {fmt_money(r['final_nav']):>14} {fmt_pct(r['cagr_pct']):>9} "
+            f"  {i:>4} {r['label']:<67} {fmt_money(r['final_nav']):>14} {fmt_pct(r['cagr_pct']):>9} "
             f"{fmt_pct(r['max_drawdown_pct']):>9} {r['sharpe']:>8.3f} {r['calmar']:>8.3f} "
             f"{r.get('trade_count', 0):>7} {fmt_pct(r.get('win_rate_pct')):>8} {fmt_pct(r.get('avg_trade_return_pct')):>8} {fmt_pct(r.get('exposure_pct')):>8}"
         )
@@ -227,6 +284,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-holds", nargs="+", type=int, default=[20, 40, 60])
     p.add_argument("--stops", nargs="+", type=float, default=[-0.10, -0.15, -0.20])
     p.add_argument("--memories", nargs="+", type=int, default=[5, 10, 20])
+    p.add_argument("--entry-delays", nargs="+", type=int, default=[0, 1])
     p.add_argument("--top-n", type=int, default=25)
     p.add_argument("--crash-2020-start", default="2020-02-19")
     p.add_argument("--crash-2020-end", default="2020-03-23")
@@ -248,14 +306,13 @@ def main() -> None:
     rows: list[dict[str, Any]] = []
     trades_all: list[dict[str, Any]] = []
 
-    # Benchmarks.
     for sym in args.benchmarks:
         close = prices[sym]
         eq = equity_from_returns(close.pct_change(fill_method=None).fillna(0.0), args.capital, f"{sym.lower()}_bh")
         curves[eq.name] = eq
         row = add_windows(metrics(eq.name, eq, args.capital), eq, args)
         row.update(trade_stats([]))
-        row.update({"asset": sym, "type": "benchmark", "exposure_pct": 100.0})
+        row.update({"asset": sym, "type": "benchmark", "exposure_pct": 100.0, "entry_delay_days": None})
         rows.append(row)
 
     common_idx = None
@@ -267,7 +324,7 @@ def main() -> None:
         curves[eq.name] = eq
         row = add_windows(metrics(eq.name, eq, args.capital), eq, args)
         row.update(trade_stats([]))
-        row.update({"asset": "EQUAL_WEIGHT", "type": "benchmark", "exposure_pct": 100.0})
+        row.update({"asset": "EQUAL_WEIGHT", "type": "benchmark", "exposure_pct": 100.0, "entry_delay_days": None})
         rows.append(row)
 
     for asset in args.assets:
@@ -281,37 +338,42 @@ def main() -> None:
                         for hold in args.max_holds:
                             for stop in args.stops:
                                 for mem in args.memories:
-                                    eq, trades, exposure = simulate(close, asset, vw, rw, pct, ch, hold, stop, mem, args.capital, args.fee_bps)
-                                    curves[eq.name] = eq
-                                    row = add_windows(metrics(eq.name, eq, args.capital), eq, args)
-                                    row.update(
-                                        {
-                                            "asset": asset,
-                                            "type": "evcb",
-                                            "vol_window": vw,
-                                            "rank_window": rw,
-                                            "pctile": pct,
-                                            "channel": ch,
-                                            "max_hold": hold,
-                                            "stop": stop,
-                                            "memory": mem,
-                                            "exposure_pct": exposure,
-                                        }
-                                    )
-                                    row.update(trade_stats(trades))
-                                    rows.append(row)
-                                    trades_all.extend(trades)
+                                    for delay in args.entry_delays:
+                                        eq, trades, exposure = simulate(close, asset, vw, rw, pct, ch, hold, stop, mem, delay, args.capital, args.fee_bps)
+                                        curves[eq.name] = eq
+                                        row = add_windows(metrics(eq.name, eq, args.capital), eq, args)
+                                        row.update(
+                                            {
+                                                "asset": asset,
+                                                "type": "evcb",
+                                                "vol_window": vw,
+                                                "rank_window": rw,
+                                                "pctile": pct,
+                                                "channel": ch,
+                                                "max_hold": hold,
+                                                "stop": stop,
+                                                "memory": mem,
+                                                "entry_delay_days": delay,
+                                                "exposure_pct": exposure,
+                                            }
+                                        )
+                                        row.update(trade_stats(trades))
+                                        rows.append(row)
+                                        trades_all.extend(trades)
 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(curves).to_csv(out / "equity_curves.csv")
     pd.DataFrame(rows).to_csv(out / "results.csv", index=False)
-    pd.DataFrame(trades_all).to_csv(out / "trades.csv", index=False)
+    trades_df = pd.DataFrame(trades_all)
+    trades_df.to_csv(out / "trades.csv", index=False)
+    yearly_trade_summary(trades_all).to_csv(out / "trade_attribution_by_year.csv", index=False)
+
     ranked = rank(rows)
     (out / "summary.json").write_text(json.dumps({"config": vars(args), "results": rows}, indent=2, default=str), encoding="utf-8")
     with (out / "summary.md").open("w", encoding="utf-8") as f:
         f.write("# Equity Volatility Compression Breakout Summary\n\n")
-        f.write("Research-only first-pass equity ETF volatility-compression breakout test.\n\n")
+        f.write("Research-only equity ETF volatility-compression breakout test with delayed-entry audit.\n\n")
         f.write("| Rank | Label | Final NAV | CAGR | MaxDD | Sharpe | Calmar | Trades | Win Rate | Avg Trade | Exposure |\n")
         f.write("|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n")
         for i, r in enumerate(ranked[: args.top_n], start=1):
@@ -320,20 +382,24 @@ def main() -> None:
                 f"{r['sharpe']:.3f} | {r['calmar']:.3f} | {r.get('trade_count', 0)} | {fmt_pct(r.get('win_rate_pct'))} | "
                 f"{fmt_pct(r.get('avg_trade_return_pct'))} | {fmt_pct(r.get('exposure_pct'))} |\n"
             )
-        f.write("\n```text\nRESEARCH ONLY\nNO RUNTIME WORK\nNO BROKER WORK\n```\n")
+        f.write("\nAdditional audit artifacts:\n\n")
+        f.write("```text\ntrades.csv\ntrade_attribution_by_year.csv\n```\n\n")
+        f.write("```text\nRESEARCH ONLY\nNO RUNTIME WORK\nNO BROKER WORK\n```\n")
 
-    print("=" * 150)
-    print("  EQUITY VOL COMPRESSION BREAKOUT — FIRST PASS ALPHA RESEARCH")
-    print("=" * 150)
-    print(f"  Date range : {args.start} -> {args.end}")
-    print(f"  Assets     : {', '.join(args.assets)}")
-    print(f"  Fee bps    : {args.fee_bps:.2f}")
-    print("-" * 150)
+    print("=" * 156)
+    print("  EQUITY VOL COMPRESSION BREAKOUT — MECHANICS AUDIT")
+    print("=" * 156)
+    print(f"  Date range   : {args.start} -> {args.end}")
+    print(f"  Assets       : {', '.join(args.assets)}")
+    print(f"  Fee bps      : {args.fee_bps:.2f}")
+    print(f"  Entry delays : {', '.join(str(x) for x in args.entry_delays)} day(s)")
+    print("-" * 156)
     print_rows(ranked, args.top_n)
-    print("=" * 150)
+    print("=" * 156)
     print(f"  Summary: {out / 'summary.md'}")
     print(f"  Results: {out / 'results.csv'}")
     print(f"  Trades : {out / 'trades.csv'}")
+    print(f"  Yearly : {out / 'trade_attribution_by_year.csv'}")
     print("  Verdict: research output only; review before integration.\n")
 
 
