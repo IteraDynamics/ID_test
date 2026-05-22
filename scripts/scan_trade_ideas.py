@@ -5,7 +5,8 @@ Console-first scanner for actionable, risk-defined trade candidates.
 
 This is not a sleeve backtest and not a research memo generator. It scans the
 available local market data, identifies active or near-active setups, ranks them,
-and writes a simple trade blotter.
+writes a simple trade blotter, and compares the latest scan against the prior
+snapshot when available.
 
 Research/paper only. No runtime, broker, or live execution code is modified.
 """
@@ -17,6 +18,7 @@ import json
 import math
 import sys
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -409,9 +411,7 @@ def consolidate_ideas_by_ticker(raw_ideas: list[TradeIdea]) -> list[TradeIdea]:
     for ticker, ideas in grouped.items():
         ordered = sorted(ideas, key=_sort_key, reverse=True)
         primary = ordered[0]
-        confirmations = []
-        for idea in ordered[1:]:
-            confirmations.append(f"{idea.setup}:{idea.status}:score={idea.score:.1f}")
+        confirmations = [f"{idea.setup}:{idea.status}:score={idea.score:.1f}" for idea in ordered[1:]]
         primary.confirmations = confirmations
         primary.confirmation_count = len(confirmations)
         primary.raw_signal_count = len(ordered)
@@ -436,6 +436,107 @@ def scan_all(prices: dict[str, pd.Series], args: argparse.Namespace) -> tuple[li
     return consolidate_ideas_by_ticker(raw), raw
 
 
+def _idea_key(row: dict[str, Any]) -> str:
+    return str(row.get("ticker", ""))
+
+
+def _load_previous_snapshot(snapshot_dir: Path) -> tuple[Path | None, list[dict[str, Any]]]:
+    files = sorted(snapshot_dir.glob("trade_tickets_*.csv"))
+    if not files:
+        return None, []
+    path = files[-1]
+    try:
+        return path, pd.read_csv(path).to_dict("records")
+    except Exception as exc:
+        print(f"WARN: failed to load previous snapshot {path}: {exc}", file=sys.stderr)
+        return None, []
+
+
+def _change_type(current: dict[str, Any], previous: dict[str, Any] | None, move_threshold_pct: float) -> str:
+    if previous is None:
+        return "new_ticket"
+    prev_status = str(previous.get("status", ""))
+    cur_status = str(current.get("status", ""))
+    if cur_status == "active" and prev_status != "active":
+        return "newly_active"
+    try:
+        prev_dist = abs(float(previous.get("distance_to_trigger_pct")))
+        cur_dist = abs(float(current.get("distance_to_trigger_pct")))
+    except (TypeError, ValueError):
+        return "unchanged"
+    delta = cur_dist - prev_dist
+    if delta <= -move_threshold_pct:
+        return "moved_closer"
+    if delta >= move_threshold_pct:
+        return "moved_farther"
+    if cur_status != prev_status:
+        return "status_changed"
+    return "unchanged"
+
+
+def compare_snapshots(current: list[dict[str, Any]], previous: list[dict[str, Any]], move_threshold_pct: float) -> list[dict[str, Any]]:
+    previous_by_key = {_idea_key(row): row for row in previous}
+    current_by_key = {_idea_key(row): row for row in current}
+    changes: list[dict[str, Any]] = []
+    for row in current:
+        key = _idea_key(row)
+        prev = previous_by_key.get(key)
+        change = _change_type(row, prev, move_threshold_pct)
+        if change == "unchanged":
+            continue
+        prev_dist = None if prev is None else prev.get("distance_to_trigger_pct")
+        prev_status = None if prev is None else prev.get("status")
+        changes.append({
+            "ticker": row.get("ticker"),
+            "bucket": row.get("bucket"),
+            "change": change,
+            "status": row.get("status"),
+            "previous_status": prev_status,
+            "priority": row.get("priority"),
+            "score": row.get("score"),
+            "distance_to_trigger_pct": row.get("distance_to_trigger_pct"),
+            "previous_distance_to_trigger_pct": prev_dist,
+            "setup": row.get("setup"),
+            "close": row.get("close"),
+            "trigger": row.get("trigger"),
+            "stop": row.get("stop"),
+        })
+    for key, prev in previous_by_key.items():
+        if key not in current_by_key:
+            changes.append({
+                "ticker": prev.get("ticker"),
+                "bucket": prev.get("bucket"),
+                "change": "dropped",
+                "status": None,
+                "previous_status": prev.get("status"),
+                "priority": None,
+                "score": None,
+                "distance_to_trigger_pct": None,
+                "previous_distance_to_trigger_pct": prev.get("distance_to_trigger_pct"),
+                "setup": prev.get("setup"),
+                "close": None,
+                "trigger": prev.get("trigger"),
+                "stop": prev.get("stop"),
+            })
+    priority = {"newly_active": 5, "new_ticket": 4, "moved_closer": 3, "status_changed": 2, "moved_farther": 1, "dropped": 0}
+    return sorted(changes, key=lambda x: (priority.get(str(x.get("change")), -1), float(x.get("score") or 0.0)), reverse=True)
+
+
+def write_snapshots(out: Path, rows: list[dict[str, Any]], raw_rows: list[dict[str, Any]], args: argparse.Namespace) -> tuple[Path, Path | None, list[dict[str, Any]]]:
+    snapshot_dir = out / "snapshots"
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    previous_path, previous_rows = _load_previous_snapshot(snapshot_dir)
+    stamp = args.snapshot_id or datetime.now().strftime("%Y%m%d_%H%M%S")
+    current_path = snapshot_dir / f"trade_tickets_{stamp}.csv"
+    raw_path = snapshot_dir / f"raw_signals_{stamp}.csv"
+    pd.DataFrame(rows).to_csv(current_path, index=False)
+    pd.DataFrame(raw_rows).to_csv(raw_path, index=False)
+    latest_path = out / "latest_snapshot_path.txt"
+    latest_path.write_text(str(current_path), encoding="utf-8")
+    changes = compare_snapshots(rows, previous_rows, args.tracking_move_threshold_pct)
+    return current_path, previous_path, changes
+
+
 def _print_section(title: str, ideas: list[TradeIdea], limit: int) -> None:
     print("-" * 194)
     print(f"  {title}")
@@ -457,10 +558,31 @@ def _print_section(title: str, ideas: list[TradeIdea], limit: int) -> None:
         print(f"      Invalid: {idea.invalidation}")
 
 
-def print_ideas(ideas: list[TradeIdea], limit: int, per_bucket: int) -> None:
+def _print_changes(changes: list[dict[str, Any]], limit: int, previous_path: Path | None) -> None:
+    print("-" * 194)
+    print("  TRACKING CHANGES")
+    print("-" * 194)
+    if previous_path is None:
+        print("  No previous snapshot found. Current run saved as the baseline.")
+        return
+    print(f"  Compared against: {previous_path}")
+    if not changes:
+        print("  No material ticket changes versus previous snapshot.")
+        return
+    print(f"  {'#':>3} {'Ticker':<8} {'Change':<16} {'PrevStatus':<18} {'Status':<18} {'Pri':<3} {'Score':>7} {'PrevDist%':>10} {'Dist%':>10} {'Setup':<27}")
+    for i, row in enumerate(changes[:limit], start=1):
+        print(
+            f"  {i:>3} {str(row.get('ticker')):<8} {str(row.get('change')):<16} {str(row.get('previous_status')):<18} "
+            f"{str(row.get('status')):<18} {str(row.get('priority') or ''):<3} {float(row.get('score') or 0.0):>7.1f} "
+            f"{_fmt_pct(row.get('previous_distance_to_trigger_pct')):>10} {_fmt_pct(row.get('distance_to_trigger_pct')):>10} {str(row.get('setup')):<27}"
+        )
+
+
+def print_ideas(ideas: list[TradeIdea], limit: int, per_bucket: int, changes: list[dict[str, Any]], previous_path: Path | None, change_limit: int) -> None:
     print("=" * 194)
     print("  TRADE IDEA RADAR — CONSOLIDATED DESK VIEW")
     print("=" * 194)
+    _print_changes(changes, change_limit, previous_path)
     _print_section("OVERALL TOP TRADE TICKETS", ideas, limit)
     for bucket in BUCKET_ORDER:
         bucket_ideas = [x for x in ideas if x.bucket == bucket]
@@ -491,6 +613,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--momentum-horizon-days", type=int, default=20)
     p.add_argument("--reclaim-horizon-days", type=int, default=30)
     p.add_argument("--reclaim-lookback-days", type=int, default=30)
+    p.add_argument("--snapshot-id", default=None, help="Optional deterministic snapshot id for repeatable testing")
+    p.add_argument("--tracking-move-threshold-pct", type=float, default=0.50)
+    p.add_argument("--change-limit", type=int, default=20)
     return p.parse_args()
 
 
@@ -507,15 +632,23 @@ def main() -> None:
     raw_rows = [asdict(x) for x in raw_ideas]
     pd.DataFrame(rows).to_csv(out / "trade_tickets.csv", index=False)
     pd.DataFrame(raw_rows).to_csv(out / "raw_signals.csv", index=False)
-    (out / "trade_tickets.json").write_text(json.dumps({"config": vars(args), "trade_tickets": rows, "raw_signals": raw_rows}, indent=2), encoding="utf-8")
-    print_ideas(ideas, args.top_n, args.per_bucket)
-    print(f"  Scanned     : {len(prices)} tickers")
-    print(f"  Tickets     : {len(ideas)}")
-    print(f"  Raw signals : {len(raw_ideas)}")
-    print(f"  Tickets CSV : {out / 'trade_tickets.csv'}")
-    print(f"  Raw CSV     : {out / 'raw_signals.csv'}")
-    print(f"  JSON        : {out / 'trade_tickets.json'}")
-    print("  Verdict     : trade radar only; review before any execution.\n")
+    current_snapshot, previous_snapshot, changes = write_snapshots(out, rows, raw_rows, args)
+    pd.DataFrame(changes).to_csv(out / "tracking_changes.csv", index=False)
+    (out / "trade_tickets.json").write_text(
+        json.dumps({"config": vars(args), "trade_tickets": rows, "raw_signals": raw_rows, "tracking_changes": changes}, indent=2),
+        encoding="utf-8",
+    )
+    print_ideas(ideas, args.top_n, args.per_bucket, changes, previous_snapshot, args.change_limit)
+    print(f"  Scanned          : {len(prices)} tickers")
+    print(f"  Tickets          : {len(ideas)}")
+    print(f"  Raw signals      : {len(raw_ideas)}")
+    print(f"  Tracking changes : {len(changes)}")
+    print(f"  Tickets CSV      : {out / 'trade_tickets.csv'}")
+    print(f"  Raw CSV          : {out / 'raw_signals.csv'}")
+    print(f"  Changes CSV      : {out / 'tracking_changes.csv'}")
+    print(f"  Snapshot         : {current_snapshot}")
+    print(f"  JSON             : {out / 'trade_tickets.json'}")
+    print("  Verdict          : trade radar only; review before any execution.\n")
 
 
 if __name__ == "__main__":
