@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """Paper trade ledger for the trade idea radar.
 
-Reads the latest trade_tickets.csv from artifacts/trade_idea_radar, opens paper
-trades from selected active/high-priority tickets, updates open trades using the
-latest local close data, and marks trades as target_hit, stop_hit, expired, or
-still open.
+Reads the latest trade_tickets.csv from artifacts/trade_idea_radar, creates
+pending paper orders from watchlist tickets, opens active paper trades, updates
+open trades using the latest local close data, and marks trades as target_hit,
+stop_hit, expired, or still open.
 
 Research/paper only. No runtime, broker, or live execution code is modified.
 """
@@ -26,8 +26,10 @@ from scripts.scan_trade_ideas import CRYPTO_FILE_MAP
 from scripts.run_state_confirmed_risk_off_sweep import _load_close
 
 
+PENDING_STATUS = "pending"
 OPEN_STATUS = "open"
-CLOSED_STATUSES = {"target_hit", "stop_hit", "expired", "manual_closed"}
+CLOSED_STATUSES = {"target_hit", "stop_hit", "expired", "manual_closed", "cancelled"}
+ACTIVE_STATUSES = {PENDING_STATUS, OPEN_STATUS}
 
 
 def _data_path(data_dir: Path, ticker: str) -> Path:
@@ -58,10 +60,15 @@ def _read_csv(path: Path) -> pd.DataFrame:
     return pd.read_csv(path)
 
 
+def _ticket_status(row: pd.Series) -> str:
+    return str(row.get("status", ""))
+
+
 def _eligible_ticket(row: pd.Series, args: argparse.Namespace) -> bool:
     if str(row.get("direction", "LONG")) != "LONG":
         return False
-    if str(row.get("status", "")) != "active" and not args.open_watchlist:
+    status = _ticket_status(row)
+    if status != "active" and not args.open_watchlist:
         return False
     priority = str(row.get("priority", ""))
     if priority not in set(args.open_priorities):
@@ -83,22 +90,26 @@ def _trade_key(row: pd.Series) -> str:
     ])
 
 
-def _existing_open_keys(ledger: pd.DataFrame) -> set[str]:
+def _existing_active_keys(ledger: pd.DataFrame) -> set[str]:
     if ledger.empty or "status" not in ledger.columns:
         return set()
-    open_rows = ledger[ledger["status"] == OPEN_STATUS]
-    return set(open_rows.get("trade_key", pd.Series(dtype=str)).astype(str))
+    active_rows = ledger[ledger["status"].astype(str).isin(ACTIVE_STATUSES)]
+    return set(active_rows.get("trade_key", pd.Series(dtype=str)).astype(str))
 
 
-def _new_trade_from_ticket(row: pd.Series, run_date: str, data_dir: Path, start: str, end: str, default_notional: float) -> dict[str, Any]:
+def _base_trade_from_ticket(row: pd.Series, run_date: str, data_dir: Path, start: str, end: str, default_notional: float) -> dict[str, Any]:
     ticker = str(row.get("ticker"))
     close_date, close_px = _last_close(data_dir, ticker, start, end)
-    entry_price = close_px if close_px is not None else float(row.get("close"))
+    last_price = close_px if close_px is not None else float(row.get("close"))
+    trigger = float(row.get("trigger"))
     stop = float(row.get("stop"))
     target = float(row.get("target"))
-    notional = default_notional
-    qty = notional / entry_price if entry_price > 0 else 0.0
     horizon_days = int(float(row.get("horizon_days", 20)))
+    ticket_status = _ticket_status(row)
+    should_open_now = ticket_status == "active" or last_price >= trigger
+    entry_price: float | str = last_price if should_open_now else ""
+    qty: float | str = (default_notional / last_price) if should_open_now and last_price > 0 else ""
+    status = OPEN_STATUS if should_open_now else PENDING_STATUS
     return {
         "trade_id": f"{ticker}_{row.get('setup')}_{run_date}_{abs(hash(_trade_key(row))) % 1_000_000}",
         "trade_key": _trade_key(row),
@@ -109,23 +120,28 @@ def _new_trade_from_ticket(row: pd.Series, run_date: str, data_dir: Path, start:
         "setup": row.get("setup"),
         "priority": row.get("priority"),
         "score": row.get("score"),
-        "entry_date": close_date or run_date,
-        "opened_at_run": run_date,
+        "ticket_status_at_creation": ticket_status,
+        "created_at_run": run_date,
+        "pending_since": "" if should_open_now else (close_date or run_date),
+        "trigger": trigger,
+        "entry_date": close_date if should_open_now else "",
+        "opened_at_run": run_date if should_open_now else "",
         "entry_price": entry_price,
         "last_date": close_date or run_date,
-        "last_price": entry_price,
+        "last_price": last_price,
         "stop": stop,
         "target": target,
-        "notional": notional,
+        "notional": default_notional,
         "qty": qty,
         "horizon_days": horizon_days,
+        "days_pending": 0,
         "days_open": 0,
-        "status": OPEN_STATUS,
+        "status": status,
         "exit_date": "",
         "exit_price": "",
         "exit_reason": "",
-        "unrealized_pnl": 0.0,
-        "unrealized_return_pct": 0.0,
+        "unrealized_pnl": 0.0 if should_open_now else "",
+        "unrealized_return_pct": 0.0 if should_open_now else "",
         "realized_pnl": "",
         "realized_return_pct": "",
         "why": row.get("why"),
@@ -133,14 +149,43 @@ def _new_trade_from_ticket(row: pd.Series, run_date: str, data_dir: Path, start:
     }
 
 
-def _update_trade(row: pd.Series, data_dir: Path, start: str, end: str) -> dict[str, Any]:
+def _activate_pending(out: dict[str, Any], close_date: str, last_px: float, run_date: str) -> dict[str, Any]:
+    notional = float(out.get("notional", 0.0))
+    qty = notional / last_px if last_px > 0 else 0.0
+    out.update({
+        "status": OPEN_STATUS,
+        "entry_date": close_date,
+        "opened_at_run": run_date,
+        "entry_price": last_px,
+        "qty": qty,
+        "days_open": 0,
+        "unrealized_pnl": 0.0,
+        "unrealized_return_pct": 0.0,
+    })
+    return out
+
+
+def _update_trade(row: pd.Series, data_dir: Path, start: str, end: str, run_date: str) -> dict[str, Any]:
     out = row.to_dict()
-    if str(out.get("status")) != OPEN_STATUS:
+    status = str(out.get("status"))
+    if status not in ACTIVE_STATUSES:
         return out
+
     ticker = str(out.get("ticker"))
     close_date, last_px = _last_close(data_dir, ticker, start, end)
     if close_date is None or last_px is None:
         return out
+    out["last_date"] = close_date
+    out["last_price"] = last_px
+
+    if status == PENDING_STATUS:
+        pending_since = out.get("pending_since") or out.get("created_at_run") or close_date
+        out["days_pending"] = max(0, int((pd.Timestamp(close_date) - pd.Timestamp(pending_since)).days))
+        trigger = float(out.get("trigger"))
+        if last_px >= trigger:
+            out = _activate_pending(out, close_date, last_px, run_date)
+        return out
+
     entry_price = float(out.get("entry_price"))
     stop = float(out.get("stop"))
     target = float(out.get("target"))
@@ -151,7 +196,7 @@ def _update_trade(row: pd.Series, data_dir: Path, start: str, end: str) -> dict[
     pnl = (last_px - entry_price) * qty
     ret_pct = (last_px / entry_price - 1.0) * 100.0 if entry_price > 0 else 0.0
 
-    status = OPEN_STATUS
+    final_status = OPEN_STATUS
     exit_reason = ""
     exit_price: float | str = ""
     exit_date: str = ""
@@ -159,21 +204,21 @@ def _update_trade(row: pd.Series, data_dir: Path, start: str, end: str) -> dict[
     realized_return_pct: float | str = ""
 
     if last_px <= stop:
-        status = "stop_hit"
+        final_status = "stop_hit"
         exit_reason = "close_at_or_below_stop"
         exit_price = last_px
         exit_date = close_date
         realized_pnl = pnl
         realized_return_pct = ret_pct
     elif last_px >= target:
-        status = "target_hit"
+        final_status = "target_hit"
         exit_reason = "close_at_or_above_target"
         exit_price = last_px
         exit_date = close_date
         realized_pnl = pnl
         realized_return_pct = ret_pct
     elif days_open >= int(float(out.get("horizon_days", 20))):
-        status = "expired"
+        final_status = "expired"
         exit_reason = "horizon_elapsed"
         exit_price = last_px
         exit_date = close_date
@@ -181,15 +226,13 @@ def _update_trade(row: pd.Series, data_dir: Path, start: str, end: str) -> dict[
         realized_return_pct = ret_pct
 
     out.update({
-        "last_date": close_date,
-        "last_price": last_px,
         "days_open": days_open,
-        "status": status,
+        "status": final_status,
         "exit_date": exit_date,
         "exit_price": exit_price,
         "exit_reason": exit_reason,
-        "unrealized_pnl": pnl if status == OPEN_STATUS else "",
-        "unrealized_return_pct": ret_pct if status == OPEN_STATUS else "",
+        "unrealized_pnl": pnl if final_status == OPEN_STATUS else "",
+        "unrealized_return_pct": ret_pct if final_status == OPEN_STATUS else "",
         "realized_pnl": realized_pnl,
         "realized_return_pct": realized_return_pct,
     })
@@ -198,12 +241,14 @@ def _update_trade(row: pd.Series, data_dir: Path, start: str, end: str) -> dict[
 
 def _summarize(ledger: pd.DataFrame) -> dict[str, Any]:
     if ledger.empty:
-        return {"total_trades": 0, "open_trades": 0, "closed_trades": 0}
+        return {"total_trades": 0, "pending_trades": 0, "open_trades": 0, "closed_trades": 0}
     status = ledger.get("status", pd.Series(dtype=str)).astype(str)
-    closed = ledger[status.isin(CLOSED_STATUSES)]
+    pending = ledger[status == PENDING_STATUS]
     open_trades = ledger[status == OPEN_STATUS]
+    closed = ledger[status.isin(CLOSED_STATUSES)]
     summary: dict[str, Any] = {
         "total_trades": int(len(ledger)),
+        "pending_trades": int(len(pending)),
         "open_trades": int(len(open_trades)),
         "closed_trades": int(len(closed)),
     }
@@ -225,33 +270,46 @@ def _summarize(ledger: pd.DataFrame) -> dict[str, Any]:
     return summary
 
 
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _print_ledger(ledger: pd.DataFrame, summary: dict[str, Any], limit: int) -> None:
-    print("=" * 150)
+    print("=" * 160)
     print("  TRADE IDEA RADAR — PAPER LEDGER")
-    print("=" * 150)
+    print("=" * 160)
     print(
-        f"  Total={summary.get('total_trades', 0)}  Open={summary.get('open_trades', 0)}  Closed={summary.get('closed_trades', 0)}  "
+        f"  Total={summary.get('total_trades', 0)}  Pending={summary.get('pending_trades', 0)}  "
+        f"Open={summary.get('open_trades', 0)}  Closed={summary.get('closed_trades', 0)}  "
         f"RealizedPnL={summary.get('total_realized_pnl', 0.0):,.2f}  OpenUPnL={summary.get('open_unrealized_pnl', 0.0):,.2f}"
     )
     if ledger.empty:
         print("  No paper trades in ledger.")
-        print("=" * 150)
+        print("=" * 160)
         return
-    view = ledger.sort_values(["status", "score"], ascending=[True, False]).head(limit)
-    print("-" * 150)
-    print(f"  {'Ticker':<8} {'Status':<12} {'Setup':<27} {'Pri':<3} {'Score':>7} {'Entry':>10} {'Last':>10} {'Stop':>10} {'Target':>10} {'Days':>5} {'Ret%':>8}")
+    status_order = {OPEN_STATUS: 0, PENDING_STATUS: 1, "target_hit": 2, "stop_hit": 3, "expired": 4}
+    view = ledger.copy()
+    view["_status_order"] = view["status"].map(status_order).fillna(9)
+    view = view.sort_values(["_status_order", "score"], ascending=[True, False]).head(limit)
+    print("-" * 160)
+    print(f"  {'Ticker':<8} {'Status':<12} {'Setup':<27} {'Pri':<3} {'Score':>7} {'Entry':>10} {'Last':>10} {'Trigger':>10} {'Stop':>10} {'Target':>10} {'Days':>5} {'Ret%':>8}")
     for _, r in view.iterrows():
-        ret = r.get("unrealized_return_pct") if str(r.get("status")) == OPEN_STATUS else r.get("realized_return_pct")
+        status = str(r.get("status"))
+        ret = r.get("unrealized_return_pct") if status == OPEN_STATUS else r.get("realized_return_pct")
         try:
             ret_s = f"{float(ret):.2f}%"
         except (TypeError, ValueError):
             ret_s = "n/a"
+        days = r.get("days_open") if status == OPEN_STATUS else r.get("days_pending")
         print(
-            f"  {str(r.get('ticker')):<8} {str(r.get('status')):<12} {str(r.get('setup')):<27} {str(r.get('priority')):<3} "
-            f"{float(r.get('score')):>7.1f} {float(r.get('entry_price')):>10.2f} {float(r.get('last_price')):>10.2f} "
-            f"{float(r.get('stop')):>10.2f} {float(r.get('target')):>10.2f} {int(float(r.get('days_open'))):>5} {ret_s:>8}"
+            f"  {str(r.get('ticker')):<8} {status:<12} {str(r.get('setup')):<27} {str(r.get('priority')):<3} "
+            f"{_safe_float(r.get('score')):>7.1f} {_safe_float(r.get('entry_price')):>10.2f} {_safe_float(r.get('last_price')):>10.2f} "
+            f"{_safe_float(r.get('trigger')):>10.2f} {_safe_float(r.get('stop')):>10.2f} {_safe_float(r.get('target')):>10.2f} {int(_safe_float(days)):>5} {ret_s:>8}"
         )
-    print("=" * 150)
+    print("=" * 160)
 
 
 def parse_args() -> argparse.Namespace:
@@ -266,7 +324,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--default-notional", type=float, default=10_000.0)
     p.add_argument("--open-priorities", nargs="+", default=["A", "B"])
     p.add_argument("--min-score", type=float, default=80.0)
-    p.add_argument("--open-watchlist", action="store_true", help="Also open non-active watchlist tickets if priority/score gates pass")
+    p.add_argument("--open-watchlist", action="store_true", help="Create pending paper orders for non-active watchlist tickets if priority/score gates pass")
     p.add_argument("--max-new-trades", type=int, default=10)
     p.add_argument("--print-limit", type=int, default=30)
     return p.parse_args()
@@ -285,10 +343,10 @@ def main() -> None:
     updated_rows = []
     if not ledger.empty:
         for _, row in ledger.iterrows():
-            updated_rows.append(_update_trade(row, Path(args.data_dir), args.start, args.end))
+            updated_rows.append(_update_trade(row, Path(args.data_dir), args.start, args.end, run_date))
     ledger = pd.DataFrame(updated_rows) if updated_rows else pd.DataFrame()
 
-    open_keys = _existing_open_keys(ledger)
+    active_keys = _existing_active_keys(ledger)
     new_rows: list[dict[str, Any]] = []
     if not tickets.empty:
         for _, row in tickets.iterrows():
@@ -297,9 +355,10 @@ def main() -> None:
             if not _eligible_ticket(row, args):
                 continue
             key = _trade_key(row)
-            if key in open_keys:
+            if key in active_keys:
                 continue
-            new_rows.append(_new_trade_from_ticket(row, run_date, Path(args.data_dir), args.start, args.end, args.default_notional))
+            new_rows.append(_base_trade_from_ticket(row, run_date, Path(args.data_dir), args.start, args.end, args.default_notional))
+            active_keys.add(key)
 
     if new_rows:
         ledger = pd.concat([ledger, pd.DataFrame(new_rows)], ignore_index=True) if not ledger.empty else pd.DataFrame(new_rows)
@@ -311,7 +370,7 @@ def main() -> None:
     _print_ledger(ledger, summary, args.print_limit)
     print(f"  Tickets file : {tickets_path}")
     print(f"  Ledger file  : {ledger_path}")
-    print(f"  New trades   : {len(new_rows)}")
+    print(f"  New rows     : {len(new_rows)}")
     print("  Verdict      : PAPER ONLY; no broker/runtime execution.\n")
 
 
