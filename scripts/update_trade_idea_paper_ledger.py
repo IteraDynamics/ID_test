@@ -3,8 +3,8 @@
 
 Reads the latest trade_tickets.csv from artifacts/trade_idea_radar, creates
 pending paper orders from watchlist tickets, opens active paper trades, updates
-open trades using the latest local close data, and marks trades as target_hit,
-stop_hit, expired, or still open.
+open trades using the latest local close data, cancels stale/invalid pending
+orders, and marks open trades as target_hit, stop_hit, expired, or still open.
 
 Research/paper only. No runtime, broker, or live execution code is modified.
 """
@@ -29,7 +29,8 @@ from scripts.run_state_confirmed_risk_off_sweep import _load_close
 
 PENDING_STATUS = "pending"
 OPEN_STATUS = "open"
-CLOSED_STATUSES = {"target_hit", "stop_hit", "expired", "manual_closed", "cancelled"}
+CANCELLED_STATUS = "cancelled"
+CLOSED_STATUSES = {"target_hit", "stop_hit", "expired", "manual_closed", CANCELLED_STATUS}
 ACTIVE_STATUSES = {PENDING_STATUS, OPEN_STATUS}
 
 
@@ -81,7 +82,7 @@ def _eligible_ticket(row: pd.Series, args: argparse.Namespace) -> bool:
     return score >= args.min_score
 
 
-def _trade_key(row: pd.Series) -> str:
+def _trade_key(row: pd.Series | dict[str, Any]) -> str:
     return "|".join([
         str(row.get("ticker", "")),
         str(row.get("setup", "")),
@@ -96,6 +97,12 @@ def _existing_active_keys(ledger: pd.DataFrame) -> set[str]:
         return set()
     active_rows = ledger[ledger["status"].astype(str).isin(ACTIVE_STATUSES)]
     return set(active_rows.get("trade_key", pd.Series(dtype=str)).astype(str))
+
+
+def _tickets_by_key(tickets: pd.DataFrame) -> dict[str, dict[str, Any]]:
+    if tickets.empty:
+        return {}
+    return {_trade_key(row): row.to_dict() for _, row in tickets.iterrows()}
 
 
 def _base_trade_from_ticket(row: pd.Series, run_date: str, data_dir: Path, start: str, end: str, default_notional: float) -> dict[str, Any]:
@@ -145,6 +152,8 @@ def _base_trade_from_ticket(row: pd.Series, run_date: str, data_dir: Path, start
         "unrealized_return_pct": 0.0 if should_open_now else "",
         "realized_pnl": "",
         "realized_return_pct": "",
+        "cancel_date": "",
+        "cancel_reason": "",
         "why": row.get("why"),
         "invalidation": row.get("invalidation"),
     }
@@ -166,7 +175,62 @@ def _activate_pending(out: dict[str, Any], close_date: str, last_px: float, run_
     return out
 
 
-def _update_trade(row: pd.Series, data_dir: Path, start: str, end: str, run_date: str) -> dict[str, Any]:
+def _cancel_pending(out: dict[str, Any], cancel_date: str, reason: str) -> dict[str, Any]:
+    out.update({
+        "status": CANCELLED_STATUS,
+        "cancel_date": cancel_date,
+        "cancel_reason": reason,
+        "exit_date": cancel_date,
+        "exit_reason": reason,
+        "unrealized_pnl": "",
+        "unrealized_return_pct": "",
+    })
+    return out
+
+
+def _pending_cancel_reason(out: dict[str, Any], ticket: dict[str, Any] | None, args: argparse.Namespace) -> str | None:
+    if not args.cancel_stale_pending:
+        return None
+    if ticket is None:
+        return "ticket_missing_from_radar"
+
+    priority = str(ticket.get("priority", ""))
+    if priority not in set(args.open_priorities):
+        return f"priority_below_gate:{priority}"
+
+    try:
+        score = float(ticket.get("score", 0.0))
+    except (TypeError, ValueError):
+        score = 0.0
+    if score < args.min_score:
+        return f"score_below_gate:{score:.1f}"
+
+    try:
+        distance = abs(float(ticket.get("distance_to_trigger_pct", 0.0)))
+    except (TypeError, ValueError):
+        distance = 0.0
+    if distance > args.cancel_pending_if_distance_gt_pct:
+        return f"too_far_from_trigger:{distance:.2f}%"
+
+    try:
+        days_pending = int(float(out.get("days_pending", 0)))
+    except (TypeError, ValueError):
+        days_pending = 0
+    if days_pending > args.cancel_pending_after_days:
+        return f"pending_age_exceeded:{days_pending}d"
+
+    return None
+
+
+def _update_trade(
+    row: pd.Series,
+    data_dir: Path,
+    start: str,
+    end: str,
+    run_date: str,
+    tickets_by_key: dict[str, dict[str, Any]],
+    args: argparse.Namespace,
+) -> dict[str, Any]:
     out = row.to_dict()
     status = str(out.get("status"))
     if status not in ACTIVE_STATUSES:
@@ -184,7 +248,10 @@ def _update_trade(row: pd.Series, data_dir: Path, start: str, end: str, run_date
         out["days_pending"] = max(0, int((pd.Timestamp(close_date) - pd.Timestamp(pending_since)).days))
         trigger = float(out.get("trigger"))
         if last_px >= trigger:
-            out = _activate_pending(out, close_date, last_px, run_date)
+            return _activate_pending(out, close_date, last_px, run_date)
+        reason = _pending_cancel_reason(out, tickets_by_key.get(str(out.get("trade_key"))), args)
+        if reason:
+            return _cancel_pending(out, close_date, reason)
         return out
 
     entry_price = float(out.get("entry_price"))
@@ -242,20 +309,23 @@ def _update_trade(row: pd.Series, data_dir: Path, start: str, end: str, run_date
 
 def _summarize(ledger: pd.DataFrame) -> dict[str, Any]:
     if ledger.empty:
-        return {"total_trades": 0, "pending_trades": 0, "open_trades": 0, "closed_trades": 0}
+        return {"total_trades": 0, "pending_trades": 0, "open_trades": 0, "closed_trades": 0, "cancelled_trades": 0}
     status = ledger.get("status", pd.Series(dtype=str)).astype(str)
     pending = ledger[status == PENDING_STATUS]
     open_trades = ledger[status == OPEN_STATUS]
+    cancelled = ledger[status == CANCELLED_STATUS]
     closed = ledger[status.isin(CLOSED_STATUSES)]
     summary: dict[str, Any] = {
         "total_trades": int(len(ledger)),
         "pending_trades": int(len(pending)),
         "open_trades": int(len(open_trades)),
         "closed_trades": int(len(closed)),
+        "cancelled_trades": int(len(cancelled)),
     }
-    if not closed.empty and "realized_return_pct" in closed.columns:
-        rets = pd.to_numeric(closed["realized_return_pct"], errors="coerce").dropna()
-        pnl = pd.to_numeric(closed["realized_pnl"], errors="coerce").dropna()
+    realized = ledger[status.isin({"target_hit", "stop_hit", "expired", "manual_closed"})]
+    if not realized.empty and "realized_return_pct" in realized.columns:
+        rets = pd.to_numeric(realized["realized_return_pct"], errors="coerce").dropna()
+        pnl = pd.to_numeric(realized["realized_pnl"], errors="coerce").dropna()
         if not rets.empty:
             summary.update({
                 "win_rate_pct": float((rets > 0).mean() * 100.0),
@@ -290,7 +360,7 @@ def _display_price(value: Any) -> str:
 
 
 def _display_return(value: Any, status: str) -> str:
-    if status == PENDING_STATUS:
+    if status in {PENDING_STATUS, CANCELLED_STATUS}:
         return "n/a"
     try:
         if value == "" or pd.isna(value):
@@ -312,35 +382,38 @@ def _trigger_distance_pct(row: pd.Series) -> str:
 
 
 def _print_ledger(ledger: pd.DataFrame, summary: dict[str, Any], limit: int) -> None:
-    print("=" * 172)
+    print("=" * 184)
     print("  TRADE IDEA RADAR — PAPER LEDGER")
-    print("=" * 172)
+    print("=" * 184)
     print(
         f"  Total={summary.get('total_trades', 0)}  Pending={summary.get('pending_trades', 0)}  "
-        f"Open={summary.get('open_trades', 0)}  Closed={summary.get('closed_trades', 0)}  "
+        f"Open={summary.get('open_trades', 0)}  Closed={summary.get('closed_trades', 0)}  Cancelled={summary.get('cancelled_trades', 0)}  "
         f"RealizedPnL={summary.get('total_realized_pnl', 0.0):,.2f}  OpenUPnL={summary.get('open_unrealized_pnl', 0.0):,.2f}"
     )
     if ledger.empty:
         print("  No paper trades in ledger.")
-        print("=" * 172)
+        print("=" * 184)
         return
-    status_order = {OPEN_STATUS: 0, PENDING_STATUS: 1, "target_hit": 2, "stop_hit": 3, "expired": 4}
+    status_order = {OPEN_STATUS: 0, PENDING_STATUS: 1, "target_hit": 2, "stop_hit": 3, "expired": 4, CANCELLED_STATUS: 5}
     view = ledger.copy()
     view["_status_order"] = view["status"].map(status_order).fillna(9)
     view = view.sort_values(["_status_order", "score"], ascending=[True, False]).head(limit)
-    print("-" * 172)
-    print(f"  {'Ticker':<8} {'Status':<12} {'Setup':<27} {'Pri':<3} {'Score':>7} {'Entry':>10} {'Last':>10} {'Trigger':>10} {'TrigDist':>9} {'Stop':>10} {'Target':>10} {'Days':>5} {'Ret%':>8}")
+    print("-" * 184)
+    print(f"  {'Ticker':<8} {'Status':<12} {'Setup':<27} {'Pri':<3} {'Score':>7} {'Entry':>10} {'Last':>10} {'Trigger':>10} {'TrigDist':>9} {'Stop':>10} {'Target':>10} {'Days':>5} {'Ret%':>8} {'Reason':<24}")
     for _, r in view.iterrows():
         status = str(r.get("status"))
         ret = r.get("unrealized_return_pct") if status == OPEN_STATUS else r.get("realized_return_pct")
         ret_s = _display_return(ret, status)
         days = r.get("days_open") if status == OPEN_STATUS else r.get("days_pending")
+        reason = str(r.get("cancel_reason") or r.get("exit_reason") or "")
+        if reason.lower() == "nan":
+            reason = ""
         print(
             f"  {str(r.get('ticker')):<8} {status:<12} {str(r.get('setup')):<27} {str(r.get('priority')):<3} "
             f"{_safe_float(r.get('score')):>7.1f} {_display_price(r.get('entry_price')):>10} {_safe_float(r.get('last_price')):>10.2f} "
-            f"{_safe_float(r.get('trigger')):>10.2f} {_trigger_distance_pct(r):>9} {_safe_float(r.get('stop')):>10.2f} {_safe_float(r.get('target')):>10.2f} {int(_safe_float(days)):>5} {ret_s:>8}"
+            f"{_safe_float(r.get('trigger')):>10.2f} {_trigger_distance_pct(r):>9} {_safe_float(r.get('stop')):>10.2f} {_safe_float(r.get('target')):>10.2f} {int(_safe_float(days)):>5} {ret_s:>8} {reason:<24}"
         )
-    print("=" * 172)
+    print("=" * 184)
 
 
 def parse_args() -> argparse.Namespace:
@@ -358,6 +431,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--open-watchlist", action="store_true", help="Create pending paper orders for non-active watchlist tickets if priority/score gates pass")
     p.add_argument("--max-new-trades", type=int, default=10)
     p.add_argument("--print-limit", type=int, default=30)
+    p.add_argument("--cancel-stale-pending", action="store_true", default=True, help="Cancel pending orders when radar support weakens or ages out")
+    p.add_argument("--no-cancel-stale-pending", dest="cancel_stale_pending", action="store_false")
+    p.add_argument("--cancel-pending-after-days", type=int, default=10)
+    p.add_argument("--cancel-pending-if-distance-gt-pct", type=float, default=3.0)
     return p.parse_args()
 
 
@@ -370,11 +447,12 @@ def main() -> None:
 
     tickets = _read_csv(tickets_path)
     ledger = _read_csv(ledger_path)
+    current_tickets_by_key = _tickets_by_key(tickets)
 
     updated_rows = []
     if not ledger.empty:
         for _, row in ledger.iterrows():
-            updated_rows.append(_update_trade(row, Path(args.data_dir), args.start, args.end, run_date))
+            updated_rows.append(_update_trade(row, Path(args.data_dir), args.start, args.end, run_date, current_tickets_by_key, args))
     ledger = pd.DataFrame(updated_rows) if updated_rows else pd.DataFrame()
 
     active_keys = _existing_active_keys(ledger)
