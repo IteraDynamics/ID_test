@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -272,15 +273,34 @@ def _summarize(ledger: pd.DataFrame) -> dict[str, Any]:
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
     try:
+        if pd.isna(value):
+            return default
         return float(value)
     except (TypeError, ValueError):
         return default
 
 
+def _display_price(value: Any) -> str:
+    try:
+        if value == "" or pd.isna(value):
+            return "pending"
+        return f"{float(value):.2f}"
+    except (TypeError, ValueError):
+        return "pending"
+
+
+def _trigger_distance_pct(row: pd.Series) -> str:
+    last = _safe_float(row.get("last_price"))
+    trigger = _safe_float(row.get("trigger"))
+    if last <= 0 or trigger <= 0:
+        return "n/a"
+    return f"{(trigger / last - 1.0) * 100.0:.2f}%"
+
+
 def _print_ledger(ledger: pd.DataFrame, summary: dict[str, Any], limit: int) -> None:
-    print("=" * 160)
+    print("=" * 172)
     print("  TRADE IDEA RADAR — PAPER LEDGER")
-    print("=" * 160)
+    print("=" * 172)
     print(
         f"  Total={summary.get('total_trades', 0)}  Pending={summary.get('pending_trades', 0)}  "
         f"Open={summary.get('open_trades', 0)}  Closed={summary.get('closed_trades', 0)}  "
@@ -288,14 +308,14 @@ def _print_ledger(ledger: pd.DataFrame, summary: dict[str, Any], limit: int) -> 
     )
     if ledger.empty:
         print("  No paper trades in ledger.")
-        print("=" * 160)
+        print("=" * 172)
         return
     status_order = {OPEN_STATUS: 0, PENDING_STATUS: 1, "target_hit": 2, "stop_hit": 3, "expired": 4}
     view = ledger.copy()
     view["_status_order"] = view["status"].map(status_order).fillna(9)
     view = view.sort_values(["_status_order", "score"], ascending=[True, False]).head(limit)
-    print("-" * 160)
-    print(f"  {'Ticker':<8} {'Status':<12} {'Setup':<27} {'Pri':<3} {'Score':>7} {'Entry':>10} {'Last':>10} {'Trigger':>10} {'Stop':>10} {'Target':>10} {'Days':>5} {'Ret%':>8}")
+    print("-" * 172)
+    print(f"  {'Ticker':<8} {'Status':<12} {'Setup':<27} {'Pri':<3} {'Score':>7} {'Entry':>10} {'Last':>10} {'Trigger':>10} {'TrigDist':>9} {'Stop':>10} {'Target':>10} {'Days':>5} {'Ret%':>8}")
     for _, r in view.iterrows():
         status = str(r.get("status"))
         ret = r.get("unrealized_return_pct") if status == OPEN_STATUS else r.get("realized_return_pct")
@@ -306,10 +326,10 @@ def _print_ledger(ledger: pd.DataFrame, summary: dict[str, Any], limit: int) -> 
         days = r.get("days_open") if status == OPEN_STATUS else r.get("days_pending")
         print(
             f"  {str(r.get('ticker')):<8} {status:<12} {str(r.get('setup')):<27} {str(r.get('priority')):<3} "
-            f"{_safe_float(r.get('score')):>7.1f} {_safe_float(r.get('entry_price')):>10.2f} {_safe_float(r.get('last_price')):>10.2f} "
-            f"{_safe_float(r.get('trigger')):>10.2f} {_safe_float(r.get('stop')):>10.2f} {_safe_float(r.get('target')):>10.2f} {int(_safe_float(days)):>5} {ret_s:>8}"
+            f"{_safe_float(r.get('score')):>7.1f} {_display_price(r.get('entry_price')):>10} {_safe_float(r.get('last_price')):>10.2f} "
+            f"{_safe_float(r.get('trigger')):>10.2f} {_trigger_distance_pct(r):>9} {_safe_float(r.get('stop')):>10.2f} {_safe_float(r.get('target')):>10.2f} {int(_safe_float(days)):>5} {ret_s:>8}"
         )
-    print("=" * 160)
+    print("=" * 172)
 
 
 def parse_args() -> argparse.Namespace:
