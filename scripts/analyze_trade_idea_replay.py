@@ -43,6 +43,15 @@ def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _to_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if pd.isna(value):
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _to_numeric(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
     out = df.copy()
     for col in cols:
@@ -227,7 +236,6 @@ def _print_trade_table(title: str, trades: pd.DataFrame, limit: int, ascending: 
     if trades.empty:
         print("  No realized trades.")
         return
-    cols = ["ticker", "bucket", "setup", "status", "entry_date", "exit_date", "realized_return_pct", "realized_pnl", "days_open", "score"]
     df = trades.sort_values("realized_return_pct", ascending=ascending).head(limit)
     print(f"  {'Ticker':<8} {'Bucket':<24} {'Setup':<27} {'Exit':<11} {'Entry':<11} {'ExitDate':<11} {'Ret%':>9} {'PnL':>13} {'Days':>5} {'Score':>7}")
     for _, row in df.iterrows():
