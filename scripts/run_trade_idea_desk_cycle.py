@@ -22,13 +22,25 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def _run_step(label: str, cmd: list[str], cwd: Path, continue_on_error: bool) -> int:
+def _is_expected_daily_gap_warning(line: str) -> bool:
+    """Suppress expected 1D-bar warnings from shared OHLCV validation."""
+    return line.startswith("WARNING [") and "gaps > 4h detected" in line
+
+
+def _run_step(label: str, cmd: list[str], cwd: Path, continue_on_error: bool, suppress_daily_gap_warnings: bool) -> int:
     print("\n" + "=" * 180)
     print(f"  DESK CYCLE STEP — {label}")
     print("=" * 180)
     print("  " + " ".join(cmd))
     print("-" * 180)
-    proc = subprocess.run(cmd, cwd=str(cwd))
+    proc = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True)
+    for stream in (proc.stdout, proc.stderr):
+        if not stream:
+            continue
+        for line in stream.splitlines():
+            if suppress_daily_gap_warnings and _is_expected_daily_gap_warning(line):
+                continue
+            print(line)
     if proc.returncode != 0:
         print("-" * 180)
         print(f"  STEP FAILED: {label} returned exit code {proc.returncode}")
@@ -62,6 +74,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--skip-scan", action="store_true")
     p.add_argument("--skip-ledger", action="store_true")
     p.add_argument("--skip-events", action="store_true")
+    p.add_argument("--show-daily-gap-warnings", action="store_true", help="Show expected >4h gap warnings from daily bars")
     return p.parse_args()
 
 
@@ -70,6 +83,7 @@ def main() -> None:
     root = _repo_root()
     py = sys.executable
     failures: list[tuple[str, int]] = []
+    suppress_gap_warnings = not args.show_daily_gap_warnings
 
     if not args.skip_scan:
         scan_cmd = [
@@ -84,7 +98,7 @@ def main() -> None:
         ]
         if args.snapshot_id:
             scan_cmd.extend(["--snapshot-id", args.snapshot_id])
-        rc = _run_step("SCAN TRADE IDEAS", scan_cmd, root, args.continue_on_error)
+        rc = _run_step("SCAN TRADE IDEAS", scan_cmd, root, args.continue_on_error, suppress_gap_warnings)
         if rc != 0:
             failures.append(("scan", rc))
             if not args.continue_on_error:
@@ -115,7 +129,7 @@ def main() -> None:
             ledger_cmd.append("--no-cancel-stale-pending")
         if args.run_date:
             ledger_cmd.extend(["--run-date", args.run_date])
-        rc = _run_step("UPDATE PAPER LEDGER", ledger_cmd, root, args.continue_on_error)
+        rc = _run_step("UPDATE PAPER LEDGER", ledger_cmd, root, args.continue_on_error, suppress_gap_warnings)
         if rc != 0:
             failures.append(("ledger", rc))
             if not args.continue_on_error:
@@ -131,7 +145,7 @@ def main() -> None:
             events_cmd.extend(["--snapshot-id", args.snapshot_id])
         if args.run_date:
             events_cmd.extend(["--run-date", args.run_date])
-        rc = _run_step("LOG PAPER EVENTS", events_cmd, root, args.continue_on_error)
+        rc = _run_step("LOG PAPER EVENTS", events_cmd, root, args.continue_on_error, suppress_gap_warnings)
         if rc != 0:
             failures.append(("events", rc))
             if not args.continue_on_error:
