@@ -158,13 +158,7 @@ def _cooldown_active(orders: list[dict[str, Any]], ticker: str, dt: pd.Timestamp
     return False
 
 
-def _constraint_reject_reason(
-    orders: list[dict[str, Any]],
-    row: dict[str, Any],
-    dt: pd.Timestamp,
-    args: argparse.Namespace,
-    include_pending: bool = True,
-) -> str | None:
+def _constraint_reject_reason(orders: list[dict[str, Any]], row: dict[str, Any], dt: pd.Timestamp, args: argparse.Namespace, include_pending: bool = True) -> str | None:
     ticker = str(row.get("ticker"))
     bucket = str(row.get("bucket"))
     notional = float(args.default_notional)
@@ -245,17 +239,7 @@ def _new_pending_order(row: dict[str, Any], dt: pd.Timestamp, last_price: float,
 
 def _activate(order: dict[str, Any], dt: pd.Timestamp, price: float) -> None:
     qty = float(order["notional"]) / price if price > 0 else 0.0
-    order.update({
-        "status": OPEN_STATUS,
-        "entry_date": dt.date().isoformat(),
-        "entry_price": price,
-        "last_date": dt.date().isoformat(),
-        "last_price": price,
-        "qty": qty,
-        "days_open": 0,
-        "unrealized_pnl": 0.0,
-        "unrealized_return_pct": 0.0,
-    })
+    order.update({"status": OPEN_STATUS, "entry_date": dt.date().isoformat(), "entry_price": price, "last_date": dt.date().isoformat(), "last_price": price, "qty": qty, "days_open": 0, "unrealized_pnl": 0.0, "unrealized_return_pct": 0.0})
 
 
 def _close_order(order: dict[str, Any], dt: pd.Timestamp, price: float, status: str, reason: str) -> None:
@@ -263,43 +247,16 @@ def _close_order(order: dict[str, Any], dt: pd.Timestamp, price: float, status: 
     qty = float(order.get("qty") or 0.0)
     pnl = (price - entry) * qty
     ret = (price / entry - 1.0) * 100.0 if entry > 0 else 0.0
-    order.update({
-        "status": status,
-        "last_date": dt.date().isoformat(),
-        "last_price": price,
-        "exit_date": dt.date().isoformat(),
-        "exit_price": price,
-        "exit_reason": reason,
-        "realized_pnl": pnl,
-        "realized_return_pct": ret,
-        "unrealized_pnl": "",
-        "unrealized_return_pct": "",
-    })
+    order.update({"status": status, "last_date": dt.date().isoformat(), "last_price": price, "exit_date": dt.date().isoformat(), "exit_price": price, "exit_reason": reason, "realized_pnl": pnl, "realized_return_pct": ret, "unrealized_pnl": "", "unrealized_return_pct": ""})
 
 
 def _cancel_order(order: dict[str, Any], dt: pd.Timestamp, price: float | None, reason: str) -> None:
-    order.update({
-        "status": CANCELLED_STATUS,
-        "last_date": dt.date().isoformat(),
-        "last_price": order.get("last_price") if price is None else price,
-        "cancel_date": dt.date().isoformat(),
-        "cancel_reason": reason,
-        "exit_date": dt.date().isoformat(),
-        "exit_reason": reason,
-        "unrealized_pnl": "",
-        "unrealized_return_pct": "",
-    })
+    order.update({"status": CANCELLED_STATUS, "last_date": dt.date().isoformat(), "last_price": order.get("last_price") if price is None else price, "cancel_date": dt.date().isoformat(), "cancel_reason": reason, "exit_date": dt.date().isoformat(), "exit_reason": reason, "unrealized_pnl": "", "unrealized_return_pct": ""})
 
 
 def _reject_order(row: dict[str, Any], dt: pd.Timestamp, price: float, reason: str, args: argparse.Namespace) -> dict[str, Any]:
     order = _new_pending_order(row, dt, price, args)
-    order.update({
-        "status": REJECTED_STATUS,
-        "reject_date": dt.date().isoformat(),
-        "reject_reason": reason,
-        "exit_date": dt.date().isoformat(),
-        "exit_reason": reason,
-    })
+    order.update({"status": REJECTED_STATUS, "reject_date": dt.date().isoformat(), "reject_reason": reason, "exit_date": dt.date().isoformat(), "exit_reason": reason})
     return order
 
 
@@ -329,13 +286,7 @@ def _pending_cancel_reason(order: dict[str, Any], ticket: dict[str, Any] | None,
     return None
 
 
-def _update_existing_orders(
-    orders: list[dict[str, Any]],
-    prices: dict[str, pd.Series],
-    dt: pd.Timestamp,
-    current_tickets: dict[str, dict[str, Any]],
-    args: argparse.Namespace,
-) -> list[dict[str, Any]]:
+def _update_existing_orders(orders: list[dict[str, Any]], prices: dict[str, pd.Series], dt: pd.Timestamp, current_tickets: dict[str, dict[str, Any]], args: argparse.Namespace) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
     for order in orders:
         status = str(order.get("status"))
@@ -389,19 +340,12 @@ def _update_existing_orders(
 
 
 def _activation_reject_reason(order: dict[str, Any], orders: list[dict[str, Any]], dt: pd.Timestamp, args: argparse.Namespace) -> str | None:
-    # On activation, the pending order is already in reserved exposure. Apply live open-trade cap only.
     if args.max_open_trades > 0 and len(_open_orders(orders)) >= args.max_open_trades:
         return f"max_open_trades:{args.max_open_trades}"
     return None
 
 
-def _create_new_orders(
-    orders: list[dict[str, Any]],
-    tickets: list[dict[str, Any]],
-    prices: dict[str, pd.Series],
-    dt: pd.Timestamp,
-    args: argparse.Namespace,
-) -> list[dict[str, Any]]:
+def _create_new_orders(orders: list[dict[str, Any]], tickets: list[dict[str, Any]], prices: dict[str, pd.Series], dt: pd.Timestamp, args: argparse.Namespace) -> list[dict[str, Any]]:
     active_keys = {str(o.get("trade_key")) for o in orders if str(o.get("status")) in RESERVED_STATUSES}
     events: list[dict[str, Any]] = []
     new_count = 0
@@ -457,6 +401,48 @@ def _max_drawdown_pct(equity: pd.Series) -> float:
     return float(dd.min() * 100.0)
 
 
+def _portfolio_metrics(daily: pd.DataFrame, args: argparse.Namespace) -> dict[str, float]:
+    if daily.empty or "equity" not in daily.columns:
+        return {}
+    df = daily.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df["equity"] = pd.to_numeric(df["equity"], errors="coerce")
+    df = df.dropna(subset=["date", "equity"]).sort_values("date")
+    if len(df) < 2:
+        return {}
+    equity = df["equity"]
+    returns = equity.pct_change().dropna()
+    downside = returns[returns < 0]
+    start_equity = float(equity.iloc[0])
+    final_equity = float(equity.iloc[-1])
+    elapsed_days = max(1.0, float((df["date"].iloc[-1] - df["date"].iloc[0]).days))
+    years = elapsed_days / 365.25
+    total_return = final_equity / start_equity - 1.0 if start_equity > 0 else 0.0
+    cagr = (final_equity / start_equity) ** (1.0 / years) - 1.0 if start_equity > 0 and years > 0 else 0.0
+    ann = float(args.annualization_days)
+    vol = float(returns.std(ddof=0) * math.sqrt(ann)) if not returns.empty else 0.0
+    mean_return = float(returns.mean()) if not returns.empty else 0.0
+    sharpe = float((mean_return / returns.std(ddof=0)) * math.sqrt(ann)) if len(returns) > 1 and returns.std(ddof=0) > 0 else 0.0
+    downside_std = float(downside.std(ddof=0)) if len(downside) > 1 else 0.0
+    sortino = float((mean_return / downside_std) * math.sqrt(ann)) if downside_std > 0 else 0.0
+    max_dd = _max_drawdown_pct(equity)
+    calmar = float((cagr * 100.0) / abs(max_dd)) if max_dd < 0 else 0.0
+    positive_days = float((returns > 0).mean() * 100.0) if not returns.empty else 0.0
+    return {
+        "elapsed_days": elapsed_days,
+        "years": years,
+        "total_return_pct": total_return * 100.0,
+        "cagr_pct": cagr * 100.0,
+        "annualized_vol_pct": vol * 100.0,
+        "sharpe": sharpe,
+        "sortino": sortino,
+        "calmar": calmar,
+        "positive_day_rate_pct": positive_days,
+        "best_day_pct": float(returns.max() * 100.0) if not returns.empty else 0.0,
+        "worst_day_pct": float(returns.min() * 100.0) if not returns.empty else 0.0,
+    }
+
+
 def _summarize(orders: list[dict[str, Any]], daily: pd.DataFrame, events: pd.DataFrame, args: argparse.Namespace) -> dict[str, Any]:
     ledger = pd.DataFrame(orders)
     if ledger.empty:
@@ -478,41 +464,24 @@ def _summarize(orders: list[dict[str, Any]], daily: pd.DataFrame, events: pd.Dat
     max_pending = int(pd.to_numeric(daily.get("pending", pd.Series(dtype=float)), errors="coerce").max()) if not daily.empty else 0
     max_reserved_exposure = float(pd.to_numeric(daily.get("reserved_exposure", pd.Series(dtype=float)), errors="coerce").max()) if not daily.empty else 0.0
     max_open_exposure = float(pd.to_numeric(daily.get("open_exposure", pd.Series(dtype=float)), errors="coerce").max()) if not daily.empty else 0.0
+    portfolio = _portfolio_metrics(daily, args)
     by_setup = {}
     by_bucket = {}
     if not realized.empty:
         realized = realized.assign(realized_return_pct=pd.to_numeric(realized["realized_return_pct"], errors="coerce"))
         for setup, g in realized.groupby("setup"):
             rs = g["realized_return_pct"].dropna()
-            by_setup[str(setup)] = {
-                "trades": int(len(g)),
-                "win_rate_pct": float((rs > 0).mean() * 100.0) if not rs.empty else 0.0,
-                "avg_return_pct": float(rs.mean()) if not rs.empty else 0.0,
-                "expectancy_pct": float(rs.mean()) if not rs.empty else 0.0,
-            }
+            by_setup[str(setup)] = {"trades": int(len(g)), "win_rate_pct": float((rs > 0).mean() * 100.0) if not rs.empty else 0.0, "avg_return_pct": float(rs.mean()) if not rs.empty else 0.0, "expectancy_pct": float(rs.mean()) if not rs.empty else 0.0}
         for bucket, g in realized.groupby("bucket"):
             rs = g["realized_return_pct"].dropna()
-            by_bucket[str(bucket)] = {
-                "trades": int(len(g)),
-                "win_rate_pct": float((rs > 0).mean() * 100.0) if not rs.empty else 0.0,
-                "avg_return_pct": float(rs.mean()) if not rs.empty else 0.0,
-                "expectancy_pct": float(rs.mean()) if not rs.empty else 0.0,
-            }
+            by_bucket[str(bucket)] = {"trades": int(len(g)), "win_rate_pct": float((rs > 0).mean() * 100.0) if not rs.empty else 0.0, "avg_return_pct": float(rs.mean()) if not rs.empty else 0.0, "expectancy_pct": float(rs.mean()) if not rs.empty else 0.0}
     return {
         "start": args.start,
         "end": args.end,
         "capital": args.capital,
         "default_notional": args.default_notional,
-        "constraints": {
-            "max_open_trades": args.max_open_trades,
-            "max_reserved_trades": args.max_reserved_trades,
-            "max_gross_exposure_pct": args.max_gross_exposure_pct,
-            "max_ticker_exposure_pct": args.max_ticker_exposure_pct,
-            "max_bucket_exposure_pct": args.max_bucket_exposure_pct,
-            "one_trade_per_ticker": args.one_trade_per_ticker,
-            "cooldown_days": args.cooldown_days,
-            "max_new_trades_per_day": args.max_new_trades_per_day,
-        },
+        "annualization_days": args.annualization_days,
+        "constraints": {"max_open_trades": args.max_open_trades, "max_reserved_trades": args.max_reserved_trades, "max_gross_exposure_pct": args.max_gross_exposure_pct, "max_ticker_exposure_pct": args.max_ticker_exposure_pct, "max_bucket_exposure_pct": args.max_bucket_exposure_pct, "one_trade_per_ticker": args.one_trade_per_ticker, "cooldown_days": args.cooldown_days, "max_new_trades_per_day": args.max_new_trades_per_day},
         "total_orders": int(len(ledger)),
         "pending_orders": int((status == PENDING_STATUS).sum()),
         "open_trades": int((status == OPEN_STATUS).sum()),
@@ -531,6 +500,16 @@ def _summarize(orders: list[dict[str, Any]], daily: pd.DataFrame, events: pd.Dat
         "final_equity": final_equity,
         "total_return_pct_on_capital": total_return_pct,
         "max_drawdown_pct_on_equity": _max_drawdown_pct(equity),
+        "cagr_pct": portfolio.get("cagr_pct", 0.0),
+        "annualized_vol_pct": portfolio.get("annualized_vol_pct", 0.0),
+        "sharpe": portfolio.get("sharpe", 0.0),
+        "sortino": portfolio.get("sortino", 0.0),
+        "calmar": portfolio.get("calmar", 0.0),
+        "positive_day_rate_pct": portfolio.get("positive_day_rate_pct", 0.0),
+        "best_day_pct": portfolio.get("best_day_pct", 0.0),
+        "worst_day_pct": portfolio.get("worst_day_pct", 0.0),
+        "elapsed_days": portfolio.get("elapsed_days", 0.0),
+        "years": portfolio.get("years", 0.0),
         "max_open_trades_observed": max_open,
         "max_pending_orders_observed": max_pending,
         "max_reserved_exposure": max_reserved_exposure,
@@ -561,7 +540,11 @@ def _print_summary(summary: dict[str, Any]) -> None:
     print(f"  Realized PnL        : ${summary.get('total_realized_pnl', 0.0):,.2f}")
     print(f"  Final equity        : ${summary.get('final_equity', 0.0):,.2f}")
     print(f"  Return on capital   : {summary.get('total_return_pct_on_capital', 0.0):.2f}%")
+    print(f"  CAGR                : {summary.get('cagr_pct', 0.0):.2f}%")
     print(f"  Max DD on equity    : {summary.get('max_drawdown_pct_on_equity', 0.0):.2f}%")
+    print(f"  Sharpe / Sortino    : {summary.get('sharpe', 0.0):.3f} / {summary.get('sortino', 0.0):.3f}")
+    print(f"  Calmar              : {summary.get('calmar', 0.0):.3f}")
+    print(f"  Ann Vol             : {summary.get('annualized_vol_pct', 0.0):.2f}%")
     print(f"  Max open exposure   : {summary.get('max_open_exposure_pct', 0.0):.2f}%")
     print(f"  Max reserved exp    : {summary.get('max_reserved_exposure_pct', 0.0):.2f}%")
     print("=" * 156)
@@ -577,6 +560,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--out-dir", default="artifacts/trade_idea_replay")
     p.add_argument("--capital", type=float, default=100_000.0)
     p.add_argument("--default-notional", type=float, default=10_000.0)
+    p.add_argument("--annualization-days", type=float, default=365.25)
     p.add_argument("--default-horizon-days", type=int, default=20)
     p.add_argument("--open-watchlist", action="store_true", default=True)
     p.add_argument("--no-open-watchlist", dest="open_watchlist", action="store_false")
@@ -621,16 +605,13 @@ def main() -> None:
     prices = _quiet_load_universe(Path(args.data_dir), args.tickers, args.start, args.end, args.show_loader_warnings)
     if not prices:
         raise SystemExit(f"No data files found in {args.data_dir} for requested tickers")
-
     common_index = sorted(set().union(*[set(s.index) for s in prices.values()]))
     dates = [pd.Timestamp(x) for x in common_index if pd.Timestamp(args.start) <= pd.Timestamp(x) <= pd.Timestamp(args.end)]
     if args.replay_start:
         dates = [d for d in dates if d >= pd.Timestamp(args.replay_start)]
-
     orders: list[dict[str, Any]] = []
     events: list[dict[str, Any]] = []
     daily_rows: list[dict[str, Any]] = []
-
     for i, dt in enumerate(dates, start=1):
         tickets, raw = _scan_tickets_for_date(prices, dt, args)
         ticket_map = _tickets_by_key(tickets)
@@ -639,39 +620,19 @@ def main() -> None:
         status_counts = pd.Series([o.get("status") for o in orders]).value_counts().to_dict() if orders else {}
         reserved_exposure = _reserved_exposure(orders)
         open_exposure = _open_exposure(orders)
-        daily_rows.append({
-            "date": dt.date().isoformat(),
-            "tickets": len(tickets),
-            "raw_signals": len(raw),
-            "orders_total": len(orders),
-            "pending": int(status_counts.get(PENDING_STATUS, 0)),
-            "open": int(status_counts.get(OPEN_STATUS, 0)),
-            "cancelled": int(status_counts.get(CANCELLED_STATUS, 0)),
-            "rejected": int(status_counts.get(REJECTED_STATUS, 0)),
-            "target_hit": int(status_counts.get(TARGET_STATUS, 0)),
-            "stop_hit": int(status_counts.get(STOP_STATUS, 0)),
-            "expired": int(status_counts.get(EXPIRED_STATUS, 0)),
-            "reserved_exposure": reserved_exposure,
-            "reserved_exposure_pct": reserved_exposure / args.capital * 100.0 if args.capital > 0 else 0.0,
-            "open_exposure": open_exposure,
-            "open_exposure_pct": open_exposure / args.capital * 100.0 if args.capital > 0 else 0.0,
-            "equity": _equity_value(args, orders),
-        })
+        daily_rows.append({"date": dt.date().isoformat(), "tickets": len(tickets), "raw_signals": len(raw), "orders_total": len(orders), "pending": int(status_counts.get(PENDING_STATUS, 0)), "open": int(status_counts.get(OPEN_STATUS, 0)), "cancelled": int(status_counts.get(CANCELLED_STATUS, 0)), "rejected": int(status_counts.get(REJECTED_STATUS, 0)), "target_hit": int(status_counts.get(TARGET_STATUS, 0)), "stop_hit": int(status_counts.get(STOP_STATUS, 0)), "expired": int(status_counts.get(EXPIRED_STATUS, 0)), "reserved_exposure": reserved_exposure, "reserved_exposure_pct": reserved_exposure / args.capital * 100.0 if args.capital > 0 else 0.0, "open_exposure": open_exposure, "open_exposure_pct": open_exposure / args.capital * 100.0 if args.capital > 0 else 0.0, "equity": _equity_value(args, orders)})
         if args.progress_every and i % args.progress_every == 0:
             print(f"Replay progress: {i}/{len(dates)} dates processed through {dt.date().isoformat()}")
-
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     ledger = pd.DataFrame(orders)
     daily = pd.DataFrame(daily_rows)
     event_df = pd.DataFrame(events)
     summary = _summarize(orders, daily, event_df, args)
-
     ledger.to_csv(out / "replay_trades.csv", index=False)
     daily.to_csv(out / "replay_daily.csv", index=False)
     event_df.to_csv(out / "replay_events.csv", index=False)
     (out / "replay_summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
-
     _print_summary(summary)
     print(f"  Trades : {out / 'replay_trades.csv'}")
     print(f"  Daily  : {out / 'replay_daily.csv'}")
