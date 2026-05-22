@@ -16,7 +16,7 @@ import argparse
 import json
 import math
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -35,10 +35,7 @@ DEFAULT_UNIVERSE = [
     "BTC-USD", "ETH-USD",
 ]
 
-CRYPTO_FILE_MAP = {
-    "BTC-USD": "BTC-USD_1D.csv",
-    "ETH-USD": "ETH-USD_1D.csv",
-}
+CRYPTO_FILE_MAP = {"BTC-USD": "BTC-USD_1D.csv", "ETH-USD": "ETH-USD_1D.csv"}
 
 BUCKETS = {
     "growth_risk_on": {"QQQ", "SMH", "XLK", "IGV", "XLC", "MTUM", "IWF", "IWM"},
@@ -48,6 +45,7 @@ BUCKETS = {
 }
 
 BUCKET_ORDER = ["growth_risk_on", "macro_rates_commodities", "defensive_quality", "crypto", "other"]
+SETUP_RANK = {"vol_compression_breakout": 3, "momentum_continuation": 2, "trend_reclaim": 1}
 
 
 @dataclass
@@ -78,6 +76,9 @@ class TradeIdea:
     trend_state: str
     why: str
     invalidation: str
+    confirmations: list[str] = field(default_factory=list)
+    confirmation_count: int = 0
+    raw_signal_count: int = 1
 
 
 def _bucket_for(ticker: str) -> str:
@@ -100,14 +101,16 @@ def _trade_type_for(ticker: str, setup: str) -> str:
     return "tactical"
 
 
-def _priority(score: float, status: str, bucket: str) -> str:
-    if status == "active" and score >= 80:
+def _priority(score: float, status: str, bucket: str, confirmation_count: int = 0) -> str:
+    bonus = min(confirmation_count * 2.0, 6.0)
+    adj = score + bonus
+    if status == "active" and adj >= 80:
         return "A"
-    if status in {"active", "trigger_watch_1pct"} and score >= 70:
+    if status in {"active", "trigger_watch_1pct"} and adj >= 70:
         return "B"
-    if bucket == "defensive_quality" and score >= 80:
+    if bucket == "defensive_quality" and adj >= 80:
         return "B"
-    if score >= 60:
+    if adj >= 60:
         return "C"
     return "D"
 
@@ -121,7 +124,6 @@ def _bucket_score_adjustment(ticker: str, setup: str) -> float:
     if bucket == "macro_rates_commodities":
         return 0.0
     if bucket == "defensive_quality":
-        # Valid context signals, but should not crowd out higher-torque ideas.
         return -8.0 if setup == "vol_compression_breakout" else -4.0
     return 0.0
 
@@ -143,9 +145,7 @@ def _fmt_price(value: Any) -> str:
 
 
 def _data_path(data_dir: Path, ticker: str) -> Path:
-    if ticker in CRYPTO_FILE_MAP:
-        return data_dir / CRYPTO_FILE_MAP[ticker]
-    return data_dir / f"{ticker}_1D.csv"
+    return data_dir / CRYPTO_FILE_MAP[ticker] if ticker in CRYPTO_FILE_MAP else data_dir / f"{ticker}_1D.csv"
 
 
 def _load_universe(data_dir: Path, tickers: list[str], start: str, end: str) -> dict[str, pd.Series]:
@@ -156,7 +156,7 @@ def _load_universe(data_dir: Path, tickers: list[str], start: str, end: str) -> 
             continue
         try:
             out[ticker] = _load_close(str(path), ticker, start, end).dropna()
-        except Exception as exc:  # pragma: no cover - scanner should keep going.
+        except Exception as exc:
             print(f"WARN: failed to load {ticker} from {path}: {exc}", file=sys.stderr)
     return out
 
@@ -171,8 +171,7 @@ def _last(series: pd.Series, default: float | None = None) -> float | None:
 def _ret(close: pd.Series, days: int) -> float | None:
     if len(close.dropna()) <= days:
         return None
-    value = close.iloc[-1] / close.iloc[-days - 1] - 1.0
-    return float(value * 100.0)
+    return float((close.iloc[-1] / close.iloc[-days - 1] - 1.0) * 100.0)
 
 
 def _trend_state(close: pd.Series) -> str:
@@ -191,9 +190,7 @@ def _trend_state(close: pd.Series) -> str:
 
 
 def _r_multiple(entry: float, stop: float, target: float) -> float:
-    risk = max(entry - stop, 1e-12)
-    reward = target - entry
-    return float(reward / risk)
+    return float((target - entry) / max(entry - stop, 1e-12))
 
 
 def _vol_rank(close: pd.Series, vol_window: int, rank_window: int) -> pd.Series:
@@ -317,43 +314,21 @@ def scan_vol_compression_breakout(close: pd.Series, ticker: str, args: argparse.
         return ideas
     distance = (trigger / px - 1.0) * 100.0
     recent = bool(compression_recent.iloc[-1])
-    if not recent and distance > args.near_trigger_pct:
-        return ideas
-    if distance > args.near_trigger_pct:
+    if (not recent and distance > args.near_trigger_pct) or distance > args.near_trigger_pct:
         return ideas
     status = _status_from_distance(distance)
     trend = _trend_state(close)
-    score = _score_common(status, trend, distance, vr)
-    if recent:
-        score += 8
+    score = _score_common(status, trend, distance, vr) + (8 if recent else 0)
     channel_stop = float(channel_low)
     wide_stop = px * (1.0 - args.default_stop_pct)
     stop = max(channel_stop, wide_stop) if args.prefer_tighter_stop else min(channel_stop, wide_stop)
-    ideas.append(
-        _make_idea(
-            ticker=ticker,
-            setup="vol_compression_breakout",
-            status=status,
-            score=score,
-            close=px,
-            trigger=float(trigger),
-            stop=float(stop),
-            channel_stop=channel_stop,
-            wide_stop=wide_stop,
-            horizon_days=args.breakout_horizon_days,
-            setup_age_days=None,
-            vol_rank_value=vr,
-            close_series=close,
-            why=(
-                f"Vol rank {_fmt_pct(None if vr is None else vr * 100)}; "
-                f"compression_recent={recent}; price is {_fmt_pct(distance)} from {args.channel_window}d breakout."
-            ),
-            invalidation=(
-                f"Channel stop {_fmt_price(channel_stop)}; wide stop {_fmt_price(wide_stop)}; "
-                f"selected stop {_fmt_price(stop)}."
-            ),
-        )
-    )
+    ideas.append(_make_idea(
+        ticker=ticker, setup="vol_compression_breakout", status=status, score=score, close=px,
+        trigger=float(trigger), stop=float(stop), channel_stop=channel_stop, wide_stop=wide_stop,
+        horizon_days=args.breakout_horizon_days, setup_age_days=None, vol_rank_value=vr, close_series=close,
+        why=f"Vol rank {_fmt_pct(None if vr is None else vr * 100)}; compression_recent={recent}; price is {_fmt_pct(distance)} from {args.channel_window}d breakout.",
+        invalidation=f"Channel stop {_fmt_price(channel_stop)}; wide stop {_fmt_price(wide_stop)}; selected stop {_fmt_price(stop)}.",
+    ))
     return ideas
 
 
@@ -380,28 +355,13 @@ def scan_momentum_continuation(close: pd.Series, ticker: str, args: argparse.Nam
     channel_stop = float(low20)
     wide_stop = px * (1.0 - args.default_stop_pct)
     stop = max(channel_stop, wide_stop) if args.prefer_tighter_stop else min(channel_stop, wide_stop)
-    ideas.append(
-        _make_idea(
-            ticker=ticker,
-            setup="momentum_continuation",
-            status=status,
-            score=score,
-            close=px,
-            trigger=float(high20),
-            stop=float(stop),
-            channel_stop=channel_stop,
-            wide_stop=wide_stop,
-            horizon_days=args.momentum_horizon_days,
-            setup_age_days=None,
-            vol_rank_value=None,
-            close_series=close,
-            why=f"Strong trend: close > SMA50 > SMA200; 20d return {_fmt_pct(r20)}, 63d return {_fmt_pct(r63)}.",
-            invalidation=(
-                f"Channel stop {_fmt_price(channel_stop)}; wide stop {_fmt_price(wide_stop)}; "
-                f"loss of SMA50 support invalidates continuation."
-            ),
-        )
-    )
+    ideas.append(_make_idea(
+        ticker=ticker, setup="momentum_continuation", status=status, score=score, close=px,
+        trigger=float(high20), stop=float(stop), channel_stop=channel_stop, wide_stop=wide_stop,
+        horizon_days=args.momentum_horizon_days, setup_age_days=None, vol_rank_value=None, close_series=close,
+        why=f"Strong trend: close > SMA50 > SMA200; 20d return {_fmt_pct(r20)}, 63d return {_fmt_pct(r63)}.",
+        invalidation=f"Channel stop {_fmt_price(channel_stop)}; wide stop {_fmt_price(wide_stop)}; loss of SMA50 support invalidates continuation.",
+    ))
     return ideas
 
 
@@ -425,50 +385,64 @@ def scan_trend_reclaim(close: pd.Series, ticker: str, args: argparse.Namespace) 
     score = 55.0 + (10.0 if reclaimed else 0.0) + min(max(r63, -10.0), 20.0) * 0.5
     wide_stop = px * (1.0 - args.default_stop_pct)
     stop = max(float(current_sma), wide_stop) if args.prefer_tighter_stop else wide_stop
-    ideas.append(
-        _make_idea(
-            ticker=ticker,
-            setup="trend_reclaim",
-            status=status,
-            score=score,
-            close=px,
-            trigger=float(current_sma),
-            stop=float(stop),
-            channel_stop=float(current_sma),
-            wide_stop=wide_stop,
-            horizon_days=args.reclaim_horizon_days,
-            setup_age_days=None,
-            vol_rank_value=None,
-            close_series=close,
-            why=f"Price is reclaiming/near SMA200 after trading below it in the prior {args.reclaim_lookback_days} days.",
-            invalidation=f"Failed SMA200 reclaim or close below selected stop {_fmt_price(stop)}.",
-        )
-    )
+    ideas.append(_make_idea(
+        ticker=ticker, setup="trend_reclaim", status=status, score=score, close=px,
+        trigger=float(current_sma), stop=float(stop), channel_stop=float(current_sma), wide_stop=wide_stop,
+        horizon_days=args.reclaim_horizon_days, setup_age_days=None, vol_rank_value=None, close_series=close,
+        why=f"Price is reclaiming/near SMA200 after trading below it in the prior {args.reclaim_lookback_days} days.",
+        invalidation=f"Failed SMA200 reclaim or close below selected stop {_fmt_price(stop)}.",
+    ))
     return ideas
 
 
-def _sort_key(idea: TradeIdea) -> tuple[int, float, float]:
+def _sort_key(idea: TradeIdea) -> tuple[int, float, float, int]:
     priority_rank = {"A": 4, "B": 3, "C": 2, "D": 1}.get(idea.priority, 0)
-    return (priority_rank, idea.score, -abs(idea.distance_to_trigger_pct))
+    return (priority_rank, idea.score, -abs(idea.distance_to_trigger_pct), SETUP_RANK.get(idea.setup, 0))
 
 
-def scan_all(prices: dict[str, pd.Series], args: argparse.Namespace) -> list[TradeIdea]:
-    ideas: list[TradeIdea] = []
+def consolidate_ideas_by_ticker(raw_ideas: list[TradeIdea]) -> list[TradeIdea]:
+    grouped: dict[str, list[TradeIdea]] = {}
+    for idea in raw_ideas:
+        grouped.setdefault(idea.ticker, []).append(idea)
+
+    consolidated: list[TradeIdea] = []
+    for ticker, ideas in grouped.items():
+        ordered = sorted(ideas, key=_sort_key, reverse=True)
+        primary = ordered[0]
+        confirmations = []
+        for idea in ordered[1:]:
+            confirmations.append(f"{idea.setup}:{idea.status}:score={idea.score:.1f}")
+        primary.confirmations = confirmations
+        primary.confirmation_count = len(confirmations)
+        primary.raw_signal_count = len(ordered)
+        confirmation_bonus = min(len(confirmations) * 2.0, 6.0)
+        primary.score = round(min(100.0, primary.score + confirmation_bonus), 2)
+        primary.priority = _priority(primary.score, primary.status, primary.bucket, len(confirmations))
+        primary.confidence = _confidence(primary.score)
+        if confirmations:
+            primary.why = f"{primary.why} Confirmations: {'; '.join(confirmations)}."
+        consolidated.append(primary)
+    return sorted(consolidated, key=_sort_key, reverse=True)
+
+
+def scan_all(prices: dict[str, pd.Series], args: argparse.Namespace) -> tuple[list[TradeIdea], list[TradeIdea]]:
+    raw: list[TradeIdea] = []
     for ticker, close in prices.items():
         close = close.dropna()
-        ideas.extend(scan_vol_compression_breakout(close, ticker, args))
-        ideas.extend(scan_momentum_continuation(close, ticker, args))
-        ideas.extend(scan_trend_reclaim(close, ticker, args))
-    return sorted(ideas, key=_sort_key, reverse=True)
+        raw.extend(scan_vol_compression_breakout(close, ticker, args))
+        raw.extend(scan_momentum_continuation(close, ticker, args))
+        raw.extend(scan_trend_reclaim(close, ticker, args))
+    raw = sorted(raw, key=_sort_key, reverse=True)
+    return consolidate_ideas_by_ticker(raw), raw
 
 
 def _print_section(title: str, ideas: list[TradeIdea], limit: int) -> None:
-    print("-" * 182)
+    print("-" * 194)
     print(f"  {title}")
-    print("-" * 182)
+    print("-" * 194)
     print(
-        f"  {'#':>3} {'Ticker':<8} {'Type':<22} {'Setup':<27} {'Status':<18} {'Pri':<3} {'Score':>7} "
-        f"{'Close':>10} {'Trigger':>10} {'Dist%':>8} {'Stop':>10} {'ChanStop':>10} {'Target':>10} {'R':>5}"
+        f"  {'#':>3} {'Ticker':<8} {'Type':<22} {'Primary Setup':<27} {'Status':<18} {'Pri':<3} {'Score':>7} "
+        f"{'Close':>10} {'Trigger':>10} {'Dist%':>8} {'Stop':>10} {'Target':>10} {'R':>5} {'Conf':>4}"
     )
     if not ideas:
         print("  No ideas in this bucket.")
@@ -477,23 +451,22 @@ def _print_section(title: str, ideas: list[TradeIdea], limit: int) -> None:
         print(
             f"  {i:>3} {idea.ticker:<8} {idea.trade_type:<22} {idea.setup:<27} {idea.status:<18} {idea.priority:<3} "
             f"{idea.score:>7.1f} {_fmt_price(idea.close):>10} {_fmt_price(idea.trigger):>10} {_fmt_pct(idea.distance_to_trigger_pct):>8} "
-            f"{_fmt_price(idea.stop):>10} {_fmt_price(idea.channel_stop):>10} {_fmt_price(idea.target):>10} {idea.r_multiple:>5.1f}"
+            f"{_fmt_price(idea.stop):>10} {_fmt_price(idea.target):>10} {idea.r_multiple:>5.1f} {idea.confirmation_count:>4}"
         )
         print(f"      Why: {idea.why}")
         print(f"      Invalid: {idea.invalidation}")
 
 
 def print_ideas(ideas: list[TradeIdea], limit: int, per_bucket: int) -> None:
-    print("=" * 182)
-    print("  TRADE IDEA RADAR — BUCKETED DESK VIEW")
-    print("=" * 182)
-    print("  Best overall:")
-    _print_section("OVERALL TOP IDEAS", ideas, limit)
+    print("=" * 194)
+    print("  TRADE IDEA RADAR — CONSOLIDATED DESK VIEW")
+    print("=" * 194)
+    _print_section("OVERALL TOP TRADE TICKETS", ideas, limit)
     for bucket in BUCKET_ORDER:
         bucket_ideas = [x for x in ideas if x.bucket == bucket]
         if bucket_ideas:
             _print_section(bucket.upper().replace("_", " "), bucket_ideas, per_bucket)
-    print("=" * 182)
+    print("=" * 194)
 
 
 def parse_args() -> argparse.Namespace:
@@ -527,18 +500,22 @@ def main() -> None:
     prices = _load_universe(data_dir, args.tickers, args.start, args.end)
     if not prices:
         raise SystemExit(f"No data files found in {data_dir} for requested tickers")
-    ideas = scan_all(prices, args)
+    ideas, raw_ideas = scan_all(prices, args)
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     rows = [asdict(x) for x in ideas]
-    pd.DataFrame(rows).to_csv(out / "trade_ideas.csv", index=False)
-    (out / "trade_ideas.json").write_text(json.dumps({"config": vars(args), "ideas": rows}, indent=2), encoding="utf-8")
+    raw_rows = [asdict(x) for x in raw_ideas]
+    pd.DataFrame(rows).to_csv(out / "trade_tickets.csv", index=False)
+    pd.DataFrame(raw_rows).to_csv(out / "raw_signals.csv", index=False)
+    (out / "trade_tickets.json").write_text(json.dumps({"config": vars(args), "trade_tickets": rows, "raw_signals": raw_rows}, indent=2), encoding="utf-8")
     print_ideas(ideas, args.top_n, args.per_bucket)
-    print(f"  Scanned : {len(prices)} tickers")
-    print(f"  Ideas   : {len(ideas)}")
-    print(f"  CSV     : {out / 'trade_ideas.csv'}")
-    print(f"  JSON    : {out / 'trade_ideas.json'}")
-    print("  Verdict : trade radar only; review before any execution.\n")
+    print(f"  Scanned     : {len(prices)} tickers")
+    print(f"  Tickets     : {len(ideas)}")
+    print(f"  Raw signals : {len(raw_ideas)}")
+    print(f"  Tickets CSV : {out / 'trade_tickets.csv'}")
+    print(f"  Raw CSV     : {out / 'raw_signals.csv'}")
+    print(f"  JSON        : {out / 'trade_tickets.json'}")
+    print("  Verdict     : trade radar only; review before any execution.\n")
 
 
 if __name__ == "__main__":
