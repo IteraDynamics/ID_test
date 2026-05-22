@@ -52,6 +52,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--min-score", type=float, default=80.0)
     p.add_argument("--max-new-trades", type=int, default=10)
     p.add_argument("--print-limit", type=int, default=30)
+    p.add_argument("--cancel-stale-pending", action="store_true", default=True, help="Cancel pending orders when radar support weakens or ages out")
+    p.add_argument("--no-cancel-stale-pending", dest="cancel_stale_pending", action="store_false")
+    p.add_argument("--cancel-pending-after-days", type=int, default=10)
+    p.add_argument("--cancel-pending-if-distance-gt-pct", type=float, default=3.0)
     p.add_argument("--snapshot-id", default=None, help="Optional deterministic snapshot id passed to scanner and event logger")
     p.add_argument("--run-date", default=None, help="Optional run date passed to ledger/event logger")
     p.add_argument("--continue-on-error", action="store_true")
@@ -98,11 +102,17 @@ def main() -> None:
             "--min-score", str(args.min_score),
             "--max-new-trades", str(args.max_new_trades),
             "--print-limit", str(args.print_limit),
+            "--cancel-pending-after-days", str(args.cancel_pending_after_days),
+            "--cancel-pending-if-distance-gt-pct", str(args.cancel_pending_if_distance_gt_pct),
             "--open-priorities",
             *args.open_priorities,
         ]
         if args.open_watchlist:
             ledger_cmd.append("--open-watchlist")
+        if args.cancel_stale_pending:
+            ledger_cmd.append("--cancel-stale-pending")
+        else:
+            ledger_cmd.append("--no-cancel-stale-pending")
         if args.run_date:
             ledger_cmd.extend(["--run-date", args.run_date])
         rc = _run_step("UPDATE PAPER LEDGER", ledger_cmd, root, args.continue_on_error)
