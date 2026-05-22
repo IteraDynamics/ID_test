@@ -3,10 +3,9 @@
 
 Console-first scanner for actionable, risk-defined trade candidates.
 
-This is not a sleeve backtest and not a research memo generator. It scans the
-available local market data, identifies active or near-active setups, ranks them,
-writes a simple trade blotter, and compares the latest scan against the prior
-snapshot when available.
+Scans local market data, identifies active or near-active setups, consolidates
+raw signals into ticker-level trade tickets, writes a blotter, snapshots each
+run, and compares against the previous snapshot when available.
 
 Research/paper only. No runtime, broker, or live execution code is modified.
 """
@@ -36,18 +35,16 @@ DEFAULT_UNIVERSE = [
     "TLT", "IEF", "GLD", "XLE", "XLF",
     "BTC-USD", "ETH-USD",
 ]
-
 CRYPTO_FILE_MAP = {"BTC-USD": "BTC-USD_1D.csv", "ETH-USD": "ETH-USD_1D.csv"}
-
 BUCKETS = {
     "growth_risk_on": {"QQQ", "SMH", "XLK", "IGV", "XLC", "MTUM", "IWF", "IWM"},
     "defensive_quality": {"USMV", "SPLV", "SCHD", "QUAL", "RSP", "SPY"},
     "macro_rates_commodities": {"TLT", "IEF", "GLD", "XLE", "XLF"},
     "crypto": {"BTC-USD", "ETH-USD"},
 }
-
 BUCKET_ORDER = ["growth_risk_on", "macro_rates_commodities", "defensive_quality", "crypto", "other"]
 SETUP_RANK = {"vol_compression_breakout": 3, "momentum_continuation": 2, "trend_reclaim": 1}
+PRIORITY_RANK = {"A": 4, "B": 3, "C": 2, "D": 1}
 
 
 @dataclass
@@ -104,8 +101,7 @@ def _trade_type_for(ticker: str, setup: str) -> str:
 
 
 def _priority(score: float, status: str, bucket: str, confirmation_count: int = 0) -> str:
-    bonus = min(confirmation_count * 2.0, 6.0)
-    adj = score + bonus
+    adj = score + min(confirmation_count * 2.0, 6.0)
     if status == "active" and adj >= 80:
         return "A"
     if status in {"active", "trigger_watch_1pct"} and adj >= 70:
@@ -123,8 +119,6 @@ def _bucket_score_adjustment(ticker: str, setup: str) -> float:
         return 6.0
     if bucket == "crypto":
         return 4.0
-    if bucket == "macro_rates_commodities":
-        return 0.0
     if bucket == "defensive_quality":
         return -8.0 if setup == "vol_compression_breakout" else -4.0
     return 0.0
@@ -165,9 +159,7 @@ def _load_universe(data_dir: Path, tickers: list[str], start: str, end: str) -> 
 
 def _last(series: pd.Series, default: float | None = None) -> float | None:
     s = series.dropna()
-    if s.empty:
-        return default
-    return float(s.iloc[-1])
+    return default if s.empty else float(s.iloc[-1])
 
 
 def _ret(close: pd.Series, days: int) -> float | None:
@@ -191,10 +183,6 @@ def _trend_state(close: pd.Series) -> str:
     return "downtrend"
 
 
-def _r_multiple(entry: float, stop: float, target: float) -> float:
-    return float((target - entry) / max(entry - stop, 1e-12))
-
-
 def _vol_rank(close: pd.Series, vol_window: int, rank_window: int) -> pd.Series:
     rets = close.pct_change(fill_method=None).fillna(0.0)
     vol = rets.rolling(vol_window, min_periods=vol_window).std() * math.sqrt(252.0)
@@ -209,32 +197,20 @@ def _confidence(score: float) -> str:
     return "low"
 
 
-def _status_from_distance(distance_pct: float, active_if_above: bool = True) -> str:
-    if active_if_above and distance_pct <= 0:
+def _status_from_distance(distance_pct: float) -> str:
+    if distance_pct <= 0:
         return "active"
-    if 0 < distance_pct <= 1.0:
+    if distance_pct <= 1.0:
         return "trigger_watch_1pct"
-    if 1.0 < distance_pct <= 3.0:
+    if distance_pct <= 3.0:
         return "near_trigger_3pct"
     return "watch"
 
 
 def _score_common(status: str, trend: str, distance_pct: float, vol_rank_value: float | None) -> float:
     score = 35.0
-    if status == "active":
-        score += 25
-    elif status == "trigger_watch_1pct":
-        score += 18
-    elif status == "near_trigger_3pct":
-        score += 10
-    if trend == "strong_uptrend":
-        score += 15
-    elif trend == "uptrend":
-        score += 9
-    elif trend == "repairing":
-        score += 3
-    else:
-        score -= 8
+    score += {"active": 25, "trigger_watch_1pct": 18, "near_trigger_3pct": 10}.get(status, 0)
+    score += {"strong_uptrend": 15, "uptrend": 9, "repairing": 3}.get(trend, -8)
     if vol_rank_value is not None:
         if vol_rank_value <= 0.20:
             score += 15
@@ -258,7 +234,6 @@ def _make_idea(
     channel_stop: float | None,
     wide_stop: float | None,
     horizon_days: int,
-    setup_age_days: int | None,
     vol_rank_value: float | None,
     close_series: pd.Series,
     why: str,
@@ -268,11 +243,10 @@ def _make_idea(
     risk = max(close - stop, close * 0.01)
     target = close + 2.0 * risk
     bucket = _bucket_for(ticker)
-    trade_type = _trade_type_for(ticker, setup)
     return TradeIdea(
         ticker=ticker,
         bucket=bucket,
-        trade_type=trade_type,
+        trade_type=_trade_type_for(ticker, setup),
         direction="LONG",
         setup=setup,
         status=status,
@@ -286,9 +260,9 @@ def _make_idea(
         channel_stop=None if channel_stop is None else round(channel_stop, 4),
         wide_stop=None if wide_stop is None else round(wide_stop, 4),
         target=round(target, 4),
-        r_multiple=round(_r_multiple(close, stop, target), 2),
+        r_multiple=2.0,
         horizon_days=horizon_days,
-        setup_age_days=setup_age_days,
+        setup_age_days=None,
         vol_rank=None if vol_rank_value is None else round(vol_rank_value, 4),
         ret_20d_pct=None if _ret(close_series, 20) is None else round(float(_ret(close_series, 20)), 3),
         ret_63d_pct=None if _ret(close_series, 63) is None else round(float(_ret(close_series, 63)), 3),
@@ -300,129 +274,116 @@ def _make_idea(
 
 
 def scan_vol_compression_breakout(close: pd.Series, ticker: str, args: argparse.Namespace) -> list[TradeIdea]:
-    ideas: list[TradeIdea] = []
     if len(close) < max(args.vol_rank_window + args.vol_window, args.channel_window + 5, 220):
-        return ideas
+        return []
     px = float(close.iloc[-1])
     rank = _vol_rank(close, args.vol_window, args.vol_rank_window)
     compressed = rank <= args.compression_pctile
     compression_recent = compressed.rolling(args.compression_memory, min_periods=1).max().fillna(0).astype(bool)
     high = close.shift(1).rolling(args.channel_window, min_periods=args.channel_window).max()
     low = close.shift(1).rolling(args.channel_window, min_periods=args.channel_window).min()
-    trigger = _last(high)
-    channel_low = _last(low)
-    vr = _last(rank)
+    trigger, channel_low, vr = _last(high), _last(low), _last(rank)
     if trigger is None or channel_low is None:
-        return ideas
+        return []
     distance = (trigger / px - 1.0) * 100.0
     recent = bool(compression_recent.iloc[-1])
     if (not recent and distance > args.near_trigger_pct) or distance > args.near_trigger_pct:
-        return ideas
+        return []
     status = _status_from_distance(distance)
-    trend = _trend_state(close)
-    score = _score_common(status, trend, distance, vr) + (8 if recent else 0)
+    score = _score_common(status, _trend_state(close), distance, vr) + (8 if recent else 0)
     channel_stop = float(channel_low)
     wide_stop = px * (1.0 - args.default_stop_pct)
     stop = max(channel_stop, wide_stop) if args.prefer_tighter_stop else min(channel_stop, wide_stop)
-    ideas.append(_make_idea(
+    return [_make_idea(
         ticker=ticker, setup="vol_compression_breakout", status=status, score=score, close=px,
         trigger=float(trigger), stop=float(stop), channel_stop=channel_stop, wide_stop=wide_stop,
-        horizon_days=args.breakout_horizon_days, setup_age_days=None, vol_rank_value=vr, close_series=close,
+        horizon_days=args.breakout_horizon_days, vol_rank_value=vr, close_series=close,
         why=f"Vol rank {_fmt_pct(None if vr is None else vr * 100)}; compression_recent={recent}; price is {_fmt_pct(distance)} from {args.channel_window}d breakout.",
         invalidation=f"Channel stop {_fmt_price(channel_stop)}; wide stop {_fmt_price(wide_stop)}; selected stop {_fmt_price(stop)}.",
-    ))
-    return ideas
+    )]
 
 
 def scan_momentum_continuation(close: pd.Series, ticker: str, args: argparse.Namespace) -> list[TradeIdea]:
-    ideas: list[TradeIdea] = []
     if len(close) < 220:
-        return ideas
+        return []
     px = float(close.iloc[-1])
     high20 = _last(close.shift(1).rolling(20, min_periods=20).max())
     low20 = _last(close.shift(1).rolling(20, min_periods=20).min())
     sma50 = _last(close.rolling(50, min_periods=50).mean())
     sma200 = _last(close.rolling(200, min_periods=200).mean())
     if high20 is None or low20 is None or sma50 is None or sma200 is None:
-        return ideas
-    r20 = _ret(close, 20) or 0.0
-    r63 = _ret(close, 63) or 0.0
+        return []
+    r20, r63 = _ret(close, 20) or 0.0, _ret(close, 63) or 0.0
     if not (px > sma50 > sma200 and r20 > 0 and r63 > 0):
-        return ideas
+        return []
     distance = (high20 / px - 1.0) * 100.0
     if distance > args.near_trigger_pct:
-        return ideas
+        return []
     status = _status_from_distance(distance)
     score = _score_common(status, _trend_state(close), distance, None) + min(max(r63, 0.0), 25.0) * 0.7
     channel_stop = float(low20)
     wide_stop = px * (1.0 - args.default_stop_pct)
     stop = max(channel_stop, wide_stop) if args.prefer_tighter_stop else min(channel_stop, wide_stop)
-    ideas.append(_make_idea(
+    return [_make_idea(
         ticker=ticker, setup="momentum_continuation", status=status, score=score, close=px,
         trigger=float(high20), stop=float(stop), channel_stop=channel_stop, wide_stop=wide_stop,
-        horizon_days=args.momentum_horizon_days, setup_age_days=None, vol_rank_value=None, close_series=close,
+        horizon_days=args.momentum_horizon_days, vol_rank_value=None, close_series=close,
         why=f"Strong trend: close > SMA50 > SMA200; 20d return {_fmt_pct(r20)}, 63d return {_fmt_pct(r63)}.",
         invalidation=f"Channel stop {_fmt_price(channel_stop)}; wide stop {_fmt_price(wide_stop)}; loss of SMA50 support invalidates continuation.",
-    ))
-    return ideas
+    )]
 
 
 def scan_trend_reclaim(close: pd.Series, ticker: str, args: argparse.Namespace) -> list[TradeIdea]:
-    ideas: list[TradeIdea] = []
     if len(close) < 220:
-        return ideas
+        return []
     px = float(close.iloc[-1])
     sma200 = close.rolling(200, min_periods=200).mean()
     current_sma = _last(sma200)
     if current_sma is None:
-        return ideas
+        return []
     was_below_recently = bool(((close.shift(1) < sma200.shift(1)).tail(args.reclaim_lookback_days)).any())
     reclaimed = px > current_sma and was_below_recently
     distance = (current_sma / px - 1.0) * 100.0
     near_reclaim = abs(distance) <= args.near_reclaim_pct
     if not (reclaimed or near_reclaim):
-        return ideas
+        return []
     status = "active" if reclaimed else "reclaim_watch"
     r63 = _ret(close, 63) or 0.0
     score = 55.0 + (10.0 if reclaimed else 0.0) + min(max(r63, -10.0), 20.0) * 0.5
     wide_stop = px * (1.0 - args.default_stop_pct)
     stop = max(float(current_sma), wide_stop) if args.prefer_tighter_stop else wide_stop
-    ideas.append(_make_idea(
+    return [_make_idea(
         ticker=ticker, setup="trend_reclaim", status=status, score=score, close=px,
         trigger=float(current_sma), stop=float(stop), channel_stop=float(current_sma), wide_stop=wide_stop,
-        horizon_days=args.reclaim_horizon_days, setup_age_days=None, vol_rank_value=None, close_series=close,
+        horizon_days=args.reclaim_horizon_days, vol_rank_value=None, close_series=close,
         why=f"Price is reclaiming/near SMA200 after trading below it in the prior {args.reclaim_lookback_days} days.",
         invalidation=f"Failed SMA200 reclaim or close below selected stop {_fmt_price(stop)}.",
-    ))
-    return ideas
+    )]
 
 
 def _sort_key(idea: TradeIdea) -> tuple[int, float, float, int]:
-    priority_rank = {"A": 4, "B": 3, "C": 2, "D": 1}.get(idea.priority, 0)
-    return (priority_rank, idea.score, -abs(idea.distance_to_trigger_pct), SETUP_RANK.get(idea.setup, 0))
+    return (PRIORITY_RANK.get(idea.priority, 0), idea.score, -abs(idea.distance_to_trigger_pct), SETUP_RANK.get(idea.setup, 0))
 
 
 def consolidate_ideas_by_ticker(raw_ideas: list[TradeIdea]) -> list[TradeIdea]:
     grouped: dict[str, list[TradeIdea]] = {}
     for idea in raw_ideas:
         grouped.setdefault(idea.ticker, []).append(idea)
-
-    consolidated: list[TradeIdea] = []
-    for ticker, ideas in grouped.items():
+    out: list[TradeIdea] = []
+    for ideas in grouped.values():
         ordered = sorted(ideas, key=_sort_key, reverse=True)
         primary = ordered[0]
-        confirmations = [f"{idea.setup}:{idea.status}:score={idea.score:.1f}" for idea in ordered[1:]]
+        confirmations = [f"{x.setup}:{x.status}:score={x.score:.1f}" for x in ordered[1:]]
         primary.confirmations = confirmations
         primary.confirmation_count = len(confirmations)
         primary.raw_signal_count = len(ordered)
-        confirmation_bonus = min(len(confirmations) * 2.0, 6.0)
-        primary.score = round(min(100.0, primary.score + confirmation_bonus), 2)
+        primary.score = round(min(100.0, primary.score + min(len(confirmations) * 2.0, 6.0)), 2)
         primary.priority = _priority(primary.score, primary.status, primary.bucket, len(confirmations))
         primary.confidence = _confidence(primary.score)
         if confirmations:
             primary.why = f"{primary.why} Confirmations: {'; '.join(confirmations)}."
-        consolidated.append(primary)
-    return sorted(consolidated, key=_sort_key, reverse=True)
+        out.append(primary)
+    return sorted(out, key=_sort_key, reverse=True)
 
 
 def scan_all(prices: dict[str, pd.Series], args: argparse.Namespace) -> tuple[list[TradeIdea], list[TradeIdea]]:
@@ -455,8 +416,7 @@ def _load_previous_snapshot(snapshot_dir: Path) -> tuple[Path | None, list[dict[
 def _change_type(current: dict[str, Any], previous: dict[str, Any] | None, move_threshold_pct: float) -> str:
     if previous is None:
         return "new_ticket"
-    prev_status = str(previous.get("status", ""))
-    cur_status = str(current.get("status", ""))
+    prev_status, cur_status = str(previous.get("status", "")), str(current.get("status", ""))
     if cur_status == "active" and prev_status != "active":
         return "newly_active"
     try:
@@ -484,18 +444,16 @@ def compare_snapshots(current: list[dict[str, Any]], previous: list[dict[str, An
         change = _change_type(row, prev, move_threshold_pct)
         if change == "unchanged":
             continue
-        prev_dist = None if prev is None else prev.get("distance_to_trigger_pct")
-        prev_status = None if prev is None else prev.get("status")
         changes.append({
             "ticker": row.get("ticker"),
             "bucket": row.get("bucket"),
             "change": change,
             "status": row.get("status"),
-            "previous_status": prev_status,
+            "previous_status": None if prev is None else prev.get("status"),
             "priority": row.get("priority"),
             "score": row.get("score"),
             "distance_to_trigger_pct": row.get("distance_to_trigger_pct"),
-            "previous_distance_to_trigger_pct": prev_dist,
+            "previous_distance_to_trigger_pct": None if prev is None else prev.get("distance_to_trigger_pct"),
             "setup": row.get("setup"),
             "close": row.get("close"),
             "trigger": row.get("trigger"),
@@ -504,25 +462,16 @@ def compare_snapshots(current: list[dict[str, Any]], previous: list[dict[str, An
     for key, prev in previous_by_key.items():
         if key not in current_by_key:
             changes.append({
-                "ticker": prev.get("ticker"),
-                "bucket": prev.get("bucket"),
-                "change": "dropped",
-                "status": None,
-                "previous_status": prev.get("status"),
-                "priority": None,
-                "score": None,
-                "distance_to_trigger_pct": None,
-                "previous_distance_to_trigger_pct": prev.get("distance_to_trigger_pct"),
-                "setup": prev.get("setup"),
-                "close": None,
-                "trigger": prev.get("trigger"),
-                "stop": prev.get("stop"),
+                "ticker": prev.get("ticker"), "bucket": prev.get("bucket"), "change": "dropped",
+                "status": None, "previous_status": prev.get("status"), "priority": None, "score": None,
+                "distance_to_trigger_pct": None, "previous_distance_to_trigger_pct": prev.get("distance_to_trigger_pct"),
+                "setup": prev.get("setup"), "close": None, "trigger": prev.get("trigger"), "stop": prev.get("stop"),
             })
     priority = {"newly_active": 5, "new_ticket": 4, "moved_closer": 3, "status_changed": 2, "moved_farther": 1, "dropped": 0}
     return sorted(changes, key=lambda x: (priority.get(str(x.get("change")), -1), float(x.get("score") or 0.0)), reverse=True)
 
 
-def write_snapshots(out: Path, rows: list[dict[str, Any]], raw_rows: list[dict[str, Any]], args: argparse.Namespace) -> tuple[Path, Path | None, list[dict[str, Any]]]:
+def write_snapshots(out: Path, rows: list[dict[str, Any]], raw_rows: list[dict[str, Any]], args: argparse.Namespace) -> tuple[Path, Path | None, list[dict[str, Any]], bool]:
     snapshot_dir = out / "snapshots"
     snapshot_dir.mkdir(parents=True, exist_ok=True)
     previous_path, previous_rows = _load_previous_snapshot(snapshot_dir)
@@ -531,29 +480,22 @@ def write_snapshots(out: Path, rows: list[dict[str, Any]], raw_rows: list[dict[s
     raw_path = snapshot_dir / f"raw_signals_{stamp}.csv"
     pd.DataFrame(rows).to_csv(current_path, index=False)
     pd.DataFrame(raw_rows).to_csv(raw_path, index=False)
-    latest_path = out / "latest_snapshot_path.txt"
-    latest_path.write_text(str(current_path), encoding="utf-8")
-    changes = compare_snapshots(rows, previous_rows, args.tracking_move_threshold_pct)
-    return current_path, previous_path, changes
+    (out / "latest_snapshot_path.txt").write_text(str(current_path), encoding="utf-8")
+    baseline_created = previous_path is None
+    changes = [] if baseline_created else compare_snapshots(rows, previous_rows, args.tracking_move_threshold_pct)
+    return current_path, previous_path, changes, baseline_created
 
 
 def _print_section(title: str, ideas: list[TradeIdea], limit: int) -> None:
     print("-" * 194)
     print(f"  {title}")
     print("-" * 194)
-    print(
-        f"  {'#':>3} {'Ticker':<8} {'Type':<22} {'Primary Setup':<27} {'Status':<18} {'Pri':<3} {'Score':>7} "
-        f"{'Close':>10} {'Trigger':>10} {'Dist%':>8} {'Stop':>10} {'Target':>10} {'R':>5} {'Conf':>4}"
-    )
+    print(f"  {'#':>3} {'Ticker':<8} {'Type':<22} {'Primary Setup':<27} {'Status':<18} {'Pri':<3} {'Score':>7} {'Close':>10} {'Trigger':>10} {'Dist%':>8} {'Stop':>10} {'Target':>10} {'R':>5} {'Conf':>4}")
     if not ideas:
         print("  No ideas in this bucket.")
         return
     for i, idea in enumerate(ideas[:limit], start=1):
-        print(
-            f"  {i:>3} {idea.ticker:<8} {idea.trade_type:<22} {idea.setup:<27} {idea.status:<18} {idea.priority:<3} "
-            f"{idea.score:>7.1f} {_fmt_price(idea.close):>10} {_fmt_price(idea.trigger):>10} {_fmt_pct(idea.distance_to_trigger_pct):>8} "
-            f"{_fmt_price(idea.stop):>10} {_fmt_price(idea.target):>10} {idea.r_multiple:>5.1f} {idea.confirmation_count:>4}"
-        )
+        print(f"  {i:>3} {idea.ticker:<8} {idea.trade_type:<22} {idea.setup:<27} {idea.status:<18} {idea.priority:<3} {idea.score:>7.1f} {_fmt_price(idea.close):>10} {_fmt_price(idea.trigger):>10} {_fmt_pct(idea.distance_to_trigger_pct):>8} {_fmt_price(idea.stop):>10} {_fmt_price(idea.target):>10} {idea.r_multiple:>5.1f} {idea.confirmation_count:>4}")
         print(f"      Why: {idea.why}")
         print(f"      Invalid: {idea.invalidation}")
 
@@ -571,11 +513,7 @@ def _print_changes(changes: list[dict[str, Any]], limit: int, previous_path: Pat
         return
     print(f"  {'#':>3} {'Ticker':<8} {'Change':<16} {'PrevStatus':<18} {'Status':<18} {'Pri':<3} {'Score':>7} {'PrevDist%':>10} {'Dist%':>10} {'Setup':<27}")
     for i, row in enumerate(changes[:limit], start=1):
-        print(
-            f"  {i:>3} {str(row.get('ticker')):<8} {str(row.get('change')):<16} {str(row.get('previous_status')):<18} "
-            f"{str(row.get('status')):<18} {str(row.get('priority') or ''):<3} {float(row.get('score') or 0.0):>7.1f} "
-            f"{_fmt_pct(row.get('previous_distance_to_trigger_pct')):>10} {_fmt_pct(row.get('distance_to_trigger_pct')):>10} {str(row.get('setup')):<27}"
-        )
+        print(f"  {i:>3} {str(row.get('ticker')):<8} {str(row.get('change')):<16} {str(row.get('previous_status')):<18} {str(row.get('status')):<18} {str(row.get('priority') or ''):<3} {float(row.get('score') or 0.0):>7.1f} {_fmt_pct(row.get('previous_distance_to_trigger_pct')):>10} {_fmt_pct(row.get('distance_to_trigger_pct')):>10} {str(row.get('setup')):<27}")
 
 
 def print_ideas(ideas: list[TradeIdea], limit: int, per_bucket: int, changes: list[dict[str, Any]], previous_path: Path | None, change_limit: int) -> None:
@@ -621,28 +559,24 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    data_dir = Path(args.data_dir)
-    prices = _load_universe(data_dir, args.tickers, args.start, args.end)
+    prices = _load_universe(Path(args.data_dir), args.tickers, args.start, args.end)
     if not prices:
-        raise SystemExit(f"No data files found in {data_dir} for requested tickers")
+        raise SystemExit(f"No data files found in {args.data_dir} for requested tickers")
     ideas, raw_ideas = scan_all(prices, args)
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    rows = [asdict(x) for x in ideas]
-    raw_rows = [asdict(x) for x in raw_ideas]
+    rows, raw_rows = [asdict(x) for x in ideas], [asdict(x) for x in raw_ideas]
     pd.DataFrame(rows).to_csv(out / "trade_tickets.csv", index=False)
     pd.DataFrame(raw_rows).to_csv(out / "raw_signals.csv", index=False)
-    current_snapshot, previous_snapshot, changes = write_snapshots(out, rows, raw_rows, args)
+    current_snapshot, previous_snapshot, changes, baseline_created = write_snapshots(out, rows, raw_rows, args)
     pd.DataFrame(changes).to_csv(out / "tracking_changes.csv", index=False)
-    (out / "trade_tickets.json").write_text(
-        json.dumps({"config": vars(args), "trade_tickets": rows, "raw_signals": raw_rows, "tracking_changes": changes}, indent=2),
-        encoding="utf-8",
-    )
+    (out / "trade_tickets.json").write_text(json.dumps({"config": vars(args), "trade_tickets": rows, "raw_signals": raw_rows, "tracking_changes": changes, "baseline_created": baseline_created}, indent=2), encoding="utf-8")
     print_ideas(ideas, args.top_n, args.per_bucket, changes, previous_snapshot, args.change_limit)
+    tracking_label = "n/a — baseline created" if baseline_created else str(len(changes))
     print(f"  Scanned          : {len(prices)} tickers")
     print(f"  Tickets          : {len(ideas)}")
     print(f"  Raw signals      : {len(raw_ideas)}")
-    print(f"  Tracking changes : {len(changes)}")
+    print(f"  Tracking changes : {tracking_label}")
     print(f"  Tickets CSV      : {out / 'trade_tickets.csv'}")
     print(f"  Raw CSV          : {out / 'raw_signals.csv'}")
     print(f"  Changes CSV      : {out / 'tracking_changes.csv'}")
