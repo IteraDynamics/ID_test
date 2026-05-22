@@ -289,6 +289,20 @@ def _display_price(value: Any) -> str:
         return "pending"
 
 
+def _display_return(value: Any, status: str) -> str:
+    if status == PENDING_STATUS:
+        return "n/a"
+    try:
+        if value == "" or pd.isna(value):
+            return "n/a"
+        v = float(value)
+        if math.isnan(v):
+            return "n/a"
+        return f"{v:.2f}%"
+    except (TypeError, ValueError):
+        return "n/a"
+
+
 def _trigger_distance_pct(row: pd.Series) -> str:
     last = _safe_float(row.get("last_price"))
     trigger = _safe_float(row.get("trigger"))
@@ -319,10 +333,7 @@ def _print_ledger(ledger: pd.DataFrame, summary: dict[str, Any], limit: int) -> 
     for _, r in view.iterrows():
         status = str(r.get("status"))
         ret = r.get("unrealized_return_pct") if status == OPEN_STATUS else r.get("realized_return_pct")
-        try:
-            ret_s = f"{float(ret):.2f}%"
-        except (TypeError, ValueError):
-            ret_s = "n/a"
+        ret_s = _display_return(ret, status)
         days = r.get("days_open") if status == OPEN_STATUS else r.get("days_pending")
         print(
             f"  {str(r.get('ticker')):<8} {status:<12} {str(r.get('setup')):<27} {str(r.get('priority')):<3} "
