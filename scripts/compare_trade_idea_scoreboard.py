@@ -8,11 +8,12 @@ This script turns the trade idea research loop into a scoreboard:
     - QQQ buy-and-hold
     - BTC buy-and-hold
     - ETH buy-and-hold
-    - BTC/ETH 50/50 buy-and-hold, daily rebalanced by mark-to-market weights
+    - BTC/ETH 50/50 buy-and-hold
+    - the same benchmarks scaled to the drawdown of the best radar candidate
 
 The goal is not to make a strategy look good. The goal is to answer the
 capital-allocation question: does this candidate deserve attention versus the
-obvious alternatives?
+obvious alternatives at comparable risk?
 
 Research/paper only. No runtime, broker, or live execution code is modified.
 """
@@ -65,9 +66,50 @@ def _fmt(value: Any, digits: int = 2) -> str:
         return "n/a"
 
 
-def _candidate_summary_to_row(summary: dict[str, Any], source_path: Path) -> dict[str, Any]:
+def _normalize_daily_equity_frame(df: pd.DataFrame) -> pd.Series:
+    cols = {str(c).lower().strip(): c for c in df.columns}
+    date_col = None
+    for key in ["date", "dt", "timestamp", "time", "datetime"]:
+        if key in cols:
+            date_col = cols[key]
+            break
+    if date_col is None:
+        date_col = df.columns[0]
+
+    equity_col = None
+    for key in [
+        "equity",
+        "portfolio_equity",
+        "account_equity",
+        "final_equity",
+        "ending_equity",
+        "total_equity",
+        "nav",
+    ]:
+        if key in cols:
+            equity_col = cols[key]
+            break
+
+    if equity_col is None:
+        numeric_cols = [c for c in df.columns if c != date_col and pd.api.types.is_numeric_dtype(df[c])]
+        if not numeric_cols:
+            raise ValueError(f"Could not identify equity column; columns={list(df.columns)}")
+        equity_col = numeric_cols[-1]
+
+    out = df[[date_col, equity_col]].copy()
+    out.columns = ["date", "equity"]
+    out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.tz_localize(None)
+    out["equity"] = pd.to_numeric(out["equity"], errors="coerce")
+    out = out.dropna(subset=["date", "equity"]).sort_values("date")
+    out = out.drop_duplicates(subset=["date"], keep="last")
+    if out.empty:
+        return pd.Series(dtype=float)
+    return out.set_index("date")["equity"]
+
+
+def _candidate_summary_to_row(summary: dict[str, Any], source_path: Path, start: str, end: str, capital: float) -> dict[str, Any]:
     name = summary.get("scenario") or source_path.parent.name
-    return {
+    row = {
         "name": name,
         "type": "trade_radar",
         "universe": summary.get("universe"),
@@ -88,6 +130,25 @@ def _candidate_summary_to_row(summary: dict[str, Any], source_path: Path) -> dic
         "final_equity": summary.get("final_equity"),
         "source": str(source_path),
     }
+
+    daily_path = source_path.parent / "replay_daily.csv"
+    if daily_path.exists() and daily_path.stat().st_size > 0:
+        equity = _normalize_daily_equity_frame(pd.read_csv(daily_path))
+        if not equity.empty:
+            equity = equity[(equity.index >= pd.to_datetime(start)) & (equity.index <= pd.to_datetime(end))]
+            daily_metrics = _equity_metrics(equity, capital)
+            for key in [
+                "best_month_pct",
+                "worst_month_pct",
+                "best_year_pct",
+                "worst_year_pct",
+                "positive_day_rate_pct",
+                "years",
+            ]:
+                if key in daily_metrics:
+                    row[key] = daily_metrics[key]
+            row["daily_equity_source"] = str(daily_path)
+    return row
 
 
 def _normalize_price_frame(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
@@ -131,7 +192,6 @@ def _load_price(data_dir: Path, ticker: str) -> pd.DataFrame:
         if path.exists():
             return _normalize_price_frame(pd.read_csv(path), ticker)
 
-    # Fallback: search one level deep for a file that starts with or contains ticker.
     safe = ticker.lower().replace("-", "").replace("_", "")
     for path in sorted(data_dir.glob("*.csv")):
         stem = path.stem.lower().replace("-", "").replace("_", "")
@@ -237,7 +297,55 @@ def _combo_5050_row(data_dir: Path, tickers: list[str], start: str, end: str, ca
     return row, equity
 
 
-def _load_trade_radar_candidates(risk_sweep_dir: Path, candidates: list[str]) -> list[dict[str, Any]]:
+def _equity_from_scaled_returns(base_equity: pd.Series, capital: float, leverage: float) -> pd.Series:
+    returns = base_equity.pct_change().fillna(0.0) * leverage
+    return capital * (1.0 + returns).cumprod()
+
+
+def _scale_to_target_drawdown(base_equity: pd.Series, target_dd_pct: float, capital: float, max_leverage: float = 5.0) -> tuple[pd.Series, float]:
+    target = abs(float(target_dd_pct))
+    if target <= 0:
+        return base_equity.copy(), 1.0
+
+    lo, hi = 0.0, max_leverage
+    best_equity = base_equity.copy()
+    best_lev = 1.0
+    for _ in range(40):
+        mid = (lo + hi) / 2.0
+        candidate = _equity_from_scaled_returns(base_equity, capital, mid)
+        maxdd = abs(_equity_metrics(candidate, capital).get("maxdd_pct", float("nan")))
+        if math.isnan(maxdd):
+            break
+        if maxdd <= target:
+            best_equity = candidate
+            best_lev = mid
+            lo = mid
+        else:
+            hi = mid
+    return best_equity, best_lev
+
+
+def _scaled_benchmark_row(name: str, base_equity: pd.Series, target_dd_pct: float, capital: float) -> tuple[dict[str, Any], pd.Series]:
+    equity, leverage = _scale_to_target_drawdown(base_equity, target_dd_pct, capital)
+    metrics = _equity_metrics(equity, capital)
+    row = {
+        "name": f"{name}__scaled_to_{abs(target_dd_pct):.2f}dd",
+        "type": "benchmark_scaled",
+        "universe": name.replace("_buy_hold", ""),
+        "risk_band": "scaled_to_best_radar_dd",
+        "ticker_count": None,
+        "benchmark_leverage": leverage,
+        "target_dd_pct": -abs(target_dd_pct),
+        "win_rate_pct": None,
+        "expectancy_pct": None,
+        "realized_trades": None,
+        "source": "derived_from_benchmark_equity",
+    }
+    row.update(metrics)
+    return row, equity.rename(row["name"])
+
+
+def _load_trade_radar_candidates(risk_sweep_dir: Path, candidates: list[str], start: str, end: str, capital: float) -> list[dict[str, Any]]:
     rows = []
     for scenario in candidates:
         summary_path = risk_sweep_dir / scenario / "replay_summary.json"
@@ -245,7 +353,7 @@ def _load_trade_radar_candidates(risk_sweep_dir: Path, candidates: list[str]) ->
         if not summary:
             rows.append({"name": scenario, "type": "trade_radar", "source": str(summary_path), "error": "missing_summary"})
             continue
-        rows.append(_candidate_summary_to_row(summary, summary_path))
+        rows.append(_candidate_summary_to_row(summary, summary_path, start, end, capital))
     return rows
 
 
@@ -258,26 +366,46 @@ def _score_sort(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _print_scoreboard(df: pd.DataFrame) -> None:
-    print("\n" + "=" * 188)
+    print("\n" + "=" * 198)
     print("  TRADE IDEA SCOREBOARD — STRATEGY VS BENCHMARKS")
-    print("=" * 188)
+    print("=" * 198)
     if df.empty:
         print("  No rows.")
         return
 
     view = _score_sort(df)
     print(
-        f"  {'Name':<49} {'Type':<13} {'CAGR':>8} {'Ret':>8} {'MaxDD':>8} "
+        f"  {'Name':<61} {'Type':<17} {'CAGR':>8} {'Ret':>8} {'MaxDD':>8} "
         f"{'Sharpe':>8} {'Sortino':>8} {'Calmar':>8} {'AnnVol':>8} {'WorstM':>8} {'WorstY':>8} {'WorstD':>8}"
     )
     for _, r in view.iterrows():
         print(
-            f"  {str(r.get('name')):<49} {str(r.get('type')):<13} "
+            f"  {str(r.get('name')):<61} {str(r.get('type')):<17} "
             f"{_fmt(r.get('cagr_pct')):>8} {_fmt(r.get('total_return_pct')):>8} {_fmt(r.get('maxdd_pct')):>8} "
             f"{_fmt(r.get('sharpe'), 3):>8} {_fmt(r.get('sortino'), 3):>8} {_fmt(r.get('calmar'), 3):>8} "
             f"{_fmt(r.get('ann_vol_pct')):>8} {_fmt(r.get('worst_month_pct')):>8} {_fmt(r.get('worst_year_pct')):>8} {_fmt(r.get('worst_day_pct')):>8}"
         )
-    print("=" * 188)
+    print("=" * 198)
+
+
+def _print_scaled_benchmarks(df: pd.DataFrame) -> None:
+    scaled = _score_sort(df[df["type"] == "benchmark_scaled"])
+    if scaled.empty:
+        return
+    print("\n" + "=" * 198)
+    print("  RISK-NORMALIZED BENCHMARKS — SCALED TO BEST RADAR DRAWDOWN")
+    print("=" * 198)
+    print(
+        f"  {'Name':<61} {'Lev':>7} {'CAGR':>8} {'Ret':>8} {'MaxDD':>8} "
+        f"{'Sharpe':>8} {'Sortino':>8} {'Calmar':>8} {'AnnVol':>8}"
+    )
+    for _, r in scaled.iterrows():
+        print(
+            f"  {str(r.get('name')):<61} {_fmt(r.get('benchmark_leverage'), 3):>7} "
+            f"{_fmt(r.get('cagr_pct')):>8} {_fmt(r.get('total_return_pct')):>8} {_fmt(r.get('maxdd_pct')):>8} "
+            f"{_fmt(r.get('sharpe'), 3):>8} {_fmt(r.get('sortino'), 3):>8} {_fmt(r.get('calmar'), 3):>8} {_fmt(r.get('ann_vol_pct')):>8}"
+        )
+    print("=" * 198)
 
 
 def _print_trade_radar_vs_benchmarks(df: pd.DataFrame) -> None:
@@ -285,25 +413,33 @@ def _print_trade_radar_vs_benchmarks(df: pd.DataFrame) -> None:
         return
     trade = _score_sort(df[df["type"] == "trade_radar"])
     bench = _score_sort(df[df["type"] == "benchmark"])
+    scaled = _score_sort(df[df["type"] == "benchmark_scaled"])
     if trade.empty or bench.empty:
         return
 
     best_trade = trade.iloc[0]
     best_bench = bench.iloc[0]
-    print("\n" + "=" * 188)
+    print("\n" + "=" * 198)
     print("  DECISION SNAPSHOT")
-    print("=" * 188)
+    print("=" * 198)
     print(
-        f"  Best trade radar by Calmar : {best_trade.get('name')} | "
+        f"  Best trade radar by Calmar       : {best_trade.get('name')} | "
         f"CAGR={_fmt(best_trade.get('cagr_pct'))}% MaxDD={_fmt(best_trade.get('maxdd_pct'))}% "
         f"Sharpe={_fmt(best_trade.get('sharpe'), 3)} Calmar={_fmt(best_trade.get('calmar'), 3)}"
     )
     print(
-        f"  Best benchmark by Calmar   : {best_bench.get('name')} | "
+        f"  Best raw benchmark by Calmar     : {best_bench.get('name')} | "
         f"CAGR={_fmt(best_bench.get('cagr_pct'))}% MaxDD={_fmt(best_bench.get('maxdd_pct'))}% "
         f"Sharpe={_fmt(best_bench.get('sharpe'), 3)} Calmar={_fmt(best_bench.get('calmar'), 3)}"
     )
-    print("=" * 188)
+    if not scaled.empty:
+        best_scaled = scaled.iloc[0]
+        print(
+            f"  Best scaled benchmark by Calmar  : {best_scaled.get('name')} | "
+            f"CAGR={_fmt(best_scaled.get('cagr_pct'))}% MaxDD={_fmt(best_scaled.get('maxdd_pct'))}% "
+            f"Sharpe={_fmt(best_scaled.get('sharpe'), 3)} Calmar={_fmt(best_scaled.get('calmar'), 3)}"
+        )
+    print("=" * 198)
 
 
 def parse_args() -> argparse.Namespace:
@@ -317,6 +453,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--candidates", nargs="+", default=DEFAULT_CANDIDATES)
     p.add_argument("--benchmarks", nargs="+", default=DEFAULT_BENCHMARKS)
     p.add_argument("--skip-btc-eth-5050", action="store_true")
+    p.add_argument("--skip-scaled-benchmarks", action="store_true")
+    p.add_argument("--scaled-benchmark-target-dd-pct", type=float, default=None, help="Optional absolute target max drawdown for scaled benchmarks. Defaults to best radar Calmar candidate's MaxDD.")
     return p.parse_args()
 
 
@@ -328,18 +466,32 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rows = []
-    rows.extend(_load_trade_radar_candidates(risk_sweep_dir, args.candidates))
+    rows.extend(_load_trade_radar_candidates(risk_sweep_dir, args.candidates, args.start, args.end, args.capital))
 
     equity_curves = {}
+    benchmark_equities = {}
     for ticker in args.benchmarks:
         row, equity = _buy_hold_row(data_dir, ticker, args.start, args.end, args.capital)
         rows.append(row)
         equity_curves[row["name"]] = equity.rename(row["name"])
+        benchmark_equities[row["name"]] = equity
 
     if not args.skip_btc_eth_5050 and "BTC-USD" in args.benchmarks and "ETH-USD" in args.benchmarks:
         row, equity = _combo_5050_row(data_dir, ["BTC-USD", "ETH-USD"], args.start, args.end, args.capital, "BTC_ETH_50_50_buy_hold")
         rows.append(row)
         equity_curves[row["name"]] = equity.rename(row["name"])
+        benchmark_equities[row["name"]] = equity
+
+    if not args.skip_scaled_benchmarks:
+        trade_df = _score_sort(pd.DataFrame([r for r in rows if r.get("type") == "trade_radar"]))
+        target_dd = args.scaled_benchmark_target_dd_pct
+        if target_dd is None and not trade_df.empty:
+            target_dd = abs(_to_float(trade_df.iloc[0].get("maxdd_pct")))
+        if target_dd and not math.isnan(float(target_dd)) and float(target_dd) > 0:
+            for name, equity in benchmark_equities.items():
+                row, scaled_equity = _scaled_benchmark_row(name, equity, float(target_dd), args.capital)
+                rows.append(row)
+                equity_curves[row["name"]] = scaled_equity
 
     df = pd.DataFrame(rows)
     df.to_csv(out_dir / "strategy_scoreboard.csv", index=False)
@@ -348,6 +500,7 @@ def main() -> None:
         pd.concat(equity_curves.values(), axis=1).to_csv(out_dir / "benchmark_equity_curves.csv")
 
     _print_scoreboard(df)
+    _print_scaled_benchmarks(df)
     _print_trade_radar_vs_benchmarks(df)
     print(f"  Scoreboard CSV : {out_dir / 'strategy_scoreboard.csv'}")
     print(f"  Scoreboard JSON: {out_dir / 'strategy_scoreboard.json'}")
