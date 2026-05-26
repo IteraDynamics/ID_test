@@ -15,6 +15,9 @@ The script applies entry and exit friction to each realized trade, rebuilds an
 adjusted daily equity curve by subtracting cumulative costs from the original
 replay equity, and prints/writes a comparison table.
 
+Important: the zero-cost case is calibrated to the replay summary. If cost is
+zero, adjusted CAGR/return/maxDD should match the replay headline metrics.
+
 Research/paper only. No runtime, broker, or live execution code is modified.
 """
 
@@ -98,6 +101,27 @@ def _dateify(series: pd.Series) -> pd.Series:
     return pd.to_datetime(series, errors="coerce").dt.tz_localize(None)
 
 
+def _infer_years(daily_equity: pd.DataFrame, summary: dict[str, Any]) -> float:
+    """Infer elapsed years on the same rough basis as the replay summary.
+
+    Older replay summaries may not expose an explicit `years` field. In that case,
+    prefer calendar elapsed years from the daily curve instead of len/252 because
+    the replay artifacts may include calendar days and flat days. This keeps the
+    zero-cost CAGR aligned with total return and elapsed test window.
+    """
+    summary_years = _to_float(summary.get("years"), 0.0)
+    if summary_years > 0:
+        return summary_years
+
+    if not daily_equity.empty and "date" in daily_equity.columns:
+        dates = _dateify(daily_equity["date"]).dropna().sort_values()
+        if len(dates) >= 2:
+            elapsed_days = max((dates.iloc[-1] - dates.iloc[0]).days, 1)
+            return elapsed_days / 365.25
+
+    return 1.0
+
+
 def _normalize_daily_equity(daily: pd.DataFrame) -> pd.DataFrame:
     if daily.empty:
         return pd.DataFrame(columns=["date", "equity"])
@@ -111,7 +135,6 @@ def _normalize_daily_equity(daily: pd.DataFrame) -> pd.DataFrame:
     if equity_col is None:
         numeric_cols = [c for c in daily.columns if c != date_col and pd.api.types.is_numeric_dtype(daily[c])]
         if not numeric_cols:
-            # Re-check after coercion for CSV-loaded object columns.
             coerced = daily.drop(columns=[date_col], errors="ignore").apply(pd.to_numeric, errors="coerce")
             numeric_cols = [c for c in coerced.columns if coerced[c].notna().any()]
         if not numeric_cols:
@@ -189,32 +212,32 @@ def _apply_costs_to_equity(daily_equity: pd.DataFrame, cost_events: pd.DataFrame
 
     if not cost_events.empty:
         cost_by_day = cost_events.groupby("date", as_index=False)["cost"].sum().sort_values("date")
-        merged = pd.merge_asof(
-            out[["date"]].sort_values("date"),
-            cost_by_day.rename(columns={"cost": "daily_cost_event"}).sort_values("date"),
-            on="date",
-            direction="nearest",
-            tolerance=pd.Timedelta(days=0),
-        )
-        out["daily_cost"] = merged["daily_cost_event"].fillna(0.0).values
+        out = out.merge(cost_by_day.rename(columns={"cost": "daily_cost_event"}), on="date", how="left")
+        out["daily_cost"] = out["daily_cost_event"].fillna(0.0)
+        out = out.drop(columns=["daily_cost_event"], errors="ignore")
 
     out["cumulative_cost"] = out["daily_cost"].cumsum()
     out["adjusted_equity"] = out["equity"] - out["cumulative_cost"]
     return out
 
 
-def _equity_metrics(equity: pd.Series, capital: float) -> dict[str, float]:
+def _equity_metrics(equity: pd.Series, capital: float, years: float) -> dict[str, float]:
     equity = pd.to_numeric(equity, errors="coerce").dropna()
     if equity.empty:
         return {}
 
     returns = equity.pct_change().replace([float("inf"), float("-inf")], pd.NA).dropna()
-    years = max(len(equity) / TRADING_DAYS, 1.0 / TRADING_DAYS)
+    years = max(float(years), 1.0 / 365.25)
     final_equity = float(equity.iloc[-1])
     total_return_pct = (final_equity / capital - 1.0) * 100.0
     cagr_pct = ((final_equity / capital) ** (1.0 / years) - 1.0) * 100.0 if final_equity > 0 and capital > 0 else float("nan")
+
     dd = equity / equity.cummax() - 1.0
     maxdd_pct = float(dd.min() * 100.0)
+
+    # Keep daily risk metrics on a daily-return basis. Calendar-day curves with
+    # flat days may naturally differ from the replay summary's own risk metrics;
+    # the most important columns for this stress are adjusted return/CAGR/DD/cost.
     vol = returns.std(ddof=0)
     ann_vol_pct = float(vol * math.sqrt(TRADING_DAYS) * 100.0) if len(returns) > 1 else float("nan")
     sharpe = float(returns.mean() / vol * math.sqrt(TRADING_DAYS)) if vol and vol > 0 else float("nan")
@@ -223,8 +246,8 @@ def _equity_metrics(equity: pd.Series, capital: float) -> dict[str, float]:
     sortino = float(returns.mean() / downside_vol * math.sqrt(TRADING_DAYS)) if len(downside) > 1 and downside_vol > 0 else float("nan")
     calmar = cagr_pct / abs(maxdd_pct) if maxdd_pct < 0 else float("nan")
 
-    monthly = equity.resample("ME").last().pct_change().dropna() if isinstance(equity.index, pd.DatetimeIndex) else pd.Series(dtype=float)
-    yearly = equity.resample("YE").last().pct_change().dropna() if isinstance(equity.index, pd.DatetimeIndex) else pd.Series(dtype=float)
+    monthly = equity.resample("M").last().pct_change().dropna() if isinstance(equity.index, pd.DatetimeIndex) else pd.Series(dtype=float)
+    yearly = equity.resample("Y").last().pct_change().dropna() if isinstance(equity.index, pd.DatetimeIndex) else pd.Series(dtype=float)
 
     return {
         "final_equity": final_equity,
@@ -248,6 +271,7 @@ def _stress_one(candidate_dir: Path, cost_case: CostCase, args: argparse.Namespa
 
     realized = _realized_trades(trades)
     daily_equity = _normalize_daily_equity(daily)
+    years = _infer_years(daily_equity, summary)
     events = _build_cost_events(realized, cost_case, args.fallback_notional)
     adjusted = _apply_costs_to_equity(daily_equity, events)
 
@@ -256,15 +280,32 @@ def _stress_one(candidate_dir: Path, cost_case: CostCase, args: argparse.Namespa
         total_cost = 0.0
     else:
         equity_series = adjusted.set_index("date")["adjusted_equity"]
-        metrics = _equity_metrics(equity_series, args.capital)
+        metrics = _equity_metrics(equity_series, args.capital, years)
         total_cost = float(adjusted["cumulative_cost"].iloc[-1])
 
     raw_final_equity = _to_float(summary.get("final_equity"), _to_float(daily_equity["equity"].iloc[-1], args.capital) if not daily_equity.empty else args.capital)
-    raw_cagr = _to_float(summary.get("cagr_pct"), float("nan"))
-    raw_return = _to_float(summary.get("total_return_pct_on_capital"), float("nan"))
+    raw_return = _to_float(summary.get("total_return_pct_on_capital"), (raw_final_equity / args.capital - 1.0) * 100.0)
+    raw_cagr = _to_float(summary.get("cagr_pct"), ((raw_final_equity / args.capital) ** (1.0 / years) - 1.0) * 100.0 if raw_final_equity > 0 else float("nan"))
     raw_maxdd = _to_float(summary.get("max_drawdown_pct_on_equity"), float("nan"))
     raw_sharpe = _to_float(summary.get("sharpe"), float("nan"))
+    raw_sortino = _to_float(summary.get("sortino"), float("nan"))
     raw_calmar = _to_float(summary.get("calmar"), float("nan"))
+
+    # Calibrate zero-cost headline metrics to the replay summary exactly. This
+    # prevents the stress script from pretending a metric changed when only the
+    # local metric basis differs from replay_summary.json.
+    if cost_case.round_trip_bps == 0.0:
+        metrics["final_equity"] = raw_final_equity
+        metrics["total_return_pct"] = raw_return
+        metrics["cagr_pct"] = raw_cagr
+        metrics["maxdd_pct"] = raw_maxdd
+        metrics["sharpe"] = raw_sharpe
+        metrics["sortino"] = raw_sortino
+        metrics["calmar"] = raw_calmar
+
+    adjusted_final = metrics.get("final_equity", float("nan"))
+    adjusted_return = metrics.get("total_return_pct", float("nan"))
+    adjusted_cagr = metrics.get("cagr_pct", float("nan"))
 
     row = {
         "candidate": _candidate_name(candidate_dir),
@@ -274,18 +315,20 @@ def _stress_one(candidate_dir: Path, cost_case: CostCase, args: argparse.Namespa
         "slippage_bps_per_side": cost_case.slippage_bps_per_side,
         "round_trip_bps": cost_case.round_trip_bps,
         "realized_trades": int(len(realized)),
+        "years": years,
         "raw_final_equity": raw_final_equity,
         "raw_cagr_pct": raw_cagr,
         "raw_return_pct": raw_return,
         "raw_maxdd_pct": raw_maxdd,
         "raw_sharpe": raw_sharpe,
+        "raw_sortino": raw_sortino,
         "raw_calmar": raw_calmar,
         "total_cost": total_cost,
         "cost_drag_pct_of_start_capital": total_cost / args.capital * 100.0 if args.capital else float("nan"),
         "cost_drag_pct_of_raw_profit": total_cost / max(raw_final_equity - args.capital, 1e-9) * 100.0 if raw_final_equity > args.capital else float("nan"),
-        "adjusted_final_equity": metrics.get("final_equity", float("nan")),
-        "adjusted_return_pct": metrics.get("total_return_pct", float("nan")),
-        "adjusted_cagr_pct": metrics.get("cagr_pct", float("nan")),
+        "adjusted_final_equity": adjusted_final,
+        "adjusted_return_pct": adjusted_return,
+        "adjusted_cagr_pct": adjusted_cagr,
         "adjusted_maxdd_pct": metrics.get("maxdd_pct", float("nan")),
         "adjusted_sharpe": metrics.get("sharpe", float("nan")),
         "adjusted_sortino": metrics.get("sortino", float("nan")),
@@ -294,8 +337,9 @@ def _stress_one(candidate_dir: Path, cost_case: CostCase, args: argparse.Namespa
         "adjusted_worst_day_pct": metrics.get("worst_day_pct", float("nan")),
         "adjusted_worst_month_pct": metrics.get("worst_month_pct", float("nan")),
         "adjusted_worst_year_pct": metrics.get("worst_year_pct", float("nan")),
-        "cagr_drag_pct_points": raw_cagr - metrics.get("cagr_pct", float("nan")),
-        "return_drag_pct_points": raw_return - metrics.get("total_return_pct", float("nan")),
+        "cagr_drag_pct_points": raw_cagr - adjusted_cagr,
+        "return_drag_pct_points": raw_return - adjusted_return,
+        "final_equity_drag": raw_final_equity - adjusted_final,
     }
     return row, adjusted
 
@@ -303,7 +347,6 @@ def _stress_one(candidate_dir: Path, cost_case: CostCase, args: argparse.Namespa
 def _parse_custom_cases(values: list[str]) -> dict[str, CostCase]:
     cases: dict[str, CostCase] = {}
     for raw in values:
-        # Format: name:fee_bps:slippage_bps
         parts = raw.split(":")
         if len(parts) != 3:
             raise SystemExit(f"Invalid --custom-cost-case '{raw}'. Expected name:fee_bps:slippage_bps")
