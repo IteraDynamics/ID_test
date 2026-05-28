@@ -18,6 +18,29 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 import run_core_allocator_risk_contribution_sweep as base
 
 
+_ORIGINAL_RUN_POLICY = base._run_policy
+
+
+def _run_policy_with_policy_column(
+    spec: base.RiskContributionSpec,
+    prices,
+    capital: float,
+    fee_bps: float,
+):
+    """Keep compact-runner summary rows compatible with base reporting.
+
+    The base `_run_policy` stores the strategy name under the dataclass-derived
+    `name` field, while the downstream report builder expects a `policy` column.
+    Daily equity and weight outputs already use `policy`; this wrapper normalizes
+    the summary row too so top-N filtering and CSV generation do not fail late
+    with `KeyError: 'policy'` after the sweep has already run.
+    """
+
+    daily, weights, row = _ORIGINAL_RUN_POLICY(spec, prices, capital, fee_bps)
+    row["policy"] = str(row.get("policy") or row.get("name") or spec.name)
+    return daily, weights, row
+
+
 def _compact_specs(available: list[str], fast: bool, rebalance: str) -> list[base.RiskContributionSpec]:
     """Return a small focused grid around the currently plausible region.
 
@@ -122,6 +145,7 @@ def _compact_specs(available: list[str], fast: bool, rebalance: str) -> list[bas
     return specs
 
 
+base._run_policy = _run_policy_with_policy_column
 base._build_specs = _compact_specs
 
 if __name__ == "__main__":
