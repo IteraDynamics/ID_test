@@ -142,10 +142,16 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--btc-data", required=True)
     p.add_argument("--eth-data", default=None)
+    p.add_argument("--spy-data", default=None,
+                   help="Path to SPY daily OHLCV CSV (enables equity sleeve)")
+    p.add_argument("--qqq-data", default=None,
+                   help="Path to QQQ daily OHLCV CSV")
     p.add_argument("--capital", type=float, default=100_000.0)
-    p.add_argument("--trend-weight", type=float, default=0.60)
-    p.add_argument("--hedge-weight", type=float, default=0.20)
-    p.add_argument("--mr-weight",    type=float, default=0.20)
+    p.add_argument("--trend-weight",  type=float, default=0.60)
+    p.add_argument("--hedge-weight",  type=float, default=0.20)
+    p.add_argument("--mr-weight",     type=float, default=0.20)
+    p.add_argument("--equity-weight", type=float, default=0.0,
+                   help="Fraction of capital to equity SMA175 sleeve")
     # Walk-forward window
     p.add_argument("--data-start",  default="2019-01-01",
                    help="Start of the full data window (IS begins here)")
@@ -155,6 +161,7 @@ def parse_args() -> argparse.Namespace:
                    help="End of the last OOS fold")
     # Cost model
     p.add_argument("--fee",                  type=float, default=0.0006)
+    p.add_argument("--equity-fee",           type=float, default=0.0001)
     p.add_argument("--base-slippage",        type=float, default=3.0)
     p.add_argument("--slippage-vol-factor",  type=float, default=50.0)
     p.add_argument("--cooldown",             type=int,   default=2)
@@ -174,6 +181,7 @@ def _run_fold(
     args: argparse.Namespace,
     base_cfg: ExecutionConfig,
     mr_cfg: ExecutionConfig,
+    equity_cfg: ExecutionConfig | None = None,
 ) -> dict:
     """Run OOS slice of one fold. Returns metrics dict."""
     log.info("Fold %s — OOS %s → %s", fold.label, fold.oos_start, fold.oos_end)
@@ -194,7 +202,12 @@ def _run_fold(
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw_oos, spec)
-        cfg = mr_cfg if spec.family == "mr" else base_cfg
+        if spec.family == "equity":
+            cfg = equity_cfg or base_cfg
+        elif spec.family == "mr":
+            cfg = mr_cfg
+        else:
+            cfg = base_cfg
         results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold)
 
     fund_nav  = _combine_curves(results, specs)
@@ -339,6 +352,10 @@ def main() -> None:
     raw_full["BTC"] = _load_asset(args.btc_data, "BTC", args.data_start, None)
     if args.eth_data:
         raw_full["ETH"] = _load_asset(args.eth_data, "ETH", args.data_start, None)
+    if getattr(args, "spy_data", None):
+        raw_full["SPY"] = _load_asset(args.spy_data, "SPY", args.data_start, None)
+    if getattr(args, "qqq_data", None):
+        raw_full["QQQ"] = _load_asset(args.qqq_data, "QQQ", args.data_start, None)
 
     # ── Build folds ────────────────────────────────────────────────────
     folds = _build_folds(args.data_start, args.oos_start, args.oos_end)
@@ -361,11 +378,17 @@ def main() -> None:
         slippage_vol_factor=args.slippage_vol_factor,
         cooldown_bars=args.mr_cooldown,
     )
+    equity_cfg = ExecutionConfig(
+        taker_fee_rate=getattr(args, "equity_fee", 0.0001),
+        base_slippage_bps=0.5,
+        slippage_vol_factor=5.0,
+        cooldown_bars=1,
+    )
 
     # ── Run folds ──────────────────────────────────────────────────────
     fold_results: list[dict] = []
     for fold in folds:
-        fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg)
+        fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg)
         fold_results.append(fr)
         if fr and "perf" in fr:
             p = fr["perf"]

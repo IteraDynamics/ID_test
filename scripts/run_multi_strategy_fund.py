@@ -86,6 +86,7 @@ from research.strategies import REGISTRY as STRATEGY_REGISTRY
 TREND_STRATEGY   = "trend_following_v8_ecap60_add80"
 HEDGE_STRATEGY   = "crash_short_v2"
 MR_STRATEGY      = "mean_reversion"
+EQUITY_STRATEGY  = "equity_sma175"
 
 
 # ── Sleeve definition ──────────────────────────────────────────────────────────
@@ -111,6 +112,10 @@ def parse_args() -> argparse.Namespace:
                    help="Path to BTC hourly OHLCV CSV")
     p.add_argument("--eth-data", default=None,
                    help="Path to ETH hourly OHLCV CSV (optional; omit for BTC-only)")
+    p.add_argument("--spy-data", default=None,
+                   help="Path to SPY daily OHLCV CSV (enables equity sleeve)")
+    p.add_argument("--qqq-data", default=None,
+                   help="Path to QQQ daily OHLCV CSV (optional; SPY-only if omitted)")
     p.add_argument("--capital", type=float, default=100_000.0,
                    help="Total fund capital (USD)")
     p.add_argument("--trend-weight", type=float, default=0.60,
@@ -119,17 +124,21 @@ def parse_args() -> argparse.Namespace:
                    help="Fraction of capital to crash-hedge sleeve")
     p.add_argument("--mr-weight", type=float, default=0.20,
                    help="Fraction of capital to mean-reversion sleeve")
+    p.add_argument("--equity-weight", type=float, default=0.0,
+                   help="Fraction of capital to equity SMA175 sleeve (requires --spy-data)")
     p.add_argument("--start", default=None,
                    help="Backtest start date YYYY-MM-DD (default: data start)")
     p.add_argument("--end", default=None,
                    help="Backtest end date YYYY-MM-DD (default: data end)")
     # Cost model
     p.add_argument("--fee", type=float, default=0.0006,
-                   help="Taker fee rate (default 6 bps)")
+                   help="Taker fee rate for crypto (default 6 bps)")
+    p.add_argument("--equity-fee", type=float, default=0.0001,
+                   help="Taker fee rate for equity ETFs (default 1 bp)")
     p.add_argument("--base-slippage", type=float, default=3.0,
-                   help="Base slippage bps")
+                   help="Base slippage bps (crypto)")
     p.add_argument("--slippage-vol-factor", type=float, default=50.0,
-                   help="Slippage bps per unit of ATR%%")
+                   help="Slippage bps per unit of ATR%% (crypto)")
     p.add_argument("--cooldown", type=int, default=2,
                    help="Cooldown bars between trades (trend/hedge sleeves)")
     p.add_argument("--mr-cooldown", type=int, default=12,
@@ -147,14 +156,18 @@ def parse_args() -> argparse.Namespace:
 # ── Sleeve construction ────────────────────────────────────────────────────────
 
 def _build_sleeves(args: argparse.Namespace) -> list[SleeveSpec]:
-    total_w = args.trend_weight + args.hedge_weight + args.mr_weight
+    ew = getattr(args, "equity_weight", 0.0)
+    total_w = args.trend_weight + args.hedge_weight + args.mr_weight + ew
     if abs(total_w - 1.0) > 0.001:
         log.warning("Sleeve weights sum to %.4f — normalising to 1.0", total_w)
     tw = args.trend_weight / total_w
     hw = args.hedge_weight / total_w
     mw = args.mr_weight    / total_w
+    eqw = ew / total_w
 
     has_eth = bool(args.eth_data)
+    has_spy = bool(getattr(args, "spy_data", None))
+    has_qqq = bool(getattr(args, "qqq_data", None))
     cap = args.capital
 
     # Trend: BTC 1H + 4H + (ETH 1H + 4H if available), equal sub-weight
@@ -201,6 +214,23 @@ def _build_sleeves(args: argparse.Namespace) -> list[SleeveSpec]:
             strategy=MR_STRATEGY,
             capital=cap * mw * mr_sub_w,
         ))
+
+    # Equity: SPY + QQQ daily (only if equity data provided and weight > 0)
+    if eqw > 0:
+        equity_assets = (["SPY"] if has_spy else []) + (["QQQ"] if has_qqq else [])
+        if not equity_assets:
+            log.warning("--equity-weight %.2f set but no equity data provided — skipping equity sleeve", eqw)
+        else:
+            eq_sub_w = 1.0 / len(equity_assets)
+            for asset in equity_assets:
+                sleeves.append(SleeveSpec(
+                    label=f"{asset}_1D_equity",
+                    family="equity",
+                    asset=asset,
+                    timeframe="1D",
+                    strategy=EQUITY_STRATEGY,
+                    capital=cap * eqw * eq_sub_w,
+                ))
 
     return sleeves
 
@@ -391,8 +421,10 @@ def _write_report(
         f"trend_weight  {args.trend_weight}",
         f"hedge_weight  {args.hedge_weight}",
         f"mr_weight     {args.mr_weight}",
+        f"equity_weight {getattr(args, 'equity_weight', 0.0)}",
         f"capital       ${args.capital:,.0f}",
-        f"fee           {args.fee*10000:.1f} bps",
+        f"fee           {args.fee*10000:.1f} bps (crypto)",
+        f"equity_fee    {getattr(args, 'equity_fee', 0.0001)*10000:.1f} bps (equity)",
         f"base_slip     {args.base_slippage:.1f} bps",
         f"slip_vol_fac  {args.slippage_vol_factor:.1f}",
         f"cooldown      {args.cooldown} bars (trend/hedge)",
@@ -424,14 +456,23 @@ def main() -> None:
     raw["BTC"] = _load_asset(args.btc_data, "BTC", args.start, args.end)
     if args.eth_data:
         raw["ETH"] = _load_asset(args.eth_data, "ETH", args.start, args.end)
+    if args.spy_data:
+        raw["SPY"] = _load_asset(args.spy_data, "SPY", args.start, args.end)
+    if args.qqq_data:
+        raw["QQQ"] = _load_asset(args.qqq_data, "QQQ", args.start, args.end)
 
     # ── Build sleeves ──────────────────────────────────────────────────
+    if getattr(args, "equity_weight", 0.0) > 0 and not args.spy_data and not getattr(args, "qqq_data", None):
+        log.error("--equity-weight > 0 requires at least --spy-data or --qqq-data")
+        sys.exit(1)
+
     specs = _build_sleeves(args)
-    log.info("Configured %d sleeves  (trend=%d  hedge=%d  mr=%d)",
+    log.info("Configured %d sleeves  (trend=%d  hedge=%d  mr=%d  equity=%d)",
              len(specs),
              sum(1 for s in specs if s.family == "trend"),
              sum(1 for s in specs if s.family == "hedge"),
-             sum(1 for s in specs if s.family == "mr"))
+             sum(1 for s in specs if s.family == "mr"),
+             sum(1 for s in specs if s.family == "equity"))
 
     # ── Execution configs (per family) ────────────────────────────────
     base_cfg = ExecutionConfig(
@@ -446,13 +487,24 @@ def main() -> None:
         slippage_vol_factor=args.slippage_vol_factor,
         cooldown_bars=args.mr_cooldown,
     )
+    equity_cfg = ExecutionConfig(
+        taker_fee_rate=getattr(args, "equity_fee", 0.0001),
+        base_slippage_bps=0.5,      # SPY/QQQ: near-zero slippage
+        slippage_vol_factor=5.0,    # minimal vol impact for liquid ETFs
+        cooldown_bars=1,            # daily bars: 1-bar cooldown is one trading day
+    )
 
     # ── Run all sleeves ────────────────────────────────────────────────
     specs = [s for s in specs if s.capital > 0]
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw, spec)
-        cfg = mr_cfg if spec.family == "mr" else base_cfg
+        if spec.family == "equity":
+            cfg = equity_cfg
+        elif spec.family == "mr":
+            cfg = mr_cfg
+        else:
+            cfg = base_cfg
         results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold)
 
     # ── Combine ────────────────────────────────────────────────────────
@@ -515,10 +567,14 @@ def main() -> None:
             "fee_bps":      args.fee * 10000,
             "base_slippage_bps": args.base_slippage,
             "slippage_vol_factor": args.slippage_vol_factor,
-            "cooldown_bars": args.cooldown,
+            "cooldown_bars":    args.cooldown,
             "mr_cooldown_bars": args.mr_cooldown,
+            "equity_weight":    getattr(args, "equity_weight", 0.0),
+            "equity_fee_bps":   getattr(args, "equity_fee", 0.0001) * 10000,
             "btc_data":     args.btc_data,
             "eth_data":     args.eth_data,
+            "spy_data":     getattr(args, "spy_data", None),
+            "qqq_data":     getattr(args, "qqq_data", None),
             "start":        args.start,
             "end":          args.end,
         },
