@@ -381,7 +381,12 @@ def main() -> None:
     equity_cfg = ExecutionConfig(
         taker_fee_rate=getattr(args, "equity_fee", 0.0001),
         base_slippage_bps=0.5,
-        slippage_vol_factor=5.0,
+        slippage_size_factor=1.0,
+        slippage_vol_factor=2.0,
+        min_slippage_bps=0.1,
+        max_slippage_bps=5.0,
+        spread_k=0.02,
+        min_spread_bps=0.2,
         cooldown_bars=1,
     )
 

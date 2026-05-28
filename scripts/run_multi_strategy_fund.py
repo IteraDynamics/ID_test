@@ -489,9 +489,14 @@ def main() -> None:
     )
     equity_cfg = ExecutionConfig(
         taker_fee_rate=getattr(args, "equity_fee", 0.0001),
-        base_slippage_bps=0.5,      # SPY/QQQ: near-zero slippage
-        slippage_vol_factor=5.0,    # minimal vol impact for liquid ETFs
-        cooldown_bars=1,            # daily bars: 1-bar cooldown is one trading day
+        base_slippage_bps=0.5,        # very low base for liquid ETFs
+        slippage_size_factor=1.0,     # minimal market impact (SPY/QQQ are enormous)
+        slippage_vol_factor=2.0,      # low vol sensitivity for daily equity bars
+        min_slippage_bps=0.1,         # near-zero floor
+        max_slippage_bps=5.0,         # cap at 5 bps — generous for ETFs
+        spread_k=0.02,                # daily ATR ~0.7% → half-spread ~0.7 bps/side
+        min_spread_bps=0.2,           # ~0.2 bps/side for SPY/QQQ
+        cooldown_bars=1,              # daily bars: 1-bar cooldown = one trading day
     )
 
     # ── Run all sleeves ────────────────────────────────────────────────
