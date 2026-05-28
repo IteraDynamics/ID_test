@@ -155,6 +155,7 @@ def compute_metrics(
     equity_curve: pd.Series,
     trades: list,
     params: dict | None = None,
+    initial_capital: float | None = None,
 ) -> BacktestMetrics:
     """Compute all performance metrics from an equity curve and trade list.
 
@@ -166,6 +167,11 @@ def compute_metrics(
         List of TradeRecord objects (from BacktestResult.trades).
     params :
         Optional dict of backtest params (for labelling output).
+    initial_capital :
+        If provided, anchors total_return and CAGR to this value instead of
+        eq.iloc[0].  Use this when the combined equity curve may start above
+        the intended capital due to sleeve alignment (e.g. equity data joins
+        an hourly crypto curve mid-stream).
 
     Returns
     -------
@@ -177,7 +183,7 @@ def compute_metrics(
     if len(eq) < 2:
         return _empty_metrics(params)
 
-    initial = float(eq.iloc[0])
+    initial = initial_capital if initial_capital is not None else float(eq.iloc[0])
     final = float(eq.iloc[-1])
 
     # ── Returns ───────────────────────────────────────────────────────
@@ -194,15 +200,24 @@ def compute_metrics(
     drawdown = (eq - running_max) / running_max
     max_dd = float(drawdown.min()) * 100.0  # negative number, in %
 
-    # ── Volatility ────────────────────────────────────────────────────
-    bar_returns = eq.pct_change().dropna()
-    vol_per_bar = float(bar_returns.std())
-    vol_ann = vol_per_bar * np.sqrt(bars_per_year) * 100.0
-
-    # ── Sharpe (bar returns, 0 risk-free) ─────────────────────────────
-    mean_ret = float(bar_returns.mean())
-    std_ret = float(bar_returns.std())
-    sharpe = (mean_ret / std_ret * np.sqrt(bars_per_year)) if std_ret > 1e-12 else 0.0
+    # ── Volatility & Sharpe (daily-resampled, 0 risk-free) ───────────
+    # Always use daily returns for vol/Sharpe regardless of bar frequency.
+    # This prevents inflation when sub-daily bars contain many zero-return
+    # slots (e.g. daily equity data ffill'd to an hourly combined curve).
+    daily_eq = eq.resample("D").last().dropna()
+    if len(daily_eq) >= 5:
+        daily_rets = daily_eq.pct_change().dropna()
+        days_per_year = _infer_bars_per_year(daily_eq)   # ≈365.25 for crypto/mixed
+        vol_ann = float(daily_rets.std()) * np.sqrt(days_per_year) * 100.0
+        mean_d = float(daily_rets.mean())
+        std_d  = float(daily_rets.std())
+        sharpe = (mean_d / std_d * np.sqrt(days_per_year)) if std_d > 1e-12 else 0.0
+    else:
+        bar_returns = eq.pct_change().dropna()
+        vol_ann = float(bar_returns.std()) * np.sqrt(bars_per_year) * 100.0
+        mean_ret = float(bar_returns.mean())
+        std_ret  = float(bar_returns.std())
+        sharpe = (mean_ret / std_ret * np.sqrt(bars_per_year)) if std_ret > 1e-12 else 0.0
 
     # ── Calmar ────────────────────────────────────────────────────────
     calmar = (cagr / abs(max_dd)) if abs(max_dd) > 1e-6 else 0.0

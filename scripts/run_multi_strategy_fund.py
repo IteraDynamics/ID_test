@@ -298,8 +298,8 @@ def _combine_curves(
 
 # ── Metrics helpers ────────────────────────────────────────────────────────────
 
-def _perf_dict(eq: pd.Series, trades: list | None = None) -> dict:
-    m = compute_metrics(eq, trades or [])
+def _perf_dict(eq: pd.Series, trades: list | None = None, initial_capital: float | None = None) -> dict:
+    m = compute_metrics(eq, trades or [], initial_capital=initial_capital)
     return {
         "cagr_pct":          round(m.cagr_pct, 2),
         "total_return_pct":  round(m.total_return_pct, 2),
@@ -533,7 +533,7 @@ def main() -> None:
 
     # ── Metrics ────────────────────────────────────────────────────────
     all_trades = [t for r in results.values() for t in r.trades]
-    fund_perf  = _perf_dict(fund_nav, all_trades)
+    fund_perf  = _perf_dict(fund_nav, all_trades, initial_capital=args.capital)
     annual_ret = _annual_returns(fund_nav)
     sleeve_act = _sleeve_activity(results, specs)
     regime_exp = _regime_exposure(results, specs)

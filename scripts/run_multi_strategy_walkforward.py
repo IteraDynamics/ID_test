@@ -439,7 +439,7 @@ def main() -> None:
         log.error("No OOS equity curve produced — check data ranges")
         sys.exit(1)
 
-    stitched_perf   = _perf_dict(stitched)
+    stitched_perf   = _perf_dict(stitched, initial_capital=args.capital)
     stitched_annual = _annual_returns(stitched)
 
     # ── Print summary ──────────────────────────────────────────────────
