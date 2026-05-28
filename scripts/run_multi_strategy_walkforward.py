@@ -189,7 +189,7 @@ def _run_fold(
             return {}
         raw_oos[asset] = sliced
 
-    specs = _build_sleeves(args)
+    specs = [s for s in _build_sleeves(args) if s.capital > 0]
 
     results: dict[str, BacktestResult] = {}
     for spec in specs:

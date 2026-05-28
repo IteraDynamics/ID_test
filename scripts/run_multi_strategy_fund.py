@@ -448,6 +448,7 @@ def main() -> None:
     )
 
     # ── Run all sleeves ────────────────────────────────────────────────
+    specs = [s for s in specs if s.capital > 0]
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw, spec)
