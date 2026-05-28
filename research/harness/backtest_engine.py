@@ -118,6 +118,9 @@ def run_backtest(
     slippage_bps: float | None = None,
     # ML calibration — optional, backward-compatible
     calibrators: "dict | None" = None,
+    # Cash yield — optional daily return series applied to idle cash
+    # (e.g. BIL returns so equity sleeves earn yield when flat)
+    cash_yield_series: "pd.Series | None" = None,
 ) -> BacktestResult:
     """Run a deterministic single-strategy backtest.
 
@@ -191,9 +194,19 @@ def run_backtest(
     trades: list[TradeRecord] = []
     intents: list[StrategyIntent] = []
 
+    # Align cash yield series to df index if provided
+    _yield_arr: np.ndarray | None = None
+    if cash_yield_series is not None:
+        aligned = cash_yield_series.reindex(df.index, method="ffill").fillna(0.0)
+        _yield_arr = aligned.to_numpy(dtype=float)
+
     for i in range(n):
         close_price = float(df["close"].iloc[i])
         atr_pct = float(atr_pct_series.iloc[i])
+
+        # Apply cash yield to idle cash (BIL/SGOV proxy when equity sleeve is flat)
+        if _yield_arr is not None:
+            cash *= 1.0 + _yield_arr[i]
 
         # Mark-to-market NAV
         nav = cash + position_units * close_price

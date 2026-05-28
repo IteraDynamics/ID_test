@@ -116,6 +116,8 @@ def parse_args() -> argparse.Namespace:
                    help="Path to SPY daily OHLCV CSV (enables equity sleeve)")
     p.add_argument("--qqq-data", default=None,
                    help="Path to QQQ daily OHLCV CSV (optional; SPY-only if omitted)")
+    p.add_argument("--bil-data", default=None,
+                   help="Path to BIL daily OHLCV CSV (cash yield for idle equity capital)")
     p.add_argument("--capital", type=float, default=100_000.0,
                    help="Total fund capital (USD)")
     p.add_argument("--trend-weight", type=float, default=0.60,
@@ -264,6 +266,7 @@ def _run_sleeve(
     df: pd.DataFrame,
     exec_config: ExecutionConfig,
     rebalance_threshold: float,
+    cash_yield_series: "pd.Series | None" = None,
 ) -> BacktestResult:
     strategy = STRATEGY_REGISTRY[spec.strategy]
     log.info("Running %s  strategy=%s  capital=$%.0f",
@@ -275,6 +278,7 @@ def _run_sleeve(
         exec_config=exec_config,
         asset=spec.asset,
         rebalance_threshold=rebalance_threshold,
+        cash_yield_series=cash_yield_series,
     )
 
 
@@ -461,6 +465,14 @@ def main() -> None:
     if args.qqq_data:
         raw["QQQ"] = _load_asset(args.qqq_data, "QQQ", args.start, args.end)
 
+    # BIL daily returns — used as cash yield for idle equity capital
+    bil_yield: pd.Series | None = None
+    if getattr(args, "bil_data", None):
+        bil_df = _load_asset(args.bil_data, "BIL", args.start, args.end)
+        bil_yield = bil_df["close"].pct_change().fillna(0.0)
+        log.info("BIL: %d bars  %s → %s  (cash yield for equity sleeves)",
+                 len(bil_df), bil_df.index[0], bil_df.index[-1])
+
     # ── Build sleeves ──────────────────────────────────────────────────
     if getattr(args, "equity_weight", 0.0) > 0 and not args.spy_data and not getattr(args, "qqq_data", None):
         log.error("--equity-weight > 0 requires at least --spy-data or --qqq-data")
@@ -506,11 +518,14 @@ def main() -> None:
         df = _sleeve_df(raw, spec)
         if spec.family == "equity":
             cfg = equity_cfg
+            yield_series = bil_yield
         elif spec.family == "mr":
             cfg = mr_cfg
+            yield_series = None
         else:
             cfg = base_cfg
-        results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold)
+            yield_series = None
+        results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold, yield_series)
 
     # ── Combine ────────────────────────────────────────────────────────
     fund_nav = _combine_curves(results, specs)

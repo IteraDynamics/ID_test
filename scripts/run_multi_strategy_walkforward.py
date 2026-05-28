@@ -146,6 +146,8 @@ def parse_args() -> argparse.Namespace:
                    help="Path to SPY daily OHLCV CSV (enables equity sleeve)")
     p.add_argument("--qqq-data", default=None,
                    help="Path to QQQ daily OHLCV CSV")
+    p.add_argument("--bil-data", default=None,
+                   help="Path to BIL daily OHLCV CSV (cash yield for idle equity capital)")
     p.add_argument("--capital", type=float, default=100_000.0)
     p.add_argument("--trend-weight",  type=float, default=0.60)
     p.add_argument("--hedge-weight",  type=float, default=0.20)
@@ -182,6 +184,7 @@ def _run_fold(
     base_cfg: ExecutionConfig,
     mr_cfg: ExecutionConfig,
     equity_cfg: ExecutionConfig | None = None,
+    bil_yield_full: "pd.Series | None" = None,
 ) -> dict:
     """Run OOS slice of one fold. Returns metrics dict."""
     log.info("Fold %s — OOS %s → %s", fold.label, fold.oos_start, fold.oos_end)
@@ -199,16 +202,24 @@ def _run_fold(
 
     specs = [s for s in _build_sleeves(args) if s.capital > 0]
 
+    # Slice BIL yield to OOS window
+    bil_yield_oos: pd.Series | None = None
+    if bil_yield_full is not None:
+        bil_yield_oos = bil_yield_full.loc[fold.oos_start: fold.oos_end]
+
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw_oos, spec)
         if spec.family == "equity":
             cfg = equity_cfg or base_cfg
+            yield_series = bil_yield_oos
         elif spec.family == "mr":
             cfg = mr_cfg
+            yield_series = None
         else:
             cfg = base_cfg
-        results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold)
+            yield_series = None
+        results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold, yield_series)
 
     fund_nav  = _combine_curves(results, specs)
     all_trades = [t for r in results.values() for t in r.trades]
@@ -357,6 +368,13 @@ def main() -> None:
     if getattr(args, "qqq_data", None):
         raw_full["QQQ"] = _load_asset(args.qqq_data, "QQQ", args.data_start, None)
 
+    bil_yield_full: pd.Series | None = None
+    if getattr(args, "bil_data", None):
+        bil_df = _load_asset(args.bil_data, "BIL", args.data_start, None)
+        bil_yield_full = bil_df["close"].pct_change().fillna(0.0)
+        log.info("BIL: %d bars  %s → %s  (cash yield for equity sleeves)",
+                 len(bil_df), bil_df.index[0], bil_df.index[-1])
+
     # ── Build folds ────────────────────────────────────────────────────
     folds = _build_folds(args.data_start, args.oos_start, args.oos_end)
     log.info("Walk-forward: %d folds  OOS %s → %s",
@@ -393,7 +411,7 @@ def main() -> None:
     # ── Run folds ──────────────────────────────────────────────────────
     fold_results: list[dict] = []
     for fold in folds:
-        fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg)
+        fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg, bil_yield_full)
         fold_results.append(fr)
         if fr and "perf" in fr:
             p = fr["perf"]
