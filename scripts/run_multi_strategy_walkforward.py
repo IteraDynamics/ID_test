@@ -189,30 +189,33 @@ def _run_fold(
     """Run OOS slice of one fold. Returns metrics dict."""
     log.info("Fold %s — OOS %s → %s", fold.label, fold.oos_start, fold.oos_end)
 
-    # Slice raw data to OOS window only (strategies still see full history
-    # up to oos_end, but we only evaluate from oos_start onward)
-    raw_oos: dict[str, pd.DataFrame] = {}
+    # Slice raw data from IS start through OOS end.
+    # This gives long-period indicators (e.g. SMA175 on daily equity) proper
+    # warmup history so the strategy is active from day 1 of the OOS window.
+    # Metrics are then evaluated on the OOS portion only (oos_start onwards).
+    raw_with_warmup: dict[str, pd.DataFrame] = {}
     for asset, df in raw_full.items():
-        sliced = df.loc[fold.oos_start: fold.oos_end]
-        if len(sliced) < 100:
+        sliced = df.loc[fold.is_start: fold.oos_end]
+        oos_len = len(df.loc[fold.oos_start: fold.oos_end])
+        if oos_len < 100:
             log.warning("Fold %s %s: only %d bars in OOS — skipping",
-                        fold.label, asset, len(sliced))
+                        fold.label, asset, oos_len)
             return {}
-        raw_oos[asset] = sliced
+        raw_with_warmup[asset] = sliced
 
     specs = [s for s in _build_sleeves(args) if s.capital > 0]
 
-    # Slice BIL yield to OOS window
-    bil_yield_oos: pd.Series | None = None
+    # Slice BIL yield to IS+OOS window (backtest engine aligns to df.index internally)
+    bil_yield_window: pd.Series | None = None
     if bil_yield_full is not None:
-        bil_yield_oos = bil_yield_full.loc[fold.oos_start: fold.oos_end]
+        bil_yield_window = bil_yield_full.loc[fold.is_start: fold.oos_end]
 
     results: dict[str, BacktestResult] = {}
     for spec in specs:
-        df = _sleeve_df(raw_oos, spec)
+        df = _sleeve_df(raw_with_warmup, spec)
         if spec.family == "equity":
             cfg = equity_cfg or base_cfg
-            yield_series = bil_yield_oos
+            yield_series = bil_yield_window
         elif spec.family == "mr":
             cfg = mr_cfg
             yield_series = None
@@ -221,8 +224,13 @@ def _run_fold(
             yield_series = None
         results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold, yield_series)
 
-    fund_nav  = _combine_curves(results, specs)
-    all_trades = [t for r in results.values() for t in r.trades]
+    # Combine, then slice to OOS period only for fair OOS evaluation
+    fund_nav_full = _combine_curves(results, specs)
+    fund_nav = fund_nav_full.loc[fold.oos_start:]
+
+    oos_start_ts = pd.Timestamp(fold.oos_start)
+    all_trades = [t for r in results.values() for t in r.trades
+                  if pd.Timestamp(t.timestamp) >= oos_start_ts]
     perf = _perf_dict(fund_nav, all_trades)
     activity = _sleeve_activity(results, specs)
 
