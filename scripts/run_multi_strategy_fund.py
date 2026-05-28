@@ -446,7 +446,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ── Validate weights ───────────────────────────────────────────────
-    total_w = args.trend_weight + args.hedge_weight + args.mr_weight
+    total_w = args.trend_weight + args.hedge_weight + args.mr_weight + getattr(args, "equity_weight", 0.0)
     if abs(total_w - 1.0) > 0.05:
         log.error("Sleeve weights sum to %.3f — must be close to 1.0", total_w)
         sys.exit(1)
