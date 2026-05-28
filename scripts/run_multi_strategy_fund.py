@@ -131,7 +131,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--slippage-vol-factor", type=float, default=50.0,
                    help="Slippage bps per unit of ATR%%")
     p.add_argument("--cooldown", type=int, default=2,
-                   help="Cooldown bars between trades")
+                   help="Cooldown bars between trades (trend/hedge sleeves)")
+    p.add_argument("--mr-cooldown", type=int, default=12,
+                   help="Cooldown bars for MR sleeves (matches 12H horizon)")
     p.add_argument("--rebalance-threshold", type=float, default=0.02,
                    help="Minimum exposure delta to trigger a trade")
     # Output
@@ -393,7 +395,8 @@ def _write_report(
         f"fee           {args.fee*10000:.1f} bps",
         f"base_slip     {args.base_slippage:.1f} bps",
         f"slip_vol_fac  {args.slippage_vol_factor:.1f}",
-        f"cooldown      {args.cooldown} bars",
+        f"cooldown      {args.cooldown} bars (trend/hedge)",
+        f"mr_cooldown   {args.mr_cooldown} bars (MR sleeves)",
         "```",
         "",
         "_Research only. Not financial advice._",
@@ -430,19 +433,26 @@ def main() -> None:
              sum(1 for s in specs if s.family == "hedge"),
              sum(1 for s in specs if s.family == "mr"))
 
-    # ── Execution config ───────────────────────────────────────────────
-    exec_config = ExecutionConfig(
+    # ── Execution configs (per family) ────────────────────────────────
+    base_cfg = ExecutionConfig(
         taker_fee_rate=args.fee,
         base_slippage_bps=args.base_slippage,
         slippage_vol_factor=args.slippage_vol_factor,
         cooldown_bars=args.cooldown,
+    )
+    mr_cfg = ExecutionConfig(
+        taker_fee_rate=args.fee,
+        base_slippage_bps=args.base_slippage,
+        slippage_vol_factor=args.slippage_vol_factor,
+        cooldown_bars=args.mr_cooldown,
     )
 
     # ── Run all sleeves ────────────────────────────────────────────────
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw, spec)
-        results[spec.label] = _run_sleeve(spec, df, exec_config, args.rebalance_threshold)
+        cfg = mr_cfg if spec.family == "mr" else base_cfg
+        results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold)
 
     # ── Combine ────────────────────────────────────────────────────────
     fund_nav = _combine_curves(results, specs)
@@ -505,6 +515,7 @@ def main() -> None:
             "base_slippage_bps": args.base_slippage,
             "slippage_vol_factor": args.slippage_vol_factor,
             "cooldown_bars": args.cooldown,
+            "mr_cooldown_bars": args.mr_cooldown,
             "btc_data":     args.btc_data,
             "eth_data":     args.eth_data,
             "start":        args.start,

@@ -158,6 +158,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--base-slippage",        type=float, default=3.0)
     p.add_argument("--slippage-vol-factor",  type=float, default=50.0)
     p.add_argument("--cooldown",             type=int,   default=2)
+    p.add_argument("--mr-cooldown",          type=int,   default=12,
+                   help="Cooldown bars for MR sleeves (matches 12H horizon)")
     p.add_argument("--rebalance-threshold",  type=float, default=0.02)
     # Output
     p.add_argument("--out-dir", default="artifacts/multi_strategy_walkforward")
@@ -170,7 +172,8 @@ def _run_fold(
     fold: WFFold,
     raw_full: dict[str, pd.DataFrame],
     args: argparse.Namespace,
-    exec_config: ExecutionConfig,
+    base_cfg: ExecutionConfig,
+    mr_cfg: ExecutionConfig,
 ) -> dict:
     """Run OOS slice of one fold. Returns metrics dict."""
     log.info("Fold %s — OOS %s → %s", fold.label, fold.oos_start, fold.oos_end)
@@ -191,7 +194,8 @@ def _run_fold(
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw_oos, spec)
-        results[spec.label] = _run_sleeve(spec, df, exec_config, args.rebalance_threshold)
+        cfg = mr_cfg if spec.family == "mr" else base_cfg
+        results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold)
 
     fund_nav  = _combine_curves(results, specs)
     all_trades = [t for r in results.values() for t in r.trades]
@@ -308,7 +312,8 @@ def _write_wf_report(
         f"fee            {args.fee*10000:.1f} bps",
         f"base_slippage  {args.base_slippage:.1f} bps",
         f"slip_vol_fac   {args.slippage_vol_factor:.1f}",
-        f"cooldown       {args.cooldown} bars",
+        f"cooldown       {args.cooldown} bars (trend/hedge)",
+        f"mr_cooldown    {args.mr_cooldown} bars (MR sleeves)",
         "```",
         "",
         "## Methodology",
@@ -343,18 +348,24 @@ def main() -> None:
         log.info("  Fold %-6s  IS %s → %s   OOS %s → %s",
                  f.label, f.is_start, f.is_end, f.oos_start, f.oos_end)
 
-    # ── Cost config ────────────────────────────────────────────────────
-    exec_config = ExecutionConfig(
+    # ── Cost configs (per family) ──────────────────────────────────────
+    base_cfg = ExecutionConfig(
         taker_fee_rate=args.fee,
         base_slippage_bps=args.base_slippage,
         slippage_vol_factor=args.slippage_vol_factor,
         cooldown_bars=args.cooldown,
     )
+    mr_cfg = ExecutionConfig(
+        taker_fee_rate=args.fee,
+        base_slippage_bps=args.base_slippage,
+        slippage_vol_factor=args.slippage_vol_factor,
+        cooldown_bars=args.mr_cooldown,
+    )
 
     # ── Run folds ──────────────────────────────────────────────────────
     fold_results: list[dict] = []
     for fold in folds:
-        fr = _run_fold(fold, raw_full, args, exec_config)
+        fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg)
         fold_results.append(fr)
         if fr and "perf" in fr:
             p = fr["perf"]
@@ -456,6 +467,7 @@ def main() -> None:
             "base_slippage_bps":    args.base_slippage,
             "slippage_vol_factor":  args.slippage_vol_factor,
             "cooldown_bars":        args.cooldown,
+            "mr_cooldown_bars":     args.mr_cooldown,
         },
     }
     (out_dir / "summary.json").write_text(
