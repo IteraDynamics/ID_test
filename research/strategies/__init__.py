@@ -32,6 +32,7 @@ from research.strategies import trend_following_short
 from research.strategies import trend_following_short_v2
 from research.strategies import crash_short_v1
 from research.strategies import crash_short_v2
+from research.strategies import crash_short_v3
 from research.strategies import volatility_breakout
 from research.strategies import mean_reversion
 from research.strategies import equity_sma175
@@ -59,6 +60,7 @@ REGISTRY: dict[str, object] = {
     "trend_following_short_v2": trend_following_short_v2,
     "crash_short_v1": crash_short_v1,
     "crash_short_v2": crash_short_v2,
+    "crash_short_v3": crash_short_v3,
     "volatility_breakout": volatility_breakout,
     "mean_reversion": mean_reversion,
     "equity_sma175": equity_sma175,
@@ -90,6 +92,7 @@ __all__ = [
     "trend_following_short_v2",
     "crash_short_v1",
     "crash_short_v2",
+    "crash_short_v3",
     "volatility_breakout",
     "mean_reversion",
     "equity_sma175",

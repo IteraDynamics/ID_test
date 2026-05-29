@@ -84,7 +84,7 @@ from research.harness.metrics import compute_metrics, BacktestMetrics
 from research.strategies import REGISTRY as STRATEGY_REGISTRY
 
 TREND_STRATEGY   = "trend_following_v8_ecap60_add80"
-HEDGE_STRATEGY   = "crash_short_v2"
+HEDGE_STRATEGY   = "crash_short_v3"
 MR_STRATEGY      = "mean_reversion"
 EQUITY_STRATEGY  = "equity_sma175"
 

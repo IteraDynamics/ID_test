@@ -87,7 +87,7 @@ from scripts.run_multi_strategy_fund import (
 )
 
 TREND_STRATEGY = "trend_following_v8_ecap60_add80"
-HEDGE_STRATEGY = "crash_short_v2"
+HEDGE_STRATEGY = "crash_short_v3"
 MR_STRATEGY    = "mean_reversion"
 
 
