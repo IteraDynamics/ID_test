@@ -87,7 +87,7 @@ from scripts.run_multi_strategy_fund import (
 )
 
 TREND_STRATEGY = "trend_following_v8_ecap60_add80"
-HEDGE_STRATEGY = "crash_short_v5"
+HEDGE_STRATEGY = "crash_short_v6"
 MR_STRATEGY    = "mean_reversion"
 
 
@@ -185,6 +185,7 @@ def _run_fold(
     mr_cfg: ExecutionConfig,
     equity_cfg: ExecutionConfig | None = None,
     bil_yield_full: "pd.Series | None" = None,
+    spy_sma175_full: "pd.Series | None" = None,
 ) -> dict:
     """Run OOS slice of one fold. Returns metrics dict."""
     log.info("Fold %s — OOS %s → %s", fold.label, fold.oos_start, fold.oos_end)
@@ -210,9 +211,20 @@ def _run_fold(
     if bil_yield_full is not None:
         bil_yield_window = bil_yield_full.loc[fold.is_start: fold.oos_end]
 
+    # Slice SPY SMA175 signal to fold window for cross-asset hedge gate
+    spy_sma175_window: pd.Series | None = None
+    if spy_sma175_full is not None:
+        spy_sma175_window = spy_sma175_full.loc[fold.is_start: fold.oos_end]
+
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw_with_warmup, spec)
+        # Inject SPY cross-asset signal into hedge sleeves so crash_short_v6
+        # can gate entries on whether equity is also in a bear market.
+        if spec.family == "hedge" and spy_sma175_window is not None:
+            aligned = spy_sma175_window.reindex(df.index, method="ffill")
+            df = df.copy()
+            df["spy_above_sma175"] = aligned
         if spec.family == "equity":
             cfg = equity_cfg or base_cfg
             yield_series = bil_yield_window
@@ -383,6 +395,14 @@ def main() -> None:
         log.info("BIL: %d bars  %s → %s  (cash yield for equity sleeves)",
                  len(bil_df), bil_df.index[0], bil_df.index[-1])
 
+    # SPY SMA175 cross-asset signal for crash_short_v6 hedge gate
+    spy_sma175_full: pd.Series | None = None
+    if "SPY" in raw_full:
+        spy_close = raw_full["SPY"]["close"]
+        spy_sma175 = spy_close.rolling(175).mean()
+        spy_sma175_full = (spy_close > spy_sma175).rename("spy_above_sma175")
+        log.info("SPY SMA175 signal computed: %d bars", len(spy_sma175_full))
+
     # ── Build folds ────────────────────────────────────────────────────
     folds = _build_folds(args.data_start, args.oos_start, args.oos_end)
     log.info("Walk-forward: %d folds  OOS %s → %s",
@@ -419,7 +439,7 @@ def main() -> None:
     # ── Run folds ──────────────────────────────────────────────────────
     fold_results: list[dict] = []
     for fold in folds:
-        fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg, bil_yield_full)
+        fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg, bil_yield_full, spy_sma175_full)
         fold_results.append(fr)
         if fr and "perf" in fr:
             p = fr["perf"]

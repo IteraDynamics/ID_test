@@ -84,7 +84,7 @@ from research.harness.metrics import compute_metrics, BacktestMetrics
 from research.strategies import REGISTRY as STRATEGY_REGISTRY
 
 TREND_STRATEGY   = "trend_following_v8_ecap60_add80"
-HEDGE_STRATEGY   = "crash_short_v5"
+HEDGE_STRATEGY   = "crash_short_v6"
 MR_STRATEGY      = "mean_reversion"
 EQUITY_STRATEGY  = "equity_sma175"
 
@@ -473,6 +473,17 @@ def main() -> None:
         log.info("BIL: %d bars  %s → %s  (cash yield for equity sleeves)",
                  len(bil_df), bil_df.index[0], bil_df.index[-1])
 
+    # SPY SMA175 signal — cross-asset gate for hedge sleeves
+    # True when SPY is above its 175-day SMA (equity bull market).
+    # Injected as df["spy_above_sma175"] into each hedge sleeve's dataframe
+    # so crash_short_v6 can block entries during equity bull markets.
+    spy_sma175_signal: pd.Series | None = None
+    if "SPY" in raw:
+        spy_close = raw["SPY"]["close"]
+        spy_sma175 = spy_close.rolling(175).mean()
+        spy_sma175_signal = (spy_close > spy_sma175).rename("spy_above_sma175")
+        log.info("SPY SMA175 signal computed: %d bars", len(spy_sma175_signal))
+
     # ── Build sleeves ──────────────────────────────────────────────────
     if getattr(args, "equity_weight", 0.0) > 0 and not args.spy_data and not getattr(args, "qqq_data", None):
         log.error("--equity-weight > 0 requires at least --spy-data or --qqq-data")
@@ -516,6 +527,12 @@ def main() -> None:
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw, spec)
+        # Inject SPY cross-asset signal into hedge sleeve dataframes so
+        # crash_short_v6 can gate entries on equity regime.
+        if spec.family == "hedge" and spy_sma175_signal is not None:
+            aligned = spy_sma175_signal.reindex(df.index, method="ffill")
+            df = df.copy()
+            df["spy_above_sma175"] = aligned
         if spec.family == "equity":
             cfg = equity_cfg
             yield_series = bil_yield
