@@ -83,7 +83,7 @@ from research.harness.execution_model import ExecutionConfig
 from research.harness.metrics import compute_metrics, BacktestMetrics
 from research.strategies import REGISTRY as STRATEGY_REGISTRY
 
-TREND_STRATEGY   = "trend_following_v10"
+TREND_STRATEGY   = "trend_following_v9"
 HEDGE_STRATEGY   = "crash_short_v6"
 MR_STRATEGY      = "mean_reversion"
 EQUITY_STRATEGY  = "equity_sma175"
