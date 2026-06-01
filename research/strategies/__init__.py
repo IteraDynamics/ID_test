@@ -27,6 +27,7 @@ from research.strategies import trend_following_v8_ecap75_add90
 from research.strategies import trend_following_v8_ecap60
 from research.strategies import trend_following_v8_ecap60_add80
 from research.strategies import trend_following_v9
+from research.strategies import trend_following_v10
 from research.strategies import trend_following_v8_ecap50
 from research.strategies import trend_following_v8_ecap50_add70
 from research.strategies import trend_following_short
@@ -59,6 +60,7 @@ REGISTRY: dict[str, object] = {
     "trend_following_v8_ecap60": trend_following_v8_ecap60,
     "trend_following_v8_ecap60_add80": trend_following_v8_ecap60_add80,
     "trend_following_v9": trend_following_v9,
+    "trend_following_v10": trend_following_v10,
     "trend_following_v8_ecap50": trend_following_v8_ecap50,
     "trend_following_v8_ecap50_add70": trend_following_v8_ecap50_add70,
     "trend_following_short": trend_following_short,
@@ -95,6 +97,7 @@ __all__ = [
     "trend_following_v8_ecap60",
     "trend_following_v8_ecap60_add80",
     "trend_following_v9",
+    "trend_following_v10",
     "trend_following_v8_ecap50",
     "trend_following_v8_ecap50_add70",
     "trend_following_short",

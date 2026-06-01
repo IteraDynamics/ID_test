@@ -86,7 +86,7 @@ from scripts.run_multi_strategy_fund import (
     _sleeve_activity,
 )
 
-TREND_STRATEGY = "trend_following_v9"
+TREND_STRATEGY = "trend_following_v10"
 HEDGE_STRATEGY = "crash_short_v6"
 MR_STRATEGY    = "mean_reversion"
 
