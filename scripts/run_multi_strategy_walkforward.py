@@ -170,6 +170,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--mr-cooldown",          type=int,   default=12,
                    help="Cooldown bars for MR sleeves (matches 12H horizon)")
     p.add_argument("--rebalance-threshold",  type=float, default=0.02)
+    # Parallelism
+    p.add_argument("--workers", type=int, default=1,
+                   help="Number of parallel fold workers (default 1 = sequential). "
+                        "Set to 4 to run all folds concurrently (~4x speedup). "
+                        "On Windows, must be run under 'if __name__ == \"__main__\"' — "
+                        "this script already satisfies that requirement.")
     # Output
     p.add_argument("--out-dir", default="artifacts/multi_strategy_walkforward")
     return p.parse_args()
@@ -437,21 +443,51 @@ def main() -> None:
         cooldown_bars=1,
     )
 
-    # ── Run folds ──────────────────────────────────────────────────────
-    fold_results: list[dict] = []
-    for fold in folds:
-        fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg, bil_yield_full, spy_sma175_full)
-        fold_results.append(fr)
+    # ── Run folds (sequential or parallel) ────────────────────────────
+    def _log_fold(fr: dict, label: str) -> None:
         if fr and "perf" in fr:
-            p = fr["perf"]
+            perf = fr["perf"]
             log.info(
                 "  Fold %s OOS → CAGR %+.1f%%  MaxDD %.1f%%  Sharpe %.3f  Calmar %.3f",
-                fold.label,
-                p.get("cagr_pct", 0),
-                p.get("max_drawdown_pct", 0),
-                p.get("sharpe", 0),
-                p.get("calmar", 0),
+                label,
+                perf.get("cagr_pct", 0),
+                perf.get("max_drawdown_pct", 0),
+                perf.get("sharpe", 0),
+                perf.get("calmar", 0),
             )
+
+    fold_results: list[dict] = []
+
+    if args.workers > 1:
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        n_workers = min(args.workers, len(folds))
+        log.info("Running %d folds in parallel with %d workers", len(folds), n_workers)
+        fold_results_map: dict[str, dict] = {}
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            future_to_fold = {
+                executor.submit(
+                    _run_fold, fold, raw_full, args,
+                    base_cfg, mr_cfg, equity_cfg,
+                    bil_yield_full, spy_sma175_full,
+                ): fold
+                for fold in folds
+            }
+            for future in as_completed(future_to_fold):
+                fold = future_to_fold[future]
+                try:
+                    fr = future.result()
+                except Exception as exc:
+                    log.error("Fold %s raised an exception: %s", fold.label, exc)
+                    fr = {}
+                fold_results_map[fold.label] = fr
+                _log_fold(fr, fold.label)
+        # Reassemble in chronological order
+        fold_results = [fold_results_map.get(f.label, {}) for f in folds]
+    else:
+        for fold in folds:
+            fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg, bil_yield_full, spy_sma175_full)
+            fold_results.append(fr)
+            _log_fold(fr, fold.label)
 
     # ── Stitch OOS ─────────────────────────────────────────────────────
     stitched = _stitch_oos(fold_results, args.capital)
