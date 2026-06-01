@@ -86,7 +86,7 @@ from scripts.run_multi_strategy_fund import (
     _sleeve_activity,
 )
 
-TREND_STRATEGY = "trend_following_v8_ecap60_add80"
+TREND_STRATEGY = "trend_following_v9"
 HEDGE_STRATEGY = "crash_short_v6"
 MR_STRATEGY    = "mean_reversion"
 
@@ -219,9 +219,10 @@ def _run_fold(
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw_with_warmup, spec)
-        # Inject SPY cross-asset signal into hedge sleeves so crash_short_v6
-        # can gate entries on whether equity is also in a bear market.
-        if spec.family == "hedge" and spy_sma175_window is not None:
+        # Inject SPY cross-asset signal into trend and hedge sleeves.
+        # trend_v9: blocks new longs when SPY < SMA175 (macro bear).
+        # crash_short_v6: blocks new shorts when SPY > SMA175 (equity bull).
+        if spec.family in ("hedge", "trend") and spy_sma175_window is not None:
             aligned = spy_sma175_window.reindex(df.index, method="ffill")
             df = df.copy()
             df["spy_above_sma175"] = aligned

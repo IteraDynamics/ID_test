@@ -83,7 +83,7 @@ from research.harness.execution_model import ExecutionConfig
 from research.harness.metrics import compute_metrics, BacktestMetrics
 from research.strategies import REGISTRY as STRATEGY_REGISTRY
 
-TREND_STRATEGY   = "trend_following_v8_ecap60_add80"
+TREND_STRATEGY   = "trend_following_v9"
 HEDGE_STRATEGY   = "crash_short_v6"
 MR_STRATEGY      = "mean_reversion"
 EQUITY_STRATEGY  = "equity_sma175"
@@ -473,10 +473,10 @@ def main() -> None:
         log.info("BIL: %d bars  %s → %s  (cash yield for equity sleeves)",
                  len(bil_df), bil_df.index[0], bil_df.index[-1])
 
-    # SPY SMA175 signal — cross-asset gate for hedge sleeves
+    # SPY SMA175 signal — cross-asset gate for trend and hedge sleeves
     # True when SPY is above its 175-day SMA (equity bull market).
-    # Injected as df["spy_above_sma175"] into each hedge sleeve's dataframe
-    # so crash_short_v6 can block entries during equity bull markets.
+    # Injected into trend sleeves (trend_following_v9 blocks new longs in macro bear)
+    # and hedge sleeves (crash_short_v6 blocks new shorts in equity bull markets).
     spy_sma175_signal: pd.Series | None = None
     if "SPY" in raw:
         spy_close = raw["SPY"]["close"]
@@ -527,9 +527,10 @@ def main() -> None:
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw, spec)
-        # Inject SPY cross-asset signal into hedge sleeve dataframes so
-        # crash_short_v6 can gate entries on equity regime.
-        if spec.family == "hedge" and spy_sma175_signal is not None:
+        # Inject SPY cross-asset signal into trend and hedge sleeve dataframes.
+        # trend_v9: blocks new longs when SPY < SMA175 (macro bear).
+        # crash_short_v6: blocks new shorts when SPY > SMA175 (equity bull).
+        if spec.family in ("hedge", "trend") and spy_sma175_signal is not None:
             aligned = spy_sma175_signal.reindex(df.index, method="ffill")
             df = df.copy()
             df["spy_above_sma175"] = aligned
