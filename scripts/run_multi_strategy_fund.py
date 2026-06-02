@@ -86,7 +86,7 @@ from research.strategies import REGISTRY as STRATEGY_REGISTRY
 TREND_STRATEGY   = "trend_following_v11"
 HEDGE_STRATEGY   = "crash_short_v6"
 MR_STRATEGY      = "mean_reversion"
-EQUITY_STRATEGY  = "equity_sma175_v2"
+EQUITY_STRATEGY  = "equity_sma175_v3"
 
 
 # ── Sleeve definition ──────────────────────────────────────────────────────────

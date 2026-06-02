@@ -43,6 +43,7 @@ from research.strategies import volatility_breakout
 from research.strategies import mean_reversion
 from research.strategies import equity_sma175
 from research.strategies import equity_sma175_v2
+from research.strategies import equity_sma175_v3
 
 REGISTRY: dict[str, object] = {
     "trend_following": trend_following,
@@ -78,6 +79,7 @@ REGISTRY: dict[str, object] = {
     "mean_reversion": mean_reversion,
     "equity_sma175": equity_sma175,
     "equity_sma175_v2": equity_sma175_v2,
+    "equity_sma175_v3": equity_sma175_v3,
 }
 
 __all__ = [
@@ -117,5 +119,6 @@ __all__ = [
     "mean_reversion",
     "equity_sma175",
     "equity_sma175_v2",
+    "equity_sma175_v3",
     "REGISTRY",
 ]
