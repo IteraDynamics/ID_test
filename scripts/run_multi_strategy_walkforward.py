@@ -154,6 +154,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--mr-weight",     type=float, default=0.20)
     p.add_argument("--equity-weight", type=float, default=0.0,
                    help="Fraction of capital to equity SMA175 sleeve")
+    p.add_argument("--gld-data", default=None,
+                   help="Path to GLD daily OHLCV CSV (enables gold trend sleeve)")
+    p.add_argument("--gold-weight", type=float, default=0.0,
+                   help="Fraction of capital to gold SMA200 trend sleeve")
     # Walk-forward window
     p.add_argument("--data-start",  default="2019-01-01",
                    help="Start of the full data window (IS begins here)")
@@ -244,7 +248,7 @@ def _run_fold(
             aligned = btc_parabolic_window.reindex(df.index, method="ffill")
             df = df.copy()
             df["btc_in_parabolic"] = aligned
-        if spec.family == "equity":
+        if spec.family in ("equity", "gold"):
             cfg = equity_cfg or base_cfg
             yield_series = bil_yield_window
         elif spec.family == "mr":
@@ -406,6 +410,8 @@ def main() -> None:
         raw_full["SPY"] = _load_asset(args.spy_data, "SPY", args.data_start, None)
     if getattr(args, "qqq_data", None):
         raw_full["QQQ"] = _load_asset(args.qqq_data, "QQQ", args.data_start, None)
+    if getattr(args, "gld_data", None):
+        raw_full["GLD"] = _load_asset(args.gld_data, "GLD", args.data_start, None)
 
     bil_yield_full: pd.Series | None = None
     if getattr(args, "bil_data", None):

@@ -87,6 +87,7 @@ TREND_STRATEGY   = "trend_following_v11"
 HEDGE_STRATEGY   = "crash_short_v6"
 MR_STRATEGY      = "mean_reversion"
 EQUITY_STRATEGY  = "equity_sma175_v3"
+GOLD_STRATEGY    = "gold_sma_v1"
 
 
 # ── Sleeve definition ──────────────────────────────────────────────────────────
@@ -128,6 +129,10 @@ def parse_args() -> argparse.Namespace:
                    help="Fraction of capital to mean-reversion sleeve")
     p.add_argument("--equity-weight", type=float, default=0.0,
                    help="Fraction of capital to equity SMA175 sleeve (requires --spy-data)")
+    p.add_argument("--gld-data", default=None,
+                   help="Path to GLD daily OHLCV CSV (enables gold trend sleeve)")
+    p.add_argument("--gold-weight", type=float, default=0.0,
+                   help="Fraction of capital to gold SMA200 trend sleeve (requires --gld-data)")
     p.add_argument("--start", default=None,
                    help="Backtest start date YYYY-MM-DD (default: data start)")
     p.add_argument("--end", default=None,
@@ -158,14 +163,16 @@ def parse_args() -> argparse.Namespace:
 # ── Sleeve construction ────────────────────────────────────────────────────────
 
 def _build_sleeves(args: argparse.Namespace) -> list[SleeveSpec]:
-    ew = getattr(args, "equity_weight", 0.0)
-    total_w = args.trend_weight + args.hedge_weight + args.mr_weight + ew
+    ew  = getattr(args, "equity_weight", 0.0)
+    gw  = getattr(args, "gold_weight", 0.0)
+    total_w = args.trend_weight + args.hedge_weight + args.mr_weight + ew + gw
     if abs(total_w - 1.0) > 0.001:
         log.warning("Sleeve weights sum to %.4f — normalising to 1.0", total_w)
-    tw = args.trend_weight / total_w
-    hw = args.hedge_weight / total_w
-    mw = args.mr_weight    / total_w
+    tw  = args.trend_weight / total_w
+    hw  = args.hedge_weight / total_w
+    mw  = args.mr_weight    / total_w
     eqw = ew / total_w
+    gldw = gw / total_w
 
     has_eth = bool(args.eth_data)
     has_spy = bool(getattr(args, "spy_data", None))
@@ -233,6 +240,21 @@ def _build_sleeves(args: argparse.Namespace) -> list[SleeveSpec]:
                     strategy=EQUITY_STRATEGY,
                     capital=cap * eqw * eq_sub_w,
                 ))
+
+    # Gold: GLD daily (only if gold data provided and weight > 0)
+    has_gld = bool(getattr(args, "gld_data", None))
+    if gldw > 0:
+        if not has_gld:
+            log.warning("--gold-weight %.2f set but no --gld-data provided — skipping gold sleeve", gw)
+        else:
+            sleeves.append(SleeveSpec(
+                label="GLD_1D_gold",
+                family="gold",
+                asset="GLD",
+                timeframe="1D",
+                strategy=GOLD_STRATEGY,
+                capital=cap * gldw,
+            ))
 
     return sleeves
 
@@ -464,6 +486,8 @@ def main() -> None:
         raw["SPY"] = _load_asset(args.spy_data, "SPY", args.start, args.end)
     if args.qqq_data:
         raw["QQQ"] = _load_asset(args.qqq_data, "QQQ", args.start, args.end)
+    if getattr(args, "gld_data", None):
+        raw["GLD"] = _load_asset(args.gld_data, "GLD", args.start, args.end)
 
     # BIL daily returns — used as cash yield for idle equity capital
     bil_yield: pd.Series | None = None
@@ -551,7 +575,7 @@ def main() -> None:
             aligned = btc_parabolic_signal.reindex(df.index, method="ffill")
             df = df.copy()
             df["btc_in_parabolic"] = aligned
-        if spec.family == "equity":
+        if spec.family in ("equity", "gold"):
             cfg = equity_cfg
             yield_series = bil_yield
         elif spec.family == "mr":
