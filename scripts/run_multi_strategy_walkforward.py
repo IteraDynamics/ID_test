@@ -417,8 +417,6 @@ def main() -> None:
     if getattr(args, "bil_data", None):
         bil_df = _load_asset(args.bil_data, "BIL", args.data_start, None)
         bil_yield_full = bil_df["close"].pct_change().fillna(0.0)
-        log.info("BIL: %d bars  %s → %s  (cash yield for equity sleeves)",
-                 len(bil_df), bil_df.index[0], bil_df.index[-1])
 
     # SPY SMA175 cross-asset signal for crash_short_v6 hedge gate
     spy_sma175_full: pd.Series | None = None
