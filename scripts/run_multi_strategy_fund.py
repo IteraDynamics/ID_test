@@ -86,7 +86,7 @@ from research.strategies import REGISTRY as STRATEGY_REGISTRY
 TREND_STRATEGY   = "trend_following_v11"
 HEDGE_STRATEGY   = "crash_short_v6"
 MR_STRATEGY      = "mean_reversion"
-EQUITY_STRATEGY  = "equity_sma175"
+EQUITY_STRATEGY  = "equity_sma175_v2"
 
 
 # ── Sleeve definition ──────────────────────────────────────────────────────────
@@ -484,6 +484,17 @@ def main() -> None:
         spy_sma175_signal = (spy_close > spy_sma175).rename("spy_above_sma175")
         log.info("SPY SMA175 signal computed: %d bars", len(spy_sma175_signal))
 
+    # BTC parabolic signal — daily boolean: BTC price > 100% above its 365-day SMA.
+    # Injected into equity sleeves so equity_sma175_v2 can trigger an early exit
+    # when equity rolls over during a macro-risk parabolic crypto environment.
+    btc_parabolic_signal: pd.Series | None = None
+    if "BTC" in raw:
+        btc_daily = raw["BTC"]["close"].resample("D").last().dropna()
+        btc_sma365 = btc_daily.rolling(365).mean()
+        btc_ext = (btc_daily - btc_sma365) / btc_sma365.replace(0, float("nan"))
+        btc_parabolic_signal = (btc_ext > 1.0).rename("btc_in_parabolic")
+        log.info("BTC parabolic signal computed: %d daily bars", len(btc_parabolic_signal))
+
     # ── Build sleeves ──────────────────────────────────────────────────
     if getattr(args, "equity_weight", 0.0) > 0 and not args.spy_data and not getattr(args, "qqq_data", None):
         log.error("--equity-weight > 0 requires at least --spy-data or --qqq-data")
@@ -528,12 +539,18 @@ def main() -> None:
     for spec in specs:
         df = _sleeve_df(raw, spec)
         # Inject SPY cross-asset signal into trend and hedge sleeve dataframes.
-        # trend_v9: blocks new longs when SPY < SMA175 (macro bear).
+        # trend_v11: blocks new longs when SPY < SMA175 (macro bear).
         # crash_short_v6: blocks new shorts when SPY > SMA175 (equity bull).
         if spec.family in ("hedge", "trend") and spy_sma175_signal is not None:
             aligned = spy_sma175_signal.reindex(df.index, method="ffill")
             df = df.copy()
             df["spy_above_sma175"] = aligned
+        # Inject BTC parabolic signal into equity sleeves so equity_sma175_v2
+        # can trigger early exit when equity weakens in parabolic BTC environments.
+        if spec.family == "equity" and btc_parabolic_signal is not None:
+            aligned = btc_parabolic_signal.reindex(df.index, method="ffill")
+            df = df.copy()
+            df["btc_in_parabolic"] = aligned
         if spec.family == "equity":
             cfg = equity_cfg
             yield_series = bil_yield

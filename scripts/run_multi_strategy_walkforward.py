@@ -192,6 +192,7 @@ def _run_fold(
     equity_cfg: ExecutionConfig | None = None,
     bil_yield_full: "pd.Series | None" = None,
     spy_sma175_full: "pd.Series | None" = None,
+    btc_parabolic_full: "pd.Series | None" = None,
 ) -> dict:
     """Run OOS slice of one fold. Returns metrics dict."""
     log.info("Fold %s — OOS %s → %s", fold.label, fold.oos_start, fold.oos_end)
@@ -217,21 +218,32 @@ def _run_fold(
     if bil_yield_full is not None:
         bil_yield_window = bil_yield_full.loc[fold.is_start: fold.oos_end]
 
-    # Slice SPY SMA175 signal to fold window for cross-asset hedge gate
+    # Slice SPY SMA175 signal to fold window for cross-asset hedge/trend gate
     spy_sma175_window: pd.Series | None = None
     if spy_sma175_full is not None:
         spy_sma175_window = spy_sma175_full.loc[fold.is_start: fold.oos_end]
+
+    # Slice BTC parabolic signal to fold window for equity fast-exit gate
+    btc_parabolic_window: pd.Series | None = None
+    if btc_parabolic_full is not None:
+        btc_parabolic_window = btc_parabolic_full.loc[fold.is_start: fold.oos_end]
 
     results: dict[str, BacktestResult] = {}
     for spec in specs:
         df = _sleeve_df(raw_with_warmup, spec)
         # Inject SPY cross-asset signal into trend and hedge sleeves.
-        # trend_v9: blocks new longs when SPY < SMA175 (macro bear).
+        # trend_v11: blocks new longs when SPY < SMA175 (macro bear).
         # crash_short_v6: blocks new shorts when SPY > SMA175 (equity bull).
         if spec.family in ("hedge", "trend") and spy_sma175_window is not None:
             aligned = spy_sma175_window.reindex(df.index, method="ffill")
             df = df.copy()
             df["spy_above_sma175"] = aligned
+        # Inject BTC parabolic signal into equity sleeves so equity_sma175_v2
+        # can trigger early exit when equity weakens in parabolic BTC environments.
+        if spec.family == "equity" and btc_parabolic_window is not None:
+            aligned = btc_parabolic_window.reindex(df.index, method="ffill")
+            df = df.copy()
+            df["btc_in_parabolic"] = aligned
         if spec.family == "equity":
             cfg = equity_cfg or base_cfg
             yield_series = bil_yield_window
@@ -410,6 +422,16 @@ def main() -> None:
         spy_sma175_full = (spy_close > spy_sma175).rename("spy_above_sma175")
         log.info("SPY SMA175 signal computed: %d bars", len(spy_sma175_full))
 
+    # BTC parabolic signal (daily) for equity_sma175_v2 fast-exit gate.
+    # True when BTC is > 100% above its 365-day SMA — hard parabolic territory.
+    btc_parabolic_full: pd.Series | None = None
+    if "BTC" in raw_full:
+        btc_daily = raw_full["BTC"]["close"].resample("D").last().dropna()
+        btc_sma365 = btc_daily.rolling(365).mean()
+        btc_ext = (btc_daily - btc_sma365) / btc_sma365.replace(0, float("nan"))
+        btc_parabolic_full = (btc_ext > 1.0).rename("btc_in_parabolic")
+        log.info("BTC parabolic signal computed: %d daily bars", len(btc_parabolic_full))
+
     # ── Build folds ────────────────────────────────────────────────────
     folds = _build_folds(args.data_start, args.oos_start, args.oos_end)
     log.info("Walk-forward: %d folds  OOS %s → %s",
@@ -468,7 +490,7 @@ def main() -> None:
                 executor.submit(
                     _run_fold, fold, raw_full, args,
                     base_cfg, mr_cfg, equity_cfg,
-                    bil_yield_full, spy_sma175_full,
+                    bil_yield_full, spy_sma175_full, btc_parabolic_full,
                 ): fold
                 for fold in folds
             }
@@ -485,7 +507,7 @@ def main() -> None:
         fold_results = [fold_results_map.get(f.label, {}) for f in folds]
     else:
         for fold in folds:
-            fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg, bil_yield_full, spy_sma175_full)
+            fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg, bil_yield_full, spy_sma175_full, btc_parabolic_full)
             fold_results.append(fr)
             _log_fold(fr, fold.label)
 
