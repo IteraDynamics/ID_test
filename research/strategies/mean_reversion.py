@@ -42,7 +42,8 @@ RSI_PERIOD = 14
 BB_PERIOD = 20
 BB_STD = 2.0
 OVERSOLD_THRESHOLD = 35.0
-EXIT_RSI = 55.0
+EXIT_RSI = 65.0           # was 55 — wider RSI gap avoids rapid entry→exit cycling
+BB_EXIT_POS = 0.60        # price must clear 60% of band width before exiting on band signal
 ATR_PERIOD = 14
 MAX_ATR_PCT = 0.025       # don't enter if vol is expanding
 MIN_EXPOSURE = 0.25
@@ -106,25 +107,26 @@ def generate_intent(
             strategy_id=STRATEGY_ID,
         )
 
-    # ── Exit: RSI normalised / price above midline ────────────────────
+    # ── Exit: RSI normalised / price meaningfully above midline ──────
     if ctx.current_exposure_frac > 0:
-        mean_restored = rsi >= EXIT_RSI or c >= mid
+        mean_restored = rsi >= EXIT_RSI or bb_pos > BB_EXIT_POS
         if mean_restored:
             return StrategyIntent(
                 action=Action.EXIT_LONG,
                 confidence=0.75,
                 desired_exposure_frac=0.0,
                 horizon_hours=2,
-                reason=f"Mean restored: RSI={rsi:.1f}, price vs mid={c:.2f}/{mid:.2f}",
+                reason=f"Mean restored: RSI={rsi:.1f}, bb_pos={bb_pos:.3f}",
                 meta=meta,
                 strategy_id=STRATEGY_ID,
             )
 
-    # ── Entry ─────────────────────────────────────────────────────────
+    # ── Entry — only when flat ─────────────────────────────────────────
     reversion_regime = ctx.regime in (RegimeLabel.RANGE, RegimeLabel.VOL_COMPRESSION)
 
     if (
-        reversion_regime
+        ctx.current_exposure_frac == 0.0
+        and reversion_regime
         and rsi < OVERSOLD_THRESHOLD
         and bb_pos < 0.25
         and atr_pct_now < MAX_ATR_PCT
