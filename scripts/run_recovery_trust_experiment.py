@@ -373,9 +373,9 @@ def main() -> None:
         except Exception as e:
             log.warning("Could not load BIL data: %s — no cash yield applied", e)
 
-    # 2. Build sleeves
+    # 2. Build sleeves — skip zero-capital sleeves (e.g. MR when --mr-weight 0)
     log.info("Building sleeves...")
-    sleeves = _build_sleeves(args)
+    sleeves = [s for s in _build_sleeves(args) if s.capital > 0]
     log.info("Sleeves: %s", [s.label for s in sleeves])
 
     # 3. Run backtests
