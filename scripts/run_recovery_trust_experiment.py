@@ -840,9 +840,14 @@ def main() -> None:
     candidates_df = pd.concat(labelled_parts, ignore_index=True)
     candidates_df = candidates_df.sort_values("timestamp").reset_index(drop=True)
 
-    # 6. Build features
-    log.info("Building feature matrix...")
-    features_df = build_features(candidates_df, raw)
+    # 6. Build features (with temporal features from position history)
+    log.info("Building feature matrix (including temporal features)...")
+    position_data = {
+        spec.label: results[spec.label].position_series
+        for spec in sleeves
+        if spec.label in results
+    }
+    features_df = build_features(candidates_df, raw, position_data=position_data)
 
     # 7. Diagnostic report data
     class_bal = _class_balance(candidates_df)

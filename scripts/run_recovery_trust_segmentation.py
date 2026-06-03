@@ -825,6 +825,41 @@ def main() -> None:
     # Load data
     candidates_df, features_df = _load_candidates_and_features(candidates_csv, args)
 
+    # Report 0: Temporal feature profile (only when temporal features present)
+    temporal_cols = [
+        "bars_since_last_entry",
+        "days_since_last_full_exposure",
+        "bars_in_defensive_state",
+        "candidate_count_since_last_full_exposure",
+        "candidate_count_since_last_successful_risk_on",
+    ]
+    present_temporal = [c for c in temporal_cols if c in features_df.columns and features_df[c].abs().sum() > 0]
+    if present_temporal:
+        print()
+        print("=" * 70)
+        print("REPORT 0: TEMPORAL FEATURE PROFILE (mean by year)")
+        print("=" * 70)
+        years = pd.to_datetime(candidates_df["timestamp"]).dt.year.values
+        labels = candidates_df["label"].values
+        feat_sub = features_df[present_temporal].copy()
+        feat_sub["year"] = years
+        feat_sub["label"] = labels
+        # All candidates — mean by year
+        print("\n  Mean values by year (all labelled candidates):")
+        labelled_mask = labels != -1
+        for yr in sorted(set(years)):
+            mask = (years == yr) & labelled_mask
+            if mask.sum() == 0:
+                continue
+            vals = feat_sub.loc[mask, present_temporal].mean()
+            n_pos = int((labels[mask] == 1).sum())
+            n_neg = int((labels[mask] == 0).sum())
+            row_str = "  ".join(f"{c.split('_',1)[1][:18]}={vals[c]:.1f}" for c in present_temporal)
+            print(f"    {yr}  n={mask.sum():>3} (+{n_pos}/-{n_neg})  {row_str}")
+        print()
+    else:
+        print("\n  [Temporal features not present or all-zero — run experiment script to generate them]")
+
     # Report 1: Label quality by sleeve
     label_quality_df = report_label_quality(candidates_df, out_dir)
 

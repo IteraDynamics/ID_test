@@ -2,6 +2,12 @@
 
 For each candidate re-risk event, compute a feature vector using ONLY data
 available up to and including the candidate timestamp.  No future data leakage.
+
+Temporal features require per-sleeve position history.  Pass
+``position_data`` (dict keyed by sleeve_label → pd.Series[float]) to
+enable bars_since_last_entry, days_since_last_full_exposure,
+bars_in_defensive_state, candidate_count_since_last_full_exposure, and
+candidate_count_since_last_successful_risk_on.
 """
 
 from __future__ import annotations
@@ -13,6 +19,11 @@ import numpy as np
 import pandas as pd
 
 log = logging.getLogger(__name__)
+
+# Threshold for "in a position" vs flat
+_ENTRY_THRESH      = 0.10   # position > this → considered entered
+_FULL_EXP_THRESH   = 0.90   # position >= this → full exposure
+_DEFENSIVE_THRESH  = 0.25   # position <= this → defensive state
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -61,9 +72,105 @@ def _realized_vol(close: pd.Series, window: int) -> float:
 
 # ── Main function ──────────────────────────────────────────────────────────────
 
+def _temporal_features(
+    ts: pd.Timestamp,
+    sleeve_label: str,
+    position_data: dict[str, pd.Series],
+    candidates_df: pd.DataFrame,
+    cand_idx: int,
+) -> dict[str, float]:
+    """Compute temporal state features for one candidate without lookahead.
+
+    All computations use position history strictly before or at ``ts`` and
+    only *prior* rows in candidates_df (rows with integer index < cand_idx).
+    """
+    feat: dict[str, float] = {}
+    DEFAULT = {
+        "bars_since_last_entry": 0.0,
+        "days_since_last_full_exposure": 0.0,
+        "bars_in_defensive_state": 0.0,
+        "candidate_count_since_last_full_exposure": 0.0,
+        "candidate_count_since_last_successful_risk_on": 0.0,
+    }
+
+    pos_series = position_data.get(sleeve_label)
+    if pos_series is None or pos_series.empty:
+        return DEFAULT.copy()
+
+    pos_hist = pos_series[pos_series.index <= ts]
+    if pos_hist.empty:
+        return DEFAULT.copy()
+
+    vals = pos_hist.values
+    n = len(vals)
+
+    # ── bars_since_last_entry ─────────────────────────────────────────────
+    # Last bar where position transitioned from ≤_ENTRY_THRESH to >_ENTRY_THRESH
+    was_flat = vals[:-1] <= _ENTRY_THRESH
+    is_in    = vals[1:]  > _ENTRY_THRESH
+    entry_mask = was_flat & is_in
+    entry_indices = np.where(entry_mask)[0] + 1  # index of the bar that crossed up
+    if len(entry_indices):
+        feat["bars_since_last_entry"] = float(n - 1 - entry_indices[-1])
+    else:
+        feat["bars_since_last_entry"] = float(n)  # never entered — use full length
+
+    # ── days_since_last_full_exposure ──────────────────────────────────────
+    full_mask = vals >= _FULL_EXP_THRESH
+    full_indices = np.where(full_mask)[0]
+    if len(full_indices):
+        last_full_ts = pos_hist.index[full_indices[-1]]
+        feat["days_since_last_full_exposure"] = float((ts - last_full_ts).total_seconds() / 86400)
+    else:
+        # No full exposure ever — use days since series start
+        feat["days_since_last_full_exposure"] = float((ts - pos_hist.index[0]).total_seconds() / 86400)
+
+    # ── bars_in_defensive_state ────────────────────────────────────────────
+    # Consecutive bars up to and including ts where position <= _DEFENSIVE_THRESH
+    rev = vals[::-1]
+    defensive_run = 0
+    for v in rev:
+        if v <= _DEFENSIVE_THRESH:
+            defensive_run += 1
+        else:
+            break
+    feat["bars_in_defensive_state"] = float(defensive_run)
+
+    # ── candidate_count_since_last_full_exposure ───────────────────────────
+    # Count prior candidates for same sleeve that occurred after last full exposure
+    if full_indices.size:
+        last_full_ts_cfe = pos_hist.index[full_indices[-1]]
+    else:
+        last_full_ts_cfe = pos_hist.index[0]
+
+    prior_cands = candidates_df.iloc[:cand_idx]
+    prior_sleeve = prior_cands[prior_cands["sleeve_label"] == sleeve_label]
+    since_full = prior_sleeve[pd.to_datetime(prior_sleeve["timestamp"]) > last_full_ts_cfe]
+    feat["candidate_count_since_last_full_exposure"] = float(len(since_full))
+
+    # ── candidate_count_since_last_successful_risk_on ──────────────────────
+    # Look at prior labeled candidates for same sleeve; find most recent label==1;
+    # count how many candidates have occurred since that successful re-risk.
+    # If label column doesn't exist or no positives yet, fall back to full prior count.
+    if "label" in prior_sleeve.columns:
+        successful = prior_sleeve[prior_sleeve["label"] == 1]
+        if len(successful):
+            last_success_ts = pd.to_datetime(successful["timestamp"].iloc[-1])
+            since_success = prior_sleeve[pd.to_datetime(prior_sleeve["timestamp"]) > last_success_ts]
+            feat["candidate_count_since_last_successful_risk_on"] = float(len(since_success))
+        else:
+            # No successful re-risk yet in this sleeve — total prior candidate count
+            feat["candidate_count_since_last_successful_risk_on"] = float(len(prior_sleeve))
+    else:
+        feat["candidate_count_since_last_successful_risk_on"] = 0.0
+
+    return feat
+
+
 def build_features(
     candidates_df: pd.DataFrame,
     raw_data: dict[str, pd.DataFrame],
+    position_data: dict[str, pd.Series] | None = None,
 ) -> pd.DataFrame:
     """Build feature matrix for all candidate re-risk events.
 
@@ -74,6 +181,9 @@ def build_features(
     raw_data:
         Dict with keys "BTC" (hourly), "ETH" (hourly, optional),
         "SPY" (daily, optional), "QQQ" (daily, optional).
+    position_data:
+        Optional dict keyed by sleeve_label → pd.Series[float] (exposure
+        fraction, DatetimeIndex).  When provided, enables 5 temporal features.
 
     Returns
     -------
@@ -254,6 +364,21 @@ def build_features(
         feat["proposed_exposure"] = _safe(row.get("proposed_exposure", 0.0))
         feat["prior_exposure"]    = _safe(row.get("prior_exposure", 0.0))
         feat["exposure_delta"]    = _safe(row.get("exposure_delta", 0.0))
+
+        # ── Temporal / state features ──────────────────────────────────────────
+        sleeve_label = str(row.get("sleeve_label", ""))
+        if position_data is not None:
+            tfeat = _temporal_features(ts, sleeve_label, position_data, candidates_df, idx)
+            feat.update({k: _safe(v) for k, v in tfeat.items()})
+        else:
+            for k in (
+                "bars_since_last_entry",
+                "days_since_last_full_exposure",
+                "bars_in_defensive_state",
+                "candidate_count_since_last_full_exposure",
+                "candidate_count_since_last_successful_risk_on",
+            ):
+                feat[k] = 0.0
 
         # Final NaN/inf safety sweep
         for k, v in feat.items():
