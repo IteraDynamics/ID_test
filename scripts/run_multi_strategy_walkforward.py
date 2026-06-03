@@ -158,6 +158,10 @@ def parse_args() -> argparse.Namespace:
                    help="Path to GLD daily OHLCV CSV (enables gold trend sleeve)")
     p.add_argument("--gold-weight", type=float, default=0.0,
                    help="Fraction of capital to gold SMA200 trend sleeve")
+    p.add_argument("--trend-strategy", default=TREND_STRATEGY,
+                   help="Strategy key for trend sleeve (default: trend_following_v11)")
+    p.add_argument("--hedge-strategy", default=HEDGE_STRATEGY,
+                   help="Strategy key for hedge sleeve (default: crash_short_v6)")
     # Walk-forward window
     p.add_argument("--data-start",  default="2019-01-01",
                    help="Start of the full data window (IS begins here)")

@@ -133,6 +133,10 @@ def parse_args() -> argparse.Namespace:
                    help="Path to GLD daily OHLCV CSV (enables gold trend sleeve)")
     p.add_argument("--gold-weight", type=float, default=0.0,
                    help="Fraction of capital to gold SMA200 trend sleeve (requires --gld-data)")
+    p.add_argument("--trend-strategy", default=TREND_STRATEGY,
+                   help="Strategy key for trend sleeve (default: trend_following_v11)")
+    p.add_argument("--hedge-strategy", default=HEDGE_STRATEGY,
+                   help="Strategy key for hedge sleeve (default: crash_short_v6)")
     p.add_argument("--start", default=None,
                    help="Backtest start date YYYY-MM-DD (default: data start)")
     p.add_argument("--end", default=None,
@@ -185,6 +189,9 @@ def _build_sleeves(args: argparse.Namespace) -> list[SleeveSpec]:
     n_trend = len(trend_assets)
     trend_sub_w = 1.0 / n_trend
 
+    trend_strat = getattr(args, "trend_strategy", TREND_STRATEGY)
+    hedge_strat = getattr(args, "hedge_strategy", HEDGE_STRATEGY)
+
     sleeves: list[SleeveSpec] = []
     for asset, tf in zip(trend_assets, trend_tfs):
         sleeves.append(SleeveSpec(
@@ -192,7 +199,7 @@ def _build_sleeves(args: argparse.Namespace) -> list[SleeveSpec]:
             family="trend",
             asset=asset,
             timeframe=tf,
-            strategy=TREND_STRATEGY,
+            strategy=trend_strat,
             capital=cap * tw * trend_sub_w,
         ))
 
@@ -206,7 +213,7 @@ def _build_sleeves(args: argparse.Namespace) -> list[SleeveSpec]:
             family="hedge",
             asset=asset,
             timeframe="1H",
-            strategy=HEDGE_STRATEGY,
+            strategy=hedge_strat,
             capital=cap * hw * hedge_sub_w,
         ))
 
