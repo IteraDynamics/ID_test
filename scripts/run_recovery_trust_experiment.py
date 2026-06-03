@@ -66,10 +66,13 @@ from scripts.run_multi_strategy_fund import (
     _run_sleeve,
 )
 
+from research.harness.metrics import compute_metrics
+from research.harness.resampler import align_equity_curves
 from research.ml.recovery_trust.candidate_detector import detect_candidates
 from research.ml.recovery_trust.labeler import label_candidates
 from research.ml.recovery_trust.feature_builder import build_features
 from research.ml.recovery_trust.model import FoldResult, run_walk_forward
+from scripts.run_multi_strategy_walkforward import _build_folds, WFFold
 
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
@@ -325,9 +328,403 @@ def _build_report(
             _fmt_imp(last_fr.feature_importance, "GRADIENT BOOSTING (last fold)")
 
     lines.append("=" * 70)
-    lines.append("Portfolio comparison disabled in v1 — validate candidates/labels first")
-    lines.append("=" * 70)
     return "\n".join(lines)
+
+
+# ── Portfolio comparison ───────────────────────────────────────────────────────
+
+def _gbm_confidence(
+    model,
+    scaler,
+    feature_row: np.ndarray,
+) -> float:
+    """Return GBM recovery_confidence for a single feature row. Returns 0.5 on NaN."""
+    if np.any(np.isnan(feature_row)):
+        return 0.5
+    x = scaler.transform(feature_row.reshape(1, -1))
+    proba = model.predict_proba(x)[0]
+    classes = list(model.classes_)
+    pos_col = classes.index(1) if 1 in classes else 0
+    return float(proba[pos_col])
+
+
+def _scale_factor_from_confidence(conf: float) -> float:
+    """Map GBM recovery_confidence to a position scale factor."""
+    if conf >= 0.70:
+        return 1.0
+    elif conf >= 0.50:
+        return 0.50
+    elif conf >= 0.35:
+        return 0.25
+    else:
+        return 0.0
+
+
+def _reconstruct_scaled_nav(
+    baseline_position: pd.Series,
+    asset_prices: pd.Series,
+    candidates_in_oos: pd.DataFrame,
+    model,
+    scaler,
+    feature_cols: list[str],
+    features_df: pd.DataFrame,
+    initial_nav: float,
+) -> pd.Series:
+    """Reconstruct per-sleeve NAV using scaled positions at re-risk events.
+
+    EXIT/FLAT signals always pass through unchanged — ML only scales re-risk entries.
+    For subsequent HOLD bars after a scaled entry, the scaling ratio is maintained
+    until the next signal change.
+    """
+    # Build mapping from candidate timestamp -> scale_factor
+    cand_scale: dict[pd.Timestamp, float] = {}
+    for _, row in candidates_in_oos.iterrows():
+        ts = pd.Timestamp(row["timestamp"])
+        cand_idx = row.name  # integer index in features_df
+        if cand_idx in features_df.index:
+            feat_row = features_df.loc[cand_idx, feature_cols].values.astype(float)
+        else:
+            feat_row = np.full(len(feature_cols), np.nan)
+        conf = _gbm_confidence(model, scaler, feat_row)
+        cand_scale[ts] = _scale_factor_from_confidence(conf)
+
+    # Build scaled position series
+    baseline_arr = baseline_position.values.copy()
+    scaled_arr = baseline_arr.copy()
+    index = baseline_position.index
+
+    current_scale: float = 1.0
+    prev_baseline: float = float(baseline_arr[0]) if len(baseline_arr) > 0 else 0.0
+
+    for i, ts in enumerate(index):
+        bp = float(baseline_arr[i])
+        position_changed = abs(bp - prev_baseline) > 0.05
+
+        if ts in cand_scale:
+            # Re-risk event — apply GBM scale
+            current_scale = cand_scale[ts]
+            scaled_arr[i] = bp * current_scale
+        elif position_changed:
+            # New signal: exit/flat or new entry not flagged as re-risk
+            if bp <= 0.01:
+                current_scale = 1.0
+            else:
+                current_scale = 1.0
+            scaled_arr[i] = bp
+        else:
+            # HOLD bar — maintain current scale ratio
+            scaled_arr[i] = bp * current_scale
+
+        prev_baseline = bp
+
+    scaled_pos = pd.Series(scaled_arr, index=index, name="scaled_exposure")
+
+    # Reconstruct NAV: nav[t] = nav[t-1] * (1 + scaled_pos[t-1] * asset_return[t])
+    asset_aligned = asset_prices.reindex(index, method="ffill").ffill().bfill()
+    asset_ret = asset_aligned.pct_change().fillna(0.0)
+
+    nav_arr = np.empty(len(index))
+    nav_arr[0] = initial_nav
+    for i in range(1, len(index)):
+        nav_arr[i] = nav_arr[i - 1] * (1.0 + scaled_arr[i - 1] * float(asset_ret.iloc[i]))
+
+    return pd.Series(nav_arr, index=index, name="scaled_nav")
+
+
+def run_portfolio_comparison(
+    all_candidates_df: pd.DataFrame,
+    features_df: pd.DataFrame,
+    fold_results_gbm: list[FoldResult],
+    raw: dict[str, pd.DataFrame],
+    args: argparse.Namespace,
+    bil_yield: "pd.Series | None",
+    out_dir: Path,
+) -> None:
+    """Compute baseline vs GBM-gated portfolio comparison across OOS folds.
+
+    For each walk-forward fold (2021-2025):
+    - Re-run OOS sleeve backtests to get baseline position_series
+    - Train a fresh GBM on IS candidates with sample_weight imbalance handling
+    - Reconstruct scaled NAV per sleeve using GBM recovery confidence scores
+    - Combine sleeves, stitch folds, compute and print metrics
+    """
+    from sklearn.ensemble import GradientBoostingClassifier
+    from sklearn.preprocessing import StandardScaler
+
+    log.info("Starting portfolio comparison (baseline vs GBM scaler)...")
+
+    oos_start  = args.oos_start
+    oos_end    = args.oos_end
+    data_start = args.data_start
+
+    wf_folds = _build_folds(data_start, oos_start, oos_end)
+
+    sleeves = [s for s in _build_sleeves(args) if s.capital > 0 and s.family != "hedge"]
+
+    # Candidates and features
+    timestamps = pd.to_datetime(all_candidates_df["timestamp"])
+    years  = timestamps.dt.year.values
+    labels = all_candidates_df["label"].values
+    feature_cols = list(features_df.columns)
+    X_all = features_df[feature_cols].values.astype(float)
+
+    exec_config_map: dict[str, ExecutionConfig] = {}
+    for spec in sleeves:
+        if spec.family == "equity":
+            exec_config_map[spec.label] = _exec_config_equity(args)
+        else:
+            exec_config_map[spec.label] = _exec_config_crypto(args)
+
+    # Gate activity counters
+    gate_counts: dict = {
+        "total": 0,
+        "blocked": 0,
+        "reduced_25": 0,
+        "reduced_50": 0,
+        "full_pass": 0,
+        "by_year": {},
+    }
+
+    baseline_fold_navs: list[pd.Series] = []
+    scaled_fold_navs:   list[pd.Series] = []
+    per_fold_metrics:   list[dict] = []
+
+    for fold in wf_folds:
+        fold_year = int(fold.label)
+        log.info("Portfolio comparison fold %s  OOS %s → %s",
+                 fold.label, fold.oos_start, fold.oos_end)
+
+        # Train fresh GBM on IS labelled candidates
+        train_end_year = int(fold.is_end[:4])
+        train_mask = (years <= train_end_year) & (labels != -1)
+        train_idx  = np.where(train_mask)[0]
+        y_train    = labels[train_idx]
+        X_train    = X_all[train_idx]
+
+        n_pos = int((y_train == 1).sum())
+        n_neg = int((y_train == 0).sum())
+
+        if n_pos == 0 or n_neg == 0 or len(train_idx) < 10:
+            log.warning(
+                "Fold %s: insufficient IS training data (pos=%d neg=%d) — skipping",
+                fold.label, n_pos, n_neg,
+            )
+            continue
+
+        # Handle class imbalance with sample_weight (GBM has no class_weight param)
+        sample_weight = np.where(y_train == 0, 1.0, float(n_neg) / float(n_pos))
+
+        fold_scaler = StandardScaler()
+        X_train_scaled = fold_scaler.fit_transform(X_train)
+
+        gbm = GradientBoostingClassifier(
+            n_estimators=100,
+            max_depth=3,
+            learning_rate=0.05,
+            random_state=42,
+        )
+        gbm.fit(X_train_scaled, y_train, sample_weight=sample_weight)
+
+        # OOS candidates for this fold
+        oos_cands_mask = (years == fold_year)
+        oos_cands_df   = all_candidates_df[oos_cands_mask].copy()
+
+        # Slice raw with IS warmup so indicators are primed
+        raw_window: dict[str, pd.DataFrame] = {}
+        for asset, df in raw.items():
+            raw_window[asset] = df.loc[fold.is_start: fold.oos_end]
+
+        baseline_sleeve_navs: list[pd.Series] = []
+        scaled_sleeve_navs:   list[pd.Series] = []
+
+        for spec in sleeves:
+            if spec.asset not in raw_window:
+                continue
+
+            df_sleeve = _sleeve_df(raw_window, spec)
+            exec_cfg  = exec_config_map[spec.label]
+            cash_yield = bil_yield if spec.family == "equity" else None
+
+            result = _run_sleeve(
+                spec=spec,
+                df=df_sleeve,
+                exec_config=exec_cfg,
+                rebalance_threshold=args.rebalance_threshold,
+                cash_yield_series=cash_yield,
+            )
+
+            # Slice to OOS window
+            baseline_pos_oos = result.position_series.loc[fold.oos_start: fold.oos_end]
+            equity_oos       = result.equity_curve.loc[fold.oos_start: fold.oos_end]
+
+            if baseline_pos_oos.empty or equity_oos.empty:
+                continue
+
+            initial_nav = float(equity_oos.iloc[0])
+            baseline_sleeve_navs.append(equity_oos.rename(spec.label))
+
+            # Candidates for this sleeve in OOS
+            sleeve_oos_cands = oos_cands_df[oos_cands_df["sleeve_label"] == spec.label].copy()
+
+            # Asset price series for returns computation
+            asset_prices = _sleeve_df(raw_window, spec)["close"]
+
+            scaled_nav = _reconstruct_scaled_nav(
+                baseline_position=baseline_pos_oos,
+                asset_prices=asset_prices,
+                candidates_in_oos=sleeve_oos_cands,
+                model=gbm,
+                scaler=fold_scaler,
+                feature_cols=feature_cols,
+                features_df=features_df,
+                initial_nav=initial_nav,
+            )
+            scaled_sleeve_navs.append(scaled_nav.rename(spec.label))
+
+            # Tally gate activity
+            for _, cand_row in sleeve_oos_cands.iterrows():
+                cand_idx = cand_row.name
+                if cand_idx in features_df.index:
+                    feat_row = features_df.loc[cand_idx, feature_cols].values.astype(float)
+                else:
+                    feat_row = np.full(len(feature_cols), np.nan)
+                conf = _gbm_confidence(gbm, fold_scaler, feat_row)
+                sf   = _scale_factor_from_confidence(conf)
+
+                gate_counts["total"] += 1
+                year_key = str(fold_year)
+                gate_counts["by_year"].setdefault(year_key, 0)
+                gate_counts["by_year"][year_key] += 1
+
+                if sf == 0.0:
+                    gate_counts["blocked"] += 1
+                elif sf == 0.25:
+                    gate_counts["reduced_25"] += 1
+                elif sf == 0.50:
+                    gate_counts["reduced_50"] += 1
+                else:
+                    gate_counts["full_pass"] += 1
+
+        if not baseline_sleeve_navs:
+            log.warning("Fold %s: no sleeve results — skipping", fold.label)
+            continue
+
+        def _sum_navs(nav_list: list[pd.Series]) -> pd.Series:
+            if not nav_list:
+                return pd.Series(dtype=float)
+            aligned_df = align_equity_curves(
+                {s.name: s for s in nav_list}, base_freq="1h"
+            )
+            combined      = aligned_df.sum(axis=1)
+            combined.name = "fund_nav"
+            return combined
+
+        baseline_fund = _sum_navs(baseline_sleeve_navs)
+        scaled_fund   = _sum_navs(scaled_sleeve_navs if scaled_sleeve_navs else baseline_sleeve_navs)
+
+        baseline_fold_navs.append(baseline_fund)
+        scaled_fold_navs.append(scaled_fund)
+
+        b_m = compute_metrics(baseline_fund, [])
+        s_m = compute_metrics(scaled_fund,   [])
+        per_fold_metrics.append({
+            "fold":            fold.label,
+            "oos_start":       fold.oos_start,
+            "oos_end":         fold.oos_end,
+            "baseline_cagr":   round(b_m.cagr_pct, 2),
+            "baseline_mdd":    round(b_m.max_drawdown_pct, 2),
+            "baseline_sharpe": round(b_m.sharpe, 3),
+            "baseline_calmar": round(b_m.calmar, 3),
+            "scaler_cagr":     round(s_m.cagr_pct, 2),
+            "scaler_mdd":      round(s_m.max_drawdown_pct, 2),
+            "scaler_sharpe":   round(s_m.sharpe, 3),
+            "scaler_calmar":   round(s_m.calmar, 3),
+        })
+
+    if not baseline_fold_navs:
+        log.warning("Portfolio comparison: no OOS folds produced results — skipping output")
+        return
+
+    # ── Stitch OOS equity curves ────────────────────────────────────────────────
+    def _stitch(fold_navs: list[pd.Series], initial_capital: float) -> pd.Series:
+        parts: list[pd.Series] = []
+        running_nav = initial_capital
+        for nav in fold_navs:
+            nav = nav.dropna()
+            if nav.empty:
+                continue
+            scale  = running_nav / float(nav.iloc[0])
+            scaled = nav * scale
+            parts.append(scaled)
+            running_nav = float(scaled.iloc[-1])
+        if not parts:
+            return pd.Series(dtype=float)
+        stitched = pd.concat(parts)
+        stitched = stitched[~stitched.index.duplicated(keep="last")]
+        return stitched.sort_index()
+
+    baseline_stitched = _stitch(baseline_fold_navs, args.capital)
+    scaled_stitched   = _stitch(scaled_fold_navs,   args.capital)
+
+    b_metrics = compute_metrics(baseline_stitched, [], initial_capital=args.capital)
+    s_metrics = compute_metrics(scaled_stitched,   [], initial_capital=args.capital)
+
+    def _annual_ret(eq: pd.Series) -> dict[int, float]:
+        daily = eq.resample("D").last().dropna()
+        out: dict[int, float] = {}
+        for yr, grp in daily.groupby(daily.index.year):
+            if len(grp) < 5:
+                continue
+            out[int(yr)] = round((float(grp.iloc[-1]) / float(grp.iloc[0]) - 1) * 100, 1)
+        return out
+
+    b_annual = _annual_ret(baseline_stitched)
+    s_annual = _annual_ret(scaled_stitched)
+
+    # ── Print comparison table ─────────────────────────────────────────────────
+    print()
+    print("=" * 70)
+    print(f"PORTFOLIO COMPARISON — {oos_start} → {oos_end}")
+    print("=" * 70)
+    print()
+
+    def _delta(b: float, s: float) -> str:
+        d = s - b
+        return f"{d:+.3f}" if abs(d) < 10 else f"{d:+.2f}"
+
+    print(f"{'':30} {'BASELINE':>12}  {'GBM SCALER':>12}  {'DELTA':>8}")
+    print(f"{'CAGR %':<30} {b_metrics.cagr_pct:>12.2f}  {s_metrics.cagr_pct:>12.2f}  {_delta(b_metrics.cagr_pct, s_metrics.cagr_pct):>8}")
+    print(f"{'Max Drawdown %':<30} {b_metrics.max_drawdown_pct:>12.2f}  {s_metrics.max_drawdown_pct:>12.2f}  {_delta(b_metrics.max_drawdown_pct, s_metrics.max_drawdown_pct):>8}")
+    print(f"{'Sharpe':<30} {b_metrics.sharpe:>12.3f}  {s_metrics.sharpe:>12.3f}  {_delta(b_metrics.sharpe, s_metrics.sharpe):>8}")
+    print(f"{'Calmar':<30} {b_metrics.calmar:>12.3f}  {s_metrics.calmar:>12.3f}  {_delta(b_metrics.calmar, s_metrics.calmar):>8}")
+    print(f"{'Ann Vol %':<30} {b_metrics.volatility_ann_pct:>12.2f}  {s_metrics.volatility_ann_pct:>12.2f}")
+    print()
+
+    all_years = sorted(set(list(b_annual.keys()) + list(s_annual.keys())))
+    print("ANNUAL RETURNS")
+    print(f"{'':12} {'BASELINE':>10}  {'GBM SCALER':>12}")
+    for yr in all_years:
+        bv = b_annual.get(yr, float("nan"))
+        sv = s_annual.get(yr, float("nan"))
+        bv_s = f"{bv:+.1f}%" if not np.isnan(bv) else "  N/A "
+        sv_s = f"{sv:+.1f}%" if not np.isnan(sv) else "  N/A "
+        print(f"  {yr}        {bv_s:>10}   {sv_s:>10}")
+    print()
+
+    print("GBM GATE ACTIVITY")
+    print(f"  Total re-risk decisions gated:  {gate_counts['total']}")
+    print(f"  Blocked (conf < 0.35):          {gate_counts['blocked']}")
+    print(f"  Reduced to 25% (0.35-0.50):     {gate_counts['reduced_25']}")
+    print(f"  Reduced to 50% (0.50-0.70):     {gate_counts['reduced_50']}")
+    print(f"  Full pass (conf >= 0.70):        {gate_counts['full_pass']}")
+    by_yr_str = "  ".join(f"{yr}={cnt}" for yr, cnt in sorted(gate_counts["by_year"].items()))
+    print(f"  Per year: {by_yr_str}")
+    print()
+
+    # ── Save CSV ──────────────────────────────────────────────────────────────
+    csv_path = out_dir / "portfolio_comparison.csv"
+    pd.DataFrame(per_fold_metrics).to_csv(csv_path, index=False)
+    log.info("Saved portfolio comparison → %s", csv_path)
 
 
 # ── Save artifacts ─────────────────────────────────────────────────────────────
@@ -521,9 +918,21 @@ def main() -> None:
     summary_path.write_text(report, encoding="utf-8")
     log.info("Saved summary → %s", summary_path)
 
-    # 13. Explicit diagnostic mode notice
-    print()
-    print("Portfolio comparison disabled in v1 — validate candidates/labels first")
+    # 13. Portfolio comparison (GBM scaler vs baseline)
+    if "gbm" in fold_results:
+        run_portfolio_comparison(
+            all_candidates_df=candidates_df,
+            features_df=features_df,
+            fold_results_gbm=fold_results["gbm"],
+            raw=raw,
+            args=args,
+            bil_yield=bil_yield,
+            out_dir=out_dir,
+        )
+    else:
+        print()
+        print("Portfolio comparison skipped — GBM model not trained (need n_labelled >= 80)")
+
     print(f"Artifacts saved to: {out_dir.resolve()}")
 
 
