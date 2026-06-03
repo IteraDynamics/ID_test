@@ -383,10 +383,16 @@ def main() -> None:
     results = _run_all_sleeves(sleeves, raw, args, bil_yield)
     log.info("Completed %d/%d sleeves", len(results), len(sleeves))
 
-    # 4. Detect candidates per sleeve
-    log.info("Detecting candidate re-risk events...")
+    # 4. Detect candidates per sleeve — exclude hedge sleeves.
+    # Hedge (crash_short_v6) re-risks into SHORT positions; the labeling logic
+    # assumes long re-entries (positive forward return = good).  Mixing short
+    # re-entries inverts ~92% of the training labels and destroys model signal.
+    log.info("Detecting candidate re-risk events (trend + equity sleeves only)...")
     all_candidates: list[pd.DataFrame] = []
     for spec in sleeves:
+        if spec.family == "hedge":
+            log.info("Skipping %s (hedge sleeve — short re-entries excluded)", spec.label)
+            continue
         if spec.label not in results:
             continue
         result = results[spec.label]
@@ -513,7 +519,7 @@ def main() -> None:
         _save_fold_results_csv(fold_list, csv_path)
 
     summary_path = out_dir / "summary.txt"
-    summary_path.write_text(report)
+    summary_path.write_text(report, encoding="utf-8")
     log.info("Saved summary → %s", summary_path)
 
     # 13. Explicit diagnostic mode notice
