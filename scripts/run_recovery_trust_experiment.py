@@ -373,9 +373,11 @@ def main() -> None:
         except Exception as e:
             log.warning("Could not load BIL data: %s — no cash yield applied", e)
 
-    # 2. Build sleeves — skip zero-capital sleeves (e.g. MR when --mr-weight 0)
+    # 2. Build sleeves — skip zero-capital and hedge sleeves.
+    # Hedge sleeves (crash_short_v6) re-risk into SHORT positions; excluding them
+    # from backtests entirely saves ~18 min and they are not needed for candidate detection.
     log.info("Building sleeves...")
-    sleeves = [s for s in _build_sleeves(args) if s.capital > 0]
+    sleeves = [s for s in _build_sleeves(args) if s.capital > 0 and s.family != "hedge"]
     log.info("Sleeves: %s", [s.label for s in sleeves])
 
     # 3. Run backtests
@@ -390,9 +392,6 @@ def main() -> None:
     log.info("Detecting candidate re-risk events (trend + equity sleeves only)...")
     all_candidates: list[pd.DataFrame] = []
     for spec in sleeves:
-        if spec.family == "hedge":
-            log.info("Skipping %s (hedge sleeve — short re-entries excluded)", spec.label)
-            continue
         if spec.label not in results:
             continue
         result = results[spec.label]
