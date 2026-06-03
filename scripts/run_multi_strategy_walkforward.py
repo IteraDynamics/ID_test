@@ -47,8 +47,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -185,7 +187,11 @@ def parse_args() -> argparse.Namespace:
                         "On Windows, must be run under 'if __name__ == \"__main__\"' — "
                         "this script already satisfies that requirement.")
     # Output
-    p.add_argument("--out-dir", default="artifacts/multi_strategy_walkforward")
+    p.add_argument("--out-dir", default="artifacts/walkforward_results",
+                   help="Directory where all run CSV/JSON/MD files are written")
+    p.add_argument("--run-label", default="",
+                   help="Optional short label appended to the run ID (e.g. 'no_hedge'). "
+                        "Use alphanumerics and underscores only.")
     return p.parse_args()
 
 
@@ -328,14 +334,19 @@ def _md_table(rows: list[dict], cols: list[str]) -> str:
 
 
 def _write_wf_report(
-    out_dir: Path,
+    out_path: Path,
     fold_rows: list[dict],
     stitched_perf: dict,
     stitched_annual: dict,
     args: argparse.Namespace,
+    run_id: str = "",
 ) -> None:
+    trend_strat = getattr(args, "trend_strategy", TREND_STRATEGY)
+    hedge_strat = getattr(args, "hedge_strategy", HEDGE_STRATEGY)
     lines = [
         "# Multi-Strategy Fund — Walk-Forward OOS Report",
+        "",
+        f"**Run ID:** `{run_id}`" if run_id else "",
         "",
         "## Stitched OOS Performance",
         "```text",
@@ -370,15 +381,21 @@ def _write_wf_report(
         })
     lines += [_md_table(fold_table_rows, fold_summary_cols), ""]
 
+    ew  = getattr(args, "equity_weight", 0.0)
+    gw  = getattr(args, "gold_weight",  0.0)
     lines += [
         "## Configuration",
         "```text",
+        f"trend_strategy {trend_strat}",
+        f"hedge_strategy {hedge_strat}",
         f"data_start     {args.data_start}",
         f"oos_start      {args.oos_start}",
         f"oos_end        {args.oos_end}",
         f"trend_weight   {args.trend_weight}",
         f"hedge_weight   {args.hedge_weight}",
         f"mr_weight      {args.mr_weight}",
+        f"equity_weight  {ew}",
+        f"gold_weight    {gw}",
         f"capital        ${args.capital:,.0f}",
         f"fee            {args.fee*10000:.1f} bps",
         f"base_slippage  {args.base_slippage:.1f} bps",
@@ -395,7 +412,46 @@ def _write_wf_report(
         "",
         "_Research only. Not financial advice._",
     ]
-    (out_dir / "walkforward_report.md").write_text("\n".join(lines), encoding="utf-8")
+    out_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+# ── Run ID ────────────────────────────────────────────────────────────────────
+
+def _build_run_id(args: argparse.Namespace) -> str:
+    """Build a unique, self-describing run identifier.
+
+    Format:
+        wf_{trend_abbr}_t{tw}h{hw}e{ew}g{gw}_{oos_start}-{oos_end}_{ts}[_{label}]
+
+    Example:
+        wf_v12_t40h10e35g15_2021-2025_20260603_143022
+        wf_v11_t40h10e35g15_2021-2025_20260603_150811_no_hedge
+    """
+    # Abbreviate strategy name: keep only version suffix (v11, v12, etc.)
+    trend_strat = getattr(args, "trend_strategy", "trend_following_v11")
+    strat_abbr  = re.sub(r"^trend_following_", "", trend_strat)   # v11, v12, ecap60, …
+    strat_abbr  = re.sub(r"[^a-zA-Z0-9]", "", strat_abbr)[:12]  # sanitise, cap length
+
+    # Allocation fingerprint (weights as integers, e.g. 40/10/35/15)
+    tw  = round(args.trend_weight  * 100)
+    hw  = round(args.hedge_weight  * 100)
+    ew  = round(getattr(args, "equity_weight", 0.0) * 100)
+    gw  = round(getattr(args, "gold_weight",  0.0) * 100)
+    alloc = f"t{tw}h{hw}e{ew}g{gw}"
+
+    # OOS window
+    oos_range = f"{args.oos_start[:4]}-{args.oos_end[:4]}"
+
+    # Timestamp (UTC, compact)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+
+    parts = ["wf", strat_abbr, alloc, oos_range, ts]
+
+    label = re.sub(r"[^a-zA-Z0-9_]", "_", getattr(args, "run_label", "")).strip("_")
+    if label:
+        parts.append(label)
+
+    return "_".join(parts)
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
@@ -404,6 +460,9 @@ def main() -> None:
     args = parse_args()
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    run_id = _build_run_id(args)
+    log.info("Run ID: %s", run_id)
 
     # ── Load full data ─────────────────────────────────────────────────
     raw_full: dict[str, pd.DataFrame] = {}
@@ -557,8 +616,12 @@ def main() -> None:
                  p.get("calmar", 0))
     log.info("=" * 60)
 
-    # ── Save artifacts ─────────────────────────────────────────────────
-    stitched.to_csv(out_dir / "stitched_oos_equity.csv")
+    # ── Save artifacts (all files prefixed with run_id) ───────────────
+    def _p(suffix: str) -> Path:
+        """Return out_dir / run_id_suffix path."""
+        return out_dir / f"{run_id}_{suffix}"
+
+    stitched.to_csv(_p("stitched_oos_equity.csv"))
 
     fold_perf_rows = []
     for fr in fold_results:
@@ -567,7 +630,7 @@ def main() -> None:
         row = {"fold": fr["fold"], "oos_start": fr["oos_start"], "oos_end": fr["oos_end"]}
         row.update(fr["perf"])
         fold_perf_rows.append(row)
-    pd.DataFrame(fold_perf_rows).to_csv(out_dir / "fold_performance.csv", index=False)
+    pd.DataFrame(fold_perf_rows).to_csv(_p("fold_performance.csv"), index=False)
 
     # Per-fold equity curves
     fold_curves: dict[str, pd.Series] = {}
@@ -579,17 +642,20 @@ def main() -> None:
         fold_curves["stitched_oos"] = stitched
         try:
             pd.concat(fold_curves.values(), axis=1, keys=fold_curves.keys()).to_csv(
-                out_dir / "fold_equity_curves.csv"
+                _p("fold_equity_curves.csv")
             )
         except Exception:
             pass
 
+    trend_strat = getattr(args, "trend_strategy", TREND_STRATEGY)
+    hedge_strat = getattr(args, "hedge_strategy", HEDGE_STRATEGY)
     summary = {
+        "run_id": run_id,
         "stitched_oos": stitched_perf,
         "stitched_annual_returns": stitched_annual,
         "folds": [
             {
-                "fold":     fr.get("fold"),
+                "fold":      fr.get("fold"),
                 "oos_start": fr.get("oos_start"),
                 "oos_end":   fr.get("oos_end"),
                 "perf":      fr.get("perf", {}),
@@ -597,12 +663,17 @@ def main() -> None:
             for fr in fold_results if fr
         ],
         "config": {
+            "run_label":            getattr(args, "run_label", ""),
+            "trend_strategy":       trend_strat,
+            "hedge_strategy":       hedge_strat,
             "data_start":           args.data_start,
             "oos_start":            args.oos_start,
             "oos_end":              args.oos_end,
             "trend_weight":         args.trend_weight,
             "hedge_weight":         args.hedge_weight,
             "mr_weight":            args.mr_weight,
+            "equity_weight":        getattr(args, "equity_weight", 0.0),
+            "gold_weight":          getattr(args, "gold_weight", 0.0),
             "capital":              args.capital,
             "fee_bps":              args.fee * 10000,
             "base_slippage_bps":    args.base_slippage,
@@ -611,11 +682,12 @@ def main() -> None:
             "mr_cooldown_bars":     args.mr_cooldown,
         },
     }
-    (out_dir / "summary.json").write_text(
+    _p("summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8"
     )
 
-    _write_wf_report(out_dir, fold_results, stitched_perf, stitched_annual, args)
+    _write_wf_report(_p("report.md"), fold_results, stitched_perf, stitched_annual, args, run_id)
+    log.info("Run ID:  %s", run_id)
     log.info("Artifacts saved to %s", out_dir)
 
 
