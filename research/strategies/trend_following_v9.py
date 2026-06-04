@@ -1,34 +1,26 @@
-"""Layer 2 — TrendFollowingV9 — SPY cross-asset macro gate + BTC recovery override.
+"""Layer 2 — TrendFollowingV9 — SPY macro gate + explicit BTC recovery override.
 
 Extends trend_following_v8_ecap60_add80 with a two-signal cross-asset gate:
 
-  1. SPY below SMA175  → macro bear context is active.
-  2. BTC below own SMA175 (175 calendar days, timeframe-agnostic) → BTC has not
-     yet reclaimed its structural level.
+  1. SPY below SMA175 means macro bear context is active.
+  2. BTC above SMA175 means crypto recovery is confirmed by the BTC regime anchor.
 
-  Block ENTER_LONG only when BOTH conditions hold.
-  Allow ENTER_LONG when SPY is bearish BUT BTC has already reclaimed its SMA175
-  — this is the crypto-leads-equity recovery pattern (e.g. Q1 2023: BTC +90%
-  while SPY was still below its SMA175 until April).
+Canonical behavior
+------------------
+Runners should inject ``df["btc_above_sma175"]`` into every crypto trend
+sleeve, including ETH. ETH still uses ETH price action for its local trend
+signal, but the recovery override is BTC-anchored.
 
-Rationale
----------
-v9 original (SPY-only gate) fixed 2022 whipsaw but cost 2023 performance:
-SPY's 175-day SMA is a slow indicator (~8.5-month average).  SPY didn't
-reclaim SMA175 until April 2023, but BTC had already run from $16k to $30k
-in January–March.  Blocking longs until SPY confirmed missed the entire
-first leg of the 2023 bull.
+This prevents a subtle but material ambiguity: an ETH sleeve should not compute
+"BTC recovery" from ETH's own dataframe. If the canonical BTC column is absent,
+this module falls back to the local asset SMA175 for backward compatibility and
+records ``btc_state_source = "asset_local_fallback"`` in metadata. Canonical
+research runs should show ``btc_state_source = "explicit_btc"``.
 
-The BTC SMA175 override detects this exactly:
-  2022 July rally (+23%): BTC SMA175 ≈ $35-40k, BTC at $24k → below → BLOCK ✓
-  2023 Q1 rally (+90%):   BTC crossed its own SMA175 in late-Jan/Feb → ALLOW ✓
-
-The gate is still one-directional:
-  Blocks:  new ENTER_LONG when SPY bear AND BTC structural downtrend
-  Allows:  HOLD of existing positions, EXIT, FLAT always
-  Overrides: ENTER_LONG when SPY bear BUT BTC > own SMA175
-
-Backward compatible: if df["spy_above_sma175"] is absent, gate is skipped.
+The gate is one-directional:
+  - Blocks new ENTER_LONG when SPY is bearish and BTC recovery is not confirmed.
+  - Allows HOLD, EXIT, and FLAT unchanged.
+  - Allows ENTER_LONG when SPY is bearish but BTC recovery is confirmed.
 """
 
 from __future__ import annotations
@@ -38,25 +30,21 @@ import pandas as pd
 from research.strategies.contracts import Action, StrategyContext, StrategyIntent
 from research.strategies import trend_following_v8
 
-STRATEGY_ID   = "trend_following_v9"
-_ENTRY_CAP    = 0.60
-_ADDON_CAP    = 0.80
-_SPY_COL      = "spy_above_sma175"
-_BTC_SMA_DAYS = 175   # calendar days — mirrors SPY SMA175 concept
+STRATEGY_ID = "trend_following_v9"
+ENTRY_CAP = 0.60
+ADDON_CAP = 0.80
+SPY_COL = "spy_above_sma175"
+BTC_COL = "btc_above_sma175"
+SMA_DAYS = 175
 
 
-def _btc_above_sma(df: pd.DataFrame) -> bool | None:
-    """True if BTC close is above its 175-calendar-day SMA.
-
-    Auto-detects bar size (1H, 4H, etc.) so the same lookback duration is
-    used regardless of timeframe.  Returns None when there is insufficient
-    warmup history.
-    """
+def _asset_local_above_sma175(df: pd.DataFrame) -> bool | None:
+    """Backward-compatible fallback using the local asset's 175-day SMA."""
     close = df["close"]
     if len(close) < 2:
         return None
     bar_hours = max(1.0, (df.index[-1] - df.index[-2]).total_seconds() / 3600)
-    sma_bars  = round(_BTC_SMA_DAYS * 24 / bar_hours)
+    sma_bars = round(SMA_DAYS * 24 / bar_hours)
     if len(close) < sma_bars:
         return None
     sma_val = close.rolling(sma_bars).mean().iloc[-1]
@@ -65,92 +53,62 @@ def _btc_above_sma(df: pd.DataFrame) -> bool | None:
     return float(close.iloc[-1]) > float(sma_val)
 
 
-def generate_intent(
-    df: pd.DataFrame,
-    ctx: StrategyContext,
-    closed_only: bool = True,
-) -> StrategyIntent:
+def _read_spy_state(df: pd.DataFrame) -> bool | None:
+    if SPY_COL not in df.columns:
+        return None
+    val = df[SPY_COL].iloc[-1]
+    return bool(val) if pd.notna(val) else None
+
+
+def _read_btc_recovery_state(df: pd.DataFrame) -> tuple[bool | None, str]:
+    if BTC_COL in df.columns:
+        val = df[BTC_COL].iloc[-1]
+        if pd.notna(val):
+            return bool(val), "explicit_btc"
+    return _asset_local_above_sma175(df), "asset_local_fallback"
+
+
+def _copy_intent(intent: StrategyIntent, meta_updates: dict, exposure: float | None = None) -> StrategyIntent:
+    return StrategyIntent(
+        action=intent.action,
+        confidence=intent.confidence,
+        desired_exposure_frac=intent.desired_exposure_frac if exposure is None else exposure,
+        horizon_hours=intent.horizon_hours,
+        reason=intent.reason,
+        meta={**intent.meta, **meta_updates},
+        strategy_id=STRATEGY_ID,
+    )
+
+
+def generate_intent(df: pd.DataFrame, ctx: StrategyContext, closed_only: bool = True) -> StrategyIntent:
     intent = trend_following_v8.generate_intent(df, ctx, closed_only)
 
-    # Read SPY cross-asset state
-    spy_state: bool | None = None
-    if _SPY_COL in df.columns:
-        val = df[_SPY_COL].iloc[-1]
-        if pd.notna(val):
-            spy_state = bool(val)
+    spy_state = _read_spy_state(df)
+    btc_state, btc_source = _read_btc_recovery_state(df)
+    base_meta = {
+        "spy_above_sma175": spy_state,
+        "btc_above_sma175": btc_state,
+        "btc_state_source": btc_source,
+    }
 
-    # Gate: when SPY is in a macro bear, block new longs UNLESS BTC has
-    # already reclaimed its own structural level (leading-recovery override).
     if intent.action == Action.ENTER_LONG and spy_state is False:
-        btc_bullish = _btc_above_sma(df)
-        if btc_bullish is not True:
-            # Both SPY and BTC in structural downtrend — block entry.
+        if btc_state is not True:
             return StrategyIntent(
                 action=Action.FLAT,
                 confidence=0.60,
                 desired_exposure_frac=0.0,
                 horizon_hours=0,
-                reason=(
-                    "SPY below SMA175 (macro bear) and BTC below own SMA175 "
-                    "— no recovery confirmation, blocking new long entry"
-                ),
-                meta={
-                    **intent.meta,
-                    "spy_above_sma175": False,
-                    "btc_above_sma175": btc_bullish,
-                    "btc_override":     False,
-                },
+                reason=f"SPY macro bear and BTC recovery not confirmed ({btc_source})",
+                meta={**intent.meta, **base_meta, "btc_override": False},
                 strategy_id=STRATEGY_ID,
             )
-        # BTC has reclaimed its structural level while SPY is still bearish.
-        # Crypto is leading the recovery — allow the entry.
-        intent = StrategyIntent(
-            action=intent.action,
-            confidence=intent.confidence,
-            desired_exposure_frac=intent.desired_exposure_frac,
-            horizon_hours=intent.horizon_hours,
-            reason=intent.reason,
-            meta={
-                **intent.meta,
-                "spy_above_sma175": False,
-                "btc_above_sma175": True,
-                "btc_override":     True,
-            },
-            strategy_id=STRATEGY_ID,
-        )
+        intent = _copy_intent(intent, {**base_meta, "btc_override": True})
 
-    # Apply exposure caps (same as ecap60_add80)
-    is_addon         = intent.action == Action.ENTER_LONG and intent.meta.get("add_on", False)
-    is_initial_entry = intent.action == Action.ENTER_LONG and not is_addon
+    is_addon = intent.action == Action.ENTER_LONG and intent.meta.get("add_on", False)
+    is_initial = intent.action == Action.ENTER_LONG and not is_addon
 
-    if is_initial_entry and intent.desired_exposure_frac > _ENTRY_CAP:
-        return StrategyIntent(
-            action=intent.action,
-            confidence=intent.confidence,
-            desired_exposure_frac=_ENTRY_CAP,
-            horizon_hours=intent.horizon_hours,
-            reason=intent.reason,
-            meta={**intent.meta, "entry_cap": _ENTRY_CAP, "spy_above_sma175": spy_state},
-            strategy_id=STRATEGY_ID,
-        )
-
-    if is_addon and intent.desired_exposure_frac > _ADDON_CAP:
-        return StrategyIntent(
-            action=intent.action,
-            confidence=intent.confidence,
-            desired_exposure_frac=_ADDON_CAP,
-            horizon_hours=intent.horizon_hours,
-            reason=intent.reason,
-            meta={**intent.meta, "addon_cap": _ADDON_CAP, "spy_above_sma175": spy_state},
-            strategy_id=STRATEGY_ID,
-        )
-
-    return StrategyIntent(
-        action=intent.action,
-        confidence=intent.confidence,
-        desired_exposure_frac=intent.desired_exposure_frac,
-        horizon_hours=intent.horizon_hours,
-        reason=intent.reason,
-        meta={**intent.meta, "spy_above_sma175": spy_state},
-        strategy_id=STRATEGY_ID,
-    )
+    if is_initial and intent.desired_exposure_frac > ENTRY_CAP:
+        return _copy_intent(intent, {**base_meta, "entry_cap": ENTRY_CAP}, ENTRY_CAP)
+    if is_addon and intent.desired_exposure_frac > ADDON_CAP:
+        return _copy_intent(intent, {**base_meta, "addon_cap": ADDON_CAP}, ADDON_CAP)
+    return _copy_intent(intent, base_meta)
