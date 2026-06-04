@@ -13,6 +13,13 @@ receive explicit BTC macro-state columns before strategy evaluation:
 This prevents ETH sleeves from accidentally computing BTC recovery/parabolic
 state from ETH-local data. Canonical audit artifacts should show
 ``explicit_btc`` for every trend-sleeve decision row.
+
+Acceleration policy
+-------------------
+The only parallelism implemented here is fold-level parallelism. Walk-forward
+folds are independent OOS evaluations, so they can be run concurrently and then
+stitched in chronological order without changing strategy behavior, position
+logic, or performance math.
 """
 
 from __future__ import annotations
@@ -90,6 +97,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--cooldown", type=int, default=2)
     p.add_argument("--mr-cooldown", type=int, default=12)
     p.add_argument("--rebalance-threshold", type=float, default=0.02)
+    p.add_argument("--workers", type=int, default=1,
+                   help="Number of parallel fold workers. Use 1 for deterministic sequential execution; use up to the number of folds for faster full WFO.")
     p.add_argument("--out-dir", default="artifacts/multi_strategy_walkforward")
     return p.parse_args()
 
@@ -195,9 +204,20 @@ def _stitch(fold_results: list[dict], initial_capital: float) -> pd.Series:
     return stitched.sort_index()
 
 
-def _write_status(out_dir: Path, message: str) -> None:
+def _write_status(out_dir: Path, message: str, fold_label: str | None = None) -> None:
     try:
         (out_dir / "RUN_STATUS.txt").write_text(message + "\n", encoding="utf-8")
+        if fold_label:
+            (out_dir / f"RUN_STATUS_{fold_label}.txt").write_text(message + "\n", encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _write_error(out_dir: Path, err: str, fold_label: str | None = None) -> None:
+    try:
+        (out_dir / "runner_error.txt").write_text(err, encoding="utf-8")
+        if fold_label:
+            (out_dir / f"runner_error_{fold_label}.txt").write_text(err, encoding="utf-8")
     except Exception:
         pass
 
@@ -216,7 +236,7 @@ def _run_fold(
     out_dir: Path,
 ) -> dict:
     log.info("Fold %s — OOS %s to %s", fold.label, fold.oos_start, fold.oos_end)
-    _write_status(out_dir, f"fold={fold.label} stage=start")
+    _write_status(out_dir, f"fold={fold.label} stage=start", fold.label)
     raw_window = {asset: df.loc[fold.is_start : fold.oos_end] for asset, df in raw_full.items()}
     specs = [s for s in _build_sleeves(args) if s.capital > 0]
 
@@ -229,11 +249,11 @@ def _run_fold(
     audit_rows: list[dict] = []
     for spec in specs:
         if spec.asset not in raw_window:
-            log.info("Skipping %s — no %s data loaded", spec.label, spec.asset)
+            log.info("Fold %s skipping %s — no %s data loaded", fold.label, spec.label, spec.asset)
             continue
 
-        log.info("Running %-16s strategy=%s capital=$%.0f", spec.label, spec.strategy, spec.capital)
-        _write_status(out_dir, f"fold={fold.label} sleeve={spec.label} stage=running")
+        log.info("Fold %s running %-16s strategy=%s capital=$%.0f", fold.label, spec.label, spec.strategy, spec.capital)
+        _write_status(out_dir, f"fold={fold.label} sleeve={spec.label} stage=running", fold.label)
         try:
             df = _sleeve_df(raw_window, spec)
             if spec.family == "trend":
@@ -257,11 +277,11 @@ def _run_fold(
                 cash_yield_series=cash_yield,
             )
             results[spec.label] = result
-            log.info("Completed %-16s final_equity=$%.2f trades=%d", spec.label, result.final_equity, len(result.trades))
+            log.info("Fold %s completed %-16s final_equity=$%.2f trades=%d", fold.label, spec.label, result.final_equity, len(result.trades))
         except Exception:
             err = traceback.format_exc()
-            (out_dir / "runner_error.txt").write_text(err, encoding="utf-8")
-            log.error("Sleeve %s failed. Traceback written to %s", spec.label, out_dir / "runner_error.txt")
+            _write_error(out_dir, err, fold.label)
+            log.error("Fold %s sleeve %s failed. Traceback written under %s", fold.label, spec.label, out_dir)
             raise
 
         if spec.family == "trend":
@@ -294,7 +314,7 @@ def _run_fold(
     all_trades = [t for r in results.values() for t in r.trades if pd.Timestamp(t.timestamp) >= oos_start_ts]
     perf = _perf(fund_nav, all_trades)
     log.info("  Fold %s OOS → CAGR %+.1f%%  MaxDD %.1f%%  Sharpe %.3f  Calmar %.3f", fold.label, perf["cagr_pct"], perf["max_drawdown_pct"], perf["sharpe"], perf["calmar"])
-    _write_status(out_dir, f"fold={fold.label} stage=completed")
+    _write_status(out_dir, f"fold={fold.label} stage=completed", fold.label)
     return {
         "fold": fold.label,
         "oos_start": fold.oos_start,
@@ -346,17 +366,84 @@ def _write_wf_report(out_dir: Path, fold_rows: list[dict], stitched_perf: dict, 
         f"slip_vol_fac   {args.slippage_vol_factor:.1f}",
         f"cooldown       {args.cooldown} bars (trend/hedge)",
         f"mr_cooldown    {args.mr_cooldown} bars (MR sleeves)",
+        f"workers        {args.workers}",
         "```",
         "",
         "## Methodology",
         "",
         "Expanding-window walk-forward. Each fold's OOS slice is strictly future data.",
         "Trend sleeves receive canonical BTC macro-state columns computed from BTC only.",
+        "When workers > 1, folds run in parallel and are stitched in chronological order.",
         "Strategies use fixed rule-based parameters — no ML retraining or parameter selection across folds.",
         "",
         "_Research only. Not financial advice._",
     ]
     (out_dir / "walkforward_report.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def _run_folds(
+    folds: list[WFFold],
+    raw: dict[str, pd.DataFrame],
+    args: argparse.Namespace,
+    base_cfg: ExecutionConfig,
+    mr_cfg: ExecutionConfig,
+    equity_cfg: ExecutionConfig,
+    btc_state: pd.DataFrame,
+    spy_sma175: pd.Series | None,
+    btc_parabolic: pd.Series | None,
+    bil_yield: pd.Series | None,
+    out_dir: Path,
+) -> list[dict]:
+    if args.workers <= 1 or len(folds) <= 1:
+        return [
+            _run_fold(f, raw, args, base_cfg, mr_cfg, equity_cfg, btc_state, spy_sma175, btc_parabolic, bil_yield, out_dir)
+            for f in folds
+        ]
+
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+
+    n_workers = min(max(1, int(args.workers)), len(folds))
+    log.info("Running %d folds in parallel with %d workers", len(folds), n_workers)
+    fold_results_map: dict[str, dict] = {}
+    with ProcessPoolExecutor(max_workers=n_workers) as executor:
+        future_to_fold = {
+            executor.submit(
+                _run_fold,
+                f,
+                raw,
+                args,
+                base_cfg,
+                mr_cfg,
+                equity_cfg,
+                btc_state,
+                spy_sma175,
+                btc_parabolic,
+                bil_yield,
+                out_dir,
+            ): f
+            for f in folds
+        }
+        for future in as_completed(future_to_fold):
+            fold = future_to_fold[future]
+            try:
+                fr = future.result()
+            except Exception:
+                err = traceback.format_exc()
+                _write_error(out_dir, err, fold.label)
+                log.error("Fold %s failed in worker. See runner_error_%s.txt", fold.label, fold.label)
+                raise
+            fold_results_map[fold.label] = fr
+            p = fr.get("perf", {})
+            log.info(
+                "Fold %s worker complete → CAGR %+.1f%%  MaxDD %.1f%%  Sharpe %.3f  Calmar %.3f",
+                fold.label,
+                p.get("cagr_pct", 0),
+                p.get("max_drawdown_pct", 0),
+                p.get("sharpe", 0),
+                p.get("calmar", 0),
+            )
+
+    return [fold_results_map[f.label] for f in folds]
 
 
 def main() -> None:
@@ -420,10 +507,19 @@ def main() -> None:
 
         folds = _build_folds(args.data_start, args.oos_start, args.oos_end)
         log.info("Walk-forward: %d folds  OOS %s to %s", len(folds), args.oos_start, args.oos_end)
-        fold_results = [
-            _run_fold(f, raw, args, base_cfg, mr_cfg, equity_cfg, btc_state, spy_sma175, btc_parabolic, bil_yield, out_dir)
-            for f in folds
-        ]
+        fold_results = _run_folds(
+            folds,
+            raw,
+            args,
+            base_cfg,
+            mr_cfg,
+            equity_cfg,
+            btc_state,
+            spy_sma175,
+            btc_parabolic,
+            bil_yield,
+            out_dir,
+        )
 
         stitched = _stitch(fold_results, args.capital)
         if stitched.empty:
@@ -462,7 +558,7 @@ def main() -> None:
         _write_status(out_dir, "stage=completed")
     except Exception:
         err = traceback.format_exc()
-        (out_dir / "runner_error.txt").write_text(err, encoding="utf-8")
+        _write_error(out_dir, err)
         log.error("Runner failed. Traceback written to %s", out_dir / "runner_error.txt")
         raise
 
