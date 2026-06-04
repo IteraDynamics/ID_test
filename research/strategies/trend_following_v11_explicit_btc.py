@@ -1,31 +1,11 @@
-"""Layer 2 — TrendFollowingV11 — explicit BTC parabolic exposure trimmer.
-
-Extends trend_following_v9 with a parabolic-risk cap. The cap is BTC-anchored:
-runners should inject ``df["btc_extension_sma365"]`` into all crypto trend
-sleeves, including ETH. ETH still trades its own local trend, but BTC defines
-crypto-wide parabolic risk.
-
-Canonical behavior
-------------------
-When ``btc_extension_sma365`` is present, metadata records
-``btc_parabolic_state_source = "explicit_btc"``. If absent, the module falls
-back to local-asset extension for backward compatibility and records
-``btc_parabolic_state_source = "asset_local_fallback"``. Canonical research
-runs should show only ``explicit_btc`` for trend sleeves.
-
-The cap only affects new ENTER_LONG intents. Existing positions are not
-force-reduced; normal exit conditions still apply.
-"""
-
 from __future__ import annotations
 
 import pandas as pd
 
 from research.strategies.contracts import Action, StrategyContext, StrategyIntent
-from research.strategies import trend_following_v9
+from research.strategies import trend_following_v9_explicit_btc
 
-STRATEGY_ID = "trend_following_v11"
-
+STRATEGY_ID = "trend_following_v11_explicit_btc"
 PARA_SMA_DAYS = 365
 SOFT_THRESHOLD = 0.60
 HARD_THRESHOLD = 1.00
@@ -37,7 +17,6 @@ EXT_COL = "btc_extension_sma365"
 
 
 def _asset_local_extension(df: pd.DataFrame) -> float | None:
-    """Backward-compatible fallback using the local asset's SMA365 extension."""
     close = df["close"]
     if len(close) < 2:
         return None
@@ -51,7 +30,7 @@ def _asset_local_extension(df: pd.DataFrame) -> float | None:
     return (float(close.iloc[-1]) - sma_val) / sma_val
 
 
-def _read_btc_extension(df: pd.DataFrame) -> tuple[float | None, str]:
+def _read_extension(df: pd.DataFrame):
     if EXT_COL in df.columns:
         val = df[EXT_COL].iloc[-1]
         if pd.notna(val):
@@ -59,7 +38,7 @@ def _read_btc_extension(df: pd.DataFrame) -> tuple[float | None, str]:
     return _asset_local_extension(df), "asset_local_fallback"
 
 
-def _copy_intent(intent: StrategyIntent, meta_updates: dict, exposure: float | None = None) -> StrategyIntent:
+def _copy_intent(intent: StrategyIntent, meta_updates: dict, exposure=None) -> StrategyIntent:
     return StrategyIntent(
         action=intent.action,
         confidence=intent.confidence,
@@ -72,8 +51,8 @@ def _copy_intent(intent: StrategyIntent, meta_updates: dict, exposure: float | N
 
 
 def generate_intent(df: pd.DataFrame, ctx: StrategyContext, closed_only: bool = True) -> StrategyIntent:
-    intent = trend_following_v9.generate_intent(df, ctx, closed_only)
-    extension, source = _read_btc_extension(df)
+    intent = trend_following_v9_explicit_btc.generate_intent(df, ctx, closed_only)
+    extension, source = _read_extension(df)
     meta = {
         "btc_extension_sma365": round(extension, 3) if extension is not None else None,
         "btc_parabolic_state_source": source,
