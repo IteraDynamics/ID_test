@@ -1,45 +1,18 @@
 #!/usr/bin/env python
 """IteraDynamics — Multi-Strategy Fund Walk-Forward Validator.
 
-Runs the same three-sleeve fund structure (trend + hedge + MR) through
-chronological expanding-window walk-forward folds. Each fold's OOS slice
-is strictly future data that was invisible during the preceding period.
+Canonical walk-forward runner for the multi-sleeve research fund. Trend sleeves
+now receive explicit BTC macro-state columns before strategy evaluation:
 
-Walk-forward design (expanding window, annual OOS slices):
+- btc_above_sma175
+- btc_extension_sma365
+- btc_parabolic_soft
+- btc_parabolic_hard
+- btc_parabolic_tier
 
-  Fold 1:  IS 2019-01-01 → 2020-12-31   OOS 2021-01-01 → 2021-12-31
-  Fold 2:  IS 2019-01-01 → 2021-12-31   OOS 2022-01-01 → 2022-12-31
-  Fold 3:  IS 2019-01-01 → 2022-12-31   OOS 2023-01-01 → 2023-12-31
-  Fold 4:  IS 2019-01-01 → 2023-12-31   OOS 2024-01-01 → 2024-12-31
-
-Stitched OOS: concatenation of the four OOS equity curves, scaled so
-each fold starts from the prior fold's ending NAV (realistic compounding).
-
-There is no ML calibration step here — these are rule-based strategies
-with fixed parameters. Walk-forward validates that the strategy
-architecture, not cherry-picked parameters, drives performance.
-
-Usage
------
-# Default folds (2021–2024 OOS), BTC only:
-python scripts/run_multi_strategy_walkforward.py \\
-    --btc-data data/btcusd_3600s_2019-01-01_to_2025-12-30.csv
-
-# BTC + ETH:
-python scripts/run_multi_strategy_walkforward.py \\
-    --btc-data data/btcusd_3600s_2019-01-01_to_2025-12-30.csv \\
-    --eth-data data/ethusd_3600s_2019-01-01_to_2025-12-30.csv
-
-# Custom OOS start (folds auto-generated from there to --oos-end):
-python scripts/run_multi_strategy_walkforward.py \\
-    --btc-data data/btcusd_3600s_2019-01-01_to_2025-12-30.csv \\
-    --eth-data data/ethusd_3600s_2019-01-01_to_2025-12-30.csv \\
-    --data-start 2019-01-01 --oos-start 2021-01-01 --oos-end 2024-12-31
-
-PowerShell:
-python scripts\\run_multi_strategy_walkforward.py `
-    --btc-data data\\btcusd_3600s_2019-01-01_to_2025-12-30.csv `
-    --eth-data data\\ethusd_3600s_2019-01-01_to_2025-12-30.csv
+This prevents ETH sleeves from accidentally computing BTC recovery/parabolic
+state from ETH-local data. Canonical audit artifacts should show
+``explicit_btc`` for every trend-sleeve decision row.
 """
 
 from __future__ import annotations
@@ -63,129 +36,163 @@ logging.basicConfig(
 )
 log = logging.getLogger("multi_strategy_wf")
 
-import numpy as np
 import pandas as pd
 
-from research.harness.data_loader import load_ohlcv, validate_ohlcv
-from research.harness.resampler import resample_ohlcv, align_equity_curves
-from research.harness.backtest_engine import run_backtest, BacktestResult
+from research.harness.backtest_engine import BacktestResult, run_backtest
+from research.harness.cross_asset_state import compute_btc_macro_state, inject_btc_macro_state
 from research.harness.execution_model import ExecutionConfig
 from research.harness.metrics import compute_metrics
+from research.harness.resampler import align_equity_curves, resample_ohlcv
 from research.strategies import REGISTRY as STRATEGY_REGISTRY
+from research.strategies import trend_following_v11
+from scripts.run_multi_strategy_fund import SleeveSpec, _build_sleeves, _load_asset
 
-# Re-use sleeve construction helpers from the fund runner
-from scripts.run_multi_strategy_fund import (
-    SleeveSpec,
-    _build_sleeves,
-    _load_asset,
-    _sleeve_df,
-    _run_sleeve,
-    _combine_curves,
-    _perf_dict,
-    _annual_returns,
-    _sleeve_activity,
-)
-
-TREND_STRATEGY = "trend_following_v11"
 HEDGE_STRATEGY = "crash_short_v6"
-MR_STRATEGY    = "mean_reversion"
+MR_STRATEGY = "mean_reversion"
+EQUITY_STRATEGY = "equity_sma175_v3"
+GOLD_STRATEGY = "gold_sma_v1"
 
-
-# ── Fold definition ────────────────────────────────────────────────────────────
 
 @dataclass
 class WFFold:
     label: str
-    is_start: str    # inclusive
-    is_end: str      # inclusive
-    oos_start: str   # inclusive
-    oos_end: str     # inclusive
+    is_start: str
+    is_end: str
+    oos_start: str
+    oos_end: str
 
-
-def _build_folds(data_start: str, oos_start: str, oos_end: str) -> list[WFFold]:
-    """Build annual expanding-window folds from oos_start through oos_end."""
-    oos_start_dt = pd.Timestamp(oos_start)
-    oos_end_dt   = pd.Timestamp(oos_end)
-
-    folds: list[WFFold] = []
-    year = oos_start_dt.year
-    while True:
-        fold_oos_start = pd.Timestamp(f"{year}-01-01")
-        fold_oos_end   = pd.Timestamp(f"{year}-12-31")
-
-        if fold_oos_start > oos_end_dt:
-            break
-        if fold_oos_end > oos_end_dt:
-            fold_oos_end = oos_end_dt
-
-        # IS ends the day before OOS starts
-        fold_is_end = fold_oos_start - pd.Timedelta(days=1)
-
-        folds.append(WFFold(
-            label=str(year),
-            is_start=data_start,
-            is_end=str(fold_is_end.date()),
-            oos_start=str(fold_oos_start.date()),
-            oos_end=str(fold_oos_end.date()),
-        ))
-        year += 1
-
-    return folds
-
-
-# ── CLI ────────────────────────────────────────────────────────────────────────
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Multi-strategy fund walk-forward OOS validation",
+        description="Multi-strategy fund walk-forward with explicit BTC macro state",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     p.add_argument("--btc-data", required=True)
     p.add_argument("--eth-data", default=None)
-    p.add_argument("--spy-data", default=None,
-                   help="Path to SPY daily OHLCV CSV (enables equity sleeve)")
-    p.add_argument("--qqq-data", default=None,
-                   help="Path to QQQ daily OHLCV CSV")
-    p.add_argument("--bil-data", default=None,
-                   help="Path to BIL daily OHLCV CSV (cash yield for idle equity capital)")
+    p.add_argument("--spy-data", default=None)
+    p.add_argument("--qqq-data", default=None)
+    p.add_argument("--bil-data", default=None)
+    p.add_argument("--gld-data", default=None)
     p.add_argument("--capital", type=float, default=100_000.0)
-    p.add_argument("--trend-weight",  type=float, default=0.60)
-    p.add_argument("--hedge-weight",  type=float, default=0.20)
-    p.add_argument("--mr-weight",     type=float, default=0.20)
-    p.add_argument("--equity-weight", type=float, default=0.0,
-                   help="Fraction of capital to equity SMA175 sleeve")
-    p.add_argument("--gld-data", default=None,
-                   help="Path to GLD daily OHLCV CSV (enables gold trend sleeve)")
-    p.add_argument("--gold-weight", type=float, default=0.0,
-                   help="Fraction of capital to gold SMA200 trend sleeve")
-    # Walk-forward window
-    p.add_argument("--data-start",  default="2019-01-01",
-                   help="Start of the full data window (IS begins here)")
-    p.add_argument("--oos-start",   default="2021-01-01",
-                   help="Start of the first OOS fold (year 1)")
-    p.add_argument("--oos-end",     default="2024-12-31",
-                   help="End of the last OOS fold")
-    # Cost model
-    p.add_argument("--fee",                  type=float, default=0.0006)
-    p.add_argument("--equity-fee",           type=float, default=0.0001)
-    p.add_argument("--base-slippage",        type=float, default=3.0)
-    p.add_argument("--slippage-vol-factor",  type=float, default=50.0)
-    p.add_argument("--cooldown",             type=int,   default=2)
-    p.add_argument("--mr-cooldown",          type=int,   default=12,
-                   help="Cooldown bars for MR sleeves (matches 12H horizon)")
-    p.add_argument("--rebalance-threshold",  type=float, default=0.02)
-    # Parallelism
-    p.add_argument("--workers", type=int, default=1,
-                   help="Number of parallel fold workers (default 1 = sequential). "
-                        "Set to 4 to run all folds concurrently (~4x speedup). "
-                        "On Windows, must be run under 'if __name__ == \"__main__\"' — "
-                        "this script already satisfies that requirement.")
-    # Output
+    p.add_argument("--trend-weight", type=float, default=0.60)
+    p.add_argument("--hedge-weight", type=float, default=0.20)
+    p.add_argument("--mr-weight", type=float, default=0.20)
+    p.add_argument("--equity-weight", type=float, default=0.0)
+    p.add_argument("--gold-weight", type=float, default=0.0)
+    p.add_argument("--data-start", default="2019-01-01")
+    p.add_argument("--oos-start", default="2021-01-01")
+    p.add_argument("--oos-end", default="2025-12-31")
+    p.add_argument("--fee", type=float, default=0.0006)
+    p.add_argument("--equity-fee", type=float, default=0.0001)
+    p.add_argument("--base-slippage", type=float, default=3.0)
+    p.add_argument("--slippage-vol-factor", type=float, default=50.0)
+    p.add_argument("--cooldown", type=int, default=2)
+    p.add_argument("--mr-cooldown", type=int, default=12)
+    p.add_argument("--rebalance-threshold", type=float, default=0.02)
     p.add_argument("--out-dir", default="artifacts/multi_strategy_walkforward")
     return p.parse_args()
 
 
-# ── Run one fold ───────────────────────────────────────────────────────────────
+def _build_folds(data_start: str, oos_start: str, oos_end: str) -> list[WFFold]:
+    oos_start_dt = pd.Timestamp(oos_start)
+    oos_end_dt = pd.Timestamp(oos_end)
+    folds: list[WFFold] = []
+    year = oos_start_dt.year
+    while True:
+        fold_oos_start = pd.Timestamp(f"{year}-01-01")
+        fold_oos_end = pd.Timestamp(f"{year}-12-31")
+        if fold_oos_start > oos_end_dt:
+            break
+        if fold_oos_end > oos_end_dt:
+            fold_oos_end = oos_end_dt
+        fold_is_end = fold_oos_start - pd.Timedelta(days=1)
+        folds.append(
+            WFFold(
+                label=str(year),
+                is_start=data_start,
+                is_end=str(fold_is_end.date()),
+                oos_start=str(fold_oos_start.date()),
+                oos_end=str(fold_oos_end.date()),
+            )
+        )
+        year += 1
+    return folds
+
+
+def _sleeve_df(raw: dict[str, pd.DataFrame], spec: SleeveSpec) -> pd.DataFrame:
+    df = raw[spec.asset]
+    if spec.timeframe.upper() == "4H":
+        return resample_ohlcv(df, "4h")
+    return df
+
+
+def _strategy_for(spec: SleeveSpec):
+    if spec.family == "trend":
+        return trend_following_v11
+    if spec.family == "hedge":
+        return STRATEGY_REGISTRY[HEDGE_STRATEGY]
+    if spec.family == "mr":
+        return STRATEGY_REGISTRY[MR_STRATEGY]
+    if spec.family == "equity":
+        return STRATEGY_REGISTRY[EQUITY_STRATEGY]
+    if spec.family == "gold":
+        return STRATEGY_REGISTRY[GOLD_STRATEGY]
+    return STRATEGY_REGISTRY[spec.strategy]
+
+
+def _combine_curves(results: dict[str, BacktestResult], specs: list[SleeveSpec]) -> pd.Series:
+    curves = {spec.label: results[spec.label].equity_curve for spec in specs if spec.label in results}
+    aligned = align_equity_curves(curves, base_freq="1h")
+    out = aligned.sum(axis=1)
+    out.name = "fund_nav"
+    return out
+
+
+def _perf(eq: pd.Series, trades: list | None = None, initial_capital: float | None = None) -> dict:
+    m = compute_metrics(eq, trades or [], initial_capital=initial_capital)
+    return {
+        "cagr_pct": round(m.cagr_pct, 2),
+        "total_return_pct": round(m.total_return_pct, 2),
+        "max_drawdown_pct": round(m.max_drawdown_pct, 2),
+        "sharpe": round(m.sharpe, 3),
+        "calmar": round(m.calmar, 3),
+        "volatility_ann_pct": round(m.volatility_ann_pct, 2),
+        "n_trades": m.n_trades,
+        "win_rate_pct": round(m.win_rate_pct, 2),
+        "total_fees_paid": round(m.total_fees_paid, 2),
+        "total_slippage_cost": round(m.total_slippage_cost, 2),
+        "initial_equity": round(m.initial_equity, 2),
+        "final_equity": round(m.final_equity, 2),
+    }
+
+
+def _annual_returns(eq: pd.Series) -> dict[str, float]:
+    daily = eq.resample("D").last().dropna()
+    out: dict[str, float] = {}
+    for yr, grp in daily.groupby(daily.index.year):
+        if len(grp) >= 5:
+            out[str(yr)] = round((float(grp.iloc[-1]) / float(grp.iloc[0]) - 1.0) * 100.0, 2)
+    return out
+
+
+def _stitch(fold_results: list[dict], initial_capital: float) -> pd.Series:
+    parts: list[pd.Series] = []
+    running_nav = initial_capital
+    for fr in fold_results:
+        curve = fr.get("fund_nav", pd.Series(dtype=float)).dropna()
+        if curve.empty:
+            continue
+        scale = running_nav / float(curve.iloc[0])
+        scaled = curve * scale
+        parts.append(scaled)
+        running_nav = float(scaled.iloc[-1])
+    if not parts:
+        return pd.Series(dtype=float)
+    stitched = pd.concat(parts)
+    stitched = stitched[~stitched.index.duplicated(keep="last")]
+    stitched.name = "stitched_oos_nav"
+    return stitched.sort_index()
+
 
 def _run_fold(
     fold: WFFold,
@@ -193,146 +200,90 @@ def _run_fold(
     args: argparse.Namespace,
     base_cfg: ExecutionConfig,
     mr_cfg: ExecutionConfig,
-    equity_cfg: ExecutionConfig | None = None,
-    bil_yield_full: "pd.Series | None" = None,
-    spy_sma175_full: "pd.Series | None" = None,
-    btc_parabolic_full: "pd.Series | None" = None,
+    equity_cfg: ExecutionConfig,
+    btc_state_full: pd.DataFrame | None,
+    spy_sma175_full: pd.Series | None,
+    btc_parabolic_full: pd.Series | None,
+    bil_yield_full: pd.Series | None,
 ) -> dict:
-    """Run OOS slice of one fold. Returns metrics dict."""
-    log.info("Fold %s — OOS %s → %s", fold.label, fold.oos_start, fold.oos_end)
-
-    # Slice raw data from IS start through OOS end.
-    # This gives long-period indicators (e.g. SMA175 on daily equity) proper
-    # warmup history so the strategy is active from day 1 of the OOS window.
-    # Metrics are then evaluated on the OOS portion only (oos_start onwards).
-    raw_with_warmup: dict[str, pd.DataFrame] = {}
-    for asset, df in raw_full.items():
-        sliced = df.loc[fold.is_start: fold.oos_end]
-        oos_len = len(df.loc[fold.oos_start: fold.oos_end])
-        if oos_len < 100:
-            log.warning("Fold %s %s: only %d bars in OOS — skipping",
-                        fold.label, asset, oos_len)
-            return {}
-        raw_with_warmup[asset] = sliced
-
+    log.info("Fold %s — OOS %s to %s", fold.label, fold.oos_start, fold.oos_end)
+    raw_window = {asset: df.loc[fold.is_start : fold.oos_end] for asset, df in raw_full.items()}
     specs = [s for s in _build_sleeves(args) if s.capital > 0]
 
-    # Slice BIL yield to IS+OOS window (backtest engine aligns to df.index internally)
-    bil_yield_window: pd.Series | None = None
-    if bil_yield_full is not None:
-        bil_yield_window = bil_yield_full.loc[fold.is_start: fold.oos_end]
-
-    # Slice SPY SMA175 signal to fold window for cross-asset hedge/trend gate
-    spy_sma175_window: pd.Series | None = None
-    if spy_sma175_full is not None:
-        spy_sma175_window = spy_sma175_full.loc[fold.is_start: fold.oos_end]
-
-    # Slice BTC parabolic signal to fold window for equity fast-exit gate
-    btc_parabolic_window: pd.Series | None = None
-    if btc_parabolic_full is not None:
-        btc_parabolic_window = btc_parabolic_full.loc[fold.is_start: fold.oos_end]
+    btc_state_window = None if btc_state_full is None else btc_state_full.loc[fold.is_start : fold.oos_end]
+    spy_window = None if spy_sma175_full is None else spy_sma175_full.loc[fold.is_start : fold.oos_end]
+    btc_para_window = None if btc_parabolic_full is None else btc_parabolic_full.loc[fold.is_start : fold.oos_end]
+    bil_window = None if bil_yield_full is None else bil_yield_full.loc[fold.is_start : fold.oos_end]
 
     results: dict[str, BacktestResult] = {}
+    audit_rows: list[dict] = []
     for spec in specs:
-        df = _sleeve_df(raw_with_warmup, spec)
-        # Inject SPY cross-asset signal into trend and hedge sleeves.
-        # trend_v11: blocks new longs when SPY < SMA175 (macro bear).
-        # crash_short_v6: blocks new shorts when SPY > SMA175 (equity bull).
-        if spec.family in ("hedge", "trend") and spy_sma175_window is not None:
-            aligned = spy_sma175_window.reindex(df.index, method="ffill")
+        if spec.asset not in raw_window:
+            continue
+        df = _sleeve_df(raw_window, spec)
+        if spec.family == "trend":
+            df = inject_btc_macro_state(df, btc_state_window)
+        if spec.family in ("trend", "hedge") and spy_window is not None:
             df = df.copy()
-            df["spy_above_sma175"] = aligned
-        # Inject BTC parabolic signal into equity sleeves so equity_sma175_v2
-        # can trigger early exit when equity weakens in parabolic BTC environments.
-        if spec.family == "equity" and btc_parabolic_window is not None:
-            aligned = btc_parabolic_window.reindex(df.index, method="ffill")
+            df["spy_above_sma175"] = spy_window.reindex(df.index, method="ffill")
+        if spec.family == "equity" and btc_para_window is not None:
             df = df.copy()
-            df["btc_in_parabolic"] = aligned
-        if spec.family in ("equity", "gold"):
-            cfg = equity_cfg or base_cfg
-            yield_series = bil_yield_window
-        elif spec.family == "mr":
-            cfg = mr_cfg
-            yield_series = None
-        else:
-            cfg = base_cfg
-            yield_series = None
-        results[spec.label] = _run_sleeve(spec, df, cfg, args.rebalance_threshold, yield_series)
+            df["btc_in_parabolic"] = btc_para_window.reindex(df.index, method="ffill")
 
-    # Combine, then slice to OOS period only for fair OOS evaluation
+        cfg = equity_cfg if spec.family in ("equity", "gold") else mr_cfg if spec.family == "mr" else base_cfg
+        cash_yield = bil_window if spec.family in ("equity", "gold") else None
+        result = run_backtest(
+            df=df,
+            strategy_module=_strategy_for(spec),
+            initial_capital=spec.capital,
+            exec_config=cfg,
+            asset=spec.asset,
+            rebalance_threshold=args.rebalance_threshold,
+            cash_yield_series=cash_yield,
+        )
+        results[spec.label] = result
+
+        if spec.family == "trend":
+            start_ts = pd.Timestamp(fold.oos_start)
+            for intent_idx, intent in enumerate(result.intent_series):
+                ts = result.position_series.index[intent_idx]
+                if ts < start_ts:
+                    continue
+                if "btc_state_source" in intent.meta:
+                    audit_rows.append(
+                        {
+                            "fold": fold.label,
+                            "timestamp": ts,
+                            "sleeve": spec.label,
+                            "asset": spec.asset,
+                            "action": intent.action.name,
+                            "desired_exposure": intent.desired_exposure_frac,
+                            "btc_above_sma175": intent.meta.get("btc_above_sma175"),
+                            "btc_state_source": intent.meta.get("btc_state_source"),
+                            "btc_extension_sma365": intent.meta.get("btc_extension_sma365"),
+                            "btc_parabolic_state_source": intent.meta.get("btc_parabolic_state_source"),
+                            "parabolic_tier": intent.meta.get("parabolic_tier"),
+                            "reason": intent.reason,
+                        }
+                    )
+
     fund_nav_full = _combine_curves(results, specs)
-    fund_nav = fund_nav_full.loc[fold.oos_start:]
-
+    fund_nav = fund_nav_full.loc[fold.oos_start : fold.oos_end]
     oos_start_ts = pd.Timestamp(fold.oos_start)
-    all_trades = [t for r in results.values() for t in r.trades
-                  if pd.Timestamp(t.timestamp) >= oos_start_ts]
-    perf = _perf_dict(fund_nav, all_trades)
-    activity = _sleeve_activity(results, specs)
-
+    all_trades = [t for r in results.values() for t in r.trades if pd.Timestamp(t.timestamp) >= oos_start_ts]
     return {
-        "fold":       fold.label,
-        "oos_start":  fold.oos_start,
-        "oos_end":    fold.oos_end,
-        "is_start":   fold.is_start,
-        "is_end":     fold.is_end,
-        "perf":       perf,
-        "activity":   activity,
-        "fund_nav":   fund_nav,
+        "fold": fold.label,
+        "oos_start": fold.oos_start,
+        "oos_end": fold.oos_end,
+        "fund_nav": fund_nav,
+        "perf": _perf(fund_nav, all_trades),
+        "audit_rows": audit_rows,
     }
 
 
-# ── Stitch OOS equity curves ───────────────────────────────────────────────────
-
-def _stitch_oos(fold_results: list[dict], initial_capital: float) -> pd.Series:
-    """Chain OOS equity curves so each fold starts from prior fold's end NAV."""
-    parts: list[pd.Series] = []
-    running_nav = initial_capital
-
-    for fr in fold_results:
-        if not fr or "fund_nav" not in fr:
-            continue
-        curve = fr["fund_nav"].dropna()
-        if curve.empty:
-            continue
-        # Rescale so this fold starts from running_nav
-        scale = running_nav / float(curve.iloc[0])
-        scaled = curve * scale
-        parts.append(scaled)
-        running_nav = float(scaled.iloc[-1])
-
-    if not parts:
-        return pd.Series(dtype=float)
-
-    stitched = pd.concat(parts)
-    stitched.name = "stitched_oos_nav"
-    # Remove any duplicate timestamps at fold boundaries
-    stitched = stitched[~stitched.index.duplicated(keep="last")]
-    return stitched.sort_index()
-
-
-# ── Reporting ──────────────────────────────────────────────────────────────────
-
-def _md_table(rows: list[dict], cols: list[str]) -> str:
-    if not rows:
-        return "_No data._"
-    header = "| " + " | ".join(cols) + " |"
-    sep    = "| " + " | ".join(["---"] * len(cols)) + " |"
-    lines  = [header, sep]
-    for row in rows:
-        lines.append("| " + " | ".join(str(row.get(c, "")) for c in cols) + " |")
-    return "\n".join(lines)
-
-
-def _write_wf_report(
-    out_dir: Path,
-    fold_rows: list[dict],
-    stitched_perf: dict,
-    stitched_annual: dict,
-    args: argparse.Namespace,
-) -> None:
-    lines = [
-        "# Multi-Strategy Fund — Walk-Forward OOS Report",
-        "",
+def _write_wf_report(out_dir: Path, fold_rows: list[dict], stitched_perf: dict, stitched_annual: dict, audit_rows: list[dict], args: argparse.Namespace) -> None:
+    lines = ["# Multi-Strategy Fund — Walk-Forward OOS Report", ""]
+    lines += [
         "## Stitched OOS Performance",
         "```text",
     ]
@@ -341,32 +292,24 @@ def _write_wf_report(
     lines += ["```", "", "## Stitched Annual Returns", "```text"]
     for yr, ret in stitched_annual.items():
         lines.append(f"{yr}   {ret:+.2f}%")
-    lines += ["```", "", "## Per-Fold OOS Results"]
-
-    fold_summary_cols = [
-        "fold", "oos_start", "oos_end",
-        "cagr_pct", "max_drawdown_pct", "sharpe", "calmar",
-        "n_trades", "total_fees_paid",
-    ]
-    fold_table_rows = []
+    lines += ["```", "", "## Explicit BTC State Audit", f"Rows written: {len(audit_rows)}", ""]
+    if audit_rows:
+        audit_df = pd.DataFrame(audit_rows)
+        btc_counts = audit_df["btc_state_source"].value_counts(dropna=False).to_dict()
+        para_counts = audit_df["btc_parabolic_state_source"].value_counts(dropna=False).to_dict()
+        lines += ["```text", f"btc_state_source              {btc_counts}", f"btc_parabolic_state_source    {para_counts}", "```", ""]
+    lines += ["## Per-Fold OOS Results"]
+    cols = ["fold", "oos_start", "oos_end", "cagr_pct", "max_drawdown_pct", "sharpe", "calmar", "n_trades", "total_fees_paid"]
+    table = []
     for fr in fold_rows:
-        if not fr:
-            continue
-        p = fr["perf"]
-        fold_table_rows.append({
-            "fold":             fr["fold"],
-            "oos_start":        fr["oos_start"],
-            "oos_end":          fr["oos_end"],
-            "cagr_pct":         p.get("cagr_pct", ""),
-            "max_drawdown_pct": p.get("max_drawdown_pct", ""),
-            "sharpe":           p.get("sharpe", ""),
-            "calmar":           p.get("calmar", ""),
-            "n_trades":         p.get("n_trades", ""),
-            "total_fees_paid":  p.get("total_fees_paid", ""),
-        })
-    lines += [_md_table(fold_table_rows, fold_summary_cols), ""]
-
+        p = fr.get("perf", {})
+        table.append({"fold": fr.get("fold"), "oos_start": fr.get("oos_start"), "oos_end": fr.get("oos_end"), **p})
+    lines.append("| " + " | ".join(cols) + " |")
+    lines.append("| " + " | ".join(["---"] * len(cols)) + " |")
+    for row in table:
+        lines.append("| " + " | ".join(str(row.get(c, "")) for c in cols) + " |")
     lines += [
+        "",
         "## Configuration",
         "```text",
         f"data_start     {args.data_start}",
@@ -375,8 +318,11 @@ def _write_wf_report(
         f"trend_weight   {args.trend_weight}",
         f"hedge_weight   {args.hedge_weight}",
         f"mr_weight      {args.mr_weight}",
+        f"equity_weight  {args.equity_weight}",
+        f"gold_weight    {args.gold_weight}",
         f"capital        ${args.capital:,.0f}",
         f"fee            {args.fee*10000:.1f} bps",
+        f"equity_fee     {args.equity_fee*10000:.1f} bps",
         f"base_slippage  {args.base_slippage:.1f} bps",
         f"slip_vol_fac   {args.slippage_vol_factor:.1f}",
         f"cooldown       {args.cooldown} bars (trend/hedge)",
@@ -385,66 +331,48 @@ def _write_wf_report(
         "",
         "## Methodology",
         "",
-        "Expanding-window walk-forward. Each fold's OOS slice is strictly",
-        "future data. Strategies use fixed rule-based parameters — no ML",
-        "retraining or parameter selection across folds.",
+        "Expanding-window walk-forward. Each fold's OOS slice is strictly future data.",
+        "Trend sleeves receive canonical BTC macro-state columns computed from BTC only.",
+        "Strategies use fixed rule-based parameters — no ML retraining or parameter selection across folds.",
         "",
         "_Research only. Not financial advice._",
     ]
     (out_dir / "walkforward_report.md").write_text("\n".join(lines), encoding="utf-8")
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
-
 def main() -> None:
     args = parse_args()
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── Load full data ─────────────────────────────────────────────────
-    raw_full: dict[str, pd.DataFrame] = {}
-    raw_full["BTC"] = _load_asset(args.btc_data, "BTC", args.data_start, None)
+    raw: dict[str, pd.DataFrame] = {"BTC": _load_asset(args.btc_data, "BTC", args.data_start, None)}
     if args.eth_data:
-        raw_full["ETH"] = _load_asset(args.eth_data, "ETH", args.data_start, None)
-    if getattr(args, "spy_data", None):
-        raw_full["SPY"] = _load_asset(args.spy_data, "SPY", args.data_start, None)
-    if getattr(args, "qqq_data", None):
-        raw_full["QQQ"] = _load_asset(args.qqq_data, "QQQ", args.data_start, None)
-    if getattr(args, "gld_data", None):
-        raw_full["GLD"] = _load_asset(args.gld_data, "GLD", args.data_start, None)
+        raw["ETH"] = _load_asset(args.eth_data, "ETH", args.data_start, None)
+    if args.spy_data:
+        raw["SPY"] = _load_asset(args.spy_data, "SPY", args.data_start, None)
+    if args.qqq_data:
+        raw["QQQ"] = _load_asset(args.qqq_data, "QQQ", args.data_start, None)
+    if args.gld_data:
+        raw["GLD"] = _load_asset(args.gld_data, "GLD", args.data_start, None)
 
-    bil_yield_full: pd.Series | None = None
-    if getattr(args, "bil_data", None):
+    btc_state = compute_btc_macro_state(raw["BTC"])
+    log.info("BTC macro state rows: %d", len(btc_state))
+
+    spy_sma175 = None
+    if "SPY" in raw:
+        spy_close = raw["SPY"]["close"]
+        spy_sma175 = (spy_close > spy_close.rolling(175).mean()).rename("spy_above_sma175")
+        log.info("SPY SMA175 signal computed: %d bars", len(spy_sma175))
+
+    btc_parabolic = None
+    if not btc_state.empty:
+        btc_parabolic = btc_state["btc_parabolic_hard"].rename("btc_in_parabolic")
+
+    bil_yield = None
+    if args.bil_data:
         bil_df = _load_asset(args.bil_data, "BIL", args.data_start, None)
-        bil_yield_full = bil_df["close"].pct_change().fillna(0.0)
+        bil_yield = bil_df["close"].pct_change().fillna(0.0)
 
-    # SPY SMA175 cross-asset signal for crash_short_v6 hedge gate
-    spy_sma175_full: pd.Series | None = None
-    if "SPY" in raw_full:
-        spy_close = raw_full["SPY"]["close"]
-        spy_sma175 = spy_close.rolling(175).mean()
-        spy_sma175_full = (spy_close > spy_sma175).rename("spy_above_sma175")
-        log.info("SPY SMA175 signal computed: %d bars", len(spy_sma175_full))
-
-    # BTC parabolic signal (daily) for equity_sma175_v2 fast-exit gate.
-    # True when BTC is > 100% above its 365-day SMA — hard parabolic territory.
-    btc_parabolic_full: pd.Series | None = None
-    if "BTC" in raw_full:
-        btc_daily = raw_full["BTC"]["close"].resample("D").last().dropna()
-        btc_sma365 = btc_daily.rolling(365).mean()
-        btc_ext = (btc_daily - btc_sma365) / btc_sma365.replace(0, float("nan"))
-        btc_parabolic_full = (btc_ext > 1.0).rename("btc_in_parabolic")
-        log.info("BTC parabolic signal computed: %d daily bars", len(btc_parabolic_full))
-
-    # ── Build folds ────────────────────────────────────────────────────
-    folds = _build_folds(args.data_start, args.oos_start, args.oos_end)
-    log.info("Walk-forward: %d folds  OOS %s → %s",
-             len(folds), args.oos_start, args.oos_end)
-    for f in folds:
-        log.info("  Fold %-6s  IS %s → %s   OOS %s → %s",
-                 f.label, f.is_start, f.is_end, f.oos_start, f.oos_end)
-
-    # ── Cost configs (per family) ──────────────────────────────────────
     base_cfg = ExecutionConfig(
         taker_fee_rate=args.fee,
         base_slippage_bps=args.base_slippage,
@@ -458,7 +386,7 @@ def main() -> None:
         cooldown_bars=args.mr_cooldown,
     )
     equity_cfg = ExecutionConfig(
-        taker_fee_rate=getattr(args, "equity_fee", 0.0001),
+        taker_fee_rate=args.equity_fee,
         base_slippage_bps=0.5,
         slippage_size_factor=1.0,
         slippage_vol_factor=2.0,
@@ -469,150 +397,48 @@ def main() -> None:
         cooldown_bars=1,
     )
 
-    # ── Run folds (sequential or parallel) ────────────────────────────
-    def _log_fold(fr: dict, label: str) -> None:
-        if fr and "perf" in fr:
-            perf = fr["perf"]
-            log.info(
-                "  Fold %s OOS → CAGR %+.1f%%  MaxDD %.1f%%  Sharpe %.3f  Calmar %.3f",
-                label,
-                perf.get("cagr_pct", 0),
-                perf.get("max_drawdown_pct", 0),
-                perf.get("sharpe", 0),
-                perf.get("calmar", 0),
-            )
+    folds = _build_folds(args.data_start, args.oos_start, args.oos_end)
+    log.info("Walk-forward: %d folds  OOS %s to %s", len(folds), args.oos_start, args.oos_end)
+    fold_results = [
+        _run_fold(f, raw, args, base_cfg, mr_cfg, equity_cfg, btc_state, spy_sma175, btc_parabolic, bil_yield)
+        for f in folds
+    ]
 
-    fold_results: list[dict] = []
-
-    if args.workers > 1:
-        from concurrent.futures import ProcessPoolExecutor, as_completed
-        n_workers = min(args.workers, len(folds))
-        log.info("Running %d folds in parallel with %d workers", len(folds), n_workers)
-        fold_results_map: dict[str, dict] = {}
-        with ProcessPoolExecutor(max_workers=n_workers) as executor:
-            future_to_fold = {
-                executor.submit(
-                    _run_fold, fold, raw_full, args,
-                    base_cfg, mr_cfg, equity_cfg,
-                    bil_yield_full, spy_sma175_full, btc_parabolic_full,
-                ): fold
-                for fold in folds
-            }
-            for future in as_completed(future_to_fold):
-                fold = future_to_fold[future]
-                try:
-                    fr = future.result()
-                except Exception as exc:
-                    log.error("Fold %s raised an exception: %s", fold.label, exc)
-                    fr = {}
-                fold_results_map[fold.label] = fr
-                _log_fold(fr, fold.label)
-        # Reassemble in chronological order
-        fold_results = [fold_results_map.get(f.label, {}) for f in folds]
-    else:
-        for fold in folds:
-            fr = _run_fold(fold, raw_full, args, base_cfg, mr_cfg, equity_cfg, bil_yield_full, spy_sma175_full, btc_parabolic_full)
-            fold_results.append(fr)
-            _log_fold(fr, fold.label)
-
-    # ── Stitch OOS ─────────────────────────────────────────────────────
-    stitched = _stitch_oos(fold_results, args.capital)
-
+    stitched = _stitch(fold_results, args.capital)
     if stitched.empty:
-        log.error("No OOS equity curve produced — check data ranges")
-        sys.exit(1)
+        raise SystemExit("No stitched OOS NAV produced")
 
-    stitched_perf   = _perf_dict(stitched, initial_capital=args.capital)
-    stitched_annual = _annual_returns(stitched)
+    all_fold_trades: list = []
+    perf = _perf(stitched, all_fold_trades, initial_capital=args.capital)
+    annual = _annual_returns(stitched)
+    audit_rows = [row for fr in fold_results for row in fr.get("audit_rows", [])]
 
-    # ── Print summary ──────────────────────────────────────────────────
-    log.info("=" * 60)
-    log.info("STITCHED OOS RESULTS  (%s → %s)", args.oos_start, args.oos_end)
-    log.info("  CAGR:          %+.2f%%", stitched_perf["cagr_pct"])
-    log.info("  Total Return:  %+.2f%%", stitched_perf["total_return_pct"])
-    log.info("  Max Drawdown:  %.2f%%",  stitched_perf["max_drawdown_pct"])
-    log.info("  Sharpe:        %.3f",    stitched_perf["sharpe"])
-    log.info("  Calmar:        %.3f",    stitched_perf["calmar"])
-    log.info("  Ann Vol:       %.2f%%",  stitched_perf["volatility_ann_pct"])
-    log.info("  Total Trades:  %d",      stitched_perf["n_trades"])
-    log.info("-" * 60)
-    log.info("ANNUAL OOS RETURNS")
-    for yr, ret in stitched_annual.items():
-        log.info("  %s   %+.2f%%", yr, ret)
-    log.info("-" * 60)
-    log.info("PER-FOLD OOS SUMMARY")
-    for fr in fold_results:
-        if not fr or "perf" not in fr:
-            continue
-        p = fr["perf"]
-        log.info("  Fold %-6s  CAGR %+.1f%%  MaxDD %.1f%%  Sharpe %.3f  Calmar %.3f",
-                 fr["fold"],
-                 p.get("cagr_pct", 0),
-                 p.get("max_drawdown_pct", 0),
-                 p.get("sharpe", 0),
-                 p.get("calmar", 0))
-    log.info("=" * 60)
-
-    # ── Save artifacts ─────────────────────────────────────────────────
-    stitched.to_csv(out_dir / "stitched_oos_equity.csv")
+    pd.DataFrame(audit_rows).to_csv(out_dir / "cross_asset_state_audit.csv", index=False)
+    stitched.to_csv(out_dir / "stitched_oos_equity.csv", header=True)
+    stitched.to_csv(out_dir / "stitched_oos_nav.csv", header=True)
 
     fold_perf_rows = []
     for fr in fold_results:
-        if not fr or "perf" not in fr:
-            continue
-        row = {"fold": fr["fold"], "oos_start": fr["oos_start"], "oos_end": fr["oos_end"]}
-        row.update(fr["perf"])
+        row = {"fold": fr.get("fold"), "oos_start": fr.get("oos_start"), "oos_end": fr.get("oos_end")}
+        row.update(fr.get("perf", {}))
         fold_perf_rows.append(row)
     pd.DataFrame(fold_perf_rows).to_csv(out_dir / "fold_performance.csv", index=False)
 
-    # Per-fold equity curves
-    fold_curves: dict[str, pd.Series] = {}
-    for fr in fold_results:
-        if not fr or "fund_nav" not in fr:
-            continue
-        fold_curves[f"fold_{fr['fold']}"] = fr["fund_nav"]
-    if fold_curves:
-        fold_curves["stitched_oos"] = stitched
-        try:
-            pd.concat(fold_curves.values(), axis=1, keys=fold_curves.keys()).to_csv(
-                out_dir / "fold_equity_curves.csv"
-            )
-        except Exception:
-            pass
-
     summary = {
-        "stitched_oos": stitched_perf,
-        "stitched_annual_returns": stitched_annual,
-        "folds": [
-            {
-                "fold":     fr.get("fold"),
-                "oos_start": fr.get("oos_start"),
-                "oos_end":   fr.get("oos_end"),
-                "perf":      fr.get("perf", {}),
-            }
-            for fr in fold_results if fr
-        ],
-        "config": {
-            "data_start":           args.data_start,
-            "oos_start":            args.oos_start,
-            "oos_end":              args.oos_end,
-            "trend_weight":         args.trend_weight,
-            "hedge_weight":         args.hedge_weight,
-            "mr_weight":            args.mr_weight,
-            "capital":              args.capital,
-            "fee_bps":              args.fee * 10000,
-            "base_slippage_bps":    args.base_slippage,
-            "slippage_vol_factor":  args.slippage_vol_factor,
-            "cooldown_bars":        args.cooldown,
-            "mr_cooldown_bars":     args.mr_cooldown,
-        },
+        "stitched_oos": perf,
+        "stitched_annual_returns": annual,
+        "audit_rows": len(audit_rows),
+        "config": vars(args),
     }
-    (out_dir / "summary.json").write_text(
-        json.dumps(summary, indent=2), encoding="utf-8"
-    )
+    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    _write_wf_report(out_dir, fold_results, perf, annual, audit_rows, args)
 
-    _write_wf_report(out_dir, fold_results, stitched_perf, stitched_annual, args)
-    log.info("Artifacts saved to %s", out_dir)
+    log.info("STITCHED OOS RESULTS %s to %s", args.oos_start, args.oos_end)
+    log.info("CAGR %.2f%%  MaxDD %.2f%%  Sharpe %.3f  Calmar %.3f", perf["cagr_pct"], perf["max_drawdown_pct"], perf["sharpe"], perf["calmar"])
+    for yr, ret in annual.items():
+        log.info("%s  %+0.2f%%", yr, ret)
+    log.info("Audit rows written: %d", len(audit_rows))
+    log.info("Wrote artifacts to %s", out_dir)
 
 
 if __name__ == "__main__":
