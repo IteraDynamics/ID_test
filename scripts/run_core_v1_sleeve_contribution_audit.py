@@ -166,8 +166,10 @@ def make_execution_configs(args: argparse.Namespace) -> tuple[ExecutionConfig, E
 def run_audit(args: argparse.Namespace) -> dict:
     out_dir = Path(args.out_dir)
     curves_dir = out_dir / "sleeve_curves"
+    scaled_curves_dir = out_dir / "scaled_sleeve_curves"
     out_dir.mkdir(parents=True, exist_ok=True)
     curves_dir.mkdir(parents=True, exist_ok=True)
+    scaled_curves_dir.mkdir(parents=True, exist_ok=True)
 
     raw = load_data(args)
     specs = [s for s in _build_sleeves(args) if s.capital > 0]
@@ -194,9 +196,11 @@ def run_audit(args: argparse.Namespace) -> dict:
 
     sleeve_summary_rows: list[dict] = []
     annual_rows: list[dict] = []
+    scaled_annual_rows: list[dict] = []
     stitched_by_sleeve: dict[str, list[pd.Series]] = {spec.label: [] for spec in specs}
     fold_fund_curves: list[pd.Series] = []
     audit_rows: list[dict] = []
+    running_nav = float(args.capital)
 
     for fold in folds:
         log.info("Fold %s — OOS %s to %s", fold.label, fold.oos_start, fold.oos_end)
@@ -208,6 +212,8 @@ def run_audit(args: argparse.Namespace) -> dict:
 
         fold_curves: dict[str, pd.Series] = {}
         fold_results = {}
+        fold_rows_idx: list[int] = []
+
         for spec in specs:
             if spec.asset not in raw_window:
                 continue
@@ -236,7 +242,6 @@ def run_audit(args: argparse.Namespace) -> dict:
             fold_results[spec.label] = result
             oos_curve = result.equity_curve.loc[fold.oos_start : fold.oos_end].dropna()
             fold_curves[spec.label] = oos_curve
-            stitched_by_sleeve[spec.label].append(oos_curve)
             write_series(curves_dir / f"fold_{fold.label}__{spec.label}.csv", oos_curve, "equity")
 
             trades = [t for t in result.trades if pd.Timestamp(t.timestamp) >= pd.Timestamp(fold.oos_start)]
@@ -256,6 +261,8 @@ def run_audit(args: argparse.Namespace) -> dict:
                 "return_on_total_capital_pct": round(((metrics["final_equity"] - metrics["initial_equity"]) / args.capital) * 100.0, 4),
             }
             sleeve_summary_rows.append(row)
+            fold_rows_idx.append(len(sleeve_summary_rows) - 1)
+
             for year, value in annual_returns(oos_curve).items():
                 annual_rows.append({"fold": fold.label, "sleeve": spec.label, "family": spec.family, "year": year, "return_pct": value})
 
@@ -279,13 +286,45 @@ def run_audit(args: argparse.Namespace) -> dict:
 
         if fold_curves:
             aligned = align_equity_curves(fold_curves, base_freq="1h")
-            fund = aligned.sum(axis=1).loc[fold.oos_start : fold.oos_end]
-            fund.name = f"fold_{fold.label}_fund_nav"
-            fold_fund_curves.append(fund)
+            fund = aligned.sum(axis=1).loc[fold.oos_start : fold.oos_end].dropna()
+            if fund.empty:
+                continue
+
+            # Match the canonical WFO stitching semantics: each fold is scaled so
+            # its first OOS NAV equals the running fund NAV from prior folds.
+            scale = running_nav / float(fund.iloc[0])
+            scaled_fund = fund * scale
+            scaled_fund.name = f"fold_{fold.label}_fund_nav_scaled"
+            fold_fund_curves.append(scaled_fund)
+            running_nav = float(scaled_fund.iloc[-1])
+
+            for spec in specs:
+                curve = fold_curves.get(spec.label)
+                if curve is None or curve.empty:
+                    continue
+                scaled_curve = curve * scale
+                stitched_by_sleeve[spec.label].append(scaled_curve)
+                write_series(scaled_curves_dir / f"fold_{fold.label}__{spec.label}.csv", scaled_curve, "scaled_equity")
+
+                scaled_initial = float(scaled_curve.iloc[0])
+                scaled_final = float(scaled_curve.iloc[-1])
+                scaled_pnl = scaled_final - scaled_initial
+                for idx in fold_rows_idx:
+                    if sleeve_summary_rows[idx]["sleeve"] == spec.label:
+                        sleeve_summary_rows[idx]["fold_scale"] = round(scale, 8)
+                        sleeve_summary_rows[idx]["scaled_initial_equity"] = round(scaled_initial, 2)
+                        sleeve_summary_rows[idx]["scaled_final_equity"] = round(scaled_final, 2)
+                        sleeve_summary_rows[idx]["scaled_pnl_dollars"] = round(scaled_pnl, 2)
+                        sleeve_summary_rows[idx]["scaled_return_on_total_start_nav_pct"] = round((scaled_pnl / float(scaled_fund.iloc[0])) * 100.0, 4)
+                        break
+
+                for year, value in annual_returns(scaled_curve).items():
+                    scaled_annual_rows.append({"fold": fold.label, "sleeve": spec.label, "family": spec.family, "year": year, "return_pct": value})
 
     sleeve_summary = pd.DataFrame(sleeve_summary_rows)
     sleeve_summary.to_csv(out_dir / "sleeve_fold_summary.csv", index=False)
     pd.DataFrame(annual_rows).to_csv(out_dir / "sleeve_annual_returns.csv", index=False)
+    pd.DataFrame(scaled_annual_rows).to_csv(out_dir / "scaled_sleeve_annual_returns.csv", index=False)
     pd.DataFrame(audit_rows).to_csv(out_dir / "sleeve_cross_asset_state_audit.csv", index=False)
 
     stitched_sleeves = {}
@@ -296,7 +335,7 @@ def run_audit(args: argparse.Namespace) -> dict:
         stitched = stitched[~stitched.index.duplicated(keep="last")]
         stitched.name = sleeve
         stitched_sleeves[sleeve] = stitched
-        write_series(out_dir / "stitched_sleeves" / f"{sleeve}.csv", stitched, "equity")
+        write_series(out_dir / "stitched_sleeves" / f"{sleeve}.csv", stitched, "scaled_equity")
 
     stitched_aligned = align_equity_curves(stitched_sleeves, base_freq="1h") if stitched_sleeves else pd.DataFrame()
     if not stitched_aligned.empty:
@@ -317,10 +356,12 @@ def run_audit(args: argparse.Namespace) -> dict:
 
     by_sleeve = []
     if not sleeve_summary.empty:
+        pnl_col = "scaled_pnl_dollars" if "scaled_pnl_dollars" in sleeve_summary.columns else "pnl_dollars"
+        contrib_col = "scaled_return_on_total_start_nav_pct" if "scaled_return_on_total_start_nav_pct" in sleeve_summary.columns else "return_on_total_capital_pct"
         grouped = sleeve_summary.groupby(["sleeve", "family"], as_index=False).agg(
             capital=("capital", "first"),
-            pnl_dollars=("pnl_dollars", "sum"),
-            return_on_total_capital_pct=("return_on_total_capital_pct", "sum"),
+            pnl_dollars=(pnl_col, "sum"),
+            return_on_total_nav_pct=(contrib_col, "sum"),
             n_trades=("n_trades", "sum"),
             avg_sharpe=("sharpe", "mean"),
             worst_fold_dd=("max_drawdown_pct", "min"),
@@ -352,7 +393,7 @@ def write_report(out_dir: Path, summary: dict, sleeve_summary: pd.DataFrame) -> 
     for yr, ret in summary.get("fund_annual_returns", {}).items():
         lines.append(f"{yr}   {ret:+.2f}%")
     lines += ["```", "", "## Sleeve Contribution Summary", ""]
-    cols = ["sleeve", "family", "capital", "pnl_dollars", "return_on_total_capital_pct", "n_trades", "avg_sharpe", "worst_fold_dd", "best_fold_return", "worst_fold_return"]
+    cols = ["sleeve", "family", "capital", "pnl_dollars", "return_on_total_nav_pct", "n_trades", "avg_sharpe", "worst_fold_dd", "best_fold_return", "worst_fold_return"]
     lines.append("| " + " | ".join(cols) + " |")
     lines.append("| " + " | ".join(["---"] * len(cols)) + " |")
     for row in summary.get("sleeve_contribution_summary", []):
@@ -378,11 +419,13 @@ def write_report(out_dir: Path, summary: dict, sleeve_summary: pd.DataFrame) -> 
     lines += [
         "sleeve_fold_summary.csv",
         "sleeve_annual_returns.csv",
+        "scaled_sleeve_annual_returns.csv",
         "sleeve_contribution_summary.csv",
         "sleeve_daily_return_correlation.csv",
         "stitched_sleeve_equity_matrix.csv",
         "stitched_sleeves/*.csv",
         "sleeve_curves/fold_YYYY__SLEEVE.csv",
+        "scaled_sleeve_curves/fold_YYYY__SLEEVE.csv",
     ]
     lines += ["```", "", "_Research only. Not financial advice._"]
     (out_dir / "sleeve_contribution_report.md").write_text("\n".join(lines), encoding="utf-8")
