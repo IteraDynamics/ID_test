@@ -210,8 +210,7 @@ def run_audit(args: argparse.Namespace) -> dict:
         btc_para_window = None if btc_parabolic_full is None else btc_parabolic_full.loc[fold.is_start : fold.oos_end]
         bil_window = None if bil_yield_full is None else bil_yield_full.loc[fold.is_start : fold.oos_end]
 
-        fold_curves: dict[str, pd.Series] = {}
-        fold_results = {}
+        fold_curves_full: dict[str, pd.Series] = {}
         fold_rows_idx: list[int] = []
 
         for spec in specs:
@@ -239,9 +238,10 @@ def run_audit(args: argparse.Namespace) -> dict:
                 rebalance_threshold=args.rebalance_threshold,
                 cash_yield_series=cash_yield,
             )
-            fold_results[spec.label] = result
-            oos_curve = result.equity_curve.loc[fold.oos_start : fold.oos_end].dropna()
-            fold_curves[spec.label] = oos_curve
+
+            full_curve = result.equity_curve.dropna()
+            oos_curve = full_curve.loc[fold.oos_start : fold.oos_end].dropna()
+            fold_curves_full[spec.label] = full_curve
             write_series(curves_dir / f"fold_{fold.label}__{spec.label}.csv", oos_curve, "equity")
 
             trades = [t for t in result.trades if pd.Timestamp(t.timestamp) >= pd.Timestamp(fold.oos_start)]
@@ -284,14 +284,14 @@ def run_audit(args: argparse.Namespace) -> dict:
                             }
                         )
 
-        if fold_curves:
-            aligned = align_equity_curves(fold_curves, base_freq="1h")
-            fund = aligned.sum(axis=1).loc[fold.oos_start : fold.oos_end].dropna()
+        if fold_curves_full:
+            # Match canonical WFO semantics exactly: align full fold curves first,
+            # sum them, then slice the fund NAV to the fold's OOS window.
+            aligned_full = align_equity_curves(fold_curves_full, base_freq="1h")
+            fund = aligned_full.sum(axis=1).loc[fold.oos_start : fold.oos_end].dropna()
             if fund.empty:
                 continue
 
-            # Match the canonical WFO stitching semantics: each fold is scaled so
-            # its first OOS NAV equals the running fund NAV from prior folds.
             scale = running_nav / float(fund.iloc[0])
             scaled_fund = fund * scale
             scaled_fund.name = f"fold_{fold.label}_fund_nav_scaled"
@@ -299,10 +299,13 @@ def run_audit(args: argparse.Namespace) -> dict:
             running_nav = float(scaled_fund.iloc[-1])
 
             for spec in specs:
-                curve = fold_curves.get(spec.label)
-                if curve is None or curve.empty:
+                full_curve = fold_curves_full.get(spec.label)
+                if full_curve is None or full_curve.empty:
                     continue
-                scaled_curve = curve * scale
+                # Apply the fund-level fold scale, then slice OOS for attribution.
+                scaled_curve = (full_curve * scale).loc[fold.oos_start : fold.oos_end].dropna()
+                if scaled_curve.empty:
+                    continue
                 stitched_by_sleeve[spec.label].append(scaled_curve)
                 write_series(scaled_curves_dir / f"fold_{fold.label}__{spec.label}.csv", scaled_curve, "scaled_equity")
 
