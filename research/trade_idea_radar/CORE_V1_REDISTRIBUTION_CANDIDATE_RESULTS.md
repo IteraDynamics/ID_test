@@ -42,6 +42,20 @@ Annual returns:
 | 2024 | 24.26% |
 | 2025 | 5.02% |
 
+## Execution costs
+
+These tests already include the existing backtest execution model: crypto taker fees, equity ETF fees, dynamic slippage, and spread costs.
+
+Default runner assumptions include:
+
+- Crypto fee: 6 bps.
+- Equity ETF fee: 1 bp.
+- Base crypto slippage: 3 bps.
+- Dynamic crypto slippage component tied to ATR / volatility.
+- Spread, fee, and slippage costs are included in sleeve trade accounting.
+
+Therefore, the next validation layer is not "add fees/slippage." It is harsher execution-cost sensitivity: verify that the ranking survives more conservative fee/slippage assumptions.
+
 ## Runner parity
 
 The candidate WFO runner reproduced the canonical baseline exactly:
@@ -142,7 +156,7 @@ This is a research promotion only. It is not yet a production/default allocation
 
 Before production promotion, run second-pass validation:
 
-1. Transaction cost and slippage sensitivity.
+1. Harsher execution-cost sensitivity, using higher-than-default fees/slippage assumptions.
 2. Capital scale sensitivity.
 3. Longer history if available.
 4. Regime-specific attribution.
