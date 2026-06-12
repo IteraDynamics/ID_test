@@ -8,7 +8,8 @@ from pathlib import Path
 
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 
 from research.harness.metrics import compute_metrics
 
@@ -98,6 +99,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--data-start", default="2019-01-01")
     p.add_argument("--oos-start", default="2020-01-01")
     p.add_argument("--oos-end", default="2025-12-31")
+    p.add_argument("--fee", type=float, default=0.0006)
+    p.add_argument("--equity-fee", type=float, default=0.0001)
+    p.add_argument("--base-slippage", type=float, default=3.0)
+    p.add_argument("--slippage-vol-factor", type=float, default=50.0)
     p.add_argument("--out-dir", default="artifacts/core_v1_candidate_wfo")
     return p.parse_args()
 
@@ -122,12 +127,11 @@ def run_fold(args: argparse.Namespace, year: str, start: str, end: str) -> tuple
     patch.write_text(
         f'''
 from argparse import Namespace
-from pathlib import Path
 import sys
 
-# run_fold_patch.py lives under artifacts/core_v1_candidate_wfo/<scenario>/folds/<year>/
-# parents[5] is the repository root.
-sys.path.insert(0, str(Path(__file__).resolve().parents[5]))
+# Embed the repository root from the parent runner so this patch remains stable
+# even when --out-dir changes nesting depth.
+sys.path.insert(0, r"{REPO_ROOT}")
 
 import scripts.run_core_v1_sleeve_contribution_audit as audit
 from scripts.run_multi_strategy_fund import _build_sleeves as base_build
@@ -171,10 +175,10 @@ args = Namespace(
     data_start="{args.data_start}",
     oos_start="{start}",
     oos_end="{end}",
-    fee=0.0006,
-    equity_fee=0.0001,
-    base_slippage=3.0,
-    slippage_vol_factor=50.0,
+    fee={args.fee},
+    equity_fee={args.equity_fee},
+    base_slippage={args.base_slippage},
+    slippage_vol_factor={args.slippage_vol_factor},
     cooldown=2,
     mr_cooldown=12,
     rebalance_threshold=0.02,
@@ -228,6 +232,11 @@ def main() -> None:
     folds = years(args.oos_start, args.oos_end)
     workers = max(1, min(args.workers, len(folds)))
     print(f"Running {args.scenario}: {len(folds)} folds with {workers} workers")
+    print(
+        "Cost assumptions: "
+        f"fee={args.fee}, equity_fee={args.equity_fee}, "
+        f"base_slippage={args.base_slippage}, slippage_vol_factor={args.slippage_vol_factor}"
+    )
 
     fold_dirs: list[tuple[str, Path]] = []
     with ThreadPoolExecutor(max_workers=workers) as ex:
