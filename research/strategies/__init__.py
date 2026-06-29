@@ -26,14 +26,25 @@ from research.strategies import trend_following_v8_ecap75
 from research.strategies import trend_following_v8_ecap75_add90
 from research.strategies import trend_following_v8_ecap60
 from research.strategies import trend_following_v8_ecap60_add80
+from research.strategies import trend_following_v9
+from research.strategies import trend_following_v10
+from research.strategies import trend_following_v11
 from research.strategies import trend_following_v8_ecap50
 from research.strategies import trend_following_v8_ecap50_add70
 from research.strategies import trend_following_short
 from research.strategies import trend_following_short_v2
 from research.strategies import crash_short_v1
 from research.strategies import crash_short_v2
+from research.strategies import crash_short_v3
+from research.strategies import crash_short_v4
+from research.strategies import crash_short_v5
+from research.strategies import crash_short_v6
 from research.strategies import volatility_breakout
 from research.strategies import mean_reversion
+from research.strategies import equity_sma175
+from research.strategies import equity_sma175_v2
+from research.strategies import equity_sma175_v3
+from research.strategies import gold_sma_v1
 
 REGISTRY: dict[str, object] = {
     "trend_following": trend_following,
@@ -52,14 +63,25 @@ REGISTRY: dict[str, object] = {
     "trend_following_v8_ecap75_add90": trend_following_v8_ecap75_add90,
     "trend_following_v8_ecap60": trend_following_v8_ecap60,
     "trend_following_v8_ecap60_add80": trend_following_v8_ecap60_add80,
+    "trend_following_v9": trend_following_v9,
+    "trend_following_v10": trend_following_v10,
+    "trend_following_v11": trend_following_v11,
     "trend_following_v8_ecap50": trend_following_v8_ecap50,
     "trend_following_v8_ecap50_add70": trend_following_v8_ecap50_add70,
     "trend_following_short": trend_following_short,
     "trend_following_short_v2": trend_following_short_v2,
     "crash_short_v1": crash_short_v1,
     "crash_short_v2": crash_short_v2,
+    "crash_short_v3": crash_short_v3,
+    "crash_short_v4": crash_short_v4,
+    "crash_short_v5": crash_short_v5,
+    "crash_short_v6": crash_short_v6,
     "volatility_breakout": volatility_breakout,
     "mean_reversion": mean_reversion,
+    "equity_sma175": equity_sma175,
+    "equity_sma175_v2": equity_sma175_v2,
+    "equity_sma175_v3": equity_sma175_v3,
+    "gold_sma_v1": gold_sma_v1,
 }
 
 __all__ = [
@@ -82,13 +104,24 @@ __all__ = [
     "trend_following_v8_ecap75_add90",
     "trend_following_v8_ecap60",
     "trend_following_v8_ecap60_add80",
+    "trend_following_v9",
+    "trend_following_v10",
+    "trend_following_v11",
     "trend_following_v8_ecap50",
     "trend_following_v8_ecap50_add70",
     "trend_following_short",
     "trend_following_short_v2",
     "crash_short_v1",
     "crash_short_v2",
+    "crash_short_v3",
+    "crash_short_v4",
+    "crash_short_v5",
+    "crash_short_v6",
     "volatility_breakout",
     "mean_reversion",
+    "equity_sma175",
+    "equity_sma175_v2",
+    "equity_sma175_v3",
+    "gold_sma_v1",
     "REGISTRY",
 ]

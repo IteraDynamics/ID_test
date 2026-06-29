@@ -46,3 +46,5 @@ desktop.ini
 *.iml
 
 runtime/argus/state/live_state.json
+
+.claude/
