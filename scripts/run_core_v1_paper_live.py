@@ -151,16 +151,11 @@ def maybe_load_local(path: Path) -> pd.DataFrame | None:
     if not path.exists():
         return None
     try:
-        df = pd.read_csv(path)
-        date_col = next((c for c in ("timestamp", "date", "datetime", "time", "Date") if c in df.columns), df.columns[0])
-        df["timestamp"] = pd.to_datetime(df[date_col], utc=True, errors="coerce").dt.tz_convert(None)
-        cols = {c.lower(): c for c in df.columns}
-        out = pd.DataFrame(index=df["timestamp"])
-        for c in ("open", "high", "low", "close", "volume"):
-            if c in cols:
-                out[c] = pd.to_numeric(df[cols[c]], errors="coerce")
-        return out.dropna().sort_index()
-    except Exception:
+        from research.harness.data_loader import load_ohlcv
+        df = load_ohlcv(str(path))
+        return None if df.empty else df
+    except Exception as e:
+        print(f"local load failed for {path}: {e}", file=sys.stderr)
         return None
 
 
@@ -179,11 +174,14 @@ def load_market_data(args: argparse.Namespace) -> dict[str, pd.DataFrame]:
 
     for asset in ("SPY", "QQQ", "GLD", "BIL"):
         try:
-            data[asset] = fetch_stooq_daily(asset, days=args.etf_days)
+            fetched = fetch_stooq_daily(asset, days=args.etf_days)
+            if fetched.empty:
+                raise RuntimeError(f"Empty ETF data returned for {asset}")
+            data[asset] = fetched
         except Exception as e:
             errors[asset] = str(e)
             local = maybe_load_local(Path(args.data_dir) / f"{asset}_1D.csv")
-            if local is not None:
+            if local is not None and not local.empty:
                 data[asset] = local
 
     required = {"BTC", "ETH", "SPY", "QQQ", "GLD", "BIL"}
