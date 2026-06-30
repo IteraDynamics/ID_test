@@ -252,6 +252,46 @@ class PaperBroker(BaseBroker):
     def fill_history(self) -> list[Fill]:
         return list(self._fill_history)
 
+    def get_average_entry_price(self, asset: str) -> float:
+        """Weighted average entry price for the current position (average cost basis).
+
+        Walks fill history in chronological order.  BUY fills increase the cost
+        pool; SELL fills reduce units while keeping the per-unit cost unchanged.
+        Returns 0.0 when the position is flat.
+        """
+        total_units = 0.0
+        total_cost = 0.0
+        for fill in self._fill_history:
+            if fill.asset != asset:
+                continue
+            if fill.side == "BUY":
+                total_cost += fill.qty * fill.fill_price
+                total_units += fill.qty
+            else:  # SELL
+                if total_units > 0:
+                    avg = total_cost / total_units
+                    sold = min(fill.qty, total_units)
+                    total_units -= sold
+                    total_cost = total_units * avg
+        if total_units <= 1e-12:
+            return 0.0
+        return total_cost / total_units
+
+    def process_capital_flow(self, amount: float) -> None:
+        """Adjust cash for a fund-level capital transfer — not a trade.
+
+        Parameters
+        ----------
+        amount : float
+            Positive = capital inflow, negative = capital outflow.
+
+        Both _cash and _initial_cash are shifted so that performance metrics
+        (returns relative to starting capital) are not distorted by transfers.
+        Neither value is allowed to go below zero.
+        """
+        self._cash         = max(0.0, self._cash         + amount)
+        self._initial_cash = max(0.0, self._initial_cash + amount)
+
     def reset(self, initial_cash: float | None = None) -> None:
         """Reset broker to initial state."""
         self._cash = initial_cash or self._initial_cash
@@ -262,9 +302,11 @@ class PaperBroker(BaseBroker):
 
     def snapshot(self, asset: str, price: float) -> dict:
         """Return a state snapshot for persistence or logging."""
+        avg_entry = self.get_average_entry_price(asset)
         return {
             "cash": round(self._cash, 4),
             "positions": {k: round(v, 8) for k, v in self._positions.items()},
             "nav": round(self.get_nav(asset, price), 4),
             "n_fills": len(self._fill_history),
+            "average_entry_price": round(avg_entry, 6),
         }
