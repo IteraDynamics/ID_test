@@ -80,6 +80,7 @@ st.markdown(
 .good { color:#86efac; } .bad { color:#fca5a5; } .muted { color:#94a3b8; }
 .sleeve-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
 .sleeve-card { background:linear-gradient(180deg,#111827,#0b1220); border:1px solid #1f2a3d; border-radius:18px; padding:15px; box-shadow:0 14px 35px rgba(0,0,0,.20); }
+.sleeve-open { border-color:#0f766e; box-shadow:0 0 0 1px rgba(15,118,110,.16), 0 14px 35px rgba(0,0,0,.20); }
 .sleeve-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px; }
 .sleeve-name { font-size:1.12rem; color:#f8fafc; font-weight:850; letter-spacing:-.03em; }
 .sleeve-meta { color:#94a3b8; font-size:.72rem; margin-top:2px; }
@@ -87,6 +88,8 @@ st.markdown(
 .action-long { background:#052e26; color:#99f6e4; }
 .action-flat { background:#1e293b; color:#cbd5e1; }
 .action-exit { background:#3f0a0a; color:#fecaca; }
+.position-open { background:#052e26; color:#99f6e4; border:1px solid #0f766e; }
+.position-flat { background:#111827; color:#cbd5e1; border:1px solid #334155; }
 .regime { display:inline-flex; border-radius:999px; padding:3px 7px; font-size:.64rem; font-weight:850; letter-spacing:.04em; }
 .regime-up { background:#052e26; color:#99f6e4; border:1px solid #0f766e; }
 .regime-down { background:#3f0a0a; color:#fecaca; border:1px solid #dc2626; }
@@ -95,6 +98,7 @@ st.markdown(
 .kv div { background:#090f1a; border:1px solid #1e293b; border-radius:12px; padding:8px; }
 .k { color:#64748b; font-size:.61rem; text-transform:uppercase; letter-spacing:.08em; font-weight:850; }
 .v { color:#f8fafc; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:.88rem; margin-top:3px; }
+.position-line { display:flex; justify-content:space-between; gap:10px; color:#94a3b8; font-size:.75rem; border-top:1px solid #1f2a3d; padding-top:9px; margin-top:9px; }
 .reason { color:#cbd5e1; font-size:.77rem; line-height:1.34; border-top:1px solid #1f2a3d; padding-top:10px; margin-top:10px; min-height:45px; }
 .progress-outer { height:7px; background:#111827; border-radius:999px; overflow:hidden; margin-top:8px; border:1px solid #1e293b; }
 .progress-inner { height:100%; background:linear-gradient(90deg,#38bdf8,#22c55e); border-radius:999px; }
@@ -282,8 +286,12 @@ realized_pnl = float(state.get("realized_pnl") or last.get("realized_pnl") or 0.
 today_pnl = float(state.get("today_pnl") or last.get("today_pnl") or 0.0)
 today_return = float(state.get("today_return") or last.get("today_return") or 0.0)
 latest_signals = {s.get("sleeve"): s for s in last.get("signals", [])}
+latest_fills_by_sleeve: dict[str, dict[str, Any]] = {}
+for fill in reversed(fills):
+    label = fill.get("sleeve")
+    if label and label not in latest_fills_by_sleeve:
+        latest_fills_by_sleeve[label] = fill
 
-# Find the first same-day event for sleeve-level daily attribution.
 today = pd.Timestamp.now(tz="UTC").date()
 day_start_sleeve_navs: dict[str, float] = {}
 for e in events:
@@ -302,6 +310,7 @@ for label, target_w in EXPECTED_WEIGHTS.items():
     payload = sleeves.get(label, {})
     sig = latest_signals.get(label, {})
     tele = sleeve_telemetry.get(label, {})
+    last_fill = latest_fills_by_sleeve.get(label, {})
     price = float(payload.get("last_price") or sig.get("price") or 0.0)
     qty = float(tele.get("qty") or payload.get("qty") or 0.0)
     cash = float(payload.get("cash") or 0.0)
@@ -323,7 +332,9 @@ for label, target_w in EXPECTED_WEIGHTS.items():
     exposure = 0.0 if nav <= 0 else position_value / nav
     drift = actual_w - target_w
     bar_ts = sig.get("bar_timestamp") or payload.get("last_timestamp") or "—"
-    fill = sig.get("fill")
+    new_fill_this_cycle = bool(sig.get("fill"))
+    position_open = abs(qty) > 1e-12
+    position_state = "OPEN LONG" if position_open else "FLAT"
     start_nav = day_start_sleeve_navs.get(label, nav)
     sleeve_today_pnl = nav - start_nav
     contribution = sleeve_today_pnl / capital if capital else 0.0
@@ -331,7 +342,7 @@ for label, target_w in EXPECTED_WEIGHTS.items():
     total_position_value += position_value
     total_cost_basis += cost_basis
     unrealized_pnl_total += unrealized_pnl
-    if abs(qty) > 1e-12:
+    if position_open:
         open_position_count += 1
     sleeve_rows.append({
         "sleeve": label,
@@ -361,10 +372,15 @@ for label, target_w in EXPECTED_WEIGHTS.items():
         "unrealized_return": unrealized_return,
         "realized_pnl": sleeve_realized,
         "reason": reason,
-        "fill": bool(fill),
+        "new_fill_this_cycle": new_fill_this_cycle,
+        "position_open": position_open,
+        "position_state": position_state,
+        "last_fill_side": last_fill.get("side"),
+        "last_fill_ts": last_fill.get("timestamp"),
+        "last_fill_price": last_fill.get("price"),
+        "last_fill_qty": last_fill.get("qty"),
     })
 
-# Prefer runtime v2 telemetry when present; fall back to derived values for old state snapshots.
 total_cash = float(state.get("total_cash") or total_cash)
 total_position_value = float(state.get("total_position_value") or total_position_value)
 total_cost_basis = float(state.get("total_cost_basis") or total_cost_basis)
@@ -448,14 +464,8 @@ st.markdown(
     html_table(
         attribution_rows,
         [
-            ("display", "Sleeve"),
-            ("today_pnl", "Today P&L"),
-            ("contribution", "Contribution"),
-            ("unrealized_pnl", "Unrealized"),
-            ("realized_pnl", "Realized"),
-            ("action", "Action"),
-            ("regime", "Regime"),
-            ("reason", "Reason"),
+            ("display", "Sleeve"), ("position_state", "Position"), ("today_pnl", "Today P&L"), ("contribution", "Contribution"),
+            ("unrealized_pnl", "Unrealized"), ("realized_pnl", "Realized"), ("action", "Signal"), ("regime", "Regime"), ("reason", "Reason"),
         ],
         "No attribution data yet.",
     ),
@@ -465,29 +475,37 @@ st.markdown(
 st.markdown('<div class="section-title">Sleeves</div>', unsafe_allow_html=True)
 card_html = '<div class="sleeve-grid">'
 for row in sleeve_rows:
-    label = row["sleeve"]
     action_css = action_class(row["action"])
-    fill_text = "Fill" if row["fill"] else "No fill"
+    position_css = "position-open" if row["position_open"] else "position-flat"
+    card_css = "sleeve-card sleeve-open" if row["position_open"] else "sleeve-card"
     pnl_css = pnl_class(float(row["unrealized_pnl"]))
     changed = " · changed" if row["action_changed"] else ""
+    last_fill_text = "—"
+    if row.get("last_fill_side"):
+        last_fill_text = f"{row['last_fill_side']} {num(row.get('last_fill_qty'), 4)} @ {money(row.get('last_fill_price'))}"
+    new_fill_text = "Yes" if row["new_fill_this_cycle"] else "No"
     card_html += f"""
-<div class="sleeve-card">
+<div class="{card_css}">
   <div class="sleeve-top">
-    <div><div class="sleeve-name">{esc(row['display'])}</div><div class="sleeve-meta">{esc(label)} · target {pct(row['target_weight'])}{changed}</div></div>
-    <div class="action {action_css}">{esc(row['action'])}</div>
+    <div><div class="sleeve-name">{esc(row['display'])}</div><div class="sleeve-meta">{esc(row['sleeve'])} · target {pct(row['target_weight'])}{changed}</div></div>
+    <div class="badges"><span class="badge {position_css}">{esc(row['position_state'])}</span><div class="action {action_css}">{esc(row['action'])}</div></div>
   </div>
   <div class="kv">
     <div><div class="k">Regime</div><div class="v">{regime_badge(row['regime'])}</div></div>
     <div><div class="k">Exposure</div><div class="v">{pct(row['exposure'],0)}</div></div>
     <div><div class="k">Drift</div><div class="v">{pct(row['drift'],1)}</div></div>
-    <div><div class="k">NAV</div><div class="v">{money(row['nav'])}</div></div>
-    <div><div class="k">uP&L</div><div class="v {pnl_css}">{signed_money(row['unrealized_pnl'])}</div></div>
-    <div><div class="k">Today</div><div class="v {pnl_class(float(row['today_pnl']))}">{signed_money(row['today_pnl'])}</div></div>
+    <div><div class="k">Qty</div><div class="v">{num(row['qty'], 4) if row['position_open'] else '—'}</div></div>
     <div><div class="k">Avg entry</div><div class="v">{money(row['avg_entry']) if row['avg_entry'] else '—'}</div></div>
     <div><div class="k">Price</div><div class="v">{money(row['price'])}</div></div>
-    <div><div class="k">Fill</div><div class="v">{esc(fill_text)}</div></div>
+    <div><div class="k">Cost basis</div><div class="v">{money(row['cost_basis']) if row['position_open'] else '—'}</div></div>
+    <div><div class="k">Market value</div><div class="v">{money(row['position_value']) if row['position_open'] else '—'}</div></div>
+    <div><div class="k">Cash</div><div class="v">{money(row['cash'])}</div></div>
+    <div><div class="k">uP&L</div><div class="v {pnl_css}">{signed_money(row['unrealized_pnl'])}</div></div>
+    <div><div class="k">uReturn</div><div class="v {pnl_css}">{signed_pct(row['unrealized_return'])}</div></div>
+    <div><div class="k">Today</div><div class="v {pnl_class(float(row['today_pnl']))}">{signed_money(row['today_pnl'])}</div></div>
   </div>
   <div class="progress-outer"><div class="progress-inner" style="width:{max(0, min(100, row['exposure']*100)):.1f}%"></div></div>
+  <div class="position-line"><span>Last fill: <span class="mono">{esc(last_fill_text)}</span></span><span>New fill this cycle: <span class="mono">{esc(new_fill_text)}</span></span></div>
   <div class="reason">{esc(row['reason'])}</div>
   <div class="small" style="margin-top:8px;">Last bar: <span class="mono">{esc(row['last_bar'])}</span></div>
 </div>
@@ -520,19 +538,9 @@ st.markdown('<div class="section-title">Signal Changes / Activity</div>', unsafe
 activity: list[dict[str, Any]] = []
 for row in sleeve_rows:
     if row["action_changed"]:
-        activity.append({
-            "when": last.get("timestamp") or state.get("last_cycle_at"),
-            "sleeve": row["display"],
-            "event": f"{row['previous_action']} → {row['action']}",
-            "detail": row["reason"],
-        })
+        activity.append({"when": last.get("timestamp") or state.get("last_cycle_at"), "sleeve": row["display"], "event": f"{row['previous_action']} → {row['action']}", "detail": row["reason"]})
 for f in fills[-8:][::-1]:
-    activity.append({
-        "when": f.get("timestamp"),
-        "sleeve": SLEEVE_NAMES.get(f.get("sleeve"), f.get("sleeve")),
-        "event": f"{f.get('side')} {num(f.get('qty'), 4)} @ {money(f.get('price'))}",
-        "detail": f"notional {money(f.get('notional'))} · fee {money(f.get('fee'))} · slippage {money(f.get('slippage_cost'))}",
-    })
+    activity.append({"when": f.get("timestamp"), "sleeve": SLEEVE_NAMES.get(f.get("sleeve"), f.get("sleeve")), "event": f"{f.get('side')} {num(f.get('qty'), 4)} @ {money(f.get('price'))}", "detail": f"notional {money(f.get('notional'))} · fee {money(f.get('fee'))} · slippage {money(f.get('slippage_cost'))}"})
 if activity:
     timeline_html = '<div class="timeline">'
     for item in activity[:10]:
@@ -548,11 +556,11 @@ with st.expander("Audit detail: sleeve table", expanded=False):
         html_table(
             sleeve_rows,
             [
-                ("display", "Sleeve"), ("action", "Action"), ("previous_action", "Prev"), ("action_changed", "Changed"),
+                ("display", "Sleeve"), ("position_state", "Position"), ("action", "Signal"), ("previous_action", "Prev"), ("action_changed", "Changed"),
                 ("regime", "Regime"), ("target_weight", "Target wt"), ("actual_weight", "Actual wt"), ("drift", "Drift"),
-                ("nav", "NAV"), ("today_pnl", "Today"), ("unrealized_pnl", "Unrealized"), ("realized_pnl", "Realized"),
-                ("cost_basis", "Cost basis"), ("avg_entry", "Avg entry"), ("cash", "Cash"), ("position_value", "Invested"),
-                ("qty", "Qty"), ("price", "Price"), ("exposure", "Exposure"), ("last_bar", "Last bar"), ("reason", "Reason"),
+                ("nav", "NAV"), ("today_pnl", "Today"), ("unrealized_pnl", "Unrealized"), ("unrealized_return", "uReturn"), ("realized_pnl", "Realized"),
+                ("cost_basis", "Cost basis"), ("avg_entry", "Avg entry"), ("cash", "Cash"), ("position_value", "Market value"),
+                ("qty", "Qty"), ("price", "Price"), ("exposure", "Exposure"), ("last_fill_side", "Last fill"), ("last_fill_price", "Last fill px"), ("new_fill_this_cycle", "New fill"), ("last_bar", "Last bar"), ("reason", "Reason"),
             ],
             "No sleeve rows yet.",
         ),
@@ -562,22 +570,11 @@ with st.expander("Audit detail: sleeve table", expanded=False):
 with st.expander("Audit detail: latest signals", expanded=False):
     sig_rows = []
     for s in last.get("signals", []):
-        sig_rows.append({
-            "sleeve": s.get("sleeve"), "asset": s.get("asset"), "tf": s.get("timeframe"),
-            "previous_action": s.get("previous_action"), "action": s.get("action"), "action_changed": s.get("action_changed"),
-            "target": s.get("target_exposure"), "confidence": s.get("confidence"), "regime": s.get("regime"),
-            "price": s.get("price"), "cost_basis": s.get("cost_basis"), "avg_entry": s.get("avg_entry"),
-            "unrealized_pnl": s.get("unrealized_pnl"), "realized_pnl": s.get("realized_pnl"), "fill": bool(s.get("fill")), "reason": s.get("reason"),
-        })
+        sig_rows.append({"sleeve": s.get("sleeve"), "asset": s.get("asset"), "tf": s.get("timeframe"), "previous_action": s.get("previous_action"), "action": s.get("action"), "action_changed": s.get("action_changed"), "target": s.get("target_exposure"), "confidence": s.get("confidence"), "regime": s.get("regime"), "price": s.get("price"), "cost_basis": s.get("cost_basis"), "avg_entry": s.get("avg_entry"), "unrealized_pnl": s.get("unrealized_pnl"), "realized_pnl": s.get("realized_pnl"), "fill": bool(s.get("fill")), "reason": s.get("reason")})
     st.markdown(
         html_table(
             sig_rows,
-            [
-                ("sleeve", "Sleeve"), ("asset", "Asset"), ("tf", "TF"), ("previous_action", "Prev"),
-                ("action", "Action"), ("action_changed", "Changed"), ("target", "Target"), ("confidence", "Confidence"),
-                ("regime", "Regime"), ("price", "Price"), ("cost_basis", "Cost basis"), ("avg_entry", "Avg entry"),
-                ("unrealized_pnl", "uP&L"), ("realized_pnl", "rP&L"), ("fill", "Fill"), ("reason", "Reason"),
-            ],
+            [("sleeve", "Sleeve"), ("asset", "Asset"), ("tf", "TF"), ("previous_action", "Prev"), ("action", "Action"), ("action_changed", "Changed"), ("target", "Target"), ("confidence", "Confidence"), ("regime", "Regime"), ("price", "Price"), ("cost_basis", "Cost basis"), ("avg_entry", "Avg entry"), ("unrealized_pnl", "uP&L"), ("realized_pnl", "rP&L"), ("fill", "Fill"), ("reason", "Reason")],
             "No signal records yet.",
         ),
         unsafe_allow_html=True,
@@ -590,21 +587,13 @@ with st.expander("Audit detail: fills and errors", expanded=False):
         st.markdown(
             html_table(
                 fills[-50:][::-1],
-                [
-                    ("timestamp", "Timestamp"), ("sleeve", "Sleeve"), ("asset", "Asset"), ("side", "Side"),
-                    ("qty", "Qty"), ("price", "Fill price"), ("mid", "Mid"), ("notional", "Notional"),
-                    ("fee", "Fee"), ("slippage_cost", "Slippage"), ("realized_pnl", "Realized P&L"),
-                    ("cost_basis_after", "Basis after"), ("avg_entry_after", "Avg entry after"),
-                ],
+                [("timestamp", "Timestamp"), ("sleeve", "Sleeve"), ("asset", "Asset"), ("side", "Side"), ("qty", "Qty"), ("price", "Fill price"), ("mid", "Mid"), ("notional", "Notional"), ("fee", "Fee"), ("slippage_cost", "Slippage"), ("realized_pnl", "Realized P&L"), ("cost_basis_after", "Basis after"), ("avg_entry_after", "Avg entry after")],
                 "No fills yet.",
             ),
             unsafe_allow_html=True,
         )
     with c2:
         st.caption("Recent errors")
-        st.markdown(
-            html_table(errors[-50:][::-1], [("timestamp", "Timestamp"), ("version", "Version"), ("error", "Error")], "No runtime errors logged."),
-            unsafe_allow_html=True,
-        )
+        st.markdown(html_table(errors[-50:][::-1], [("timestamp", "Timestamp"), ("version", "Version"), ("error", "Error")], "No runtime errors logged."), unsafe_allow_html=True)
 
 st.caption(f"State {STATE_PATH} · Signals {SIGNALS_LOG} · Fills {FILLS_LOG} · Generated {datetime.now(UTC).isoformat()}")
