@@ -39,7 +39,6 @@ SLEEVE_NAMES = {
     "QQQ_1D_equity": "QQQ",
     "GLD_1D_gold": "GLD",
 }
-ZERO_WEIGHT = ["BTC_1H_trend", "BTC_1H_hedge", "ETH_1H_hedge"]
 
 st.set_page_config(page_title="Itera Mission Control", page_icon="◎", layout="wide", initial_sidebar_state="collapsed")
 st.markdown(f"<meta http-equiv='refresh' content='{REFRESH_SECONDS}'>", unsafe_allow_html=True)
@@ -48,73 +47,70 @@ st.markdown(
     """
 <style>
 :root { color-scheme: dark; }
-.stApp { background: #080c14; color: #e5e7eb; }
-.block-container { padding-top: 1.05rem; padding-bottom: 2rem; max-width: 1580px; }
-#MainMenu, footer, header { visibility: hidden; height: 0; }
-[data-testid="stMetric"] {
-  background: linear-gradient(180deg, #121a2a 0%, #0c1422 100%);
-  border: 1px solid #1f2a3d;
-  border-radius: 16px;
-  padding: 15px 16px;
-  box-shadow: 0 14px 35px rgba(0,0,0,.22);
-}
-[data-testid="stMetricLabel"] { color: #94a3b8 !important; font-size: .70rem !important; letter-spacing: .08em; text-transform: uppercase; }
-[data-testid="stMetricValue"] { color: #f8fafc !important; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 1.45rem !important; }
-.title-row { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin: 0 0 14px 0; }
-.brand { color:#64748b; font-size:.72rem; letter-spacing:.22em; font-weight:700; text-transform:uppercase; }
-.title { color:#f8fafc; font-size:1.82rem; line-height:1.05; font-weight:760; letter-spacing:-.045em; margin-top:2px; }
+.stApp { background:#080c14; color:#e5e7eb; }
+.block-container { padding-top:1.05rem; padding-bottom:2rem; max-width:1600px; }
+#MainMenu, footer, header { visibility:hidden; height:0; }
+[data-testid="stMetric"] { background:linear-gradient(180deg,#121a2a 0%,#0c1422 100%); border:1px solid #1f2a3d; border-radius:16px; padding:15px 16px; box-shadow:0 14px 35px rgba(0,0,0,.22); }
+[data-testid="stMetricLabel"] { color:#94a3b8 !important; font-size:.68rem !important; letter-spacing:.08em; text-transform:uppercase; }
+[data-testid="stMetricValue"] { color:#f8fafc !important; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:1.38rem !important; }
+.title-row { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin:0 0 14px 0; }
+.brand { color:#64748b; font-size:.72rem; letter-spacing:.22em; font-weight:800; text-transform:uppercase; }
+.title { color:#f8fafc; font-size:1.86rem; line-height:1.05; font-weight:800; letter-spacing:-.05em; margin-top:2px; }
 .subtitle { color:#94a3b8; font-size:.83rem; margin-top:7px; }
 .badges { display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
-.badge { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:6px 11px; font-size:.70rem; letter-spacing:.07em; font-weight:800; text-transform:uppercase; }
+.badge { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:6px 11px; font-size:.68rem; letter-spacing:.07em; font-weight:850; text-transform:uppercase; white-space:nowrap; }
 .ok { background:#052e26; color:#99f6e4; border:1px solid #0f766e; }
 .warn { background:#3b2505; color:#fde68a; border:1px solid #b45309; }
 .err { background:#3f0a0a; color:#fecaca; border:1px solid #dc2626; }
 .neutral { background:#111827; color:#cbd5e1; border:1px solid #334155; }
-.strip { display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; margin: 4px 0 18px 0; }
+.strip { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin:4px 0 16px 0; }
 .health-card { background:#0d1422; border:1px solid #1f2a3d; border-radius:14px; padding:11px 12px; min-height:72px; }
-.health-label { color:#94a3b8; font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; font-weight:800; }
-.health-value { color:#f8fafc; font-size:1.02rem; font-weight:760; margin-top:6px; }
+.health-label { color:#94a3b8; font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; font-weight:850; }
+.health-value { color:#f8fafc; font-size:1.02rem; font-weight:800; margin-top:6px; }
 .health-sub { color:#64748b; font-size:.74rem; margin-top:2px; }
 .attention { border:1px solid #334155; background:linear-gradient(180deg,#101827,#0b1220); border-radius:16px; padding:14px 16px; margin-bottom:16px; }
-.attention h3 { margin:0 0 8px 0; font-size:.92rem; letter-spacing:.06em; text-transform:uppercase; color:#cbd5e1; }
+.attention h3 { margin:0 0 8px 0; font-size:.90rem; letter-spacing:.06em; text-transform:uppercase; color:#cbd5e1; }
 .attention ul { margin:.35rem 0 0 1.1rem; color:#cbd5e1; }
-.section-title { margin-top: 8px; margin-bottom: 10px; color:#f8fafc; font-size:1.05rem; font-weight:750; letter-spacing:-.02em; }
-.pnl-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:10px; margin: 12px 0 18px 0; }
+.section-title { margin-top:10px; margin-bottom:10px; color:#f8fafc; font-size:1.05rem; font-weight:780; letter-spacing:-.02em; }
+.pnl-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:12px 0 18px 0; }
 .pnl-card { background:linear-gradient(180deg,#101827,#0b1220); border:1px solid #1f2a3d; border-radius:16px; padding:14px 15px; }
-.pnl-label { color:#94a3b8; font-size:.66rem; text-transform:uppercase; letter-spacing:.08em; font-weight:850; }
-.pnl-value { color:#f8fafc; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:1.25rem; font-weight:850; margin-top:6px; }
-.pnl-sub { color:#64748b; font-size:.74rem; margin-top:4px; }
+.pnl-label { color:#94a3b8; font-size:.65rem; text-transform:uppercase; letter-spacing:.08em; font-weight:850; }
+.pnl-value { color:#f8fafc; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:1.20rem; font-weight:850; margin-top:6px; }
+.pnl-sub { color:#64748b; font-size:.73rem; margin-top:4px; }
 .good { color:#86efac; } .bad { color:#fca5a5; } .muted { color:#94a3b8; }
-.sleeve-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
+.sleeve-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
 .sleeve-card { background:linear-gradient(180deg,#111827,#0b1220); border:1px solid #1f2a3d; border-radius:18px; padding:15px; box-shadow:0 14px 35px rgba(0,0,0,.20); }
 .sleeve-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px; }
-.sleeve-name { font-size:1.12rem; color:#f8fafc; font-weight:800; letter-spacing:-.03em; }
+.sleeve-name { font-size:1.12rem; color:#f8fafc; font-weight:850; letter-spacing:-.03em; }
 .sleeve-meta { color:#94a3b8; font-size:.72rem; margin-top:2px; }
-.action { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:.78rem; font-weight:900; padding:5px 8px; border-radius:8px; }
+.action { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:.76rem; font-weight:900; padding:5px 8px; border-radius:8px; }
 .action-long { background:#052e26; color:#99f6e4; }
 .action-flat { background:#1e293b; color:#cbd5e1; }
 .action-exit { background:#3f0a0a; color:#fecaca; }
-.kv { display:grid; grid-template-columns: repeat(3,1fr); gap:8px; margin:10px 0; }
+.regime { display:inline-flex; border-radius:999px; padding:3px 7px; font-size:.64rem; font-weight:850; letter-spacing:.04em; }
+.regime-up { background:#052e26; color:#99f6e4; border:1px solid #0f766e; }
+.regime-down { background:#3f0a0a; color:#fecaca; border:1px solid #dc2626; }
+.regime-vol { background:#162033; color:#bfdbfe; border:1px solid #334155; }
+.kv { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; }
 .kv div { background:#090f1a; border:1px solid #1e293b; border-radius:12px; padding:8px; }
-.k { color:#64748b; font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; font-weight:800; }
-.v { color:#f8fafc; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:.92rem; margin-top:3px; }
-.reason { color:#cbd5e1; font-size:.79rem; line-height:1.35; border-top:1px solid #1f2a3d; padding-top:10px; margin-top:10px; min-height:48px; }
+.k { color:#64748b; font-size:.61rem; text-transform:uppercase; letter-spacing:.08em; font-weight:850; }
+.v { color:#f8fafc; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:.88rem; margin-top:3px; }
+.reason { color:#cbd5e1; font-size:.77rem; line-height:1.34; border-top:1px solid #1f2a3d; padding-top:10px; margin-top:10px; min-height:45px; }
 .progress-outer { height:7px; background:#111827; border-radius:999px; overflow:hidden; margin-top:8px; border:1px solid #1e293b; }
 .progress-inner { height:100%; background:linear-gradient(90deg,#38bdf8,#22c55e); border-radius:999px; }
 .audit-table-wrap { background:#0d1422; border:1px solid #1f2a3d; border-radius:14px; padding:10px; overflow-x:auto; margin-bottom:12px; }
-table.audit-table { border-collapse:collapse; width:100%; min-width:850px; font-size:.76rem; }
-.audit-table th { color:#94a3b8; background:#111827; border-bottom:1px solid #263247; padding:8px; text-align:left; text-transform:uppercase; letter-spacing:.05em; font-size:.65rem; white-space:nowrap; }
+table.audit-table { border-collapse:collapse; width:100%; min-width:850px; font-size:.75rem; }
+.audit-table th { color:#94a3b8; background:#111827; border-bottom:1px solid #263247; padding:8px; text-align:left; text-transform:uppercase; letter-spacing:.05em; font-size:.63rem; white-space:nowrap; }
 .audit-table td { color:#dbe4f0; border-bottom:1px solid #1f2a3d; padding:8px; vertical-align:top; }
 .audit-table tr:last-child td { border-bottom:0; }
-.audit-note { color:#64748b; font-size:.76rem; margin:4px 0 10px 0; }
+.audit-note { color:#64748b; font-size:.75rem; margin:4px 0 10px 0; }
+.timeline { display:grid; gap:8px; }
+.timeline-item { background:#0d1422; border:1px solid #1f2a3d; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; gap:12px; }
+.timeline-main { color:#e5e7eb; font-size:.82rem; }
+.timeline-sub { color:#64748b; font-size:.72rem; margin-top:2px; }
 .small { color:#94a3b8; font-size:.78rem; }
-.mono { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-@media (max-width: 1000px) {
-  .strip, .pnl-grid { grid-template-columns: repeat(2, 1fr); }
-  .sleeve-grid { grid-template-columns: 1fr; }
-  .title-row { flex-direction:column; }
-  [data-testid="stMetricValue"] { font-size: 1.15rem !important; }
-}
+.mono { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
+@media (max-width:1000px) { .strip,.pnl-grid { grid-template-columns:repeat(2,1fr); } .sleeve-grid { grid-template-columns:1fr; } .title-row { flex-direction:column; } [data-testid="stMetricValue"] { font-size:1.12rem !important; } }
 </style>
 """,
     unsafe_allow_html=True,
@@ -220,9 +216,7 @@ def cell(v: Any) -> str:
     if isinstance(v, (dict, list, tuple)):
         return esc(json.dumps(v, default=str, sort_keys=True))
     text = str(v)
-    if text.strip() == "":
-        return "—"
-    return esc(text)
+    return "—" if text.strip() == "" else esc(text)
 
 
 def html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]], empty: str) -> str:
@@ -248,6 +242,12 @@ def action_class(action: str | None) -> str:
     return "action-flat"
 
 
+def regime_badge(regime: str) -> str:
+    r = regime or "UNKNOWN"
+    klass = "regime-up" if "UP" in r else "regime-down" if "DOWN" in r else "regime-vol"
+    return f'<span class="regime {klass}">{esc(r)}</span>'
+
+
 def pnl_class(value: float) -> str:
     if value > 0:
         return "good"
@@ -271,38 +271,66 @@ health_label = "ATTENTION" if health == "err" else "WARN" if health == "warn" el
 
 sleeves = state.get("sleeves", {})
 sleeve_navs = state.get("sleeve_navs", {})
+sleeve_telemetry = state.get("sleeve_telemetry", {})
 capital = float(state.get("capital") or DEFAULT_CAPITAL)
 total_nav = float(state.get("last_total_nav") or last.get("total_nav") or sum(float(v) for v in sleeve_navs.values()) or 0.0)
 since_inception_pnl = total_nav - capital if total_nav else 0.0
 since_inception_return = since_inception_pnl / capital if capital else 0.0
 fees_total = float(state.get("realized_fees") or last.get("fees_total") or 0.0)
 slippage_total = float(state.get("realized_slippage") or last.get("slippage_total") or 0.0)
+realized_pnl = float(state.get("realized_pnl") or last.get("realized_pnl") or 0.0)
+today_pnl = float(state.get("today_pnl") or last.get("today_pnl") or 0.0)
+today_return = float(state.get("today_return") or last.get("today_return") or 0.0)
 latest_signals = {s.get("sleeve"): s for s in last.get("signals", [])}
 
-sleeve_rows = []
+# Find the first same-day event for sleeve-level daily attribution.
+today = pd.Timestamp.now(tz="UTC").date()
+day_start_sleeve_navs: dict[str, float] = {}
+for e in events:
+    ts = parse_ts(e.get("timestamp"))
+    if ts is not None and ts.date() == today and e.get("sleeve_navs"):
+        day_start_sleeve_navs = {k: float(v) for k, v in e.get("sleeve_navs", {}).items()}
+        break
+
+sleeve_rows: list[dict[str, Any]] = []
 total_cash = 0.0
 total_position_value = 0.0
+total_cost_basis = 0.0
+unrealized_pnl_total = 0.0
 open_position_count = 0
 for label, target_w in EXPECTED_WEIGHTS.items():
     payload = sleeves.get(label, {})
     sig = latest_signals.get(label, {})
+    tele = sleeve_telemetry.get(label, {})
     price = float(payload.get("last_price") or sig.get("price") or 0.0)
-    qty = float(payload.get("qty") or 0.0)
+    qty = float(tele.get("qty") or payload.get("qty") or 0.0)
     cash = float(payload.get("cash") or 0.0)
-    position_value = qty * price
+    position_value = float(tele.get("position_value") or qty * price)
     nav = float(sleeve_navs.get(label) or cash + position_value)
     initial_capital = capital * target_w
-    sleeve_pnl = nav - initial_capital
-    actual_w = 0.0 if total_nav <= 0 else nav / total_nav
-    exposure = 0.0 if nav <= 0 else position_value / nav
-    action = sig.get("action") or "—"
+    fallback_basis = initial_capital if abs(qty) > 1e-12 else 0.0
+    cost_basis = float(tele.get("cost_basis") or payload.get("cost_basis") or fallback_basis)
+    avg_entry = float(tele.get("avg_entry") or payload.get("avg_entry") or (cost_basis / qty if abs(qty) > 1e-12 and cost_basis > 0 else 0.0))
+    unrealized_pnl = float(tele.get("unrealized_pnl") if tele.get("unrealized_pnl") is not None else (position_value - cost_basis if abs(qty) > 1e-12 else 0.0))
+    unrealized_return = float(tele.get("unrealized_return") if tele.get("unrealized_return") is not None else (unrealized_pnl / cost_basis if cost_basis > 0 else 0.0))
+    sleeve_realized = float(payload.get("realized_pnl") or sig.get("realized_pnl") or 0.0)
+    action = sig.get("action") or payload.get("last_action") or "—"
+    previous_action = sig.get("previous_action") or "—"
+    action_changed = bool(sig.get("action_changed"))
     regime = sig.get("regime") or "—"
     reason = sig.get("reason") or "No signal recorded yet."
+    actual_w = 0.0 if total_nav <= 0 else nav / total_nav
+    exposure = 0.0 if nav <= 0 else position_value / nav
     drift = actual_w - target_w
     bar_ts = sig.get("bar_timestamp") or payload.get("last_timestamp") or "—"
     fill = sig.get("fill")
+    start_nav = day_start_sleeve_navs.get(label, nav)
+    sleeve_today_pnl = nav - start_nav
+    contribution = sleeve_today_pnl / capital if capital else 0.0
     total_cash += cash
     total_position_value += position_value
+    total_cost_basis += cost_basis
+    unrealized_pnl_total += unrealized_pnl
     if abs(qty) > 1e-12:
         open_position_count += 1
     sleeve_rows.append({
@@ -313,24 +341,38 @@ for label, target_w in EXPECTED_WEIGHTS.items():
         "drift": drift,
         "initial_capital": initial_capital,
         "nav": nav,
-        "pnl_since_start": sleeve_pnl,
+        "pnl_since_start": nav - initial_capital,
+        "today_pnl": sleeve_today_pnl,
+        "contribution": contribution,
         "cash": cash,
         "position_value": position_value,
+        "cost_basis": cost_basis,
+        "avg_entry": avg_entry,
         "qty": qty,
         "price": price,
         "exposure": exposure,
         "target_exposure": float(payload.get("last_target_exposure") or sig.get("target_exposure") or 0.0),
         "action": action,
+        "previous_action": previous_action,
+        "action_changed": action_changed,
         "regime": regime,
         "last_bar": bar_ts,
+        "unrealized_pnl": unrealized_pnl,
+        "unrealized_return": unrealized_return,
+        "realized_pnl": sleeve_realized,
         "reason": reason,
         "fill": bool(fill),
     })
 
-realized_pnl = float(state.get("realized_pnl") or 0.0)
-open_mark_to_market_pnl = since_inception_pnl - realized_pnl
+# Prefer runtime v2 telemetry when present; fall back to derived values for old state snapshots.
+total_cash = float(state.get("total_cash") or total_cash)
+total_position_value = float(state.get("total_position_value") or total_position_value)
+total_cost_basis = float(state.get("total_cost_basis") or total_cost_basis)
+unrealized_pnl_total = float(state.get("unrealized_pnl") if state.get("unrealized_pnl") is not None else unrealized_pnl_total)
+open_position_count = int(state.get("open_position_count") or open_position_count)
 cash_pct = total_cash / total_nav if total_nav else 0.0
 invested_pct = total_position_value / total_nav if total_nav else 0.0
+exposure_pct = invested_pct
 
 st.markdown(
     f"""
@@ -351,8 +393,8 @@ checks = [
     ("Data", "OK" if not missing_sleeves else "MISSING", "ok" if not missing_sleeves else "err", f"{len(EXPECTED_WEIGHTS) - len(missing_sleeves)}/{len(EXPECTED_WEIGHTS)} sleeves"),
     ("Errors", "CLEAR" if not has_errors else "CHECK", "ok" if not has_errors else "warn", f"{len(errors)} logged"),
     ("Scheduler", "ON", "ok", f"poll {EXPECTED_POLL_SECONDS}s"),
-    ("Cloudflare", "ONLINE", "ok", "dashboard tunnel"),
-    ("State", "FOUND" if state else "MISSING", "ok" if state else "err", STATE_PATH.name),
+    ("Exposure", pct(exposure_pct, 1), "neutral", f"cash {pct(cash_pct, 1)}"),
+    ("State", "V2" if state.get("version") == "core_v1_paper_runtime_v2" else "V1", "ok" if state.get("version") == "core_v1_paper_runtime_v2" else "warn", STATE_PATH.name),
 ]
 strip_html = '<div class="strip">'
 for label, value, klass, sub in checks:
@@ -367,6 +409,8 @@ if missing_sleeves:
     issues.append(f"Missing sleeves in state: {', '.join(missing_sleeves)}.")
 if errors:
     issues.append(f"Latest error: {errors[-1].get('error', 'unknown error')}")
+if state.get("version") != "core_v1_paper_runtime_v2":
+    issues.append("Runtime has not completed a v2 telemetry cycle yet. Cost basis / realized P&L will lock in after the next paper cycle.")
 if not issues:
     issues.append("No actionable issues detected. Runtime, dashboard, state, and sleeve set look healthy.")
 issue_items = ''.join(f"<li>{esc(x)}</li>" for x in issues)
@@ -374,34 +418,49 @@ st.markdown(f"<div class='attention'><h3>Attention</h3><ul>{issue_items}</ul></d
 
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Portfolio NAV", money(total_nav))
-m2.metric("Since inception", signed_money(since_inception_pnl), signed_pct(since_inception_return))
-m3.metric("Drawdown", pct(state.get("drawdown_frac", 0.0), 2))
-m4.metric("Cycle", state.get("cycle", last.get("cycle", 0)))
+m2.metric("Today", signed_money(today_pnl), signed_pct(today_return))
+m3.metric("Since inception", signed_money(since_inception_pnl), signed_pct(since_inception_return))
+m4.metric("Exposure", pct(exposure_pct, 1), f"Cash {pct(cash_pct, 1)}")
 m5.metric("Last heartbeat", age_text(last_ts))
 
 st.markdown('<div class="section-title">P&L / Exposure</div>', unsafe_allow_html=True)
 pnl_html = '<div class="pnl-grid">'
 pnl_cards = [
-    ("Open / mark-to-market P&L", open_mark_to_market_pnl, "NAV less starting capital until cost basis is tracked"),
-    ("Realized P&L", realized_pnl, "Closed-trade P&L; runtime currently records fills/costs, not closed P&L"),
-    ("Cash", total_cash, f"{pct(cash_pct, 1)} of NAV"),
+    ("Unrealized P&L", unrealized_pnl_total, "Open mark-to-market P&L against cost basis"),
+    ("Realized P&L", realized_pnl, "Closed-trade P&L from paper ledger"),
+    ("Cost basis", total_cost_basis, "Current open-position basis"),
     ("Invested value", total_position_value, f"{pct(invested_pct, 1)} of NAV · {open_position_count} open positions"),
+    ("Cash", total_cash, f"{pct(cash_pct, 1)} of NAV"),
     ("Fees paid", -fees_total, "Paper commission/fee assumption from runtime config"),
     ("Slippage cost", -slippage_total, "Paper execution/slippage assumption from runtime config"),
     ("Capital base", capital, "Paper starting capital"),
-    ("Fills", float(len(fills)), "Total fill records"),
 ]
 for label, value, sub in pnl_cards:
-    value_class = pnl_class(float(value)) if label not in {"Cash", "Invested value", "Capital base", "Fills"} else "muted"
-    if label == "Fills":
-        value_text = str(int(value))
-    elif label in {"Fees paid", "Slippage cost", "Open / mark-to-market P&L", "Realized P&L"}:
-        value_text = signed_money(value)
-    else:
-        value_text = money(value)
+    value_class = pnl_class(float(value)) if label in {"Unrealized P&L", "Realized P&L", "Fees paid", "Slippage cost"} else "muted"
+    value_text = signed_money(value) if label in {"Unrealized P&L", "Realized P&L", "Fees paid", "Slippage cost"} else money(value)
     pnl_html += f'<div class="pnl-card"><div class="pnl-label">{esc(label)}</div><div class="pnl-value {value_class}">{esc(value_text)}</div><div class="pnl-sub">{esc(sub)}</div></div>'
 pnl_html += '</div>'
 st.markdown(pnl_html, unsafe_allow_html=True)
+
+st.markdown('<div class="section-title">Today\'s Attribution</div>', unsafe_allow_html=True)
+attribution_rows = sorted(sleeve_rows, key=lambda r: abs(float(r["today_pnl"])), reverse=True)
+st.markdown(
+    html_table(
+        attribution_rows,
+        [
+            ("display", "Sleeve"),
+            ("today_pnl", "Today P&L"),
+            ("contribution", "Contribution"),
+            ("unrealized_pnl", "Unrealized"),
+            ("realized_pnl", "Realized"),
+            ("action", "Action"),
+            ("regime", "Regime"),
+            ("reason", "Reason"),
+        ],
+        "No attribution data yet.",
+    ),
+    unsafe_allow_html=True,
+)
 
 st.markdown('<div class="section-title">Sleeves</div>', unsafe_allow_html=True)
 card_html = '<div class="sleeve-grid">'
@@ -409,22 +468,23 @@ for row in sleeve_rows:
     label = row["sleeve"]
     action_css = action_class(row["action"])
     fill_text = "Fill" if row["fill"] else "No fill"
-    sleeve_pnl_class = pnl_class(float(row["pnl_since_start"]))
+    pnl_css = pnl_class(float(row["unrealized_pnl"]))
+    changed = " · changed" if row["action_changed"] else ""
     card_html += f"""
 <div class="sleeve-card">
   <div class="sleeve-top">
-    <div><div class="sleeve-name">{esc(row['display'])}</div><div class="sleeve-meta">{esc(label)} · target {pct(row['target_weight'])}</div></div>
+    <div><div class="sleeve-name">{esc(row['display'])}</div><div class="sleeve-meta">{esc(label)} · target {pct(row['target_weight'])}{changed}</div></div>
     <div class="action {action_css}">{esc(row['action'])}</div>
   </div>
   <div class="kv">
-    <div><div class="k">Regime</div><div class="v">{esc(row['regime'])}</div></div>
+    <div><div class="k">Regime</div><div class="v">{regime_badge(row['regime'])}</div></div>
     <div><div class="k">Exposure</div><div class="v">{pct(row['exposure'],0)}</div></div>
     <div><div class="k">Drift</div><div class="v">{pct(row['drift'],1)}</div></div>
     <div><div class="k">NAV</div><div class="v">{money(row['nav'])}</div></div>
-    <div><div class="k">P&L</div><div class="v {sleeve_pnl_class}">{signed_money(row['pnl_since_start'])}</div></div>
+    <div><div class="k">uP&L</div><div class="v {pnl_css}">{signed_money(row['unrealized_pnl'])}</div></div>
+    <div><div class="k">Today</div><div class="v {pnl_class(float(row['today_pnl']))}">{signed_money(row['today_pnl'])}</div></div>
+    <div><div class="k">Avg entry</div><div class="v">{money(row['avg_entry']) if row['avg_entry'] else '—'}</div></div>
     <div><div class="k">Price</div><div class="v">{money(row['price'])}</div></div>
-    <div><div class="k">Cash</div><div class="v">{money(row['cash'])}</div></div>
-    <div><div class="k">Invested</div><div class="v">{money(row['position_value'])}</div></div>
     <div><div class="k">Fill</div><div class="v">{esc(fill_text)}</div></div>
   </div>
   <div class="progress-outer"><div class="progress-inner" style="width:{max(0, min(100, row['exposure']*100)):.1f}%"></div></div>
@@ -440,7 +500,7 @@ with left:
     st.markdown('<div class="section-title">Portfolio NAV</div>', unsafe_allow_html=True)
     if events:
         hist = pd.DataFrame([
-            {"timestamp": e.get("timestamp"), "nav": e.get("total_nav"), "drawdown": e.get("drawdown_frac"), "fills": len(e.get("fills", []))}
+            {"timestamp": e.get("timestamp"), "nav": e.get("total_nav"), "drawdown": e.get("drawdown_frac"), "today_pnl": e.get("today_pnl")}
             for e in events
         ])
         hist["timestamp"] = pd.to_datetime(hist["timestamp"], utc=True, errors="coerce")
@@ -451,10 +511,36 @@ with left:
         st.info("No NAV history yet.")
 
 with right:
-    st.markdown('<div class="section-title">Actual allocation</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Allocation / Exposure</div>', unsafe_allow_html=True)
     alloc_df = pd.DataFrame(sleeve_rows)[["display", "actual_weight"]].set_index("display") if sleeve_rows else pd.DataFrame()
     if not alloc_df.empty:
         st.bar_chart(alloc_df, use_container_width=True)
+
+st.markdown('<div class="section-title">Signal Changes / Activity</div>', unsafe_allow_html=True)
+activity: list[dict[str, Any]] = []
+for row in sleeve_rows:
+    if row["action_changed"]:
+        activity.append({
+            "when": last.get("timestamp") or state.get("last_cycle_at"),
+            "sleeve": row["display"],
+            "event": f"{row['previous_action']} → {row['action']}",
+            "detail": row["reason"],
+        })
+for f in fills[-8:][::-1]:
+    activity.append({
+        "when": f.get("timestamp"),
+        "sleeve": SLEEVE_NAMES.get(f.get("sleeve"), f.get("sleeve")),
+        "event": f"{f.get('side')} {num(f.get('qty'), 4)} @ {money(f.get('price'))}",
+        "detail": f"notional {money(f.get('notional'))} · fee {money(f.get('fee'))} · slippage {money(f.get('slippage_cost'))}",
+    })
+if activity:
+    timeline_html = '<div class="timeline">'
+    for item in activity[:10]:
+        timeline_html += f'<div class="timeline-item"><div><div class="timeline-main"><b>{esc(item["sleeve"])}</b> · {esc(item["event"])}</div><div class="timeline-sub">{esc(item["detail"])}</div></div><div class="timeline-sub mono">{esc(item["when"])}</div></div>'
+    timeline_html += '</div>'
+    st.markdown(timeline_html, unsafe_allow_html=True)
+else:
+    st.markdown('<div class="audit-note">No signal changes or recent fills in the latest cycle.</div>', unsafe_allow_html=True)
 
 with st.expander("Audit detail: sleeve table", expanded=False):
     st.markdown('<div class="audit-note">Sanitized read-only view. Internal Streamlit widget objects are intentionally not rendered here.</div>', unsafe_allow_html=True)
@@ -462,21 +548,11 @@ with st.expander("Audit detail: sleeve table", expanded=False):
         html_table(
             sleeve_rows,
             [
-                ("display", "Sleeve"),
-                ("action", "Action"),
-                ("regime", "Regime"),
-                ("target_weight", "Target wt"),
-                ("actual_weight", "Actual wt"),
-                ("drift", "Drift"),
-                ("nav", "NAV"),
-                ("pnl_since_start", "P&L"),
-                ("cash", "Cash"),
-                ("position_value", "Invested"),
-                ("qty", "Qty"),
-                ("price", "Price"),
-                ("exposure", "Exposure"),
-                ("last_bar", "Last bar"),
-                ("reason", "Reason"),
+                ("display", "Sleeve"), ("action", "Action"), ("previous_action", "Prev"), ("action_changed", "Changed"),
+                ("regime", "Regime"), ("target_weight", "Target wt"), ("actual_weight", "Actual wt"), ("drift", "Drift"),
+                ("nav", "NAV"), ("today_pnl", "Today"), ("unrealized_pnl", "Unrealized"), ("realized_pnl", "Realized"),
+                ("cost_basis", "Cost basis"), ("avg_entry", "Avg entry"), ("cash", "Cash"), ("position_value", "Invested"),
+                ("qty", "Qty"), ("price", "Price"), ("exposure", "Exposure"), ("last_bar", "Last bar"), ("reason", "Reason"),
             ],
             "No sleeve rows yet.",
         ),
@@ -487,31 +563,20 @@ with st.expander("Audit detail: latest signals", expanded=False):
     sig_rows = []
     for s in last.get("signals", []):
         sig_rows.append({
-            "sleeve": s.get("sleeve"),
-            "asset": s.get("asset"),
-            "tf": s.get("timeframe"),
-            "action": s.get("action"),
-            "target": s.get("target_exposure"),
-            "confidence": s.get("confidence"),
-            "regime": s.get("regime"),
-            "price": s.get("price"),
-            "fill": bool(s.get("fill")),
-            "reason": s.get("reason"),
+            "sleeve": s.get("sleeve"), "asset": s.get("asset"), "tf": s.get("timeframe"),
+            "previous_action": s.get("previous_action"), "action": s.get("action"), "action_changed": s.get("action_changed"),
+            "target": s.get("target_exposure"), "confidence": s.get("confidence"), "regime": s.get("regime"),
+            "price": s.get("price"), "cost_basis": s.get("cost_basis"), "avg_entry": s.get("avg_entry"),
+            "unrealized_pnl": s.get("unrealized_pnl"), "realized_pnl": s.get("realized_pnl"), "fill": bool(s.get("fill")), "reason": s.get("reason"),
         })
     st.markdown(
         html_table(
             sig_rows,
             [
-                ("sleeve", "Sleeve"),
-                ("asset", "Asset"),
-                ("tf", "TF"),
-                ("action", "Action"),
-                ("target", "Target"),
-                ("confidence", "Confidence"),
-                ("regime", "Regime"),
-                ("price", "Price"),
-                ("fill", "Fill"),
-                ("reason", "Reason"),
+                ("sleeve", "Sleeve"), ("asset", "Asset"), ("tf", "TF"), ("previous_action", "Prev"),
+                ("action", "Action"), ("action_changed", "Changed"), ("target", "Target"), ("confidence", "Confidence"),
+                ("regime", "Regime"), ("price", "Price"), ("cost_basis", "Cost basis"), ("avg_entry", "Avg entry"),
+                ("unrealized_pnl", "uP&L"), ("realized_pnl", "rP&L"), ("fill", "Fill"), ("reason", "Reason"),
             ],
             "No signal records yet.",
         ),
@@ -522,21 +587,14 @@ with st.expander("Audit detail: fills and errors", expanded=False):
     c1, c2 = st.columns(2)
     with c1:
         st.caption("Recent fills")
-        fill_rows = fills[-50:][::-1]
         st.markdown(
             html_table(
-                fill_rows,
+                fills[-50:][::-1],
                 [
-                    ("timestamp", "Timestamp"),
-                    ("sleeve", "Sleeve"),
-                    ("asset", "Asset"),
-                    ("side", "Side"),
-                    ("qty", "Qty"),
-                    ("price", "Fill price"),
-                    ("mid", "Mid"),
-                    ("notional", "Notional"),
-                    ("fee", "Fee"),
-                    ("slippage_cost", "Slippage"),
+                    ("timestamp", "Timestamp"), ("sleeve", "Sleeve"), ("asset", "Asset"), ("side", "Side"),
+                    ("qty", "Qty"), ("price", "Fill price"), ("mid", "Mid"), ("notional", "Notional"),
+                    ("fee", "Fee"), ("slippage_cost", "Slippage"), ("realized_pnl", "Realized P&L"),
+                    ("cost_basis_after", "Basis after"), ("avg_entry_after", "Avg entry after"),
                 ],
                 "No fills yet.",
             ),
@@ -544,16 +602,9 @@ with st.expander("Audit detail: fills and errors", expanded=False):
         )
     with c2:
         st.caption("Recent errors")
-        error_rows = errors[-50:][::-1]
         st.markdown(
-            html_table(
-                error_rows,
-                [("timestamp", "Timestamp"), ("version", "Version"), ("error", "Error")],
-                "No runtime errors logged.",
-            ),
+            html_table(errors[-50:][::-1], [("timestamp", "Timestamp"), ("version", "Version"), ("error", "Error")], "No runtime errors logged."),
             unsafe_allow_html=True,
         )
 
-st.caption(
-    f"State {STATE_PATH} · Signals {SIGNALS_LOG} · Fills {FILLS_LOG} · Generated {datetime.now(UTC).isoformat()}"
-)
+st.caption(f"State {STATE_PATH} · Signals {SIGNALS_LOG} · Fills {FILLS_LOG} · Generated {datetime.now(UTC).isoformat()}")
