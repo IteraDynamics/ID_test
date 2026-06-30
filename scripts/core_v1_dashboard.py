@@ -101,6 +101,12 @@ st.markdown(
 .reason { color:#cbd5e1; font-size:.79rem; line-height:1.35; border-top:1px solid #1f2a3d; padding-top:10px; margin-top:10px; min-height:48px; }
 .progress-outer { height:7px; background:#111827; border-radius:999px; overflow:hidden; margin-top:8px; border:1px solid #1e293b; }
 .progress-inner { height:100%; background:linear-gradient(90deg,#38bdf8,#22c55e); border-radius:999px; }
+.audit-table-wrap { background:#0d1422; border:1px solid #1f2a3d; border-radius:14px; padding:10px; overflow-x:auto; margin-bottom:12px; }
+table.audit-table { border-collapse:collapse; width:100%; min-width:850px; font-size:.76rem; }
+.audit-table th { color:#94a3b8; background:#111827; border-bottom:1px solid #263247; padding:8px; text-align:left; text-transform:uppercase; letter-spacing:.05em; font-size:.65rem; white-space:nowrap; }
+.audit-table td { color:#dbe4f0; border-bottom:1px solid #1f2a3d; padding:8px; vertical-align:top; }
+.audit-table tr:last-child td { border-bottom:0; }
+.audit-note { color:#64748b; font-size:.76rem; margin:4px 0 10px 0; }
 .small { color:#94a3b8; font-size:.78rem; }
 .mono { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 @media (max-width: 1000px) {
@@ -191,7 +197,7 @@ def signed_pct(v: Any, d: int = 2) -> str:
         return "—"
 
 
-def num(v: Any, d: int = 2) -> str:
+def num(v: Any, d: int = 4) -> str:
     try:
         return f"{float(v):,.{d}f}"
     except Exception:
@@ -200,6 +206,33 @@ def num(v: Any, d: int = 2) -> str:
 
 def esc(v: Any) -> str:
     return html.escape("" if v is None else str(v))
+
+
+def cell(v: Any) -> str:
+    if v is None:
+        return "—"
+    if isinstance(v, bool):
+        return "yes" if v else "no"
+    if isinstance(v, float):
+        return num(v, 4)
+    if isinstance(v, int):
+        return str(v)
+    if isinstance(v, (dict, list, tuple)):
+        return esc(json.dumps(v, default=str, sort_keys=True))
+    text = str(v)
+    if text.strip() == "":
+        return "—"
+    return esc(text)
+
+
+def html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]], empty: str) -> str:
+    if not rows:
+        return f'<div class="audit-note">{esc(empty)}</div>'
+    head = "".join(f"<th>{esc(label)}</th>" for key, label in columns)
+    body = ""
+    for row in rows:
+        body += "<tr>" + "".join(f"<td>{cell(row.get(key))}</td>" for key, label in columns) + "</tr>"
+    return f'<div class="audit-table-wrap"><table class="audit-table"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
 def status_badge(label: str, status: str) -> str:
@@ -291,11 +324,9 @@ for label, target_w in EXPECTED_WEIGHTS.items():
         "regime": regime,
         "last_bar": bar_ts,
         "reason": reason,
-        "fill": fill,
+        "fill": bool(fill),
     })
 
-# The current paper runtime has not yet separated realized trade P/L from open mark-to-market P/L.
-# Until cost basis is stored, open P/L is best represented as NAV less starting capital, and realized P/L is shown as known realized costs only.
 realized_pnl = float(state.get("realized_pnl") or 0.0)
 open_mark_to_market_pnl = since_inception_pnl - realized_pnl
 cash_pct = total_cash / total_nav if total_nav else 0.0
@@ -355,8 +386,8 @@ pnl_cards = [
     ("Realized P&L", realized_pnl, "Closed-trade P&L; runtime currently records fills/costs, not closed P&L"),
     ("Cash", total_cash, f"{pct(cash_pct, 1)} of NAV"),
     ("Invested value", total_position_value, f"{pct(invested_pct, 1)} of NAV · {open_position_count} open positions"),
-    ("Fees paid", -fees_total, "Recorded paper commission/fees"),
-    ("Slippage cost", -slippage_total, "Recorded paper execution slippage"),
+    ("Fees paid", -fees_total, "Paper commission/fee assumption from runtime config"),
+    ("Slippage cost", -slippage_total, "Paper execution/slippage assumption from runtime config"),
     ("Capital base", capital, "Paper starting capital"),
     ("Fills", float(len(fills)), "Total fill records"),
 ]
@@ -426,8 +457,31 @@ with right:
         st.bar_chart(alloc_df, use_container_width=True)
 
 with st.expander("Audit detail: sleeve table", expanded=False):
-    if sleeve_rows:
-        st.dataframe(pd.DataFrame(sleeve_rows), use_container_width=True, hide_index=True)
+    st.markdown('<div class="audit-note">Sanitized read-only view. Internal Streamlit widget objects are intentionally not rendered here.</div>', unsafe_allow_html=True)
+    st.markdown(
+        html_table(
+            sleeve_rows,
+            [
+                ("display", "Sleeve"),
+                ("action", "Action"),
+                ("regime", "Regime"),
+                ("target_weight", "Target wt"),
+                ("actual_weight", "Actual wt"),
+                ("drift", "Drift"),
+                ("nav", "NAV"),
+                ("pnl_since_start", "P&L"),
+                ("cash", "Cash"),
+                ("position_value", "Invested"),
+                ("qty", "Qty"),
+                ("price", "Price"),
+                ("exposure", "Exposure"),
+                ("last_bar", "Last bar"),
+                ("reason", "Reason"),
+            ],
+            "No sleeve rows yet.",
+        ),
+        unsafe_allow_html=True,
+    )
 
 with st.expander("Audit detail: latest signals", expanded=False):
     sig_rows = []
@@ -444,16 +498,61 @@ with st.expander("Audit detail: latest signals", expanded=False):
             "fill": bool(s.get("fill")),
             "reason": s.get("reason"),
         })
-    st.dataframe(pd.DataFrame(sig_rows), use_container_width=True, hide_index=True) if sig_rows else st.info("No signal records yet.")
+    st.markdown(
+        html_table(
+            sig_rows,
+            [
+                ("sleeve", "Sleeve"),
+                ("asset", "Asset"),
+                ("tf", "TF"),
+                ("action", "Action"),
+                ("target", "Target"),
+                ("confidence", "Confidence"),
+                ("regime", "Regime"),
+                ("price", "Price"),
+                ("fill", "Fill"),
+                ("reason", "Reason"),
+            ],
+            "No signal records yet.",
+        ),
+        unsafe_allow_html=True,
+    )
 
 with st.expander("Audit detail: fills and errors", expanded=False):
     c1, c2 = st.columns(2)
     with c1:
         st.caption("Recent fills")
-        st.dataframe(pd.DataFrame(fills[-50:][::-1]), use_container_width=True, hide_index=True) if fills else st.info("No fills yet.")
+        fill_rows = fills[-50:][::-1]
+        st.markdown(
+            html_table(
+                fill_rows,
+                [
+                    ("timestamp", "Timestamp"),
+                    ("sleeve", "Sleeve"),
+                    ("asset", "Asset"),
+                    ("side", "Side"),
+                    ("qty", "Qty"),
+                    ("price", "Fill price"),
+                    ("mid", "Mid"),
+                    ("notional", "Notional"),
+                    ("fee", "Fee"),
+                    ("slippage_cost", "Slippage"),
+                ],
+                "No fills yet.",
+            ),
+            unsafe_allow_html=True,
+        )
     with c2:
         st.caption("Recent errors")
-        st.dataframe(pd.DataFrame(errors[-50:][::-1]), use_container_width=True, hide_index=True) if errors else st.success("No runtime errors logged.")
+        error_rows = errors[-50:][::-1]
+        st.markdown(
+            html_table(
+                error_rows,
+                [("timestamp", "Timestamp"), ("version", "Version"), ("error", "Error")],
+                "No runtime errors logged.",
+            ),
+            unsafe_allow_html=True,
+        )
 
 st.caption(
     f"State {STATE_PATH} · Signals {SIGNALS_LOG} · Fills {FILLS_LOG} · Generated {datetime.now(UTC).isoformat()}"
