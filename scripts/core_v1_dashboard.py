@@ -20,6 +20,7 @@ ERROR_LOG = SIGNALS_LOG.with_name("core_v1_errors.jsonl")
 EXPECTED_POLL_SECONDS = int(os.getenv("CORE_V1_POLL_SECONDS", "3600"))
 STALE_AFTER_SECONDS = int(os.getenv("CORE_V1_STALE_AFTER_SECONDS", str(EXPECTED_POLL_SECONDS * 2 + 300)))
 REFRESH_SECONDS = int(os.getenv("CORE_V1_DASHBOARD_REFRESH_SECONDS", "30"))
+DEFAULT_CAPITAL = float(os.getenv("CORE_V1_CAPITAL", "100000"))
 
 SCENARIO = "candidate_btc1h_hedges_to_btc4h_gld_qqq"
 EXPECTED_WEIGHTS = {
@@ -78,6 +79,12 @@ st.markdown(
 .attention h3 { margin:0 0 8px 0; font-size:.92rem; letter-spacing:.06em; text-transform:uppercase; color:#cbd5e1; }
 .attention ul { margin:.35rem 0 0 1.1rem; color:#cbd5e1; }
 .section-title { margin-top: 8px; margin-bottom: 10px; color:#f8fafc; font-size:1.05rem; font-weight:750; letter-spacing:-.02em; }
+.pnl-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:10px; margin: 12px 0 18px 0; }
+.pnl-card { background:linear-gradient(180deg,#101827,#0b1220); border:1px solid #1f2a3d; border-radius:16px; padding:14px 15px; }
+.pnl-label { color:#94a3b8; font-size:.66rem; text-transform:uppercase; letter-spacing:.08em; font-weight:850; }
+.pnl-value { color:#f8fafc; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:1.25rem; font-weight:850; margin-top:6px; }
+.pnl-sub { color:#64748b; font-size:.74rem; margin-top:4px; }
+.good { color:#86efac; } .bad { color:#fca5a5; } .muted { color:#94a3b8; }
 .sleeve-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
 .sleeve-card { background:linear-gradient(180deg,#111827,#0b1220); border:1px solid #1f2a3d; border-radius:18px; padding:15px; box-shadow:0 14px 35px rgba(0,0,0,.20); }
 .sleeve-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px; }
@@ -94,11 +101,10 @@ st.markdown(
 .reason { color:#cbd5e1; font-size:.79rem; line-height:1.35; border-top:1px solid #1f2a3d; padding-top:10px; margin-top:10px; min-height:48px; }
 .progress-outer { height:7px; background:#111827; border-radius:999px; overflow:hidden; margin-top:8px; border:1px solid #1e293b; }
 .progress-inner { height:100%; background:linear-gradient(90deg,#38bdf8,#22c55e); border-radius:999px; }
-.table-wrap { background:#0d1422; border:1px solid #1f2a3d; border-radius:16px; padding:12px; margin-top:10px; }
 .small { color:#94a3b8; font-size:.78rem; }
 .mono { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 @media (max-width: 1000px) {
-  .strip { grid-template-columns: repeat(2, 1fr); }
+  .strip, .pnl-grid { grid-template-columns: repeat(2, 1fr); }
   .sleeve-grid { grid-template-columns: 1fr; }
   .title-row { flex-direction:column; }
   [data-testid="stMetricValue"] { font-size: 1.15rem !important; }
@@ -160,9 +166,27 @@ def money(v: Any) -> str:
         return "—"
 
 
+def signed_money(v: Any) -> str:
+    try:
+        x = float(v)
+        sign = "+" if x >= 0 else "-"
+        return f"{sign}${abs(x):,.2f}"
+    except Exception:
+        return "—"
+
+
 def pct(v: Any, d: int = 1) -> str:
     try:
         return f"{float(v):.{d}%}"
+    except Exception:
+        return "—"
+
+
+def signed_pct(v: Any, d: int = 2) -> str:
+    try:
+        x = float(v)
+        sign = "+" if x >= 0 else ""
+        return f"{sign}{x:.{d}%}"
     except Exception:
         return "—"
 
@@ -191,6 +215,14 @@ def action_class(action: str | None) -> str:
     return "action-flat"
 
 
+def pnl_class(value: float) -> str:
+    if value > 0:
+        return "good"
+    if value < 0:
+        return "bad"
+    return "muted"
+
+
 state = read_json(STATE_PATH)
 events = read_jsonl(SIGNALS_LOG)
 fills = read_jsonl(FILLS_LOG)
@@ -206,9 +238,68 @@ health_label = "ATTENTION" if health == "err" else "WARN" if health == "warn" el
 
 sleeves = state.get("sleeves", {})
 sleeve_navs = state.get("sleeve_navs", {})
+capital = float(state.get("capital") or DEFAULT_CAPITAL)
 total_nav = float(state.get("last_total_nav") or last.get("total_nav") or sum(float(v) for v in sleeve_navs.values()) or 0.0)
-pl = total_nav - 100000.0 if total_nav else 0.0
+since_inception_pnl = total_nav - capital if total_nav else 0.0
+since_inception_return = since_inception_pnl / capital if capital else 0.0
+fees_total = float(state.get("realized_fees") or last.get("fees_total") or 0.0)
+slippage_total = float(state.get("realized_slippage") or last.get("slippage_total") or 0.0)
 latest_signals = {s.get("sleeve"): s for s in last.get("signals", [])}
+
+sleeve_rows = []
+total_cash = 0.0
+total_position_value = 0.0
+open_position_count = 0
+for label, target_w in EXPECTED_WEIGHTS.items():
+    payload = sleeves.get(label, {})
+    sig = latest_signals.get(label, {})
+    price = float(payload.get("last_price") or sig.get("price") or 0.0)
+    qty = float(payload.get("qty") or 0.0)
+    cash = float(payload.get("cash") or 0.0)
+    position_value = qty * price
+    nav = float(sleeve_navs.get(label) or cash + position_value)
+    initial_capital = capital * target_w
+    sleeve_pnl = nav - initial_capital
+    actual_w = 0.0 if total_nav <= 0 else nav / total_nav
+    exposure = 0.0 if nav <= 0 else position_value / nav
+    action = sig.get("action") or "—"
+    regime = sig.get("regime") or "—"
+    reason = sig.get("reason") or "No signal recorded yet."
+    drift = actual_w - target_w
+    bar_ts = sig.get("bar_timestamp") or payload.get("last_timestamp") or "—"
+    fill = sig.get("fill")
+    total_cash += cash
+    total_position_value += position_value
+    if abs(qty) > 1e-12:
+        open_position_count += 1
+    sleeve_rows.append({
+        "sleeve": label,
+        "display": SLEEVE_NAMES[label],
+        "target_weight": target_w,
+        "actual_weight": actual_w,
+        "drift": drift,
+        "initial_capital": initial_capital,
+        "nav": nav,
+        "pnl_since_start": sleeve_pnl,
+        "cash": cash,
+        "position_value": position_value,
+        "qty": qty,
+        "price": price,
+        "exposure": exposure,
+        "target_exposure": float(payload.get("last_target_exposure") or sig.get("target_exposure") or 0.0),
+        "action": action,
+        "regime": regime,
+        "last_bar": bar_ts,
+        "reason": reason,
+        "fill": fill,
+    })
+
+# The current paper runtime has not yet separated realized trade P/L from open mark-to-market P/L.
+# Until cost basis is stored, open P/L is best represented as NAV less starting capital, and realized P/L is shown as known realized costs only.
+realized_pnl = float(state.get("realized_pnl") or 0.0)
+open_mark_to_market_pnl = since_inception_pnl - realized_pnl
+cash_pct = total_cash / total_nav if total_nav else 0.0
+invested_pct = total_position_value / total_nav if total_nav else 0.0
 
 st.markdown(
     f"""
@@ -252,65 +343,62 @@ st.markdown(f"<div class='attention'><h3>Attention</h3><ul>{issue_items}</ul></d
 
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Portfolio NAV", money(total_nav))
-m2.metric("P/L vs $100k", money(pl))
+m2.metric("Since inception", signed_money(since_inception_pnl), signed_pct(since_inception_return))
 m3.metric("Drawdown", pct(state.get("drawdown_frac", 0.0), 2))
 m4.metric("Cycle", state.get("cycle", last.get("cycle", 0)))
 m5.metric("Last heartbeat", age_text(last_ts))
 
+st.markdown('<div class="section-title">P&L / Exposure</div>', unsafe_allow_html=True)
+pnl_html = '<div class="pnl-grid">'
+pnl_cards = [
+    ("Open / mark-to-market P&L", open_mark_to_market_pnl, "NAV less starting capital until cost basis is tracked"),
+    ("Realized P&L", realized_pnl, "Closed-trade P&L; runtime currently records fills/costs, not closed P&L"),
+    ("Cash", total_cash, f"{pct(cash_pct, 1)} of NAV"),
+    ("Invested value", total_position_value, f"{pct(invested_pct, 1)} of NAV · {open_position_count} open positions"),
+    ("Fees paid", -fees_total, "Recorded paper commission/fees"),
+    ("Slippage cost", -slippage_total, "Recorded paper execution slippage"),
+    ("Capital base", capital, "Paper starting capital"),
+    ("Fills", float(len(fills)), "Total fill records"),
+]
+for label, value, sub in pnl_cards:
+    value_class = pnl_class(float(value)) if label not in {"Cash", "Invested value", "Capital base", "Fills"} else "muted"
+    if label == "Fills":
+        value_text = str(int(value))
+    elif label in {"Fees paid", "Slippage cost", "Open / mark-to-market P&L", "Realized P&L"}:
+        value_text = signed_money(value)
+    else:
+        value_text = money(value)
+    pnl_html += f'<div class="pnl-card"><div class="pnl-label">{esc(label)}</div><div class="pnl-value {value_class}">{esc(value_text)}</div><div class="pnl-sub">{esc(sub)}</div></div>'
+pnl_html += '</div>'
+st.markdown(pnl_html, unsafe_allow_html=True)
+
 st.markdown('<div class="section-title">Sleeves</div>', unsafe_allow_html=True)
 card_html = '<div class="sleeve-grid">'
-sleeve_rows = []
-for label, target_w in EXPECTED_WEIGHTS.items():
-    payload = sleeves.get(label, {})
-    sig = latest_signals.get(label, {})
-    price = float(payload.get("last_price") or sig.get("price") or 0.0)
-    qty = float(payload.get("qty") or 0.0)
-    cash = float(payload.get("cash") or 0.0)
-    nav = float(sleeve_navs.get(label) or cash + qty * price)
-    actual_w = 0.0 if total_nav <= 0 else nav / total_nav
-    exposure = 0.0 if nav <= 0 else qty * price / nav
-    action = sig.get("action") or "—"
-    regime = sig.get("regime") or "—"
-    reason = sig.get("reason") or "No signal recorded yet."
-    action_css = action_class(action)
-    drift = actual_w - target_w
-    bar_ts = sig.get("bar_timestamp") or payload.get("last_timestamp") or "—"
-    fill = sig.get("fill")
-    fill_text = "Fill" if fill else "No fill"
-    fill_status = "ok" if fill else "neutral"
-    sleeve_rows.append({
-        "sleeve": label,
-        "target_weight": target_w,
-        "actual_weight": actual_w,
-        "drift": drift,
-        "nav": nav,
-        "cash": cash,
-        "qty": qty,
-        "price": price,
-        "exposure": exposure,
-        "target_exposure": float(payload.get("last_target_exposure") or sig.get("target_exposure") or 0.0),
-        "action": action,
-        "regime": regime,
-        "last_bar": bar_ts,
-        "reason": reason,
-    })
+for row in sleeve_rows:
+    label = row["sleeve"]
+    action_css = action_class(row["action"])
+    fill_text = "Fill" if row["fill"] else "No fill"
+    sleeve_pnl_class = pnl_class(float(row["pnl_since_start"]))
     card_html += f"""
 <div class="sleeve-card">
   <div class="sleeve-top">
-    <div><div class="sleeve-name">{esc(SLEEVE_NAMES[label])}</div><div class="sleeve-meta">{esc(label)} · target {pct(target_w)}</div></div>
-    <div class="action {action_css}">{esc(action)}</div>
+    <div><div class="sleeve-name">{esc(row['display'])}</div><div class="sleeve-meta">{esc(label)} · target {pct(row['target_weight'])}</div></div>
+    <div class="action {action_css}">{esc(row['action'])}</div>
   </div>
   <div class="kv">
-    <div><div class="k">Regime</div><div class="v">{esc(regime)}</div></div>
-    <div><div class="k">Exposure</div><div class="v">{pct(exposure,0)}</div></div>
-    <div><div class="k">Drift</div><div class="v">{pct(drift,1)}</div></div>
-    <div><div class="k">NAV</div><div class="v">{money(nav)}</div></div>
-    <div><div class="k">Price</div><div class="v">{money(price)}</div></div>
+    <div><div class="k">Regime</div><div class="v">{esc(row['regime'])}</div></div>
+    <div><div class="k">Exposure</div><div class="v">{pct(row['exposure'],0)}</div></div>
+    <div><div class="k">Drift</div><div class="v">{pct(row['drift'],1)}</div></div>
+    <div><div class="k">NAV</div><div class="v">{money(row['nav'])}</div></div>
+    <div><div class="k">P&L</div><div class="v {sleeve_pnl_class}">{signed_money(row['pnl_since_start'])}</div></div>
+    <div><div class="k">Price</div><div class="v">{money(row['price'])}</div></div>
+    <div><div class="k">Cash</div><div class="v">{money(row['cash'])}</div></div>
+    <div><div class="k">Invested</div><div class="v">{money(row['position_value'])}</div></div>
     <div><div class="k">Fill</div><div class="v">{esc(fill_text)}</div></div>
   </div>
-  <div class="progress-outer"><div class="progress-inner" style="width:{max(0, min(100, exposure*100)):.1f}%"></div></div>
-  <div class="reason">{esc(reason)}</div>
-  <div class="small" style="margin-top:8px;">Last bar: <span class="mono">{esc(bar_ts)}</span></div>
+  <div class="progress-outer"><div class="progress-inner" style="width:{max(0, min(100, row['exposure']*100)):.1f}%"></div></div>
+  <div class="reason">{esc(row['reason'])}</div>
+  <div class="small" style="margin-top:8px;">Last bar: <span class="mono">{esc(row['last_bar'])}</span></div>
 </div>
 """
 card_html += '</div>'
@@ -333,7 +421,7 @@ with left:
 
 with right:
     st.markdown('<div class="section-title">Actual allocation</div>', unsafe_allow_html=True)
-    alloc_df = pd.DataFrame(sleeve_rows)[["sleeve", "actual_weight"]].set_index("sleeve") if sleeve_rows else pd.DataFrame()
+    alloc_df = pd.DataFrame(sleeve_rows)[["display", "actual_weight"]].set_index("display") if sleeve_rows else pd.DataFrame()
     if not alloc_df.empty:
         st.bar_chart(alloc_df, use_container_width=True)
 
