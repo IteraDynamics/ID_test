@@ -28,7 +28,6 @@ import sys
 import time
 import urllib.parse
 import urllib.request
-from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -45,7 +44,7 @@ load_dotenv()
 from research.regimes.baseline_engine import BaselineRegimeEngine
 from research.regimes.contracts import RegimeLabel
 from research.strategies import REGISTRY as STRATEGY_REGISTRY
-from research.strategies.contracts import Action, StrategyContext
+from research.strategies.contracts import StrategyContext
 from research.harness.resampler import resample_ohlcv
 from runtime.core_v1.allocation import (
     SELECTED_CORE_V1_SCENARIO,
@@ -55,7 +54,7 @@ from runtime.core_v1.allocation import (
 
 COINBASE_URL = "https://api.exchange.coinbase.com/products/{product}/candles"
 STOOQ_URL = "https://stooq.com/q/d/l/"
-STATE_VERSION = "core_v1_paper_runtime_v1"
+STATE_VERSION = "core_v1_paper_runtime_v2"
 
 
 def utc_now() -> datetime:
@@ -117,7 +116,6 @@ def fetch_coinbase_hourly(product: str, days: int = 420) -> pd.DataFrame:
         data = fetch_json(url)
         if isinstance(data, list):
             rows.extend(data)
-        # Coinbase rate limits are generous enough for this cadence; be polite.
         time.sleep(0.12)
         chunk_start = chunk_end
 
@@ -241,17 +239,41 @@ def classify_regime(df: pd.DataFrame) -> RegimeLabel:
         return RegimeLabel.UNKNOWN
 
 
-def load_state(path: Path, capital: float) -> dict[str, Any]:
-    default_sleeves = {
-        s.label: {
-            "cash": capital * s.weight,
-            "qty": 0.0,
-            "last_price": None,
-            "last_target_exposure": 0.0,
-            "last_timestamp": None,
-        }
-        for s in SELECTED_CORE_V1_SLEEVES
+def default_sleeve_state(capital: float, weight: float) -> dict[str, Any]:
+    return {
+        "cash": capital * weight,
+        "qty": 0.0,
+        "cost_basis": 0.0,
+        "avg_entry": None,
+        "realized_pnl": 0.0,
+        "last_action": None,
+        "last_price": None,
+        "last_target_exposure": 0.0,
+        "last_timestamp": None,
     }
+
+
+def migrate_sleeve_state(s: dict[str, Any], capital: float, weight: float) -> None:
+    s.setdefault("cash", capital * weight)
+    s.setdefault("qty", 0.0)
+    s.setdefault("realized_pnl", 0.0)
+    s.setdefault("last_action", None)
+    s.setdefault("last_price", None)
+    s.setdefault("last_target_exposure", 0.0)
+    s.setdefault("last_timestamp", None)
+
+    qty = float(s.get("qty", 0.0) or 0.0)
+    if "cost_basis" not in s or s.get("cost_basis") is None:
+        # Backward-compatible migration for positions opened before cost-basis telemetry existed.
+        # Use the sleeve's initial allocation as the best available starting basis.
+        s["cost_basis"] = capital * weight if abs(qty) > 1e-12 else 0.0
+        s["basis_source"] = "backfilled_initial_allocation" if abs(qty) > 1e-12 else "none"
+    cost_basis = float(s.get("cost_basis", 0.0) or 0.0)
+    s["avg_entry"] = cost_basis / qty if abs(qty) > 1e-12 and cost_basis > 0 else None
+
+
+def load_state(path: Path, capital: float) -> dict[str, Any]:
+    default_sleeves = {s.label: default_sleeve_state(capital, s.weight) for s in SELECTED_CORE_V1_SLEEVES}
     state = read_json(path, {})
     if not state:
         return {
@@ -261,16 +283,22 @@ def load_state(path: Path, capital: float) -> dict[str, Any]:
             "cycle": 0,
             "capital": capital,
             "sleeves": default_sleeves,
+            "realized_pnl": 0.0,
             "realized_fees": 0.0,
             "realized_slippage": 0.0,
             "high_water_nav": capital,
         }
-    for k, v in default_sleeves.items():
-        state.setdefault("sleeves", {}).setdefault(k, v)
-    state.setdefault("version", STATE_VERSION)
+
+    state.setdefault("sleeves", {})
+    for sleeve in SELECTED_CORE_V1_SLEEVES:
+        s = state["sleeves"].setdefault(sleeve.label, default_sleeve_state(capital, sleeve.weight))
+        migrate_sleeve_state(s, capital, sleeve.weight)
+
+    state["version"] = STATE_VERSION
     state.setdefault("scenario", SELECTED_CORE_V1_SCENARIO)
     state.setdefault("capital", capital)
     state.setdefault("cycle", 0)
+    state.setdefault("realized_pnl", 0.0)
     state.setdefault("realized_fees", 0.0)
     state.setdefault("realized_slippage", 0.0)
     state.setdefault("high_water_nav", capital)
@@ -314,7 +342,10 @@ def execute_paper_fill(
     nav = sleeve_nav(s, price)
     if nav <= 0:
         return None
-    current_value = float(s.get("qty", 0.0)) * price
+
+    current_qty = float(s.get("qty", 0.0) or 0.0)
+    current_cost_basis = float(s.get("cost_basis", 0.0) or 0.0)
+    current_value = current_qty * price
     current_exposure = current_value / nav
     delta_exposure = target_exposure - current_exposure
     if abs(delta_exposure) < min_delta:
@@ -328,20 +359,38 @@ def execute_paper_fill(
     qty = abs(delta_value) / fill_price
     notional = qty * fill_price
     fee = notional * fee_rate
+    realized_trade_pnl = 0.0
+    sold_cost_basis = 0.0
 
     if side == "BUY":
         max_affordable = max(0.0, float(s.get("cash", 0.0))) / (fill_price * (1.0 + fee_rate))
         qty = min(qty, max_affordable)
         notional = qty * fill_price
         fee = notional * fee_rate
-        s["qty"] = float(s.get("qty", 0.0)) + qty
+        s["qty"] = current_qty + qty
         s["cash"] = float(s.get("cash", 0.0)) - notional - fee
+        s["cost_basis"] = current_cost_basis + notional + fee
     else:
-        qty = min(qty, max(0.0, float(s.get("qty", 0.0))))
+        qty = min(qty, max(0.0, current_qty))
         notional = qty * fill_price
         fee = notional * fee_rate
-        s["qty"] = float(s.get("qty", 0.0)) - qty
+        if current_qty > 0:
+            sold_cost_basis = current_cost_basis * (qty / current_qty)
+        realized_trade_pnl = notional - fee - sold_cost_basis
+        remaining_qty = current_qty - qty
+        remaining_cost_basis = max(0.0, current_cost_basis - sold_cost_basis)
+        if remaining_qty < 1e-12:
+            remaining_qty = 0.0
+            remaining_cost_basis = 0.0
+        s["qty"] = remaining_qty
         s["cash"] = float(s.get("cash", 0.0)) + notional - fee
+        s["cost_basis"] = remaining_cost_basis
+        s["realized_pnl"] = float(s.get("realized_pnl", 0.0)) + realized_trade_pnl
+        state["realized_pnl"] = float(state.get("realized_pnl", 0.0)) + realized_trade_pnl
+
+    new_qty = float(s.get("qty", 0.0) or 0.0)
+    new_cost_basis = float(s.get("cost_basis", 0.0) or 0.0)
+    s["avg_entry"] = new_cost_basis / new_qty if new_qty > 1e-12 and new_cost_basis > 0 else None
 
     slippage_cost = abs(qty * (fill_price - price))
     state["realized_fees"] = float(state.get("realized_fees", 0.0)) + fee
@@ -354,7 +403,40 @@ def execute_paper_fill(
         "notional": notional,
         "fee": fee,
         "slippage_cost": slippage_cost,
+        "realized_pnl": realized_trade_pnl,
+        "sold_cost_basis": sold_cost_basis,
+        "cost_basis_after": s.get("cost_basis", 0.0),
+        "avg_entry_after": s.get("avg_entry"),
     }
+
+
+def mark_to_market(s: dict[str, Any], price: float) -> dict[str, float]:
+    qty = float(s.get("qty", 0.0) or 0.0)
+    cost_basis = float(s.get("cost_basis", 0.0) or 0.0)
+    position_value = qty * price
+    unrealized_pnl = position_value - cost_basis if qty > 1e-12 else 0.0
+    return {
+        "qty": qty,
+        "cost_basis": cost_basis,
+        "position_value": position_value,
+        "avg_entry": cost_basis / qty if qty > 1e-12 and cost_basis > 0 else 0.0,
+        "unrealized_pnl": unrealized_pnl,
+        "unrealized_return": unrealized_pnl / cost_basis if cost_basis > 0 else 0.0,
+    }
+
+
+def update_daily_pnl_state(state: dict[str, Any], total_nav: float) -> dict[str, Any]:
+    today = utc_now().date().isoformat()
+    previous_nav = float(state.get("last_total_nav") or state.get("capital") or total_nav)
+    if state.get("day_start_date") != today:
+        state["day_start_date"] = today
+        state["day_start_nav"] = previous_nav
+    day_start_nav = float(state.get("day_start_nav") or previous_nav)
+    today_pnl = total_nav - day_start_nav
+    today_return = today_pnl / day_start_nav if day_start_nav > 0 else 0.0
+    state["today_pnl"] = today_pnl
+    state["today_return"] = today_return
+    return {"date": today, "day_start_nav": day_start_nav, "today_pnl": today_pnl, "today_return": today_return}
 
 
 def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
@@ -375,10 +457,12 @@ def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
         cash_yield_total += apply_cash_yield(state, sleeve.label, sleeve.family, data["BIL"])
         nav_before = sleeve_nav(s_state, price)
         current_exposure = 0.0 if nav_before <= 0 else (float(s_state.get("qty", 0.0)) * price / nav_before)
+        previous_action = s_state.get("last_action")
         regime = classify_regime(df)
         ctx = StrategyContext(regime=regime, current_exposure_frac=current_exposure, asset=sleeve.asset, bar_index=len(df) - 1)
         strategy = STRATEGY_REGISTRY[sleeve.strategy]
         intent = strategy.generate_intent(df, ctx, closed_only=True)
+        action = intent.action.value if hasattr(intent.action, "value") else str(intent.action)
         target_exposure = max(0.0, min(1.0, float(intent.desired_exposure_frac)))
         fee_rate = args.equity_fee if sleeve.family in ("equity", "gold") else args.fee
         slippage_bps = args.equity_slippage_bps if sleeve.family in ("equity", "gold") else args.crypto_slippage_bps
@@ -392,6 +476,8 @@ def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
             args.rebalance_threshold,
         )
         nav_after = sleeve_nav(state["sleeves"][sleeve.label], price)
+        mtm = mark_to_market(state["sleeves"][sleeve.label], price)
+        state["sleeves"][sleeve.label]["last_action"] = action
         state["sleeves"][sleeve.label]["last_price"] = price
         state["sleeves"][sleeve.label]["last_target_exposure"] = target_exposure
         state["sleeves"][sleeve.label]["last_timestamp"] = str(ts)
@@ -405,12 +491,20 @@ def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
             "bar_timestamp": str(ts),
             "price": price,
             "regime": regime.value,
-            "action": intent.action.value if hasattr(intent.action, "value") else str(intent.action),
+            "action": action,
+            "previous_action": previous_action,
+            "action_changed": previous_action is not None and previous_action != action,
             "confidence": float(intent.confidence),
             "target_exposure": target_exposure,
             "current_exposure_before": current_exposure,
             "nav_before": nav_before,
             "nav_after": nav_after,
+            "position_value": mtm["position_value"],
+            "cost_basis": mtm["cost_basis"],
+            "avg_entry": mtm["avg_entry"],
+            "unrealized_pnl": mtm["unrealized_pnl"],
+            "unrealized_return": mtm["unrealized_return"],
+            "realized_pnl": float(state["sleeves"][sleeve.label].get("realized_pnl", 0.0)),
             "reason": intent.reason,
             "meta": intent.meta,
             "fill": fill,
@@ -419,11 +513,19 @@ def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
         if fill:
             fills.append({**fill, "sleeve": sleeve.label, "asset": sleeve.asset, "timestamp": utc_now().isoformat()})
 
-    sleeve_navs = {}
+    sleeve_navs: dict[str, float] = {}
+    sleeve_telemetry: dict[str, dict[str, float]] = {}
     for sleeve in SELECTED_CORE_V1_SLEEVES:
         price = float(state["sleeves"][sleeve.label].get("last_price") or latest_price(data[sleeve.asset]))
         sleeve_navs[sleeve.label] = sleeve_nav(state["sleeves"][sleeve.label], price)
+        sleeve_telemetry[sleeve.label] = mark_to_market(state["sleeves"][sleeve.label], price)
+
     total_nav = float(sum(sleeve_navs.values()))
+    total_cash = float(sum(float(state["sleeves"][s.label].get("cash", 0.0)) for s in SELECTED_CORE_V1_SLEEVES))
+    total_position_value = float(sum(v["position_value"] for v in sleeve_telemetry.values()))
+    total_cost_basis = float(sum(v["cost_basis"] for v in sleeve_telemetry.values()))
+    unrealized_pnl = float(sum(v["unrealized_pnl"] for v in sleeve_telemetry.values()))
+    daily_pnl = update_daily_pnl_state(state, total_nav)
     hwm = max(float(state.get("high_water_nav", args.capital)), total_nav)
     state["high_water_nav"] = hwm
     state["cycle"] = int(state.get("cycle", 0)) + 1
@@ -431,6 +533,12 @@ def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
     state["last_total_nav"] = total_nav
     state["drawdown_frac"] = 0.0 if hwm <= 0 else total_nav / hwm - 1.0
     state["sleeve_navs"] = sleeve_navs
+    state["sleeve_telemetry"] = sleeve_telemetry
+    state["total_cash"] = total_cash
+    state["total_position_value"] = total_position_value
+    state["total_cost_basis"] = total_cost_basis
+    state["unrealized_pnl"] = unrealized_pnl
+    state["open_position_count"] = int(sum(1 for v in sleeve_telemetry.values() if abs(v["qty"]) > 1e-12))
     write_json_atomic(state_path, state)
 
     event = {
@@ -442,8 +550,16 @@ def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
         "drawdown_frac": state["drawdown_frac"],
         "cash_yield_applied": cash_yield_total,
         "sleeve_navs": sleeve_navs,
+        "sleeve_telemetry": sleeve_telemetry,
         "signals": signals,
         "fills": fills,
+        "today_pnl": daily_pnl["today_pnl"],
+        "today_return": daily_pnl["today_return"],
+        "cash_total": total_cash,
+        "position_value_total": total_position_value,
+        "cost_basis_total": total_cost_basis,
+        "unrealized_pnl": unrealized_pnl,
+        "realized_pnl": state.get("realized_pnl", 0.0),
         "fees_total": state.get("realized_fees", 0.0),
         "slippage_total": state.get("realized_slippage", 0.0),
     }
@@ -480,13 +596,14 @@ def main() -> None:
             event = run_cycle(args)
             print(
                 f"{event['timestamp']} Core v1 cycle={event['cycle']} NAV=${event['total_nav']:,.2f} "
-                f"DD={event['drawdown_frac']:.2%} fills={len(event['fills'])}",
+                f"DD={event['drawdown_frac']:.2%} today={event['today_pnl']:+,.2f} fills={len(event['fills'])}",
                 flush=True,
             )
             for s in event["signals"]:
+                changed = " changed" if s.get("action_changed") else ""
                 print(
-                    f"  {s['sleeve']}: {s['action']} target={s['target_exposure']:.3f} "
-                    f"price={s['price']:.2f} regime={s['regime']} | {s['reason']}",
+                    f"  {s['sleeve']}: {s['action']}{changed} target={s['target_exposure']:.3f} "
+                    f"price={s['price']:.2f} regime={s['regime']} uPnL={s['unrealized_pnl']:+,.2f} | {s['reason']}",
                     flush=True,
                 )
         except Exception as e:
