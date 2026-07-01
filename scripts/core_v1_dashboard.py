@@ -96,7 +96,7 @@ html, body, [class*="css"] { font-family:-apple-system,BlinkMacSystemFont,"Inter
 .section-head { display:flex; justify-content:space-between; align-items:end; gap:12px; margin:22px 0 10px 0; }
 .section-title { color:#f8fafc; font-size:1.08rem; font-weight:850; letter-spacing:-.025em; }
 .section-sub { color:#64748b; font-size:.76rem; margin-top:2px; }
-.chart-card { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:6px 10px 2px 10px; box-shadow:0 18px 40px rgba(0,0,0,.24); }
+div[data-testid="stElementContainer"]:has(> div[data-testid="stFullScreenFrame"]) { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:10px 12px 4px 12px; box-shadow:0 18px 40px rgba(0,0,0,.24); }
 .posture-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
 .posture-card { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:16px; box-shadow:0 18px 40px rgba(0,0,0,.24); }
 .comp-bar { display:flex; width:100%; height:14px; border-radius:999px; overflow:hidden; border:1px solid #1e293b; background:#0b1220; margin:12px 0 14px 0; }
@@ -639,9 +639,7 @@ st.markdown(f'<div class="alert-line {alert_class}"><span>{esc(alert_text)}</spa
 st.markdown('<div class="section-head"><div><div class="section-title">Portfolio NAV</div><div class="section-sub">Equity curve with drawdown and trade markers.</div></div></div>', unsafe_allow_html=True)
 fig = nav_chart(events, fills)
 if fig is not None:
-    st.markdown('<div class="chart-card">', unsafe_allow_html=True)
     st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
-    st.markdown("</div>", unsafe_allow_html=True)
 else:
     st.info("No NAV history yet.")
 
