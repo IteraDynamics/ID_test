@@ -54,6 +54,7 @@ from runtime.core_v1.allocation import (
 
 COINBASE_URL = "https://api.exchange.coinbase.com/products/{product}/candles"
 STOOQ_URL = "https://stooq.com/q/d/l/"
+YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?{params}"
 STATE_VERSION = "core_v1_paper_runtime_v2"
 
 
@@ -129,20 +130,52 @@ def fetch_coinbase_hourly(product: str, days: int = 420) -> pd.DataFrame:
 
 
 def fetch_stooq_daily(symbol: str, days: int = 520) -> pd.DataFrame:
-    params = urllib.parse.urlencode({"s": f"{symbol.lower()}.us", "i": "d"})
-    text = fetch_text(f"{STOOQ_URL}?{params}")
-    reader = csv.DictReader(text.splitlines())
-    rows = list(reader)
-    if not rows or "Date" not in rows[0]:
-        raise RuntimeError(f"No Stooq daily data returned for {symbol}")
-    df = pd.DataFrame(rows)
-    df["timestamp"] = pd.to_datetime(df["Date"], utc=False)
-    for c in ("Open", "High", "Low", "Close", "Volume"):
-        df[c] = pd.to_numeric(df[c], errors="coerce")
-    df = df.rename(columns={"Open": "open", "High": "high", "Low": "low", "Close": "close", "Volume": "volume"})
-    df = df[["timestamp", "open", "high", "low", "close", "volume"]].dropna().set_index("timestamp").sort_index()
+    """Fetch fresh daily ETF data from Yahoo chart API.
+
+    Kept function name for compatibility, but this no longer relies on Stooq.
+    """
+    params = urllib.parse.urlencode({"range": f"{max(days, 30)}d", "interval": "1d", "includePrePost": "false"})
+    data = fetch_json(YAHOO_CHART_URL.format(symbol=symbol, params=params))
+    result = data["chart"]["result"][0]
+    timestamps = result.get("timestamp", [])
+    quote = result["indicators"]["quote"][0]
+    if not timestamps:
+        raise RuntimeError(f"No Yahoo daily data returned for {symbol}")
+
+    df = pd.DataFrame({
+        "timestamp": pd.to_datetime(timestamps, unit="s", utc=True).tz_convert(None).normalize(),
+        "open": quote.get("open", []),
+        "high": quote.get("high", []),
+        "low": quote.get("low", []),
+        "close": quote.get("close", []),
+        "volume": quote.get("volume", []),
+    })
+    df = df.dropna(subset=["open", "high", "low", "close"]).drop_duplicates("timestamp")
+    df = df.set_index("timestamp").sort_index()
     cutoff = pd.Timestamp.utcnow().tz_localize(None) - pd.Timedelta(days=days)
-    return df.loc[df.index >= cutoff]
+    return df.loc[df.index >= cutoff][["open", "high", "low", "close", "volume"]].astype(float)
+
+
+def bar_age_hours(df: pd.DataFrame) -> float:
+    ts = pd.Timestamp(df.index[-1])
+    if ts.tzinfo is not None:
+        ts = ts.tz_convert(None)
+    return (pd.Timestamp.utcnow().tz_localize(None) - ts).total_seconds() / 3600.0
+
+
+def validate_market_freshness(data: dict[str, pd.DataFrame], args: argparse.Namespace) -> None:
+    failures = []
+    for asset in ("SPY", "QQQ", "GLD", "BIL"):
+        age = bar_age_hours(data[asset])
+        if age > args.max_etf_bar_age_hours:
+            failures.append(f"{asset} daily bar stale: age={age:.1f}h max={args.max_etf_bar_age_hours}h last={data[asset].index[-1]}")
+    for asset in ("BTC", "ETH"):
+        age = bar_age_hours(data[asset])
+        if age > args.max_crypto_bar_age_hours:
+            failures.append(f"{asset} hourly bar stale: age={age:.1f}h max={args.max_crypto_bar_age_hours}h last={data[asset].index[-1]}")
+    if failures:
+        raise RuntimeError("Market data freshness check failed: " + "; ".join(failures))
+
 
 
 def maybe_load_local(path: Path) -> pd.DataFrame | None:
@@ -178,14 +211,16 @@ def load_market_data(args: argparse.Namespace) -> dict[str, pd.DataFrame]:
             data[asset] = fetched
         except Exception as e:
             errors[asset] = str(e)
-            local = maybe_load_local(Path(args.data_dir) / f"{asset}_1D.csv")
-            if local is not None and not local.empty:
-                data[asset] = local
+            if args.allow_stale_local_fallback:
+                local = maybe_load_local(Path(args.data_dir) / f"{asset}_1D.csv")
+                if local is not None and not local.empty:
+                    data[asset] = local
 
     required = {"BTC", "ETH", "SPY", "QQQ", "GLD", "BIL"}
     missing = sorted(required - set(data))
     if missing:
         raise RuntimeError(f"Missing market data for {missing}; errors={errors}")
+    validate_market_freshness(data, args)
     return data
 
 
@@ -585,6 +620,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--crypto-slippage-bps", type=float, default=float(os.getenv("CORE_V1_CRYPTO_SLIPPAGE_BPS", "3.0")))
     p.add_argument("--equity-slippage-bps", type=float, default=float(os.getenv("CORE_V1_EQUITY_SLIPPAGE_BPS", "0.5")))
     p.add_argument("--rebalance-threshold", type=float, default=float(os.getenv("REBALANCE_THRESHOLD", "0.02")))
+    p.add_argument("--max-etf-bar-age-hours", type=float, default=float(os.getenv("CORE_V1_MAX_ETF_BAR_AGE_HOURS", "96")))
+    p.add_argument("--max-crypto-bar-age-hours", type=float, default=float(os.getenv("CORE_V1_MAX_CRYPTO_BAR_AGE_HOURS", "6")))
+    p.add_argument("--allow-stale-local-fallback", action="store_true")
     return p.parse_args()
 
 
