@@ -54,6 +54,23 @@ REGIME_DISPLAY = {
     "HIGH_VOL": ("High Vol", "regime-vol"),
     "UNKNOWN": ("Unknown", "regime-neutral"),
 }
+# One-word regime read for the Market Regime hero card — same underlying
+# regime taxonomy as REGIME_DISPLAY, phrased for a plain-English summary.
+REGIME_WORD = {
+    "TREND_UP": ("Bullish", "good"),
+    "TREND_DOWN": ("Bearish", "bad"),
+    "RANGE": ("Range-bound", "muted"),
+    "VOL_COMPRESSION": ("Compressing", "muted"),
+    "VOL_EXPANSION": ("Expanding", "muted"),
+    "HIGH_VOL": ("Volatile", "muted"),
+    "UNKNOWN": ("Unknown", "muted"),
+    "MIXED": ("Mixed", "muted"),
+}
+POSTURE_NARRATIVE = {
+    "RISK ON": "Growth Exposure",
+    "BALANCED": "Balanced Exposure",
+    "DEFENSIVE": "Capital Preservation",
+}
 
 st.set_page_config(page_title="Itera Mission Control", page_icon="◎", layout="wide", initial_sidebar_state="collapsed")
 st.markdown(f"<meta http-equiv='refresh' content='{REFRESH_SECONDS}'>", unsafe_allow_html=True)
@@ -93,12 +110,26 @@ html, body, [class*="css"] { font-family:-apple-system,BlinkMacSystemFont,"Inter
 .alert-ok { background:#052e26; border:1px solid #0f766e; color:#ccfbf1; }
 .alert-warn { background:#3b2505; border:1px solid #b45309; color:#fde68a; }
 .alert-err { background:#3f0a0a; border:1px solid #dc2626; color:#fecaca; }
+.healthy-banner { display:flex; align-items:center; gap:16px; border-radius:16px; padding:14px 18px; margin:10px 0 16px 0; background:linear-gradient(145deg,#06281f 0%, #052018 100%); border:1px solid #0f766e; box-shadow:0 18px 40px rgba(0,0,0,.24); }
+.healthy-banner .healthy-icon { font-size:1.6rem; color:#4ade80; flex:none; }
+.healthy-title { color:#f0fdf4; font-size:1.02rem; font-weight:900; letter-spacing:-.02em; }
+.healthy-sub { color:#a7f3d0; font-size:.78rem; margin-top:4px; display:flex; gap:14px; flex-wrap:wrap; }
 .section-head { display:flex; justify-content:space-between; align-items:end; gap:12px; margin:22px 0 10px 0; }
 .section-title { color:#f8fafc; font-size:1.08rem; font-weight:850; letter-spacing:-.025em; }
 .section-sub { color:#64748b; font-size:.76rem; margin-top:2px; }
 div[data-testid="stElementContainer"]:has(> div[data-testid="stFullScreenFrame"]) { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:10px 12px 4px 12px; box-shadow:0 18px 40px rgba(0,0,0,.24); }
 .posture-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
 .posture-card { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:16px; box-shadow:0 18px 40px rgba(0,0,0,.24); }
+.regime-hero { background:linear-gradient(145deg,#132033 0%, #0b1220 62%, #07101d 100%); border:1px solid #334155; border-radius:18px; padding:18px 20px; box-shadow:0 18px 40px rgba(0,0,0,.24); margin:10px 0 12px 0; }
+.regime-hero-top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+.regime-hero-kicker { color:#64748b; font-size:.68rem; letter-spacing:.2em; font-weight:900; text-transform:uppercase; }
+.regime-hero-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:14px; }
+.regime-cell { background:#0d1422; border:1px solid #1f2a3d; border-radius:14px; padding:10px 12px; }
+.regime-cell-label { color:#94a3b8; font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; font-weight:900; }
+.regime-cell-value { font-size:1.05rem; font-weight:900; margin-top:6px; }
+.regime-posture { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; padding-top:12px; border-top:1px solid #1f2a3d; }
+.regime-posture-label { color:#94a3b8; font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; font-weight:850; }
+.regime-posture-value { color:#f8fafc; font-size:1.0rem; font-weight:900; }
 .comp-bar { display:flex; width:100%; height:14px; border-radius:999px; overflow:hidden; border:1px solid #1e293b; background:#0b1220; margin:12px 0 14px 0; }
 .comp-seg { height:100%; }
 .comp-legend { display:flex; flex-wrap:wrap; gap:18px; }
@@ -131,21 +162,26 @@ div[data-testid="stElementContainer"]:has(> div[data-testid="stFullScreenFrame"]
 .stat-label { color:#64748b; font-size:.60rem; text-transform:uppercase; letter-spacing:.08em; font-weight:900; }
 .stat-value { color:#f8fafc; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:.86rem; margin-top:4px; }
 .position-line { display:flex; justify-content:space-between; gap:10px; color:#94a3b8; font-size:.74rem; border-top:1px solid #1f2a3d; padding-top:9px; margin-top:10px; }
-.regime { display:inline-flex; border-radius:999px; padding:3px 7px; font-size:.62rem; font-weight:900; letter-spacing:.04em; white-space:nowrap; }
+.regime { display:inline-flex; align-items:center; border-radius:999px; padding:5px 9px; font-size:.64rem; font-weight:900; letter-spacing:.04em; white-space:nowrap; line-height:1; }
 .regime-up { background:#052e26; color:#99f6e4; border:1px solid #0f766e; }
 .regime-down { background:#3f0a0a; color:#fecaca; border:1px solid #dc2626; }
 .regime-vol { background:#162033; color:#bfdbfe; border:1px solid #334155; }
 .regime-neutral { background:#111827; color:#cbd5e1; border:1px solid #334155; }
-.state-chip { font-size:.66rem; font-weight:950; letter-spacing:.06em; padding:5px 9px; border-radius:8px; text-transform:uppercase; }
+.state-chip { display:inline-flex; align-items:center; font-size:.66rem; font-weight:950; letter-spacing:.06em; padding:5px 9px; border-radius:8px; text-transform:uppercase; line-height:1; }
 .state-holding { background:#052e26; color:#99f6e4; border:1px solid #0f766e; }
 .state-flat { background:#1e293b; color:#cbd5e1; border:1px solid #334155; }
 .state-entering { background:#0c1e33; color:#bfdbfe; border:1px solid #1d4ed8; }
 .state-exiting { background:#3b2505; color:#fde68a; border:1px solid #b45309; }
-.health-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
-.health-card { background:#0d1422; border:1px solid #1f2a3d; border-radius:14px; padding:11px 12px; min-height:72px; }
+.health-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
+.health-card { background:#0d1422; border:1px solid #1f2a3d; border-radius:14px; padding:11px 12px; min-height:72px; box-shadow:0 12px 28px rgba(0,0,0,.20); }
 .health-label { color:#94a3b8; font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; font-weight:900; }
 .health-value { color:#f8fafc; font-size:.98rem; font-weight:850; margin-top:6px; }
 .health-sub { color:#64748b; font-size:.72rem; margin-top:2px; }
+.health-detail { color:#94a3b8; font-size:.72rem; margin-top:6px; display:flex; flex-direction:column; gap:5px; border-top:1px solid #1f2a3d; padding-top:6px; }
+.health-detail-row { display:flex; justify-content:space-between; gap:10px; }
+.health-detail-row span:last-child { color:#cbd5e1; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; text-align:right; }
+.health-detail-row.stacked { flex-direction:column; gap:2px; }
+.health-detail-row.stacked span:last-child { color:#dbe4f0; text-align:left; white-space:normal; line-height:1.35; }
 .timeline { display:grid; gap:8px; }
 .timeline-item { background:#0d1422; border:1px solid #1f2a3d; border-radius:13px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
 .timeline-item.buy { border-left:4px solid #22c55e; }
@@ -167,7 +203,7 @@ table.audit-table { border-collapse:collapse; width:100%; min-width:850px; font-
 .small { color:#94a3b8; font-size:.76rem; }
 .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
 @media (max-width:1200px) { .command-deck { grid-template-columns:repeat(2,1fr); } .position-grid { grid-template-columns:repeat(2,1fr); } }
-@media (max-width:760px) { .command-deck,.position-grid { grid-template-columns:1fr; } .brand-row { flex-direction:column; align-items:flex-start; } .stat-grid { grid-template-columns:repeat(2,1fr); } .primary .command-value { font-size:1.72rem; } .comp-legend { gap:12px; } .comp-item { min-width:42%; } }
+@media (max-width:760px) { .command-deck,.position-grid { grid-template-columns:1fr; } .brand-row { flex-direction:column; align-items:flex-start; } .stat-grid { grid-template-columns:repeat(2,1fr); } .primary .command-value { font-size:1.72rem; } .comp-legend { gap:12px; } .comp-item { min-width:42%; } .regime-hero-grid { grid-template-columns:repeat(2,1fr); } }
 </style>
 """,
     unsafe_allow_html=True,
@@ -209,19 +245,26 @@ def age_seconds(ts: pd.Timestamp | None) -> int | None:
     return max(0, int((pd.Timestamp.now(tz="UTC") - ts).total_seconds()))
 
 
+def format_duration(seconds: int | None) -> str:
+    if seconds is None:
+        return "unknown"
+    seconds = abs(seconds)
+    if seconds < 90:
+        return f"{seconds}s"
+    minutes = seconds // 60
+    if minutes < 90:
+        return f"{minutes}m"
+    hours = minutes // 60
+    if hours < 48:
+        return f"{hours}h"
+    return f"{hours // 24}d"
+
+
 def age_text(ts: pd.Timestamp | None) -> str:
     seconds = age_seconds(ts)
     if seconds is None:
         return "unknown"
-    if seconds < 90:
-        return f"{seconds}s ago"
-    minutes = seconds // 60
-    if minutes < 90:
-        return f"{minutes}m ago"
-    hours = minutes // 60
-    if hours < 48:
-        return f"{hours}h ago"
-    return f"{hours // 24}d ago"
+    return f"{format_duration(seconds)} ago"
 
 
 def money(v: Any) -> str:
@@ -307,6 +350,39 @@ def sleeve_status(action: str | None, position_open: bool) -> tuple[str, str, st
     if position_open:
         return "HOLDING", "holding", "Holding"
     return "FLAT", "flat", "Flat"
+
+
+def friendly_ts(value: Any) -> str:
+    ts = parse_ts(value)
+    if ts is None:
+        return "—"
+    return ts.strftime("%b %-d, %H:%M UTC")
+
+
+def strategy_display(name: str | None) -> str:
+    if not name:
+        return "—"
+    return name.replace("_", " ").title()
+
+
+def weighted_regime(rows: list[dict[str, Any]]) -> str:
+    """Weighted-majority regime label for a group of sleeves.
+
+    Weights each sleeve's regime vote by its target allocation so a larger
+    sleeve's regime dominates the class-level read. Ties/no-data fall back
+    to MIXED/UNKNOWN rather than guessing.
+    """
+    weights: dict[str, float] = {}
+    for row in rows:
+        regime = row.get("regime") or "UNKNOWN"
+        weights[regime] = weights.get(regime, 0.0) + float(row.get("target_weight") or 0.0)
+    if not weights:
+        return "UNKNOWN"
+    best_regime = max(weights, key=lambda k: weights[k])
+    tied = [r for r, w in weights.items() if abs(w - weights[best_regime]) < 1e-12]
+    if len(tied) > 1:
+        return "MIXED"
+    return best_regime
 
 
 def display_cell(key: str, value: Any) -> str:
@@ -441,6 +517,8 @@ last_age_seconds = age_seconds(last_ts)
 is_stale = last_age_seconds is None or last_age_seconds > STALE_AFTER_SECONDS
 missing_sleeves = sorted(set(EXPECTED_WEIGHTS) - set(state.get("sleeves", {})))
 state_is_v2 = state.get("version") == "core_v1_paper_runtime_v2"
+seconds_until_next_cycle = None if last_age_seconds is None else EXPECTED_POLL_SECONDS - last_age_seconds
+poll_minutes = max(1, round(EXPECTED_POLL_SECONDS / 60))
 
 sleeves = state.get("sleeves", {})
 sleeve_navs = state.get("sleeve_navs", {})
@@ -544,10 +622,13 @@ for label, target_w in EXPECTED_WEIGHTS.items():
         "realized_pnl": sleeve_realized,
         "reason": reason,
         "position_open": position_open,
+        "strategy": meta.strategy if meta else "—",
         "last_fill_side": last_fill.get("side"),
         "last_fill_ts": last_fill.get("timestamp"),
         "last_fill_price": last_fill.get("price"),
         "last_fill_qty": last_fill.get("qty"),
+        "last_fill_notional": last_fill.get("notional"),
+        "last_fill_fee": last_fill.get("fee"),
     })
 
 total_cash = float(state.get("total_cash") if state.get("total_cash") is not None else total_cash)
@@ -564,12 +645,57 @@ elif invested_pct <= 0.25:
     posture_label, posture_status = "DEFENSIVE", "warn"
 else:
     posture_label, posture_status = "BALANCED", "neutral"
+posture_narrative = POSTURE_NARRATIVE[posture_label]
+
+# Market Regime hero card: weighted-majority regime per asset class, derived
+# entirely from each sleeve's own regime signal (no synthesized data).
+class_regime = {
+    cls: weighted_regime([r for r in sleeve_rows if r["asset_class"] == cls])
+    for cls in ("Crypto", "Equities", "Gold")
+}
 
 audit_ts = parse_ts(audit_report.get("timestamp")) if audit_report else None
 audit_age = age_seconds(audit_ts)
 audit_available = bool(audit_report)
 audit_ok = bool(audit_report.get("ok")) if audit_available else None
 audit_stale = audit_available and audit_age is not None and audit_age > STALE_AUDIT_AFTER_SECONDS
+audit_rows = audit_report.get("rows", []) if audit_available else []
+largest_drift_row = max(audit_rows, key=lambda r: abs(float(r.get("price_diff_pct") or 0.0)), default=None)
+failed_audit_rows = [r for r in audit_rows if not r.get("price_ok", True) or not r.get("position_value_ok", True) or not r.get("unrealized_ok", True) or not r.get("avg_entry_ok", True)]
+
+bar_ages = [age_seconds(parse_ts(r["last_bar"])) for r in sleeve_rows if parse_ts(r["last_bar"]) is not None]
+oldest_bar_age = max(bar_ages) if bar_ages else None
+newest_bar_age = min(bar_ages) if bar_ages else None
+
+last_fill_overall = fills[-1] if fills else None
+
+# Attach each historical fill's strategy reason via the signals log nearest in
+# time — real per-cycle reasons, not fabricated commentary.
+reason_frames = []
+for event in events:
+    for sig_row in event.get("signals", []):
+        if sig_row.get("fill"):
+            reason_frames.append({"sleeve": sig_row.get("sleeve"), "timestamp": event.get("timestamp"), "reason": sig_row.get("reason", "")})
+reason_lookup_df = pd.DataFrame(reason_frames)
+if not reason_lookup_df.empty:
+    reason_lookup_df["timestamp"] = pd.to_datetime(reason_lookup_df["timestamp"], utc=True, errors="coerce")
+    reason_lookup_df = reason_lookup_df.dropna(subset=["timestamp"]).sort_values("timestamp")
+
+
+def lookup_fill_reason(sleeve: str, ts_value: Any) -> str:
+    if reason_lookup_df.empty:
+        return ""
+    ts = parse_ts(ts_value)
+    if ts is None:
+        return ""
+    subset = reason_lookup_df[reason_lookup_df["sleeve"] == sleeve]
+    if subset.empty:
+        return ""
+    diffs = (subset["timestamp"] - ts).abs()
+    idx = diffs.idxmin()
+    if diffs.loc[idx] > pd.Timedelta(minutes=10):
+        return ""
+    return str(subset.loc[idx, "reason"] or "")
 
 issues: list[str] = []
 if is_stale:
@@ -614,7 +740,7 @@ drawdown_class = "bad" if drawdown_frac < -0.0005 else "muted"
 drawdown_value = signed_pct(drawdown_frac, 1) if total_nav > 0 else "—"
 drawdown_sub = f"Peak {money(high_water_nav)}" if total_nav > 0 else "Awaiting first cycle"
 command_cards = [
-    ("Portfolio NAV", money(total_nav), f"{open_position_count} open · cycle {state.get('cycle', last.get('cycle', 0))}", "primary", "white"),
+    ("Portfolio NAV", money(total_nav), f"{open_position_count} open · {money(total_cash)} cash", "primary", "white"),
     ("Intraday P&L", today_value, today_sub, "", today_class),
     ("Since Inception", signed_money(since_inception_pnl), signed_pct(since_inception_return), "", since_class),
     ("Drawdown", drawdown_value, drawdown_sub, "", drawdown_class if total_nav > 0 else "muted"),
@@ -630,11 +756,44 @@ if issues:
     alert_class = "alert-err" if health_status == "err" else "alert-warn"
     alert_text = " · ".join(issues)
     alert_right = "Action required" if health_status == "err" else "Review"
+    st.markdown(f'<div class="alert-line {alert_class}"><span>{esc(alert_text)}</span><span class="mono">{esc(alert_right)}</span></div>', unsafe_allow_html=True)
 else:
-    alert_class = "alert-ok"
-    alert_text = "✓ No alerts. Runtime, data freshness, state, and audit all look healthy."
-    alert_right = "All clear"
-st.markdown(f'<div class="alert-line {alert_class}"><span>{esc(alert_text)}</span><span class="mono">{esc(alert_right)}</span></div>', unsafe_allow_html=True)
+    pricing_sub = f"All pricing verified {age_text(audit_ts)}" if audit_available else "Pricing audit not yet configured"
+    st.markdown(
+        f"""
+<div class="healthy-banner">
+  <div class="healthy-icon">✓</div>
+  <div>
+    <div class="healthy-title">System Healthy — no intervention required</div>
+    <div class="healthy-sub"><span>Runtime current · last cycle {esc(age_text(last_ts))}</span><span>{esc(pricing_sub)}</span><span>{esc(len(EXPECTED_WEIGHTS) - len(missing_sleeves))}/{esc(len(EXPECTED_WEIGHTS))} sleeves reporting</span></div>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+# ---------------------------------------------------------------------------
+# Market Regime — plain-English read of what each asset class is doing and
+# why the portfolio is positioned the way it is.
+# ---------------------------------------------------------------------------
+regime_cells = ""
+for cls in ("Crypto", "Equities", "Gold"):
+    word, word_cls = REGIME_WORD.get(class_regime[cls], ("Unknown", "muted"))
+    regime_cells += f'<div class="regime-cell"><div class="regime-cell-label">{esc(cls)}</div><div class="regime-cell-value {word_cls}">{esc(word)}</div></div>'
+regime_cells += f'<div class="regime-cell"><div class="regime-cell-label">Cash</div><div class="regime-cell-value white">{pct(cash_pct, 1)}</div></div>'
+st.markdown(
+    f"""
+<div class="regime-hero">
+  <div class="regime-hero-top">
+    <div class="regime-hero-kicker">Market Regime</div>
+    {status_badge(f'Overall: {posture_label}', posture_status)}
+  </div>
+  <div class="regime-hero-grid">{regime_cells}</div>
+  <div class="regime-posture"><span class="regime-posture-label">Portfolio Posture</span><span class="regime-posture-value">{esc(posture_narrative)}</span></div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
 st.markdown('<div class="section-head"><div><div class="section-title">Portfolio NAV</div><div class="section-sub">Equity curve with drawdown and trade markers.</div></div></div>', unsafe_allow_html=True)
 fig = nav_chart(events, fills)
@@ -672,17 +831,48 @@ for row in sleeve_rows:
     is_open = bool(row["position_open"])
     state_label, state_key, verb = sleeve_status(row["action"], is_open)
     card_class = f"position-card {state_key}"
-    pnl_value = float(row["unrealized_pnl"] if is_open else row["today_pnl"])
-    pnl_cls = css_class_for_value(pnl_value)
-    headline = signed_money(row["unrealized_pnl"]) if is_open else "FLAT"
-    headline_sub = f"Unrealized · {signed_pct(row['unrealized_return'])}" if is_open else f"Cash {money(row['cash'])}"
     last_fill = "—"
     if row.get("last_fill_side"):
         last_fill = f"{row['last_fill_side']} {num(row.get('last_fill_qty'), 4)} @ {money(row.get('last_fill_price'))}"
     actual_pct = max(0.0, min(100.0, float(row["actual_weight"]) * 100.0))
     target_pct = max(0.0, min(100.0, float(row["target_weight"]) * 100.0))
-    primary_detail_1 = num(row["qty"], 4) if is_open else "—"
-    primary_detail_2 = money(row["avg_entry"]) if row["avg_entry"] else "—"
+
+    if is_open:
+        headline = signed_money(row["unrealized_pnl"])
+        headline_cls = css_class_for_value(float(row["unrealized_pnl"]))
+        headline_sub = f"Unrealized · {signed_pct(row['unrealized_return'])}"
+        stats = f"""
+    <div class="stat"><div class="stat-label">Now</div><div class="stat-value">{money(row['price'])}</div></div>
+    <div class="stat"><div class="stat-label">Position value</div><div class="stat-value">{money(row['position_value'])}</div></div>
+    <div class="stat"><div class="stat-label">Avg entry</div><div class="stat-value">{money(row['avg_entry']) if row['avg_entry'] else '—'}</div></div>
+    <div class="stat"><div class="stat-label">Intraday</div><div class="stat-value {css_class_for_value(float(row['today_pnl']))}">{signed_money(row['today_pnl'])}</div></div>
+    <div class="stat"><div class="stat-label">Qty</div><div class="stat-value">{num(row['qty'], 4)}</div></div>
+    <div class="stat"><div class="stat-label">Realized</div><div class="stat-value {css_class_for_value(float(row['realized_pnl']))}">{signed_money(row['realized_pnl'])}</div></div>
+"""
+    else:
+        headline = "FLAT"
+        headline_cls = "muted"
+        exit_ts = parse_ts(row.get("last_fill_ts")) if row.get("last_fill_side") == "SELL" else None
+        if exit_ts is not None:
+            exited_today = exit_ts.date() == pd.Timestamp.now(tz="UTC").date()
+            exit_label = "Exited today" if exited_today else f"Last exit {age_text(exit_ts)}"
+            cash_returned = row.get("last_fill_notional")
+            fee = row.get("last_fill_fee") or 0.0
+            cash_returned_value = money(float(cash_returned) - float(fee)) if cash_returned is not None else "—"
+            exit_stat_value = friendly_ts(row.get("last_fill_ts"))
+        else:
+            exit_label = "No exits yet"
+            cash_returned_value = "—"
+            exit_stat_value = "—"
+        headline_sub = exit_label
+        stats = f"""
+    <div class="stat"><div class="stat-label">Now</div><div class="stat-value">{money(row['price'])}</div></div>
+    <div class="stat"><div class="stat-label">Cash</div><div class="stat-value">{money(row['cash'])}</div></div>
+    <div class="stat"><div class="stat-label">Realized P&amp;L</div><div class="stat-value {css_class_for_value(float(row['realized_pnl']))}">{signed_money(row['realized_pnl'])}</div></div>
+    <div class="stat"><div class="stat-label">Last exit</div><div class="stat-value">{exit_stat_value}</div></div>
+    <div class="stat"><div class="stat-label">Cash returned</div><div class="stat-value">{cash_returned_value}</div></div>
+    <div class="stat"><div class="stat-label">Last signal</div><div class="stat-value">{friendly_ts(row['last_bar'])}</div></div>
+"""
     position_html += f"""
 <div class="{card_class}">
   <div class="position-top">
@@ -693,22 +883,15 @@ for row in sleeve_rows:
     <div class="badges">{regime_badge(row['regime'])}<span class="state-chip state-{state_key}">{esc(state_label)}</span></div>
   </div>
   <div class="reason-line"><b>{esc(verb)}</b> — {esc(row['reason'])}</div>
-  <div class="position-pnl {pnl_cls}">{headline}</div>
-  <div class="position-pnl-sub">{headline_sub}</div>
+  <div class="position-pnl {headline_cls}">{headline}</div>
+  <div class="position-pnl-sub">{esc(headline_sub)}</div>
   <div class="alloc-wrap">
     <div class="alloc-top"><span>Allocation {pct(row['actual_weight'], 1)}</span><span>Target {pct(row['target_weight'], 1)}</span></div>
     <div class="alloc-meter"><div class="alloc-fill" style="width:{actual_pct:.1f}%"></div><div class="target-pin" style="left:{target_pct:.1f}%"></div></div>
   </div>
-  <div class="stat-grid">
-    <div class="stat"><div class="stat-label">Now</div><div class="stat-value">{money(row['price'])}</div></div>
-    <div class="stat"><div class="stat-label">Intraday</div><div class="stat-value {css_class_for_value(float(row['today_pnl']))}">{signed_money(row['today_pnl'])}</div></div>
-    <div class="stat"><div class="stat-label">Market value</div><div class="stat-value">{money(row['position_value']) if is_open else money(row['cash'])}</div></div>
-    <div class="stat"><div class="stat-label">Qty</div><div class="stat-value">{primary_detail_1}</div></div>
-    <div class="stat"><div class="stat-label">Avg entry</div><div class="stat-value">{primary_detail_2}</div></div>
-    <div class="stat"><div class="stat-label">Realized</div><div class="stat-value {css_class_for_value(float(row['realized_pnl']))}">{signed_money(row['realized_pnl'])}</div></div>
-  </div>
+  <div class="stat-grid">{stats}</div>
   <div class="position-line"><span>Last fill: <span class="mono">{esc(last_fill)}</span></span><span>Drift: <span class="mono">{signed_pct(row['drift'], 1)}</span></span></div>
-  <div class="small" style="margin-top:8px;">Last bar: <span class="mono">{esc(row['last_bar'])}</span></div>
+  <div class="small" style="margin-top:8px;">Last bar: <span class="mono">{esc(friendly_ts(row['last_bar']))}</span></div>
 </div>
 """
 position_html += "</div>"
@@ -721,20 +904,27 @@ st.markdown('<div class="section-head"><div><div class="section-title">Activity 
 activity: list[dict[str, Any]] = []
 for row in sleeve_rows:
     if row["action_changed"]:
-        activity.append({"kind": "signal", "when": last.get("timestamp") or state.get("last_cycle_at"), "sleeve": row["display"], "event": f"{row['previous_action']} → {row['action']}", "detail": row["reason"]})
+        tooltip = f"{strategy_display(row['strategy'])} — {row['reason']}"
+        activity.append({"kind": "signal", "when": last.get("timestamp") or state.get("last_cycle_at"), "sleeve": row["display"], "event": f"{row['previous_action']} → {row['action']}", "detail": row["reason"], "tooltip": tooltip})
 for f in fills[-12:][::-1]:
     side = str(f.get("side") or "").upper()
     kind = "buy" if side == "BUY" else "sell" if side == "SELL" else "signal"
-    activity.append({"kind": kind, "when": f.get("timestamp"), "sleeve": SLEEVE_NAMES.get(f.get("sleeve"), f.get("sleeve")), "event": f"{num(f.get('qty'), 4)} @ {money(f.get('price'))}", "detail": f"notional {money(f.get('notional'))} · fee {money(f.get('fee'))} · slippage {money(f.get('slippage_cost'))} · realized {signed_money(f.get('realized_pnl', 0.0))}"})
+    sleeve_key = f.get("sleeve")
+    strategy = SLEEVE_META[sleeve_key].strategy if sleeve_key in SLEEVE_META else None
+    reason = lookup_fill_reason(sleeve_key, f.get("timestamp"))
+    execution_cost = float(f.get("fee") or 0.0) + float(f.get("slippage_cost") or 0.0)
+    detail = f"notional {money(f.get('notional'))} · execution cost {money(execution_cost)} · realized {signed_money(f.get('realized_pnl', 0.0))}"
+    tooltip = f"{strategy_display(strategy)}" + (f" — {reason}" if reason else "")
+    activity.append({"kind": kind, "when": f.get("timestamp"), "sleeve": SLEEVE_NAMES.get(sleeve_key, sleeve_key), "event": f"{num(f.get('qty'), 4)} @ {money(f.get('price'))}", "detail": detail, "tooltip": tooltip})
 if activity:
     timeline_html = '<div class="timeline">'
     for item in activity[:12]:
         tag = item["kind"].upper() if item["kind"] in ("buy", "sell") else "SIGNAL"
         timeline_html += (
-            f'<div class="timeline-item {esc(item["kind"])}"><div class="timeline-left">'
+            f'<div class="timeline-item {esc(item["kind"])}" title="{esc(item["tooltip"])}"><div class="timeline-left">'
             f'<span class="timeline-tag {esc(item["kind"])}">{esc(tag)}</span>'
             f'<div><div class="timeline-main"><b>{esc(item["sleeve"])}</b> · {esc(item["event"])}</div><div class="timeline-sub">{esc(item["detail"])}</div></div>'
-            f'</div><div class="timeline-sub mono">{esc(item["when"])}</div></div>'
+            f'</div><div class="timeline-sub mono">{esc(friendly_ts(item["when"]))}</div></div>'
         )
     timeline_html += "</div>"
     st.markdown(timeline_html, unsafe_allow_html=True)
@@ -744,7 +934,10 @@ else:
 # ---------------------------------------------------------------------------
 # 5. Is everything healthy? — operational status
 # ---------------------------------------------------------------------------
-st.markdown('<div class="section-head"><div><div class="section-title">System Health</div><div class="section-sub">Operational status, separated from portfolio performance.</div></div></div>', unsafe_allow_html=True)
+st.markdown('<div class="section-head"><div><div class="section-title">System Health</div><div class="section-sub">Do I need to SSH into the server? Answered below.</div></div></div>', unsafe_allow_html=True)
+
+next_cycle_text = "unknown" if seconds_until_next_cycle is None else (f"in {format_duration(seconds_until_next_cycle)}" if seconds_until_next_cycle > 0 else f"overdue {format_duration(seconds_until_next_cycle)}")
+
 if not audit_available:
     audit_value, audit_klass, audit_sub = "PENDING", "neutral", "No audit report found yet"
 elif not audit_ok:
@@ -753,18 +946,57 @@ elif audit_stale:
     audit_value, audit_klass, audit_sub = "STALE", "warn", f"last run {age_text(audit_ts)}"
 else:
     audit_value, audit_klass, audit_sub = "PASS", "ok", f"last run {age_text(audit_ts)}"
+
+runtime_detail = [("Cycle #", str(state.get("cycle", last.get("cycle", 0)))), ("Last cycle", age_text(last_ts))]
+
+market_data_detail = [
+    ("Oldest bar", format_duration(oldest_bar_age) if oldest_bar_age is not None else "—"),
+    ("Newest bar", format_duration(newest_bar_age) if newest_bar_age is not None else "—"),
+]
+
+audit_detail = []
+if largest_drift_row is not None:
+    drift_sleeve = largest_drift_row.get("sleeve") or largest_drift_row.get("asset") or "—"
+    audit_detail.append(("Largest drift", f"{signed_pct(largest_drift_row.get('price_diff_pct'), 2)} ({drift_sleeve})"))
+if audit_available:
+    audit_detail.append(("Audit time", friendly_ts(audit_report.get("timestamp"))))
+if audit_available and not audit_ok:
+    if audit_report.get("failures"):
+        audit_detail.append(("Reason", str(audit_report["failures"][0])))
+    if failed_audit_rows:
+        affected = ", ".join(sorted({r.get("sleeve") or r.get("asset") or "—" for r in failed_audit_rows}))
+        audit_detail.append(("Affected", affected))
+
+scheduler_detail = [("Next cycle", next_cycle_text)]
+
+last_fill_sub = "No fills recorded"
+last_fill_value = "—"
+last_fill_klass = "neutral"
+if last_fill_overall:
+    side = str(last_fill_overall.get("side") or "—").upper()
+    last_fill_value = side
+    last_fill_klass = "ok" if side == "BUY" else "warn" if side == "SELL" else "neutral"
+    fill_sleeve_name = SLEEVE_NAMES.get(last_fill_overall.get("sleeve"), last_fill_overall.get("sleeve"))
+    last_fill_sub = f"{fill_sleeve_name} · {age_text(parse_ts(last_fill_overall.get('timestamp')))}"
+
+errors_sub = f"last error {age_text(parse_ts(errors[-1].get('timestamp')))}" if errors else "0 logged"
+
 checks = [
-    ("Runtime", "OK" if not is_stale else "STALE", "ok" if not is_stale else "err", f"last {age_text(last_ts)}"),
-    ("Market Data", "OK" if not missing_sleeves else "MISSING", "ok" if not missing_sleeves else "err", f"{len(EXPECTED_WEIGHTS) - len(missing_sleeves)}/{len(EXPECTED_WEIGHTS)} sleeves"),
-    ("Price Audit", audit_value, audit_klass, audit_sub),
-    ("Errors", "CLEAR" if not errors else "CHECK", "ok" if not errors else "warn", f"{len(errors)} logged"),
-    ("Scheduler", "ON", "ok", f"poll {EXPECTED_POLL_SECONDS}s"),
-    ("State Persistence", "V2" if state_is_v2 else "V1", "ok" if state_is_v2 else "warn", STATE_PATH.name),
-    ("Cost & Fees", money(fees_total + slippage_total), "neutral", "fees + slippage to date"),
+    ("Runtime", "RUNNING" if not is_stale else "STALE", "ok" if not is_stale else "err", f"poll every {poll_minutes}m", runtime_detail),
+    ("Market Data", "FRESH" if not missing_sleeves else "MISSING", "ok" if not missing_sleeves else "err", f"{len(EXPECTED_WEIGHTS) - len(missing_sleeves)}/{len(EXPECTED_WEIGHTS)} sleeves", market_data_detail),
+    ("Price Audit", audit_value, audit_klass, audit_sub, audit_detail),
+    ("Scheduler", "ON", "ok", f"every {poll_minutes}m", scheduler_detail),
+    ("Last Fill", last_fill_value, last_fill_klass, last_fill_sub, []),
+    ("Errors", "CLEAR" if not errors else "CHECK", "ok" if not errors else "warn", errors_sub, []),
+    ("State Persistence", "V2" if state_is_v2 else "V1", "ok" if state_is_v2 else "warn", STATE_PATH.name, []),
+    ("Cost & Fees", money(fees_total + slippage_total), "neutral", "fees + slippage to date", []),
 ]
 health_html = '<div class="health-grid">'
-for label, value, klass, sub in checks:
-    health_html += f'<div class="health-card"><div class="health-label">{esc(label)}</div><div class="health-value">{status_badge(value, klass)}</div><div class="health-sub">{esc(sub)}</div></div>'
+for label, value, klass, sub, detail_rows in checks:
+    detail_html = ""
+    if detail_rows:
+        detail_html = '<div class="health-detail">' + "".join(f'<div class="health-detail-row{" stacked" if len(str(v)) > 18 else ""}"><span>{esc(k)}</span><span>{esc(v)}</span></div>' for k, v in detail_rows) + "</div>"
+    health_html += f'<div class="health-card"><div class="health-label">{esc(label)}</div><div class="health-value">{status_badge(value, klass)}</div><div class="health-sub">{esc(sub)}</div>{detail_html}</div>'
 health_html += "</div>"
 st.markdown(health_html, unsafe_allow_html=True)
 
