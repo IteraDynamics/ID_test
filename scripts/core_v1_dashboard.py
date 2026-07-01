@@ -48,15 +48,13 @@ st.markdown(
 <style>
 :root { color-scheme: dark; }
 .stApp { background: radial-gradient(circle at top left, #111827 0%, #080c14 42%, #05070c 100%); color:#e5e7eb; }
-.block-container { padding-top:1.0rem; padding-bottom:2.0rem; max-width:1680px; }
+.block-container { padding-top:1.0rem; padding-bottom:2.0rem; max-width:1700px; }
 #MainMenu, footer, header { visibility:hidden; height:0; }
 [data-testid="stHeaderActionElements"] { display:none; }
-[data-testid="stMetric"] { background:linear-gradient(180deg,#121a2a 0%,#0c1422 100%); border:1px solid #1f2a3d; border-radius:16px; padding:14px 15px; box-shadow:0 14px 35px rgba(0,0,0,.22); }
-[data-testid="stMetricLabel"] { color:#94a3b8 !important; font-size:.66rem !important; letter-spacing:.08em; text-transform:uppercase; }
-[data-testid="stMetricValue"] { color:#f8fafc !important; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:1.25rem !important; }
+[data-testid="stMetric"] { background:#0d1422; border:1px solid #1f2a3d; border-radius:16px; padding:12px 14px; }
 .brand-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:12px; }
 .brand-kicker { color:#64748b; font-size:.70rem; letter-spacing:.24em; font-weight:850; text-transform:uppercase; }
-.brand-title { color:#f8fafc; font-size:1.90rem; line-height:1.0; font-weight:900; letter-spacing:-.055em; margin-top:2px; }
+.brand-title { color:#f8fafc; font-size:1.9rem; line-height:1.0; font-weight:950; letter-spacing:-.055em; margin-top:2px; }
 .brand-sub { color:#94a3b8; font-size:.82rem; margin-top:7px; }
 .badges { display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
 .badge { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:6px 11px; font-size:.66rem; letter-spacing:.07em; font-weight:900; text-transform:uppercase; white-space:nowrap; }
@@ -64,12 +62,12 @@ st.markdown(
 .warn { background:#3b2505; color:#fde68a; border:1px solid #b45309; }
 .err { background:#3f0a0a; color:#fecaca; border:1px solid #dc2626; }
 .neutral { background:#111827; color:#cbd5e1; border:1px solid #334155; }
-.command-deck { display:grid; grid-template-columns:1.45fr repeat(4, 1fr); gap:10px; margin:10px 0 12px 0; }
-.command-card { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:16px; box-shadow:0 18px 40px rgba(0,0,0,.24); min-height:110px; }
+.command-deck { display:grid; grid-template-columns:1.48fr repeat(4, 1fr); gap:10px; margin:10px 0 12px 0; }
+.command-card { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:16px; box-shadow:0 18px 40px rgba(0,0,0,.24); min-height:108px; }
 .command-card.primary { background:linear-gradient(145deg,#132033 0%, #0b1220 62%, #07101d 100%); border-color:#334155; }
 .command-label { color:#94a3b8; font-size:.66rem; letter-spacing:.09em; text-transform:uppercase; font-weight:900; }
-.command-value { color:#f8fafc; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:1.62rem; line-height:1.05; font-weight:950; margin-top:10px; }
-.primary .command-value { font-size:2.16rem; }
+.command-value { color:#f8fafc; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:1.58rem; line-height:1.05; font-weight:950; margin-top:10px; }
+.primary .command-value { font-size:2.12rem; }
 .command-sub { color:#64748b; font-size:.76rem; margin-top:7px; }
 .good { color:#86efac; } .bad { color:#fca5a5; } .muted { color:#94a3b8; } .white { color:#f8fafc; }
 .alert-line { border-radius:14px; padding:10px 13px; margin:10px 0 16px 0; font-size:.83rem; display:flex; justify-content:space-between; align-items:center; gap:12px; }
@@ -80,22 +78,27 @@ st.markdown(
 .section-title { color:#f8fafc; font-size:1.08rem; font-weight:850; letter-spacing:-.025em; }
 .section-sub { color:#64748b; font-size:.76rem; margin-top:2px; }
 .position-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
-.position-card { background:linear-gradient(180deg,#111827,#0b1220); border:1px solid #1f2a3d; border-radius:20px; padding:16px; box-shadow:0 18px 40px rgba(0,0,0,.24); }
+.position-card { background:linear-gradient(180deg,#111827,#0b1220); border:1px solid #1f2a3d; border-radius:20px; padding:17px; box-shadow:0 18px 40px rgba(0,0,0,.24); }
 .position-card.open { border-color:#0f766e; box-shadow:0 0 0 1px rgba(15,118,110,.16), 0 18px 40px rgba(0,0,0,.24); }
-.position-card.flat { opacity:.86; }
+.position-card.flat { opacity:.82; }
+.position-card.exit { border-color:#7f1d1d; }
 .position-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
-.position-name { color:#f8fafc; font-size:1.18rem; font-weight:900; letter-spacing:-.035em; }
+.position-name { color:#f8fafc; font-size:1.22rem; font-weight:950; letter-spacing:-.035em; }
 .position-meta { color:#94a3b8; font-size:.72rem; margin-top:3px; }
-.position-pnl { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:1.72rem; font-weight:950; margin-top:14px; letter-spacing:-.04em; }
+.decision-line { color:#e5e7eb; font-size:.86rem; line-height:1.28; margin-top:13px; min-height:38px; }
+.decision-line b { color:#f8fafc; }
+.position-pnl { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:1.76rem; font-weight:950; margin-top:13px; letter-spacing:-.04em; }
 .position-pnl-sub { color:#94a3b8; font-size:.78rem; margin-top:2px; }
-.meter { height:8px; background:#111827; border-radius:999px; overflow:hidden; margin:12px 0; border:1px solid #1e293b; }
-.meter-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,#38bdf8,#22c55e); }
+.alloc-wrap { margin:13px 0 11px 0; }
+.alloc-top { display:flex; justify-content:space-between; color:#94a3b8; font-size:.68rem; letter-spacing:.04em; text-transform:uppercase; font-weight:850; margin-bottom:6px; }
+.alloc-meter { position:relative; height:9px; background:#111827; border-radius:999px; overflow:hidden; border:1px solid #1e293b; }
+.alloc-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,#38bdf8,#22c55e); }
+.target-pin { position:absolute; top:-2px; width:2px; height:13px; background:#f8fafc; opacity:.9; }
 .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
 .stat { background:#090f1a; border:1px solid #1e293b; border-radius:12px; padding:8px; min-height:52px; }
 .stat-label { color:#64748b; font-size:.60rem; text-transform:uppercase; letter-spacing:.08em; font-weight:900; }
 .stat-value { color:#f8fafc; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:.86rem; margin-top:4px; }
-.reason { color:#cbd5e1; font-size:.76rem; line-height:1.34; border-top:1px solid #1f2a3d; padding-top:10px; margin-top:10px; min-height:42px; }
-.position-line { display:flex; justify-content:space-between; gap:10px; color:#94a3b8; font-size:.74rem; border-top:1px solid #1f2a3d; padding-top:9px; margin-top:9px; }
+.position-line { display:flex; justify-content:space-between; gap:10px; color:#94a3b8; font-size:.74rem; border-top:1px solid #1f2a3d; padding-top:9px; margin-top:10px; }
 .regime { display:inline-flex; border-radius:999px; padding:3px 7px; font-size:.62rem; font-weight:900; letter-spacing:.04em; }
 .regime-up { background:#052e26; color:#99f6e4; border:1px solid #0f766e; }
 .regime-down { background:#3f0a0a; color:#fecaca; border:1px solid #dc2626; }
@@ -104,7 +107,6 @@ st.markdown(
 .signal-long { background:#052e26; color:#99f6e4; }
 .signal-flat { background:#1e293b; color:#cbd5e1; }
 .signal-exit { background:#3f0a0a; color:#fecaca; }
-.panel-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:12px; }
 .health-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
 .health-card { background:#0d1422; border:1px solid #1f2a3d; border-radius:14px; padding:11px 12px; min-height:72px; }
 .health-label { color:#94a3b8; font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; font-weight:900; }
@@ -112,6 +114,9 @@ st.markdown(
 .health-sub { color:#64748b; font-size:.72rem; margin-top:2px; }
 .timeline { display:grid; gap:8px; }
 .timeline-item { background:#0d1422; border:1px solid #1f2a3d; border-radius:13px; padding:10px 12px; display:flex; justify-content:space-between; gap:12px; }
+.timeline-item.buy { border-left:4px solid #22c55e; }
+.timeline-item.sell { border-left:4px solid #ef4444; }
+.timeline-item.signal { border-left:4px solid #38bdf8; }
 .timeline-main { color:#e5e7eb; font-size:.82rem; }
 .timeline-sub { color:#64748b; font-size:.72rem; margin-top:2px; }
 .audit-table-wrap { background:#0d1422; border:1px solid #1f2a3d; border-radius:14px; padding:10px; overflow-x:auto; margin-bottom:12px; }
@@ -122,7 +127,7 @@ table.audit-table { border-collapse:collapse; width:100%; min-width:850px; font-
 .audit-note { color:#64748b; font-size:.75rem; margin:4px 0 10px 0; }
 .small { color:#94a3b8; font-size:.76rem; }
 .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
-@media (max-width:1200px) { .command-deck { grid-template-columns:repeat(2,1fr); } .position-grid { grid-template-columns:repeat(2,1fr); } .health-grid { grid-template-columns:repeat(3,1fr); } .panel-grid { grid-template-columns:1fr; } }
+@media (max-width:1200px) { .command-deck { grid-template-columns:repeat(2,1fr); } .position-grid { grid-template-columns:repeat(2,1fr); } .health-grid { grid-template-columns:repeat(3,1fr); } }
 @media (max-width:760px) { .command-deck,.position-grid,.health-grid { grid-template-columns:1fr; } .brand-row { flex-direction:column; align-items:flex-start; } .stat-grid { grid-template-columns:repeat(2,1fr); } .primary .command-value { font-size:1.72rem; } }
 </style>
 """,
@@ -285,6 +290,18 @@ def html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]], empty
     return f'<div class="audit-table-wrap"><table class="audit-table"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
+def intraday_nav_baseline(events: list[dict[str, Any]]) -> tuple[float | None, int]:
+    today = pd.Timestamp.now(tz="UTC").date()
+    today_events = []
+    for e in events:
+        ts = parse_ts(e.get("timestamp"))
+        if ts is not None and ts.date() == today and e.get("total_nav") is not None:
+            today_events.append(e)
+    if not today_events:
+        return None, 0
+    return float(today_events[0].get("total_nav")), len(today_events)
+
+
 def latest_same_day_navs(events: list[dict[str, Any]]) -> dict[str, float]:
     today = pd.Timestamp.now(tz="UTC").date()
     for e in events:
@@ -312,11 +329,12 @@ capital = float(state.get("capital") or DEFAULT_CAPITAL)
 total_nav = float(state.get("last_total_nav") or last.get("total_nav") or sum(float(v) for v in sleeve_navs.values()) or 0.0)
 since_inception_pnl = total_nav - capital if total_nav else 0.0
 since_inception_return = since_inception_pnl / capital if capital else 0.0
+intraday_base, intraday_count = intraday_nav_baseline(events)
+intraday_pnl = total_nav - intraday_base if intraday_base and intraday_count > 1 else None
+intraday_return = intraday_pnl / intraday_base if intraday_pnl is not None and intraday_base else None
 fees_total = float(state.get("realized_fees") or last.get("fees_total") or 0.0)
 slippage_total = float(state.get("realized_slippage") or last.get("slippage_total") or 0.0)
 realized_pnl = float(state.get("realized_pnl") or last.get("realized_pnl") or 0.0)
-today_pnl = float(state.get("today_pnl") or last.get("today_pnl") or 0.0)
-today_return = float(state.get("today_return") or last.get("today_return") or 0.0)
 latest_signals = {s.get("sleeve"): s for s in last.get("signals", [])}
 latest_fills_by_sleeve: dict[str, dict[str, Any]] = {}
 for fill in reversed(fills):
@@ -440,12 +458,13 @@ st.markdown(
 )
 
 primary_class = css_class_for_value(since_inception_pnl)
-today_class = css_class_for_value(today_pnl)
+today_value = signed_money(intraday_pnl) if intraday_pnl is not None else "Awaiting baseline"
+today_sub = signed_pct(intraday_return) if intraday_return is not None else "after next cycle"
+today_class = css_class_for_value(intraday_pnl or 0.0) if intraday_pnl is not None else "muted"
 unrealized_class = css_class_for_value(unrealized_pnl_total)
-realized_class = css_class_for_value(realized_pnl)
 command_cards = [
     ("Portfolio NAV", money(total_nav), f"Since inception <span class='{primary_class}'>{signed_money(since_inception_pnl)} · {signed_pct(since_inception_return)}</span>", "primary", "white"),
-    ("Today", signed_money(today_pnl), signed_pct(today_return), "", today_class),
+    ("Intraday", today_value, today_sub, "", today_class),
     ("Exposure", pct(invested_pct, 1), f"Cash {pct(cash_pct, 1)} · {open_position_count} open", "", "white"),
     ("Unrealized", signed_money(unrealized_pnl_total), f"Basis {money(total_cost_basis)}", "", unrealized_class),
     ("Heartbeat", age_text(last_ts), f"Cycle {state.get('cycle', last.get('cycle', 0))}", "", "white"),
@@ -466,11 +485,12 @@ else:
     alert_right = "All clear"
 st.markdown(f'<div class="alert-line {alert_class}"><span>{esc(alert_text)}</span><span class="mono">{esc(alert_right)}</span></div>', unsafe_allow_html=True)
 
-st.markdown('<div class="section-head"><div><div class="section-title">Positions</div><div class="section-sub">Open exposure and sleeve decisions at a glance.</div></div></div>', unsafe_allow_html=True)
+st.markdown('<div class="section-head"><div><div class="section-title">Positions</div><div class="section-sub">Own it, explain it, monitor it. Details move into diagnostics.</div></div></div>', unsafe_allow_html=True)
 position_html = '<div class="position-grid">'
 for row in sleeve_rows:
     is_open = bool(row["position_open"])
-    card_class = "position-card open" if is_open else "position-card flat"
+    is_exit = (row.get("action") or "").upper().startswith("EXIT") or float(row.get("today_pnl") or 0.0) < 0 and not is_open and row.get("last_fill_side") == "SELL"
+    card_class = "position-card open" if is_open else "position-card exit" if is_exit else "position-card flat"
     pnl_value = float(row["unrealized_pnl"] if is_open else row["today_pnl"])
     pnl_cls = css_class_for_value(pnl_value)
     headline = signed_money(row["unrealized_pnl"]) if is_open else "FLAT"
@@ -480,6 +500,10 @@ for row in sleeve_rows:
     last_fill = "—"
     if row.get("last_fill_side"):
         last_fill = f"{row['last_fill_side']} {num(row.get('last_fill_qty'), 4)} @ {money(row.get('last_fill_price'))}"
+    actual_pct = max(0.0, min(100.0, float(row["actual_weight"]) * 100.0))
+    target_pct = max(0.0, min(100.0, float(row["target_weight"]) * 100.0))
+    primary_detail_1 = num(row['qty'], 4) if is_open else "—"
+    primary_detail_2 = money(row['avg_entry']) if row['avg_entry'] else "—"
     position_html += f"""
 <div class="{card_class}">
   <div class="position-top">
@@ -489,39 +513,41 @@ for row in sleeve_rows:
     </div>
     <div class="badges"><span class="badge {'ok' if is_open else 'neutral'}">{esc(row['position_state'])}</span><span class="signal-chip {signal_cls}">{esc(row['action'])}</span></div>
   </div>
+  <div class="decision-line"><b>{esc('Holding' if is_open else 'Flat')}</b> — {esc(row['reason'])}</div>
   <div class="position-pnl {pnl_cls}">{headline}</div>
   <div class="position-pnl-sub">{headline_sub}</div>
-  <div class="meter"><div class="meter-fill" style="width:{max(0, min(100, row['exposure'] * 100)):.1f}%"></div></div>
+  <div class="alloc-wrap">
+    <div class="alloc-top"><span>Allocation {pct(row['actual_weight'], 1)}</span><span>Target {pct(row['target_weight'], 1)}</span></div>
+    <div class="alloc-meter"><div class="alloc-fill" style="width:{actual_pct:.1f}%"></div><div class="target-pin" style="left:{target_pct:.1f}%"></div></div>
+  </div>
   <div class="stat-grid">
     <div class="stat"><div class="stat-label">Regime</div><div class="stat-value">{regime_badge(row['regime'])}</div></div>
-    <div class="stat"><div class="stat-label">Price</div><div class="stat-value">{money(row['price'])}</div></div>
-    <div class="stat"><div class="stat-label">Today</div><div class="stat-value {css_class_for_value(float(row['today_pnl']))}">{signed_money(row['today_pnl'])}</div></div>
-    <div class="stat"><div class="stat-label">Qty</div><div class="stat-value">{num(row['qty'], 4) if is_open else '—'}</div></div>
-    <div class="stat"><div class="stat-label">Avg entry</div><div class="stat-value">{money(row['avg_entry']) if row['avg_entry'] else '—'}</div></div>
-    <div class="stat"><div class="stat-label">Market value</div><div class="stat-value">{money(row['position_value']) if is_open else '—'}</div></div>
-    <div class="stat"><div class="stat-label">Basis</div><div class="stat-value">{money(row['cost_basis']) if is_open else '—'}</div></div>
-    <div class="stat"><div class="stat-label">Cash</div><div class="stat-value">{money(row['cash'])}</div></div>
-    <div class="stat"><div class="stat-label">Drift</div><div class="stat-value">{signed_pct(row['drift'], 1)}</div></div>
+    <div class="stat"><div class="stat-label">Now</div><div class="stat-value">{money(row['price'])}</div></div>
+    <div class="stat"><div class="stat-label">Intraday</div><div class="stat-value {css_class_for_value(float(row['today_pnl']))}">{signed_money(row['today_pnl'])}</div></div>
+    <div class="stat"><div class="stat-label">Qty</div><div class="stat-value">{primary_detail_1}</div></div>
+    <div class="stat"><div class="stat-label">Avg</div><div class="stat-value">{primary_detail_2}</div></div>
+    <div class="stat"><div class="stat-label">Value</div><div class="stat-value">{money(row['position_value']) if is_open else money(row['cash'])}</div></div>
   </div>
-  <div class="position-line"><span>Last fill: <span class="mono">{esc(last_fill)}</span></span><span>New fill: <span class="mono">{'Yes' if row['new_fill_this_cycle'] else 'No'}</span></span></div>
-  <div class="reason">{esc(row['reason'])}</div>
+  <div class="position-line"><span>Last fill: <span class="mono">{esc(last_fill)}</span></span><span>Drift: <span class="mono">{signed_pct(row['drift'], 1)}</span></span></div>
   <div class="small" style="margin-top:8px;">Last bar: <span class="mono">{esc(row['last_bar'])}</span></div>
 </div>
 """
 position_html += '</div>'
 st.markdown(position_html, unsafe_allow_html=True)
 
-st.markdown('<div class="section-head"><div><div class="section-title">Activity / Flight Recorder</div><div class="section-sub">What changed, what filled, and why.</div></div></div>', unsafe_allow_html=True)
+st.markdown('<div class="section-head"><div><div class="section-title">Activity / Flight Recorder</div><div class="section-sub">Trade tape and decision changes, color-coded.</div></div></div>', unsafe_allow_html=True)
 activity: list[dict[str, Any]] = []
 for row in sleeve_rows:
     if row["action_changed"]:
-        activity.append({"when": last.get("timestamp") or state.get("last_cycle_at"), "sleeve": row["display"], "event": f"{row['previous_action']} → {row['action']}", "detail": row["reason"]})
-for f in fills[-10:][::-1]:
-    activity.append({"when": f.get("timestamp"), "sleeve": SLEEVE_NAMES.get(f.get("sleeve"), f.get("sleeve")), "event": f"{f.get('side')} {num(f.get('qty'), 4)} @ {money(f.get('price'))}", "detail": f"notional {money(f.get('notional'))} · fee {money(f.get('fee'))} · slippage {money(f.get('slippage_cost'))} · realized {signed_money(f.get('realized_pnl', 0.0))}"})
+        activity.append({"kind": "signal", "when": last.get("timestamp") or state.get("last_cycle_at"), "sleeve": row["display"], "event": f"{row['previous_action']} → {row['action']}", "detail": row["reason"]})
+for f in fills[-12:][::-1]:
+    side = str(f.get("side") or "").upper()
+    kind = "buy" if side == "BUY" else "sell" if side == "SELL" else "signal"
+    activity.append({"kind": kind, "when": f.get("timestamp"), "sleeve": SLEEVE_NAMES.get(f.get("sleeve"), f.get("sleeve")), "event": f"{side} {num(f.get('qty'), 4)} @ {money(f.get('price'))}", "detail": f"notional {money(f.get('notional'))} · fee {money(f.get('fee'))} · slippage {money(f.get('slippage_cost'))} · realized {signed_money(f.get('realized_pnl', 0.0))}"})
 if activity:
     timeline_html = '<div class="timeline">'
     for item in activity[:12]:
-        timeline_html += f'<div class="timeline-item"><div><div class="timeline-main"><b>{esc(item["sleeve"])}</b> · {esc(item["event"])}</div><div class="timeline-sub">{esc(item["detail"])}</div></div><div class="timeline-sub mono">{esc(item["when"])}</div></div>'
+        timeline_html += f'<div class="timeline-item {esc(item["kind"])}"><div><div class="timeline-main"><b>{esc(item["sleeve"])}</b> · {esc(item["event"])}</div><div class="timeline-sub">{esc(item["detail"])}</div></div><div class="timeline-sub mono">{esc(item["when"])}</div></div>'
     timeline_html += '</div>'
     st.markdown(timeline_html, unsafe_allow_html=True)
 else:
@@ -534,7 +560,7 @@ checks = [
     ("Errors", "CLEAR" if not errors else "CHECK", "ok" if not errors else "warn", f"{len(errors)} logged"),
     ("Scheduler", "ON", "ok", f"poll {EXPECTED_POLL_SECONDS}s"),
     ("State", "V2" if state_is_v2 else "V1", "ok" if state_is_v2 else "warn", STATE_PATH.name),
-    ("Fees/Slip", money(fees_total + slippage_total), "neutral", "paper assumptions"),
+    ("Paper Runtime", f"Cycle {state.get('cycle', last.get('cycle', 0))}", "neutral", f"fees/slip {money(fees_total + slippage_total)}"),
 ]
 health_html = '<div class="health-grid">'
 for label, value, klass, sub in checks:
@@ -544,12 +570,9 @@ st.markdown(health_html, unsafe_allow_html=True)
 
 left, right = st.columns([1.25, 1])
 with left:
-    st.markdown('<div class="section-head"><div><div class="section-title">Portfolio NAV</div><div class="section-sub">Equity curve; trade markers will come next.</div></div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-head"><div><div class="section-title">Portfolio NAV</div><div class="section-sub">Equity curve; custom trade-marker chart comes next.</div></div></div>', unsafe_allow_html=True)
     if events:
-        hist = pd.DataFrame([
-            {"timestamp": e.get("timestamp"), "nav": e.get("total_nav"), "drawdown": e.get("drawdown_frac"), "today_pnl": e.get("today_pnl")}
-            for e in events
-        ])
+        hist = pd.DataFrame([{"timestamp": e.get("timestamp"), "nav": e.get("total_nav"), "drawdown": e.get("drawdown_frac")} for e in events])
         hist["timestamp"] = pd.to_datetime(hist["timestamp"], utc=True, errors="coerce")
         hist = hist.dropna(subset=["timestamp"]).set_index("timestamp").sort_index()
         if not hist.empty:
@@ -564,35 +587,14 @@ with right:
 
 attribution_rows = sorted(sleeve_rows, key=lambda r: abs(float(r["today_pnl"])), reverse=True)
 with st.expander("Diagnostics: attribution table", expanded=False):
-    st.markdown(
-        html_table(
-            attribution_rows,
-            [("display", "Sleeve"), ("position_state", "Position"), ("today_pnl", "Today P&L"), ("contribution", "Contribution"), ("unrealized_pnl", "Unrealized"), ("realized_pnl", "Realized"), ("action", "Signal"), ("regime", "Regime"), ("reason", "Reason")],
-            "No attribution data yet.",
-        ),
-        unsafe_allow_html=True,
-    )
+    st.markdown(html_table(attribution_rows, [("display", "Sleeve"), ("position_state", "Position"), ("today_pnl", "Intraday P&L"), ("contribution", "Contribution"), ("unrealized_pnl", "Unrealized"), ("realized_pnl", "Realized"), ("action", "Signal"), ("regime", "Regime"), ("reason", "Reason")], "No attribution data yet."), unsafe_allow_html=True)
 with st.expander("Diagnostics: sleeve table", expanded=False):
-    st.markdown(
-        html_table(
-            sleeve_rows,
-            [("display", "Sleeve"), ("position_state", "Position"), ("action", "Signal"), ("previous_action", "Prev"), ("action_changed", "Changed"), ("regime", "Regime"), ("target_weight", "Target"), ("actual_weight", "Actual"), ("drift", "Drift"), ("nav", "NAV"), ("today_pnl", "Today"), ("unrealized_pnl", "Unrealized"), ("unrealized_return", "uReturn"), ("realized_pnl", "Realized"), ("cost_basis", "Basis"), ("avg_entry", "Avg entry"), ("cash", "Cash"), ("position_value", "Market value"), ("qty", "Qty"), ("price", "Price"), ("exposure", "Exposure"), ("last_fill_side", "Last fill"), ("last_fill_price", "Last fill px"), ("new_fill_this_cycle", "New fill"), ("last_bar", "Last bar"), ("reason", "Reason")],
-            "No sleeve rows yet.",
-        ),
-        unsafe_allow_html=True,
-    )
-with st.expander("Diagnostics: signals, fills, errors", expanded=False):
+    st.markdown(html_table(sleeve_rows, [("display", "Sleeve"), ("position_state", "Position"), ("action", "Signal"), ("previous_action", "Prev"), ("action_changed", "Changed"), ("regime", "Regime"), ("target_weight", "Target"), ("actual_weight", "Actual"), ("drift", "Drift"), ("nav", "NAV"), ("today_pnl", "Intraday"), ("unrealized_pnl", "Unrealized"), ("unrealized_return", "uReturn"), ("realized_pnl", "Realized"), ("cost_basis", "Basis"), ("avg_entry", "Avg entry"), ("cash", "Cash"), ("position_value", "Market value"), ("qty", "Qty"), ("price", "Price"), ("exposure", "Exposure"), ("last_fill_side", "Last fill"), ("last_fill_price", "Last fill px"), ("new_fill_this_cycle", "New fill"), ("last_bar", "Last bar"), ("reason", "Reason")], "No sleeve rows yet."), unsafe_allow_html=True)
+with st.expander("Diagnostics: fills and errors", expanded=False):
     c1, c2 = st.columns(2)
     with c1:
         st.caption("Recent fills")
-        st.markdown(
-            html_table(
-                fills[-50:][::-1],
-                [("timestamp", "Timestamp"), ("sleeve", "Sleeve"), ("asset", "Asset"), ("side", "Side"), ("qty", "Qty"), ("price", "Fill price"), ("mid", "Mid"), ("notional", "Notional"), ("fee", "Fee"), ("slippage_cost", "Slippage"), ("realized_pnl", "Realized P&L"), ("cost_basis_after", "Basis after"), ("avg_entry_after", "Avg entry after")],
-                "No fills yet.",
-            ),
-            unsafe_allow_html=True,
-        )
+        st.markdown(html_table(fills[-50:][::-1], [("timestamp", "Timestamp"), ("sleeve", "Sleeve"), ("asset", "Asset"), ("side", "Side"), ("qty", "Qty"), ("price", "Fill price"), ("mid", "Mid"), ("notional", "Notional"), ("fee", "Fee"), ("slippage_cost", "Slippage"), ("realized_pnl", "Realized P&L"), ("cost_basis_after", "Basis after"), ("avg_entry_after", "Avg entry after")], "No fills yet."), unsafe_allow_html=True)
     with c2:
         st.caption("Recent errors")
         st.markdown(html_table(errors[-50:][::-1], [("timestamp", "Timestamp"), ("version", "Version"), ("error", "Error")], "No runtime errors logged."), unsafe_allow_html=True)
