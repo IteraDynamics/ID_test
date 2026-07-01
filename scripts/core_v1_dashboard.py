@@ -114,6 +114,10 @@ html, body, [class*="css"] { font-family:-apple-system,BlinkMacSystemFont,"Inter
 .healthy-banner .healthy-icon { font-size:1.6rem; color:#4ade80; flex:none; }
 .healthy-title { color:#f0fdf4; font-size:1.02rem; font-weight:900; letter-spacing:-.02em; }
 .healthy-sub { color:#a7f3d0; font-size:.78rem; margin-top:4px; display:flex; gap:14px; flex-wrap:wrap; }
+.attention-banner { display:flex; align-items:center; gap:16px; border-radius:16px; padding:14px 18px; margin:10px 0 16px 0; background:linear-gradient(145deg,#3f0a0a 0%, #2a0505 100%); border:1px solid #dc2626; box-shadow:0 18px 40px rgba(0,0,0,.24); }
+.attention-banner .healthy-icon { font-size:1.6rem; color:#f87171; flex:none; }
+.attention-banner .healthy-title { color:#fef2f2; }
+.attention-banner .healthy-sub { color:#fecaca; }
 .section-head { display:flex; justify-content:space-between; align-items:end; gap:12px; margin:22px 0 10px 0; }
 .section-title { color:#f8fafc; font-size:1.08rem; font-weight:850; letter-spacing:-.025em; }
 .section-sub { color:#64748b; font-size:.76rem; margin-top:2px; }
@@ -130,6 +134,10 @@ div[data-testid="stElementContainer"]:has(> div[data-testid="stFullScreenFrame"]
 .regime-posture { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; padding-top:12px; border-top:1px solid #1f2a3d; }
 .regime-posture-label { color:#94a3b8; font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; font-weight:850; }
 .regime-posture-value { color:#f8fafc; font-size:1.0rem; font-weight:900; }
+.thesis-card { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:18px 20px; box-shadow:0 18px 40px rgba(0,0,0,.24); margin:10px 0 12px 0; }
+.thesis-line { color:#e2e8f0; font-size:.94rem; line-height:1.6; margin-top:8px; }
+.thesis-line:first-child { margin-top:0; }
+.thesis-closing { color:#f8fafc; font-size:.94rem; font-weight:900; margin-top:14px; padding-top:12px; border-top:1px solid #1f2a3d; }
 .comp-bar { display:flex; width:100%; height:14px; border-radius:999px; overflow:hidden; border:1px solid #1e293b; background:#0b1220; margin:12px 0 14px 0; }
 .comp-seg { height:100%; }
 .comp-legend { display:flex; flex-wrap:wrap; gap:18px; }
@@ -383,6 +391,38 @@ def weighted_regime(rows: list[dict[str, Any]]) -> str:
     if len(tied) > 1:
         return "MIXED"
     return best_regime
+
+
+def join_names(names: list[str]) -> tuple[str, str]:
+    """Join sleeve display names into a natural phrase; returns (phrase, verb)."""
+    if not names:
+        return "", "is"
+    if len(names) == 1:
+        return names[0], "is"
+    if len(names) == 2:
+        return f"{names[0]} and {names[1]}", "are"
+    return f"{', '.join(names[:-1])}, and {names[-1]}", "are"
+
+
+def class_narrative(cls: str, rows: list[dict[str, Any]], regime: str) -> str | None:
+    """Plain-English read of one asset class, built only from real position
+    state and the class's own weighted regime — no invented specifics."""
+    class_rows = [r for r in rows if r["asset_class"] == cls]
+    if not class_rows:
+        return None
+    open_rows = [r for r in class_rows if r["position_open"]]
+    flat_rows = [r for r in class_rows if not r["position_open"]]
+    regime_word = REGIME_WORD.get(regime, ("unclear", "muted"))[0].lower()
+    open_phrase, open_verb = join_names([r["display"] for r in open_rows])
+    flat_phrase, flat_verb = join_names([r["display"] for r in flat_rows])
+
+    if open_rows and not flat_rows:
+        return f"{cls} remains {regime_word} — {open_phrase} {open_verb} actively held."
+    if flat_rows and not open_rows:
+        return f"{cls} is sitting defensively in cash — {flat_phrase} {flat_verb} flat while the regime reads {regime_word}."
+    if open_rows and flat_rows:
+        return f"{cls} is split: {open_phrase} {open_verb} held while {flat_phrase} {flat_verb} flat, as the broader regime reads {regime_word}."
+    return None
 
 
 def display_cell(key: str, value: Any) -> str:
@@ -654,6 +694,27 @@ class_regime = {
     for cls in ("Crypto", "Equities", "Gold")
 }
 
+# Portfolio Thesis: a plain-English narrative generated from the same
+# real position/regime data as the rest of the dashboard — never hardcoded.
+if total_nav <= 0:
+    thesis_lines = ["Core v1 has not yet completed a trading cycle — no positions to report."]
+    thesis_closing = "Overall posture: Awaiting first cycle."
+else:
+    leading_class, leading_value = max(
+        (("Crypto", class_value.get("Crypto", 0.0)), ("Equities", class_value.get("Equities", 0.0)), ("Gold", class_value.get("Gold", 0.0))),
+        key=lambda x: x[1],
+    )
+    if leading_value / total_nav >= 0.25:
+        thesis_opening = f"Core v1 currently favors {leading_class}."
+    else:
+        thesis_opening = f"Core v1 is currently positioned defensively, holding {pct(cash_pct, 0)} in cash."
+    thesis_lines = [thesis_opening]
+    for cls in ("Equities", "Gold", "Crypto"):
+        line = class_narrative(cls, sleeve_rows, class_regime.get(cls, "UNKNOWN"))
+        if line:
+            thesis_lines.append(line)
+    thesis_closing = f"Overall posture: {posture_narrative}."
+
 audit_ts = parse_ts(audit_report.get("timestamp")) if audit_report else None
 audit_age = age_seconds(audit_ts)
 audit_available = bool(audit_report)
@@ -752,25 +813,42 @@ for label, value, sub, extra, value_class in command_cards:
 command_html += "</div>"
 st.markdown(command_html, unsafe_allow_html=True)
 
-if issues:
-    alert_class = "alert-err" if health_status == "err" else "alert-warn"
-    alert_text = " · ".join(issues)
-    alert_right = "Action required" if health_status == "err" else "Review"
-    st.markdown(f'<div class="alert-line {alert_class}"><span>{esc(alert_text)}</span><span class="mono">{esc(alert_right)}</span></div>', unsafe_allow_html=True)
-else:
-    pricing_sub = f"All pricing verified {age_text(audit_ts)}" if audit_available else "Pricing audit not yet configured"
+audit_failing = audit_available and not audit_ok
+if not issues:
+    pricing_bullet = "Pricing Verified" if audit_available else "Pricing Check Pending"
     st.markdown(
         f"""
 <div class="healthy-banner">
   <div class="healthy-icon">✓</div>
   <div>
-    <div class="healthy-title">System Healthy — no intervention required</div>
-    <div class="healthy-sub"><span>Runtime current · last cycle {esc(age_text(last_ts))}</span><span>{esc(pricing_sub)}</span><span>{esc(len(EXPECTED_WEIGHTS) - len(missing_sleeves))}/{esc(len(EXPECTED_WEIGHTS))} sleeves reporting</span></div>
+    <div class="healthy-title">System Healthy</div>
+    <div class="healthy-sub"><span>Runtime Active</span><span>{esc(pricing_bullet)}</span><span>Market Data Fresh</span><span>No Intervention Required</span></div>
   </div>
 </div>
 """,
         unsafe_allow_html=True,
     )
+elif audit_failing:
+    other_issues = [i for i in issues if "audit" not in i.lower()]
+    bullets = ["Pricing Verification Failed", "Review Audit Details", *other_issues]
+    bullets_html = "".join(f"<span>{esc(b)}</span>" for b in bullets)
+    st.markdown(
+        f"""
+<div class="attention-banner">
+  <div class="healthy-icon">✕</div>
+  <div>
+    <div class="healthy-title">Attention Required</div>
+    <div class="healthy-sub">{bullets_html}</div>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+else:
+    alert_class = "alert-err" if health_status == "err" else "alert-warn"
+    alert_text = " · ".join(issues)
+    alert_right = "Action required" if health_status == "err" else "Review"
+    st.markdown(f'<div class="alert-line {alert_class}"><span>{esc(alert_text)}</span><span class="mono">{esc(alert_right)}</span></div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Market Regime — plain-English read of what each asset class is doing and
@@ -842,7 +920,7 @@ for row in sleeve_rows:
         headline_cls = css_class_for_value(float(row["unrealized_pnl"]))
         headline_sub = f"Unrealized · {signed_pct(row['unrealized_return'])}"
         stats = f"""
-    <div class="stat"><div class="stat-label">Now</div><div class="stat-value">{money(row['price'])}</div></div>
+    <div class="stat"><div class="stat-label">Current Price</div><div class="stat-value">{money(row['price'])}</div></div>
     <div class="stat"><div class="stat-label">Position value</div><div class="stat-value">{money(row['position_value'])}</div></div>
     <div class="stat"><div class="stat-label">Avg entry</div><div class="stat-value">{money(row['avg_entry']) if row['avg_entry'] else '—'}</div></div>
     <div class="stat"><div class="stat-label">Intraday</div><div class="stat-value {css_class_for_value(float(row['today_pnl']))}">{signed_money(row['today_pnl'])}</div></div>
@@ -866,7 +944,7 @@ for row in sleeve_rows:
             exit_stat_value = "—"
         headline_sub = exit_label
         stats = f"""
-    <div class="stat"><div class="stat-label">Now</div><div class="stat-value">{money(row['price'])}</div></div>
+    <div class="stat"><div class="stat-label">Current Price</div><div class="stat-value">{money(row['price'])}</div></div>
     <div class="stat"><div class="stat-label">Cash</div><div class="stat-value">{money(row['cash'])}</div></div>
     <div class="stat"><div class="stat-label">Realized P&amp;L</div><div class="stat-value {css_class_for_value(float(row['realized_pnl']))}">{signed_money(row['realized_pnl'])}</div></div>
     <div class="stat"><div class="stat-label">Last exit</div><div class="stat-value">{exit_stat_value}</div></div>
@@ -938,14 +1016,35 @@ st.markdown('<div class="section-head"><div><div class="section-title">System He
 
 next_cycle_text = "unknown" if seconds_until_next_cycle is None else (f"in {format_duration(seconds_until_next_cycle)}" if seconds_until_next_cycle > 0 else f"overdue {format_duration(seconds_until_next_cycle)}")
 
+sleeves_checked = f"{len(audit_rows)}/{len(EXPECTED_WEIGHTS)}"
+largest_drift_text = f"{signed_pct(largest_drift_row.get('price_diff_pct'), 2)} ({largest_drift_row.get('sleeve') or largest_drift_row.get('asset') or '—'})" if largest_drift_row is not None else "—"
+
 if not audit_available:
     audit_value, audit_klass, audit_sub = "PENDING", "neutral", "No audit report found yet"
+    audit_detail = []
 elif not audit_ok:
-    audit_value, audit_klass, audit_sub = "FAIL", "err", f"last run {age_text(audit_ts)}"
+    audit_value, audit_klass, audit_sub = "FAIL", "err", "Pricing verification failed"
+    affected = ", ".join(sorted({r.get("sleeve") or r.get("asset") or "—" for r in failed_audit_rows})) if failed_audit_rows else "—"
+    audit_detail = [
+        ("Largest Drift", largest_drift_text),
+        ("Affected Sleeves", affected),
+        ("Failure Reason", str(audit_report["failures"][0]) if audit_report.get("failures") else "—"),
+        ("Audit Timestamp", friendly_ts(audit_report.get("timestamp"))),
+    ]
 elif audit_stale:
     audit_value, audit_klass, audit_sub = "STALE", "warn", f"last run {age_text(audit_ts)}"
+    audit_detail = [
+        ("Largest Drift", largest_drift_text),
+        ("Sleeves Checked", sleeves_checked),
+        ("Audit Timestamp", friendly_ts(audit_report.get("timestamp"))),
+    ]
 else:
-    audit_value, audit_klass, audit_sub = "PASS", "ok", f"last run {age_text(audit_ts)}"
+    audit_value, audit_klass, audit_sub = "PASS", "ok", "Verified"
+    audit_detail = [
+        ("Last Audit", friendly_ts(audit_report.get("timestamp"))),
+        ("Largest Drift", largest_drift_text),
+        ("Sleeves Checked", sleeves_checked),
+    ]
 
 runtime_detail = [("Cycle #", str(state.get("cycle", last.get("cycle", 0)))), ("Last cycle", age_text(last_ts))]
 
@@ -953,19 +1052,6 @@ market_data_detail = [
     ("Oldest bar", format_duration(oldest_bar_age) if oldest_bar_age is not None else "—"),
     ("Newest bar", format_duration(newest_bar_age) if newest_bar_age is not None else "—"),
 ]
-
-audit_detail = []
-if largest_drift_row is not None:
-    drift_sleeve = largest_drift_row.get("sleeve") or largest_drift_row.get("asset") or "—"
-    audit_detail.append(("Largest drift", f"{signed_pct(largest_drift_row.get('price_diff_pct'), 2)} ({drift_sleeve})"))
-if audit_available:
-    audit_detail.append(("Audit time", friendly_ts(audit_report.get("timestamp"))))
-if audit_available and not audit_ok:
-    if audit_report.get("failures"):
-        audit_detail.append(("Reason", str(audit_report["failures"][0])))
-    if failed_audit_rows:
-        affected = ", ".join(sorted({r.get("sleeve") or r.get("asset") or "—" for r in failed_audit_rows}))
-        audit_detail.append(("Affected", affected))
 
 scheduler_detail = [("Next cycle", next_cycle_text)]
 
@@ -999,6 +1085,16 @@ for label, value, klass, sub, detail_rows in checks:
     health_html += f'<div class="health-card"><div class="health-label">{esc(label)}</div><div class="health-value">{status_badge(value, klass)}</div><div class="health-sub">{esc(sub)}</div>{detail_html}</div>'
 health_html += "</div>"
 st.markdown(health_html, unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Portfolio Thesis — the executive-level "why" behind the current portfolio.
+# ---------------------------------------------------------------------------
+st.markdown('<div class="section-head"><div><div class="section-title">Portfolio Thesis</div><div class="section-sub">Why the portfolio currently looks the way it does.</div></div></div>', unsafe_allow_html=True)
+thesis_html = '<div class="thesis-card">'
+thesis_html += "".join(f'<div class="thesis-line">{esc(line)}</div>' for line in thesis_lines)
+thesis_html += f'<div class="thesis-closing">{esc(thesis_closing)}</div>'
+thesis_html += "</div>"
+st.markdown(thesis_html, unsafe_allow_html=True)
 
 attribution_rows = sorted(sleeve_rows, key=lambda r: abs(float(r["today_pnl"])), reverse=True)
 with st.expander("Diagnostics: attribution table", expanded=False):
