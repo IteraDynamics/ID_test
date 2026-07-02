@@ -174,6 +174,13 @@ def audit(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     return (0 if not failures else 2), report
 
 
+def write_report_atomic(path: Path, report: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(report, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    tmp.replace(path)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Audit Core v1 paper state against fresh external prices")
     p.add_argument("--state-path", default=os.getenv("CORE_V1_STATE_PATH", "/opt/itera/runtime/core_v1/state.json"))
@@ -182,8 +189,15 @@ def main() -> None:
     p.add_argument("--dollar-tolerance", type=float, default=0.05)
     p.add_argument("--price-tolerance", type=float, default=0.0001)
     p.add_argument("--json", action="store_true")
+    p.add_argument(
+        "--output",
+        default=os.getenv("CORE_V1_AUDIT_REPORT_PATH"),
+        help="Optional path to persist the JSON audit report (e.g. for dashboard consumption). Unset by default.",
+    )
     args = p.parse_args()
     code, report = audit(args)
+    if args.output:
+        write_report_atomic(Path(args.output), report)
     if args.json:
         print(json.dumps(report, indent=2, sort_keys=True))
     else:
