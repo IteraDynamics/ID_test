@@ -14,6 +14,7 @@ from typing import Any
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 from plotly.subplots import make_subplots
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -31,7 +32,6 @@ PAPER_EXPORT_DIR = Path(os.getenv("CORE_V1_PAPER_EXPORT_DIR", str(REPO_ROOT / "a
 EXPECTED_POLL_SECONDS = int(os.getenv("CORE_V1_POLL_SECONDS", "3600"))
 STALE_AFTER_SECONDS = int(os.getenv("CORE_V1_STALE_AFTER_SECONDS", str(EXPECTED_POLL_SECONDS * 2 + 300)))
 STALE_AUDIT_AFTER_SECONDS = int(os.getenv("CORE_V1_STALE_AUDIT_AFTER_SECONDS", str(EXPECTED_POLL_SECONDS * 6)))
-REFRESH_SECONDS = int(os.getenv("CORE_V1_DASHBOARD_REFRESH_SECONDS", "30"))
 DEFAULT_CAPITAL = float(os.getenv("CORE_V1_CAPITAL", "100000"))
 
 SCENARIO = SELECTED_CORE_V1_SCENARIO
@@ -74,8 +74,131 @@ POSTURE_NARRATIVE = {
     "DEFENSIVE": "Capital Preservation",
 }
 
+def inject_scroll_and_expander_persistence() -> None:
+    """Keep scroll position and expander state stable across Streamlit reruns.
+
+    There is deliberately no timer and no hard browser navigation of any
+    kind here — that always resets scroll to the top and collapses
+    expanders, which is exactly what we're avoiding. The dashboard only
+    updates when the operator clicks "Refresh now" (a native st.button,
+    which reruns the script over the existing websocket connection instead
+    of navigating the page). Even so, Streamlit's own rerun zeroes out the
+    scroll container's scrollTop (sometimes more than once as content keeps
+    settling), so this continuously tracks the last known-good scroll
+    position and snaps back to it the instant the container unexpectedly
+    reads 0, rather than reacting to reruns directly — which would otherwise
+    fight the operator's own fresh scrolling if a correction was still in
+    flight when they moved. Expander open/closed state is saved to
+    sessionStorage on toggle and restored the same way.
+    """
+    components.html(
+        """
+<script>
+(function() {
+  const win = window.parent;
+  const doc = win.document;
+  const EXPANDER_KEY = "core_v1_dashboard_expanders";
+
+  // Streamlit scrolls an internal container (historically
+  // [data-testid="stMain"] / [data-testid="stAppViewContainer"]), not the
+  // window itself, so find whichever element is actually scrollable.
+  function getScrollContainer() {
+    // Prefer the known container by existence alone: gating on
+    // scrollHeight > clientHeight is unreliable mid-rerun, when content is
+    // briefly shorter than the viewport before the rest of the page paints,
+    // and would otherwise make this fall through to scanning the whole page
+    // and grabbing the wrong (non-scrolling) element for that moment.
+    const known = doc.querySelector('[data-testid="stMain"]') || doc.querySelector('[data-testid="stAppViewContainer"]');
+    if (known) { return known; }
+    let best = null;
+    let bestOverflow = 0;
+    doc.querySelectorAll("*").forEach(function(el) {
+      const overflow = el.scrollHeight - el.clientHeight;
+      if (overflow > bestOverflow) { bestOverflow = overflow; best = el; }
+    });
+    return best || win.document.scrollingElement || doc.documentElement;
+  }
+
+  // The expander summary also contains a material-icon ligature span
+  // (e.g. "keyboard_arrow_right"/"keyboard_arrow_down") whose text changes
+  // with open/closed state, so pull the label from Streamlit's markdown
+  // container rather than the summary's full textContent.
+  function detailsLabel(d, i) {
+    const summary = d.querySelector("summary");
+    if (!summary) return "idx:" + i;
+    const markdown = summary.querySelector('[data-testid="stMarkdownContainer"]');
+    if (markdown) return markdown.textContent.trim();
+    return summary.textContent.trim();
+  }
+
+  function saveExpanderState() {
+    try {
+      const map = {};
+      doc.querySelectorAll("details").forEach(function(d, i) {
+        map[detailsLabel(d, i)] = d.open;
+      });
+      win.sessionStorage.setItem(EXPANDER_KEY, JSON.stringify(map));
+    } catch (e) {}
+  }
+
+  function restoreExpanders() {
+    try {
+      const raw = win.sessionStorage.getItem(EXPANDER_KEY);
+      if (!raw) return;
+      const map = JSON.parse(raw);
+      doc.querySelectorAll("details").forEach(function(d, i) {
+        const label = detailsLabel(d, i);
+        if (Object.prototype.hasOwnProperty.call(map, label)) { d.open = map[label]; }
+      });
+    } catch (e) {}
+  }
+
+  // Opening/closing an expander is purely client-side, but save the
+  // operator's choice immediately (capture phase so this fires even where
+  // "toggle" doesn't bubble) so it's already correct if a rerun happens
+  // shortly after for an unrelated reason.
+  doc.addEventListener("toggle", function() { saveExpanderState(); }, true);
+  win.setInterval(saveExpanderState, 1000);
+
+  // A Streamlit rerun (triggered by the refresh button or any other widget)
+  // resets the scroll container's scrollTop to 0, sometimes more than once
+  // over the following couple of seconds as content keeps settling — even
+  // though nothing else about the page changes size. Continuously track the
+  // last known-good (nonzero) scrollTop, and step in when the container
+  // suddenly reads exactly 0 while we know the operator wasn't already at
+  // the top — which is what Streamlit's reset looks like — restoring the
+  // last known-good value in that instant. This is scoped to a short window
+  // after a DOM mutation (a rerun repainting the page, or an expander
+  // revealing content) rather than running unconditionally forever, so it
+  // never overrides the operator's own deliberate scroll back to the top
+  // once things have been quiet for a couple of seconds.
+  let lastKnownGoodScroll = 0;
+  let correctUntil = 0;
+  const CORRECTION_WINDOW_MS = 2500;
+  new win.MutationObserver(function() {
+    correctUntil = performance.now() + CORRECTION_WINDOW_MS;
+  }).observe(doc.body, { childList: true, subtree: true });
+  correctUntil = performance.now() + CORRECTION_WINDOW_MS; // covers the very first page load
+
+  win.setInterval(function() {
+    const container = getScrollContainer();
+    if (container.scrollTop === 0 && lastKnownGoodScroll > 40 && performance.now() < correctUntil) {
+      container.scrollTop = lastKnownGoodScroll;
+      restoreExpanders();
+    } else {
+      lastKnownGoodScroll = container.scrollTop;
+    }
+  }, 100);
+})();
+</script>
+""",
+        height=0,
+        width=0,
+    )
+
+
 st.set_page_config(page_title="Itera Mission Control", page_icon="◎", layout="wide", initial_sidebar_state="collapsed")
-st.markdown(f"<meta http-equiv='refresh' content='{REFRESH_SECONDS}'>", unsafe_allow_html=True)
+inject_scroll_and_expander_persistence()
 
 st.markdown(
     """
@@ -91,6 +214,9 @@ html, body, [class*="css"] { font-family:-apple-system,BlinkMacSystemFont,"Inter
 .brand-kicker { color:#64748b; font-size:.70rem; letter-spacing:.24em; font-weight:850; text-transform:uppercase; }
 .brand-title { color:#f8fafc; font-size:1.9rem; line-height:1.0; font-weight:950; letter-spacing:-.055em; margin-top:2px; }
 .brand-sub { color:#94a3b8; font-size:.82rem; margin-top:7px; }
+.refresh-status { color:#64748b; font-size:.74rem; margin:2px 0 14px 0; }
+div[data-testid="stButton"] button { background:#0d1422; border:1px solid #1f2a3d; color:#e5e7eb; border-radius:10px; font-weight:750; font-size:.78rem; padding:4px 10px; }
+div[data-testid="stButton"] button:hover { border-color:#38bdf8; color:#38bdf8; }
 .badges { display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
 .badge { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:6px 11px; font-size:.66rem; letter-spacing:.07em; font-weight:900; text-transform:uppercase; white-space:nowrap; }
 .ok { background:#052e26; color:#99f6e4; border:1px solid #0f766e; }
@@ -793,6 +919,18 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
+# Auto-refresh is intentionally off: a timer-driven reload/rerun would always
+# fire mid-read and disrupt whatever the operator is inspecting. Updating is
+# a deliberate operator action instead.
+refresh_status_col, refresh_button_col = st.columns([5, 1])
+with refresh_status_col:
+    st.markdown(
+        f'<div class="refresh-status">Auto-refresh paused while inspecting · last updated {datetime.now(UTC).strftime("%H:%M:%S UTC")}</div>',
+        unsafe_allow_html=True,
+    )
+with refresh_button_col:
+    st.button("Refresh now", use_container_width=True)
 
 # ---------------------------------------------------------------------------
 # 1. Am I making money? — command deck + NAV / drawdown chart
