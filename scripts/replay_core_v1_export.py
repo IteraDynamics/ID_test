@@ -21,6 +21,29 @@ This is a read-only validation/reporting tool. It never modifies strategy,
 allocation, execution, or dashboard code, and it never fabricates data — if
 a required export file is missing, it fails clearly instead of guessing.
 
+The report separates three independent questions, so a lookback limitation
+never masquerades as data corruption:
+
+- **Export integrity** — is the export well-formed and internally
+  self-consistent (required files present, rows parse, timestamps valid,
+  required sleeves present, cycle structure valid, and the signals/
+  market_data logs agree with each other)? PASS/FAIL only — insufficient
+  historical lookback is *not* an integrity problem.
+- **Replay capability** — could signal recomputation actually be attempted?
+  PASS if sufficient history existed, PARTIAL if only decision bars were
+  available (the expected case for a single export snapshot), FAIL only if
+  replay could not be attempted at all because the export is malformed or
+  the strategy stack failed to import.
+- **Runtime consistency** — where recomputation *was* attempted, did it
+  agree with what the runtime logged, and is the fill timeline internally
+  consistent? PASS/FAIL — a genuine behavioral finding, independent of
+  lookback availability.
+
+Overall status is PASS only if replay fully succeeded, PARTIAL if the
+export is valid but lacks enough history to fully recompute signals, and
+FAIL only if the export itself is invalid, corrupted, or internally
+inconsistent.
+
 Important limitation — read this before trusting a "PASS"
 -----------------------------------------------------------
 The live runtime's market-data export (see ``market_data_bar_row`` in
@@ -307,27 +330,76 @@ def load_fills(export_dir: Path) -> tuple[list[dict[str, Any]], Path]:
 # ─────────────────────────────────────────────────────────────────────────
 
 
-def check_market_data_integrity(rows: list[dict[str, Any]]) -> list[str]:
+_OHLC_EPSILON = 1e-9
+
+
+def check_market_data_integrity(rows: list[dict[str, Any]]) -> tuple[list[str], list[str]]:
+    """Returns (integrity_issues, freshness_notes).
+
+    integrity_issues are hard export-well-formedness problems: missing
+    fields, unparseable timestamps, OHLC values that are not internally
+    coherent. These are file/parsing concerns and belong in export
+    integrity.
+
+    freshness_notes are informational: e.g. the runtime flagged a bar as
+    not-yet-completed (bar_completed=False). That describes a runtime
+    data-quality condition, not a malformed export file, so it is reported
+    separately and does not affect export integrity.
+    """
+    import pandas as pd
+
     issues: list[str] = []
+    freshness_notes: list[str] = []
     for r in rows:
         label = f"cycle={r['cycle']} sleeve={r['sleeve']}"
         if r["bar_timestamp"] is None:
             issues.append(f"{label}: missing bar_timestamp")
+        elif pd.isna(pd.to_datetime(r["bar_timestamp"], errors="coerce")):
+            issues.append(f"{label}: unparseable bar_timestamp {r['bar_timestamp']!r}")
         for field in ("open", "high", "low", "close"):
             if r[field] is None:
                 issues.append(f"{label}: missing {field}")
         o, h, l, c = r["open"], r["high"], r["low"], r["close"]
         if None not in (o, h, l, c):
-            if h < l:
+            if h < l - _OHLC_EPSILON:
                 issues.append(f"{label}: high {h} < low {l}")
-            if h < o or h < c:
+            if h < o - _OHLC_EPSILON or h < c - _OHLC_EPSILON:
                 issues.append(f"{label}: high {h} is not the max of open/close")
-            if l > o or l > c:
+            if l > o + _OHLC_EPSILON or l > c + _OHLC_EPSILON:
                 issues.append(f"{label}: low {l} is not the min of open/close")
             if c <= 0:
                 issues.append(f"{label}: non-positive close {c}")
         if r["bar_completed"] is False:
-            issues.append(f"{label}: bar_completed=False — runtime may have used an in-progress candle")
+            freshness_notes.append(f"{label}: bar_completed=False — runtime may have used an in-progress candle")
+    return issues, freshness_notes
+
+
+def check_cross_log_consistency(
+    market_rows: list[dict[str, Any]], signal_rows: list[dict[str, Any]]
+) -> list[str]:
+    """The export's own files must agree with each other: for every
+    strategy-relevant market_data row, there must be a matching signals row
+    for the same (sleeve, cycle) that references the same bar and price.
+    This is a self-consistency property of the export, independent of
+    whether enough history exists to recompute anything."""
+    issues: list[str] = []
+    signal_index = {(r["sleeve"], r["cycle"]): r for r in signal_rows}
+    for mrow in market_rows:
+        if mrow["sleeve"] in INFORMATIONAL_SLEEVE_LABELS:
+            continue
+        key = (mrow["sleeve"], mrow["cycle"])
+        srow = signal_index.get(key)
+        label = f"cycle={mrow['cycle']} sleeve={mrow['sleeve']}"
+        if srow is None:
+            issues.append(f"{label}: market_data row has no matching signals row")
+            continue
+        if srow["bar_timestamp"] != mrow["bar_timestamp"]:
+            issues.append(
+                f"{label}: bar_timestamp mismatch between signals ({srow['bar_timestamp']}) "
+                f"and market_data ({mrow['bar_timestamp']})"
+            )
+        if srow["price"] is not None and mrow["close"] is not None and abs(srow["price"] - mrow["close"]) > 1e-6:
+            issues.append(f"{label}: logged price {srow['price']} != market_data close {mrow['close']}")
     return issues
 
 
@@ -457,9 +529,20 @@ def replay_sleeve(
     market_rows: list[dict[str, Any]],
     signal_rows: list[dict[str, Any]],
     stack: StrategyStack | None,
+    import_error: str | None,
 ) -> dict[str, Any]:
+    """Per-cycle replay for one sleeve.
+
+    Cross-log structural agreement (does signals.jsonl describe the same bar
+    market_data.jsonl does?) is validated once, globally, by
+    check_cross_log_consistency — not here. This function only decides,
+    per (sleeve, cycle), whether replay was *capable* of running (enough
+    history) and, when it was, whether the recomputed result *matches* the
+    runtime's logged decision. Those are the two separate questions the
+    replay_capability and runtime_consistency report axes answer.
+    """
     sleeve_market_rows = [r for r in market_rows if r["sleeve"] == sleeve_label]
-    sleeve_signal_rows = [r for r in signal_rows if r["sleeve"] == sleeve_label]
+    sleeve_signal_rows = {r["cycle"]: r for r in signal_rows if r["sleeve"] == sleeve_label}
 
     result: dict[str, Any] = {
         "sleeve": sleeve_label,
@@ -471,17 +554,13 @@ def replay_sleeve(
     if not sleeve_market_rows:
         result["reasons"].append("no market_data rows found for this sleeve")
         return result
-    if not sleeve_signal_rows:
-        result["status"] = "FAIL"
-        result["reasons"].append("no runtime-logged signal found for this sleeve")
-        return result
 
     full_series = build_sleeve_bar_series(market_rows, sleeve_label) if stack is not None else None
     sleeve_meta = stack.sleeves_by_label.get(sleeve_label) if stack is not None else None
 
     per_cycle: list[dict[str, Any]] = []
     for mrow in sorted(sleeve_market_rows, key=lambda r: (r["cycle"] is None, r["cycle"])):
-        srow = next((s for s in sleeve_signal_rows if s["cycle"] == mrow["cycle"]), None)
+        srow = sleeve_signal_rows.get(mrow["cycle"])
         cycle_result: dict[str, Any] = {
             "cycle": mrow["cycle"],
             "bar_timestamp": mrow["bar_timestamp"],
@@ -489,34 +568,21 @@ def replay_sleeve(
         }
 
         if srow is None:
-            cycle_result["status"] = "FAIL"
-            cycle_result["reason"] = "market data row has no matching signal row for this cycle"
+            # Already recorded as an export integrity issue by
+            # check_cross_log_consistency — nothing further to evaluate here.
+            cycle_result["status"] = "NOT_EVALUATED"
+            cycle_result["reason"] = "no matching signals row (see export integrity issues)"
             per_cycle.append(cycle_result)
             continue
 
-        # Structural cross-check: the two logs describe the same runtime
-        # cycle and must agree on the bar itself, independent of replay.
-        struct_issues = []
-        if srow["bar_timestamp"] != mrow["bar_timestamp"]:
-            struct_issues.append(
-                f"bar_timestamp mismatch between signals ({srow['bar_timestamp']}) and market_data ({mrow['bar_timestamp']})"
-            )
-        if srow["price"] is not None and mrow["close"] is not None and abs(srow["price"] - mrow["close"]) > 1e-9:
-            struct_issues.append(f"logged price {srow['price']} != market_data close {mrow['close']}")
         cycle_result["runtime_action"] = srow["action"]
         cycle_result["runtime_regime"] = srow["regime"]
         cycle_result["runtime_target_exposure"] = srow["target_exposure"]
         cycle_result["runtime_reason"] = srow["reason"]
 
-        if struct_issues:
-            cycle_result["status"] = "FAIL"
-            cycle_result["reason"] = "; ".join(struct_issues)
-            per_cycle.append(cycle_result)
-            continue
-
         if stack is None or sleeve_meta is None or full_series is None:
-            cycle_result["status"] = "INSUFFICIENT_HISTORY"
-            cycle_result["reason"] = "strategy stack unavailable — cannot recompute"
+            cycle_result["status"] = "STACK_UNAVAILABLE"
+            cycle_result["reason"] = f"strategy stack import failed — cannot recompute ({import_error})"
             per_cycle.append(cycle_result)
             continue
 
@@ -593,8 +659,14 @@ def replay_sleeve(
         per_cycle.append(cycle_result)
 
     result["cycles"] = per_cycle
-    statuses = {c["status"] for c in per_cycle}
+    statuses = {c["status"] for c in per_cycle if c["status"] != "NOT_EVALUATED"}
     if "FAIL" in statuses or "MISMATCH" in statuses:
+        # A genuine recompute-vs-runtime divergence: a runtime_consistency
+        # concern, not a lookback limitation.
+        result["status"] = "FAIL"
+    elif "STACK_UNAVAILABLE" in statuses:
+        # Replay mechanism itself is broken — capability concern, not a
+        # lookback limitation either.
         result["status"] = "FAIL"
     elif statuses == {"PASS_WITH_FALLBACK"}:
         result["status"] = "PASS"
@@ -603,6 +675,9 @@ def replay_sleeve(
     elif statuses == {"INSUFFICIENT_HISTORY"}:
         result["status"] = "PARTIAL"
         result["reasons"].append("insufficient historical bars in export to recompute any cycle for this sleeve")
+    elif not statuses:
+        result["status"] = "NO_DATA"
+        result["reasons"].append("no runtime-logged signal matched any market_data row for this sleeve")
     else:
         result["status"] = "PARTIAL"
     return result
@@ -622,7 +697,8 @@ def build_report(export_dir: Path) -> dict[str, Any]:
     events, signal_rows, signals_path = load_signals(export_dir)
     fills, fills_path = load_fills(export_dir)
 
-    integrity_issues = check_market_data_integrity(market_rows)
+    integrity_issues, freshness_notes = check_market_data_integrity(market_rows)
+    cross_log_issues = check_cross_log_consistency(market_rows, signal_rows)
     sleeves_present = check_required_sleeves_present(market_rows)
     cycles, missing_cycles, cycles_ok = check_cycles(market_rows)
     fill_status, fill_issues = check_fill_timeline(fills, signal_rows)
@@ -631,61 +707,87 @@ def build_report(export_dir: Path) -> dict[str, Any]:
 
     sleeve_results: dict[str, Any] = {}
     for label in REQUIRED_SLEEVE_LABELS:
-        sleeve_results[label] = replay_sleeve(label, market_rows, signal_rows, stack)
+        sleeve_results[label] = replay_sleeve(label, market_rows, signal_rows, stack, import_error)
 
     mismatches: list[dict[str, Any]] = []
     for label, res in sleeve_results.items():
         for c in res["cycles"]:
-            if c.get("status") in ("MISMATCH", "FAIL"):
+            if c.get("status") == "MISMATCH":
                 mismatches.append({"sleeve": label, **c})
 
-    any_recomputed = any(
-        c.get("status") in ("PASS_WITH_FALLBACK", "MISMATCH")
-        for res in sleeve_results.values()
-        for c in res["cycles"]
-    )
-    replay_possible = stack is not None and any_recomputed
-
-    sleeve_statuses = {label: res["status"] for label, res in sleeve_results.items()}
-    if any(s == "FAIL" for s in sleeve_statuses.values()):
-        signal_parity_status = "FAIL"
-    elif any(s in ("PARTIAL", "NO_DATA") for s in sleeve_statuses.values()) or not replay_possible:
-        signal_parity_status = "PARTIAL"
-    else:
-        signal_parity_status = "PASS"
-
+    # ── Axis 1: export integrity ──────────────────────────────────────
+    # Is the export itself well-formed and internally self-consistent?
+    # Insufficient lookback history is NOT an integrity problem — it is
+    # an expected, honest limitation of a single decision-bar export and
+    # belongs entirely to axis 2 (replay capability).
     market_data_rows_ok = len(market_rows) > 0 and not integrity_issues
     required_sleeves_present = all(sleeves_present.values())
     export_structure_ok = not validate_export_structure(export_dir)
+    export_integrity_issues = list(integrity_issues) + list(cross_log_issues)
+    export_integrity_ok = (
+        export_structure_ok
+        and market_data_rows_ok
+        and required_sleeves_present
+        and cycles_ok
+        and not cross_log_issues
+    )
+    export_integrity_status = "PASS" if export_integrity_ok else "FAIL"
+
+    # ── Axis 2: replay capability ────────────────────────────────────
+    # Could recomputation actually be *attempted*? This says nothing
+    # about whether the recomputed result agreed with the runtime.
+    all_cycle_statuses = [c["status"] for res in sleeve_results.values() for c in res["cycles"]]
+    attempted_statuses = {"PASS_WITH_FALLBACK", "MISMATCH"}
+    capable_cycle_exists = any(s in attempted_statuses for s in all_cycle_statuses)
+    insufficient_cycle_exists = "INSUFFICIENT_HISTORY" in all_cycle_statuses
+    stack_unavailable = stack is None or "STACK_UNAVAILABLE" in all_cycle_statuses
+
+    if export_integrity_status == "FAIL" or stack_unavailable:
+        replay_capability_status = "FAIL"
+    elif capable_cycle_exists and not insufficient_cycle_exists:
+        replay_capability_status = "PASS"
+    else:
+        # Either nothing could be attempted (decision-bars-only export —
+        # the common, expected case) or a mix of capable/insufficient
+        # cycles. Either way replay is only partially possible, not broken.
+        replay_capability_status = "PARTIAL"
+
+    replay_possible = capable_cycle_exists
+
+    # ── Axis 3: runtime consistency ──────────────────────────────────
+    # Where replay *was* attempted, did it agree with the runtime? And is
+    # the fill timeline internally consistent? Both are genuine behavioral
+    # findings, independent of lookback availability.
+    mismatch_exists = any(s == "MISMATCH" for s in all_cycle_statuses)
+    runtime_consistency_status = "FAIL" if (mismatch_exists or fill_status == "FAIL") else "PASS"
+
     signal_events_loaded = len(signal_rows) > 0
     fills_loaded_ok = True  # zero fills is a valid, loadable state
     audit_report_present = audit_report is not None
     state_snapshot_present = bool(state)
 
-    overall_issues = []
-    if not export_structure_ok:
-        overall_issues.append("export_structure")
-    if not market_data_rows_ok:
-        overall_issues.append("market_data_rows")
-    if not required_sleeves_present:
-        overall_issues.append("required_sleeves_present")
-    if fill_status == "FAIL":
-        overall_issues.append("fill_timeline")
-    if signal_parity_status == "FAIL":
-        overall_issues.append("signal_parity")
-
-    if overall_issues:
+    # ── Overall status ────────────────────────────────────────────────
+    # PASS only if the export is valid, consistent, and replay fully
+    # succeeded. PARTIAL if the export is valid and consistent but lacks
+    # enough historical context to fully recompute signals. FAIL only if
+    # the export itself is invalid, corrupted, or internally inconsistent.
+    if export_integrity_status == "FAIL" or runtime_consistency_status == "FAIL":
         overall_status = "FAIL"
-    elif signal_parity_status == "PARTIAL" or fill_status == "PARTIAL":
+    elif replay_capability_status != "PASS":
         overall_status = "PARTIAL"
     else:
         overall_status = "PASS"
 
     limitations: list[str] = []
-    if not replay_possible:
+    if replay_capability_status == "PARTIAL" and not stack_unavailable:
         limitations.append(PARTIAL_LOOKBACK_MESSAGE)
     if stack is None:
         limitations.append(f"strategy stack import failed — signal recomputation skipped entirely ({import_error})")
+    if freshness_notes:
+        limitations.append(
+            f"{len(freshness_notes)} bar(s) flagged bar_completed=False by the runtime "
+            "(informational data-quality note — does not affect export integrity)"
+        )
 
     report: dict[str, Any] = {
         "export_dir": str(export_dir),
@@ -707,6 +809,12 @@ def build_report(export_dir: Path) -> dict[str, Any]:
             "fills": str(fills_path),
         },
         "validation": {
+            "export_integrity_status": export_integrity_status,
+            "replay_capability_status": replay_capability_status,
+            "runtime_consistency_status": runtime_consistency_status,
+            "fill_timeline_status": fill_status,
+            "overall_status": overall_status,
+            # Detail fields underlying the three axes above.
             "export_structure_ok": export_structure_ok,
             "market_data_rows_ok": market_data_rows_ok,
             "required_sleeves_present": required_sleeves_present,
@@ -716,14 +824,14 @@ def build_report(export_dir: Path) -> dict[str, Any]:
             "audit_report_present": audit_report_present,
             "state_snapshot_present": state_snapshot_present,
             "replay_possible": replay_possible,
-            "signal_parity_status": signal_parity_status,
-            "fill_timeline_status": fill_status,
-            "overall_status": overall_status,
         },
         "required_sleeves_present_detail": sleeves_present,
         "cycles": cycles,
         "missing_cycles": missing_cycles,
+        "export_integrity_issues": export_integrity_issues,
         "market_data_integrity_issues": integrity_issues,
+        "cross_log_consistency_issues": cross_log_issues,
+        "bar_freshness_notes": freshness_notes,
         "fill_timeline_issues": fill_issues,
         "strategy_import_ok": stack is not None,
         "strategy_import_error": import_error,
@@ -797,11 +905,17 @@ def render_terminal_report(report: dict[str, Any]) -> str:
     lines.append(f"- fills: {loaded['fills']}")
     lines.append("")
     lines.append("Validation:")
-    lines.append(f"- market data integrity: {'PASS' if v['market_data_rows_ok'] else 'FAIL'}")
-    lines.append(f"- signal parity: {v['signal_parity_status']}")
+    lines.append(f"- export integrity: {v['export_integrity_status']}")
+    lines.append(f"- replay capability: {v['replay_capability_status']}")
+    lines.append(f"- runtime consistency: {v['runtime_consistency_status']}")
     lines.append(f"- fill timeline consistency: {v['fill_timeline_status']}")
     lines.append(f"- audit report included: {'yes' if v['audit_report_present'] else 'no'}")
     lines.append(f"- state snapshot included: {'yes' if v['state_snapshot_present'] else 'no'}")
+    if v["export_integrity_status"] == "FAIL" and report["export_integrity_issues"]:
+        lines.append("")
+        lines.append("Export integrity issues:")
+        for issue in report["export_integrity_issues"]:
+            lines.append(f"- {issue}")
     lines.append("")
     lines.append("Sleeve Results:")
     for label, res in report["sleeve_results"].items():
