@@ -728,7 +728,7 @@ audit_rows = audit_report.get("rows", []) if audit_available else []
 # comes from bar_price_ok, which compares the runtime's stored bar price
 # against an independently reconstructed completed bar, not the live tick.
 largest_drift_row = max(audit_rows, key=lambda r: abs(float(r.get("live_drift_pct") or 0.0)), default=None)
-failed_audit_rows = [r for r in audit_rows if not r.get("bar_price_ok", True) or not r.get("position_value_ok", True) or not r.get("unrealized_ok", True) or not r.get("avg_entry_ok", True)]
+failed_audit_rows = [r for r in audit_rows if not r.get("bar_price_ok", True) or r.get("bar_completed") is False or not r.get("position_value_ok", True) or not r.get("unrealized_ok", True) or not r.get("avg_entry_ok", True)]
 
 bar_ages = [age_seconds(parse_ts(r["last_bar"])) for r in sleeve_rows if parse_ts(r["last_bar"]) is not None]
 oldest_bar_age = max(bar_ages) if bar_ages else None
@@ -1119,7 +1119,7 @@ with st.expander("Diagnostics: price audit report", expanded=False):
     if not audit_available:
         st.markdown(f'<div class="audit-note">No audit report found at {esc(str(AUDIT_REPORT_PATH))}. Run <span class="mono">scripts/audit_core_v1_prices.py --output {esc(str(AUDIT_REPORT_PATH))}</span> on a schedule to populate this.</div>', unsafe_allow_html=True)
     else:
-        st.markdown(html_table(audit_report.get("rows", []), [("sleeve", "Sleeve"), ("asset", "Asset"), ("strategy_bar_price", "Bar price"), ("verified_bar_price", "Verified price"), ("bar_price_diff_pct", "Bar diff"), ("bar_price_ok", "Bar OK"), ("live_price", "Live price"), ("live_drift_pct", "Live drift"), ("bar_age_hours", "Bar age (h)"), ("position_value_ok", "Value OK"), ("unrealized_ok", "uPnL OK"), ("avg_entry_ok", "Avg OK")], "No audit rows recorded."), unsafe_allow_html=True)
+        st.markdown(html_table(audit_report.get("rows", []), [("sleeve", "Sleeve"), ("asset", "Asset"), ("strategy_bar_price", "Bar price"), ("verified_bar_price", "Verified price"), ("bar_price_diff_pct", "Bar diff"), ("bar_price_ok", "Bar OK"), ("bar_completed", "Bar completed"), ("live_price", "Live price"), ("live_drift_pct", "Live drift"), ("bar_age_hours", "Bar age (h)"), ("position_value_ok", "Value OK"), ("unrealized_ok", "uPnL OK"), ("avg_entry_ok", "Avg OK")], "No audit rows recorded."), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Paper Data Export — low-priority operator diagnostic, not part of the main

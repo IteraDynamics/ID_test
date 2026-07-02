@@ -96,9 +96,29 @@ def fetch_text(url: str, timeout: int = 20) -> str:
         return resp.read().decode("utf-8")
 
 
+def drop_incomplete_bars(df: pd.DataFrame, bar_duration: timedelta, now: datetime) -> pd.DataFrame:
+    """Drop any bar whose window has not fully closed as of `now`.
+
+    A bar labeled T covers [T, T+bar_duration). It is only safe to treat as
+    a completed, immutable observation once now >= T+bar_duration. This is
+    what keeps mutable in-progress candles (whose close keeps changing)
+    out of strategy decisions — for any timeframe, applied uniformly.
+    """
+    if df.empty:
+        return df
+    now_naive = now.replace(tzinfo=None) if now.tzinfo is not None else now
+    return df[df.index + bar_duration <= now_naive]
+
+
 def fetch_coinbase_hourly(product: str, days: int = 420) -> pd.DataFrame:
-    """Fetch hourly Coinbase candles in <=300-candle chunks."""
-    end = utc_now().replace(minute=0, second=0, microsecond=0)
+    """Fetch hourly Coinbase candles in <=300-candle chunks.
+
+    Only fully-closed hourly candles are returned — the current, still-forming
+    hour (whose close keeps changing until the hour ends) is excluded so it
+    can never reach strategy logic.
+    """
+    now = utc_now()
+    end = now.replace(minute=0, second=0, microsecond=0)
     start = end - timedelta(days=days)
     rows: list[list[float]] = []
     chunk_start = start
@@ -126,7 +146,11 @@ def fetch_coinbase_hourly(product: str, days: int = 420) -> pd.DataFrame:
     df = pd.DataFrame(rows, columns=["time", "low", "high", "open", "close", "volume"])
     df["timestamp"] = pd.to_datetime(df["time"], unit="s", utc=True).dt.tz_convert(None)
     df = df.drop(columns=["time"]).drop_duplicates("timestamp").set_index("timestamp").sort_index()
-    return df[["open", "high", "low", "close", "volume"]].astype(float)
+    df = df[["open", "high", "low", "close", "volume"]].astype(float)
+    df = drop_incomplete_bars(df, timedelta(hours=1), now)
+    if df.empty:
+        raise RuntimeError(f"No completed Coinbase candles available for {product} (all fetched bars still in progress)")
+    return df
 
 
 def fetch_stooq_daily(symbol: str, days: int = 520) -> pd.DataFrame:
@@ -258,11 +282,20 @@ def spy_state(data: dict[str, pd.DataFrame], index: pd.DatetimeIndex) -> pd.Seri
     return state.reindex(index, method="ffill")
 
 
+TIMEFRAME_DURATION = {"1H": timedelta(hours=1), "4H": timedelta(hours=4), "1D": timedelta(days=1)}
+
+
 def sleeve_dataframe(sleeve, data: dict[str, pd.DataFrame]) -> pd.DataFrame:
     if sleeve.asset in ("BTC", "ETH"):
         df = data[sleeve.asset]
         if sleeve.timeframe == "4H":
             df = resample_ohlcv(df, "4h")
+            # Defense in depth: resample_ohlcv aggregates whatever hourly
+            # rows fall in the trailing 4H bin even if only 1-3 of its 4
+            # constituent hours have completed. The input is already
+            # filtered to completed hours only, but the aggregated bin
+            # itself must also not be reported until its own window closes.
+            df = drop_incomplete_bars(df, TIMEFRAME_DURATION["4H"], utc_now())
         df = df.copy()
         btc_cols = btc_state_columns(data, df.index)
         df["btc_above_sma175"] = btc_cols["btc_above_sma175"]
@@ -275,9 +308,6 @@ def sleeve_dataframe(sleeve, data: dict[str, pd.DataFrame]) -> pd.DataFrame:
         btc_cols = btc_state_columns(data, df.index)
         df["btc_in_parabolic"] = btc_cols["btc_in_parabolic"]
     return df.dropna(subset=["open", "high", "low", "close"])
-
-
-TIMEFRAME_DURATION = {"1H": timedelta(hours=1), "4H": timedelta(hours=4), "1D": timedelta(days=1)}
 
 
 def market_data_bar_row(

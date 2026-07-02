@@ -106,14 +106,35 @@ def fresh_quote(asset: str) -> dict[str, Any]:
     return yahoo_quote(asset)
 
 
+TIMEFRAME_DURATION = {"1H": timedelta(hours=1), "4H": timedelta(hours=4), "1D": timedelta(days=1)}
+
+
+def drop_incomplete_bars(df: pd.DataFrame, bar_duration: timedelta, now: datetime) -> pd.DataFrame:
+    """Drop any bar whose window has not fully closed as of `now`.
+
+    Mirrors the same rule the live runtime applies when loading market data —
+    a bar labeled T covers [T, T+bar_duration) and is only a fixed, immutable
+    observation once now >= T+bar_duration. Without this, the audit's own
+    independent fetch could pick up the same still-forming candle the
+    runtime is being checked against, comparing two different snapshots of
+    a price that is still changing — a false failure, not a real mismatch.
+    """
+    if df.empty:
+        return df
+    now_naive = now.replace(tzinfo=None) if now.tzinfo is not None else now
+    return df[df.index + bar_duration <= now_naive]
+
+
 def fetch_coinbase_hourly(product: str, days: float) -> pd.DataFrame:
     """Independently fetch recent hourly Coinbase candles.
 
     Deliberately duplicated (not imported) from the live runtime's fetch
     logic — this script re-derives market data on its own rather than
-    trusting the same code path it is verifying.
+    trusting the same code path it is verifying. Only fully-closed hourly
+    candles are returned (see drop_incomplete_bars).
     """
-    end = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
+    now = datetime.now(UTC)
+    end = now.replace(minute=0, second=0, microsecond=0)
     start = end - timedelta(days=days)
     rows: list[list[float]] = []
     chunk_start = start
@@ -141,7 +162,8 @@ def fetch_coinbase_hourly(product: str, days: float) -> pd.DataFrame:
     df = pd.DataFrame(rows, columns=["time", "low", "high", "open", "close", "volume"])
     df["timestamp"] = pd.to_datetime(df["time"], unit="s", utc=True).dt.tz_convert(None)
     df = df.drop(columns=["time"]).drop_duplicates("timestamp").set_index("timestamp").sort_index()
-    return df[["open", "high", "low", "close", "volume"]].astype(float)
+    df = df[["open", "high", "low", "close", "volume"]].astype(float)
+    return drop_incomplete_bars(df, timedelta(hours=1), now)
 
 
 def fetch_daily_bars(symbol: str, days: float) -> pd.DataFrame:
@@ -176,6 +198,10 @@ def reconstruct_bar(asset: str, timeframe: str, target_ts: pd.Timestamp, crypto_
         df = fetch_coinbase_hourly(f"{asset}-USD", days=crypto_days)
         if timeframe == "4H":
             df = resample_ohlcv(df, "4h")
+            # Same defense-in-depth as the runtime: a resampled trailing 4H
+            # bin can still be partially formed even when its hourly inputs
+            # are all individually complete.
+            df = drop_incomplete_bars(df, TIMEFRAME_DURATION["4H"], datetime.now(UTC))
     else:
         df = fetch_daily_bars(asset, days=etf_days)
 
@@ -235,6 +261,10 @@ def audit(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         strategy_bar_price = float(s.get("last_price") or 0.0)
         strategy_bar_ts = parse_naive_ts(s.get("last_timestamp"))
         bar_age = age_hours(s.get("last_timestamp"))
+        bar_duration = TIMEFRAME_DURATION.get(timeframe)
+        bar_completed: bool | None = None
+        if strategy_bar_ts is not None and bar_duration is not None:
+            bar_completed = bool(datetime.now(UTC).replace(tzinfo=None) >= (strategy_bar_ts + bar_duration))
 
         verified_bar_price: float | None = None
         verified_bar_ts: pd.Timestamp | None = None
@@ -282,6 +312,16 @@ def audit(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
 
         if stale:
             failures.append(f"{label}: stale bar age {bar_age:.1f}h")
+        if bar_completed is False and timeframe in ("1H", "4H"):
+            # Wall-clock "bar_start + duration <= now" is only a valid
+            # completeness test for continuously-trading crypto. Daily
+            # equity/gold bars are midnight-normalized and depend on market
+            # session hours, not naive 24h arithmetic — bar_completed is
+            # still reported for them below, just never used to fail here.
+            failures.append(
+                f"{label}: stored bar {strategy_bar_ts} for timeframe {timeframe} had not closed as of "
+                "audit time — runtime may be using an in-progress candle"
+            )
         if bar_error is not None:
             failures.append(f"{label}: could not independently verify bar — {bar_error}")
         elif not bar_price_ok:
@@ -306,6 +346,7 @@ def audit(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             "verified_bar_price": verified_bar_price,
             "bar_price_diff_pct": bar_price_diff,
             "bar_price_ok": bar_price_ok,
+            "bar_completed": bar_completed,
             "bar_verification_error": bar_error,
             "live_price": live_price,
             "live_drift_pct": live_drift_pct,
