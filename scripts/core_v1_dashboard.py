@@ -24,8 +24,10 @@ from runtime.core_v1.allocation import SELECTED_CORE_V1_SCENARIO, SELECTED_CORE_
 STATE_PATH = Path(os.getenv("CORE_V1_STATE_PATH", "/opt/itera/runtime/core_v1/state.json"))
 SIGNALS_LOG = Path(os.getenv("CORE_V1_SIGNALS_LOG", "/opt/itera/logs/core_v1_signals.jsonl"))
 FILLS_LOG = Path(os.getenv("CORE_V1_FILLS_LOG", "/opt/itera/logs/core_v1_fills.jsonl"))
+MARKET_DATA_LOG = Path(os.getenv("CORE_V1_MARKET_DATA_LOG", "/opt/itera/logs/core_v1_market_data.jsonl"))
 ERROR_LOG = SIGNALS_LOG.with_name("core_v1_errors.jsonl")
 AUDIT_REPORT_PATH = Path(os.getenv("CORE_V1_AUDIT_REPORT_PATH", str(STATE_PATH.with_name("core_v1_audit_report.json"))))
+PAPER_EXPORT_DIR = Path(os.getenv("CORE_V1_PAPER_EXPORT_DIR", str(REPO_ROOT / "artifacts" / "core_v1_paper_export")))
 EXPECTED_POLL_SECONDS = int(os.getenv("CORE_V1_POLL_SECONDS", "3600"))
 STALE_AFTER_SECONDS = int(os.getenv("CORE_V1_STALE_AFTER_SECONDS", str(EXPECTED_POLL_SECONDS * 2 + 300)))
 STALE_AUDIT_AFTER_SECONDS = int(os.getenv("CORE_V1_STALE_AUDIT_AFTER_SECONDS", str(EXPECTED_POLL_SECONDS * 6)))
@@ -430,12 +432,12 @@ def display_cell(key: str, value: Any) -> str:
         return "—"
     if isinstance(value, bool):
         return "yes" if value else "no"
-    money_keys = {"nav", "today_pnl", "unrealized_pnl", "realized_pnl", "cost_basis", "avg_entry", "cash", "position_value", "price", "last_fill_price", "fee", "slippage_cost", "notional", "market_value"}
-    pct_keys = {"target_weight", "actual_weight", "drift", "contribution", "unrealized_return", "exposure", "target_exposure", "confidence"}
+    money_keys = {"nav", "today_pnl", "unrealized_pnl", "realized_pnl", "cost_basis", "avg_entry", "cash", "position_value", "price", "last_fill_price", "fee", "slippage_cost", "notional", "market_value", "strategy_bar_price", "verified_bar_price", "live_price"}
+    pct_keys = {"target_weight", "actual_weight", "drift", "contribution", "unrealized_return", "exposure", "target_exposure", "confidence", "bar_price_diff_pct", "live_drift_pct"}
     if key in money_keys:
         return signed_money(value) if key in {"today_pnl", "unrealized_pnl", "realized_pnl"} else money(value)
     if key in pct_keys:
-        return signed_pct(value) if key in {"drift", "contribution", "unrealized_return"} else pct(value)
+        return signed_pct(value) if key in {"drift", "contribution", "unrealized_return", "bar_price_diff_pct", "live_drift_pct"} else pct(value)
     if isinstance(value, float):
         return num(value)
     if isinstance(value, int):
@@ -721,8 +723,12 @@ audit_available = bool(audit_report)
 audit_ok = bool(audit_report.get("ok")) if audit_available else None
 audit_stale = audit_available and audit_age is not None and audit_age > STALE_AUDIT_AFTER_SECONDS
 audit_rows = audit_report.get("rows", []) if audit_available else []
-largest_drift_row = max(audit_rows, key=lambda r: abs(float(r.get("price_diff_pct") or 0.0)), default=None)
-failed_audit_rows = [r for r in audit_rows if not r.get("price_ok", True) or not r.get("position_value_ok", True) or not r.get("unrealized_ok", True) or not r.get("avg_entry_ok", True)]
+# "Largest drift" surfaces live market movement since each sleeve's last
+# completed bar — informational context, not a pass/fail signal. Pass/fail
+# comes from bar_price_ok, which compares the runtime's stored bar price
+# against an independently reconstructed completed bar, not the live tick.
+largest_drift_row = max(audit_rows, key=lambda r: abs(float(r.get("live_drift_pct") or 0.0)), default=None)
+failed_audit_rows = [r for r in audit_rows if not r.get("bar_price_ok", True) or r.get("bar_completed") is False or not r.get("position_value_ok", True) or not r.get("unrealized_ok", True) or not r.get("avg_entry_ok", True)]
 
 bar_ages = [age_seconds(parse_ts(r["last_bar"])) for r in sleeve_rows if parse_ts(r["last_bar"]) is not None]
 oldest_bar_age = max(bar_ages) if bar_ages else None
@@ -1017,7 +1023,7 @@ st.markdown('<div class="section-head"><div><div class="section-title">System He
 next_cycle_text = "unknown" if seconds_until_next_cycle is None else (f"in {format_duration(seconds_until_next_cycle)}" if seconds_until_next_cycle > 0 else f"overdue {format_duration(seconds_until_next_cycle)}")
 
 sleeves_checked = f"{len(audit_rows)}/{len(EXPECTED_WEIGHTS)}"
-largest_drift_text = f"{signed_pct(largest_drift_row.get('price_diff_pct'), 2)} ({largest_drift_row.get('sleeve') or largest_drift_row.get('asset') or '—'})" if largest_drift_row is not None else "—"
+largest_drift_text = f"{signed_pct(largest_drift_row.get('live_drift_pct'), 2)} ({largest_drift_row.get('sleeve') or largest_drift_row.get('asset') or '—'})" if largest_drift_row is not None else "—"
 
 if not audit_available:
     audit_value, audit_klass, audit_sub = "PENDING", "neutral", "No audit report found yet"
@@ -1111,8 +1117,39 @@ with st.expander("Diagnostics: fills and errors", expanded=False):
         st.markdown(html_table(errors[-50:][::-1], [("timestamp", "Timestamp"), ("version", "Version"), ("error", "Error")], "No runtime errors logged."), unsafe_allow_html=True)
 with st.expander("Diagnostics: price audit report", expanded=False):
     if not audit_available:
-        st.markdown(f'<div class="audit-note">No audit report found at {esc(str(AUDIT_REPORT_PATH))}. Run <span class="mono">scripts/audit_core_v1_prices.py --json &gt; {esc(str(AUDIT_REPORT_PATH))}</span> on a schedule to populate this.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="audit-note">No audit report found at {esc(str(AUDIT_REPORT_PATH))}. Run <span class="mono">scripts/audit_core_v1_prices.py --output {esc(str(AUDIT_REPORT_PATH))}</span> on a schedule to populate this.</div>', unsafe_allow_html=True)
     else:
-        st.markdown(html_table(audit_report.get("rows", []), [("sleeve", "Sleeve"), ("asset", "Asset"), ("state_price", "State price"), ("fresh_price", "Fresh price"), ("price_diff_pct", "Diff"), ("bar_age_hours", "Bar age (h)"), ("price_ok", "Price OK"), ("position_value_ok", "Value OK"), ("unrealized_ok", "uPnL OK"), ("avg_entry_ok", "Avg OK")], "No audit rows recorded."), unsafe_allow_html=True)
+        st.markdown(html_table(audit_report.get("rows", []), [("sleeve", "Sleeve"), ("asset", "Asset"), ("strategy_bar_price", "Bar price"), ("verified_bar_price", "Verified price"), ("bar_price_diff_pct", "Bar diff"), ("bar_price_ok", "Bar OK"), ("bar_completed", "Bar completed"), ("live_price", "Live price"), ("live_drift_pct", "Live drift"), ("bar_age_hours", "Bar age (h)"), ("position_value_ok", "Value OK"), ("unrealized_ok", "uPnL OK"), ("avg_entry_ok", "Avg OK")], "No audit rows recorded."), unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Paper Data Export — low-priority operator diagnostic, not part of the main
+# Mission Control narrative. Shows whether market-data capture is running
+# and points at the most recent local export, if any.
+# ---------------------------------------------------------------------------
+with st.expander("Paper Data Export", expanded=False):
+    market_data_rows = read_jsonl(MARKET_DATA_LOG)
+    latest_market_data_ts = None
+    for row in reversed(market_data_rows):
+        candidate_ts = parse_ts(row.get("timestamp"))
+        if candidate_ts is not None:
+            latest_market_data_ts = candidate_ts
+            break
+    capture_age = age_seconds(latest_market_data_ts)
+    capture_active = MARKET_DATA_LOG.exists() and capture_age is not None and capture_age <= STALE_AFTER_SECONDS
+
+    latest_export_dir = None
+    if PAPER_EXPORT_DIR.exists():
+        export_subdirs = [d for d in PAPER_EXPORT_DIR.iterdir() if d.is_dir()]
+        if export_subdirs:
+            latest_export_dir = max(export_subdirs, key=lambda d: d.stat().st_mtime)
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown(f"**Market data capture active:** {'Yes' if capture_active else 'No'}")
+        st.markdown(f"**Latest market-data row:** {friendly_ts(str(latest_market_data_ts)) if latest_market_data_ts is not None else 'None captured yet'}")
+    with col_b:
+        st.markdown(f"**Captured rows:** {len(market_data_rows):,}")
+        st.markdown(f"**Latest export:** {esc(str(latest_export_dir)) if latest_export_dir is not None else 'No exports found'}")
+    st.caption(f"Log: {MARKET_DATA_LOG} · Run scripts/export_core_v1_paper_data.py for a local replay-ready export (raw JSONL + normalized CSVs + manifest).")
 
 st.caption(f"State {STATE_PATH} · Signals {SIGNALS_LOG} · Fills {FILLS_LOG} · Generated {datetime.now(UTC).isoformat()}")
