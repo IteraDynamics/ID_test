@@ -167,7 +167,15 @@ def fetch_coinbase_hourly(product: str, days: float) -> pd.DataFrame:
 
 
 def fetch_daily_bars(symbol: str, days: float) -> pd.DataFrame:
-    """Independently fetch recent daily bars (equities/gold)."""
+    """Independently fetch recent daily bars (equities/gold).
+
+    Only fully-closed daily candles are returned (see drop_incomplete_bars).
+    Yahoo's intraday response includes a mutable "today" row that keeps
+    changing until market close; without filtering it out, this independent
+    verification would be comparing the runtime's live snapshot against its
+    own, differently-timed live snapshot of the same still-forming candle —
+    a false failure, not a real price mismatch.
+    """
     params = urllib.parse.urlencode({"range": f"{max(int(days), 5)}d", "interval": "1d", "includePrePost": "false"})
     data = fetch_json(YAHOO_CHART.format(symbol=symbol, params=params))
     result = data["chart"]["result"][0]
@@ -185,7 +193,8 @@ def fetch_daily_bars(symbol: str, days: float) -> pd.DataFrame:
         "volume": quote.get("volume", []),
     })
     df = df.dropna(subset=["open", "high", "low", "close"]).drop_duplicates("timestamp")
-    return df.set_index("timestamp").sort_index()[["open", "high", "low", "close", "volume"]].astype(float)
+    df = df.set_index("timestamp").sort_index()[["open", "high", "low", "close", "volume"]].astype(float)
+    return drop_incomplete_bars(df, TIMEFRAME_DURATION["1D"], datetime.now(UTC))
 
 
 def reconstruct_bar(asset: str, timeframe: str, target_ts: pd.Timestamp, crypto_days: float, etf_days: float) -> tuple[float, pd.Timestamp]:
