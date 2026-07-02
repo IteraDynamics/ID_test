@@ -14,6 +14,7 @@ from typing import Any
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 from plotly.subplots import make_subplots
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -74,8 +75,160 @@ POSTURE_NARRATIVE = {
     "DEFENSIVE": "Capital Preservation",
 }
 
+def _monitored_files_fingerprint() -> str:
+    """Cheap mtime/size fingerprint of the files that actually drive the dashboard.
+
+    Used client-side to back off the auto-refresh cadence when nothing has
+    changed, instead of hard-reloading on a fixed timer regardless of state.
+    """
+    parts = []
+    for path in (STATE_PATH, AUDIT_REPORT_PATH, SIGNALS_LOG, FILLS_LOG, MARKET_DATA_LOG, ERROR_LOG):
+        try:
+            stat = path.stat()
+            parts.append(f"{path.name}:{stat.st_mtime_ns}:{stat.st_size}")
+        except OSError:
+            parts.append(f"{path.name}:missing")
+    return "|".join(parts)
+
+
+def inject_refresh_and_scroll_persistence(refresh_seconds: int, fingerprint: str) -> None:
+    """Auto-refresh the dashboard without yanking the operator back to the top.
+
+    Streamlit's front end has no built-in way to reload without a hard
+    navigation, and a hard navigation always resets scroll position and
+    collapses expanders. Instead of a `<meta refresh>`/`location.reload()`
+    tick, this saves scroll position and expander open/closed state to
+    sessionStorage on an interval and right before reload, then restores both
+    once the new page has painted. The reload cadence itself backs off
+    (up to 6x the base interval) when the monitored state/log files haven't
+    changed since the last check, so we're not forcing a reload for no reason.
+    """
+    payload = json.dumps({"refreshSeconds": refresh_seconds, "fingerprint": fingerprint})
+    components.html(
+        f"""
+<script>
+(function() {{
+  const CONFIG = {payload};
+  const win = window.parent;
+  const doc = win.document;
+  const BASE_MS = CONFIG.refreshSeconds * 1000;
+  const MAX_MS = BASE_MS * 6;
+  const SCROLL_KEY = "core_v1_dashboard_scrollTop";
+  const EXPANDER_KEY = "core_v1_dashboard_expanders";
+  const FP_KEY = "core_v1_dashboard_fingerprint";
+  const INTERVAL_KEY = "core_v1_dashboard_interval";
+
+  // Streamlit scrolls an internal container (historically
+  // [data-testid="stMain"] / [data-testid="stAppViewContainer"]), not the
+  // window itself, so find whichever element is actually scrollable.
+  function getScrollContainer() {{
+    const known = doc.querySelector('[data-testid="stMain"]') || doc.querySelector('[data-testid="stAppViewContainer"]');
+    if (known && known.scrollHeight > known.clientHeight) {{ return known; }}
+    let best = null;
+    let bestOverflow = 0;
+    doc.querySelectorAll("*").forEach(function(el) {{
+      const overflow = el.scrollHeight - el.clientHeight;
+      if (overflow > bestOverflow) {{ bestOverflow = overflow; best = el; }}
+    }});
+    return best || win.document.scrollingElement || doc.documentElement;
+  }}
+
+  function saveScroll() {{
+    try {{
+      const container = getScrollContainer();
+      win.sessionStorage.setItem(SCROLL_KEY, String(container.scrollTop));
+    }} catch (e) {{}}
+  }}
+
+  // The expander summary also contains a material-icon ligature span
+  // (e.g. "keyboard_arrow_right"/"keyboard_arrow_down") whose text changes
+  // with open/closed state, so pull the label from Streamlit's markdown
+  // container rather than the summary's full textContent.
+  function detailsLabel(d, i) {{
+    const summary = d.querySelector("summary");
+    if (!summary) return "idx:" + i;
+    const markdown = summary.querySelector('[data-testid="stMarkdownContainer"]');
+    if (markdown) return markdown.textContent.trim();
+    return summary.textContent.trim();
+  }}
+
+  function saveExpanderState() {{
+    try {{
+      const map = {{}};
+      doc.querySelectorAll("details").forEach(function(d, i) {{
+        map[detailsLabel(d, i)] = d.open;
+      }});
+      win.sessionStorage.setItem(EXPANDER_KEY, JSON.stringify(map));
+    }} catch (e) {{}}
+  }}
+
+  function restoreScroll() {{
+    try {{
+      const y = win.sessionStorage.getItem(SCROLL_KEY);
+      if (y !== null) {{ getScrollContainer().scrollTop = parseInt(y, 10); }}
+    }} catch (e) {{}}
+  }}
+
+  function restoreExpanders() {{
+    try {{
+      const raw = win.sessionStorage.getItem(EXPANDER_KEY);
+      if (!raw) return;
+      const map = JSON.parse(raw);
+      doc.querySelectorAll("details").forEach(function(d, i) {{
+        const label = detailsLabel(d, i);
+        if (Object.prototype.hasOwnProperty.call(map, label)) {{ d.open = map[label]; }}
+      }});
+    }} catch (e) {{}}
+  }}
+
+  // Streamlit paints progressively over the websocket, so retry the restore
+  // briefly rather than only once on script start.
+  let attempts = 0;
+  const restoreTimer = win.setInterval(function() {{
+    restoreScroll();
+    restoreExpanders();
+    attempts += 1;
+    if (attempts >= 10) {{ win.clearInterval(restoreTimer); }}
+  }}, 200);
+
+  // Keep a live snapshot of scroll + expander state so whatever we saved
+  // right before a reload is never far out of date.
+  win.setInterval(function() {{
+    saveScroll();
+    saveExpanderState();
+  }}, 1000);
+  win.addEventListener("beforeunload", function() {{
+    saveScroll();
+    saveExpanderState();
+  }});
+
+  // Back off the reload cadence when the underlying files haven't changed.
+  let delay = BASE_MS;
+  try {{
+    const prevFingerprint = win.sessionStorage.getItem(FP_KEY);
+    const prevInterval = parseFloat(win.sessionStorage.getItem(INTERVAL_KEY));
+    if (prevFingerprint === CONFIG.fingerprint && !isNaN(prevInterval)) {{
+      delay = Math.min(prevInterval * 1.5, MAX_MS);
+    }}
+    win.sessionStorage.setItem(FP_KEY, CONFIG.fingerprint);
+    win.sessionStorage.setItem(INTERVAL_KEY, String(delay));
+  }} catch (e) {{}}
+
+  win.setTimeout(function() {{
+    saveScroll();
+    saveExpanderState();
+    win.location.reload();
+  }}, delay);
+}})();
+</script>
+""",
+        height=0,
+        width=0,
+    )
+
+
 st.set_page_config(page_title="Itera Mission Control", page_icon="◎", layout="wide", initial_sidebar_state="collapsed")
-st.markdown(f"<meta http-equiv='refresh' content='{REFRESH_SECONDS}'>", unsafe_allow_html=True)
+inject_refresh_and_scroll_persistence(REFRESH_SECONDS, _monitored_files_fingerprint())
 
 st.markdown(
     """
