@@ -1,15 +1,36 @@
 #!/usr/bin/env python
-"""Audit Core v1 paper prices, position math, and state freshness.
+"""Independently verify Core v1 paper runtime state and position math.
 
-This script is intentionally independent of the dashboard. It compares the prices
-stored in runtime state against fresh external quotes and verifies basic position
-math:
+This script is intentionally independent of the dashboard and of the live
+runtime's own market-data cache. It re-fetches market data from source and
+reconstructs the latest completed strategy bar for each sleeve, then checks
+that the runtime's stored price for that bar matches what actually happened
+in the market — not what the market is doing *right now*.
 
-- qty * current_price == market value
+That distinction matters. The live runtime only acts on completed bars
+(1H/4H/1D depending on the sleeve), so its stored price is always a snapshot
+of a closed bar. Comparing that snapshot to a continuously-updating live
+quote produces false failures purely from ordinary price movement between
+bar close and audit time — that is not a runtime defect.
+
+This script therefore separates two different concepts:
+
+- Bar verification (pass/fail): does the runtime's stored price for sleeve X
+  match the close of the bar it says it used, per independently-fetched
+  market data? A mismatch here means the runtime read the wrong price or
+  the wrong bar — a real integrity problem.
+- Live drift (informational only): how far has the market moved since that
+  bar closed? This is operationally useful context, but normal market
+  movement can never fail the audit.
+
+It also verifies basic position math:
+
+- qty * strategy bar price == market value
 - cost_basis / qty == average entry
 - market value - cost_basis == unrealized P&L
 
-It exits non-zero when price freshness, price drift, or accounting checks fail.
+It exits non-zero when bar verification, staleness, or accounting checks
+fail. Live drift never affects the exit code or the `ok` field.
 """
 
 from __future__ import annotations
@@ -19,23 +40,24 @@ import json
 import math
 import os
 import sys
+import time
 import urllib.parse
 import urllib.request
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-ASSETS = {
-    "SPY_1D_equity": "SPY",
-    "QQQ_1D_equity": "QQQ",
-    "GLD_1D_gold": "GLD",
-    "BTC_4H_trend": "BTC",
-    "ETH_1H_trend": "ETH",
-    "ETH_4H_trend": "ETH",
-}
+import pandas as pd
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from research.harness.resampler import resample_ohlcv
+from runtime.core_v1.allocation import SELECTED_CORE_V1_SLEEVES
 
 YAHOO_CHART = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?{params}"
 COINBASE_TICKER = "https://api.exchange.coinbase.com/products/{product}/ticker"
+COINBASE_CANDLES = "https://api.exchange.coinbase.com/products/{product}/candles"
 
 
 def fetch_json(url: str, timeout: int = 20) -> Any:
@@ -78,15 +100,109 @@ def coinbase_quote(asset: str) -> dict[str, Any]:
 
 
 def fresh_quote(asset: str) -> dict[str, Any]:
+    """Current live quote — informational only, never used for pass/fail."""
     if asset in {"BTC", "ETH"}:
         return coinbase_quote(asset)
     return yahoo_quote(asset)
+
+
+def fetch_coinbase_hourly(product: str, days: float) -> pd.DataFrame:
+    """Independently fetch recent hourly Coinbase candles.
+
+    Deliberately duplicated (not imported) from the live runtime's fetch
+    logic — this script re-derives market data on its own rather than
+    trusting the same code path it is verifying.
+    """
+    end = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
+    start = end - timedelta(days=days)
+    rows: list[list[float]] = []
+    chunk_start = start
+    max_hours = 300
+
+    while chunk_start < end:
+        chunk_end = min(chunk_start + timedelta(hours=max_hours), end)
+        params = urllib.parse.urlencode(
+            {
+                "granularity": 3600,
+                "start": chunk_start.isoformat().replace("+00:00", "Z"),
+                "end": chunk_end.isoformat().replace("+00:00", "Z"),
+            }
+        )
+        url = f"{COINBASE_CANDLES.format(product=product)}?{params}"
+        data = fetch_json(url)
+        if isinstance(data, list):
+            rows.extend(data)
+        time.sleep(0.12)
+        chunk_start = chunk_end
+
+    if not rows:
+        raise RuntimeError(f"no independent Coinbase candles returned for {product}")
+
+    df = pd.DataFrame(rows, columns=["time", "low", "high", "open", "close", "volume"])
+    df["timestamp"] = pd.to_datetime(df["time"], unit="s", utc=True).dt.tz_convert(None)
+    df = df.drop(columns=["time"]).drop_duplicates("timestamp").set_index("timestamp").sort_index()
+    return df[["open", "high", "low", "close", "volume"]].astype(float)
+
+
+def fetch_daily_bars(symbol: str, days: float) -> pd.DataFrame:
+    """Independently fetch recent daily bars (equities/gold)."""
+    params = urllib.parse.urlencode({"range": f"{max(int(days), 5)}d", "interval": "1d", "includePrePost": "false"})
+    data = fetch_json(YAHOO_CHART.format(symbol=symbol, params=params))
+    result = data["chart"]["result"][0]
+    timestamps = result.get("timestamp", [])
+    quote = result["indicators"]["quote"][0]
+    if not timestamps:
+        raise RuntimeError(f"no independent daily data returned for {symbol}")
+
+    df = pd.DataFrame({
+        "timestamp": pd.to_datetime(timestamps, unit="s", utc=True).tz_convert(None).normalize(),
+        "open": quote.get("open", []),
+        "high": quote.get("high", []),
+        "low": quote.get("low", []),
+        "close": quote.get("close", []),
+        "volume": quote.get("volume", []),
+    })
+    df = df.dropna(subset=["open", "high", "low", "close"]).drop_duplicates("timestamp")
+    return df.set_index("timestamp").sort_index()[["open", "high", "low", "close", "volume"]].astype(float)
+
+
+def reconstruct_bar(asset: str, timeframe: str, target_ts: pd.Timestamp, crypto_days: float, etf_days: float) -> tuple[float, pd.Timestamp]:
+    """Independently rebuild the completed bar the runtime should have used.
+
+    Uses the same resampling rule (research.harness.resampler.resample_ohlcv)
+    the live runtime applies, but fetches its own market data from scratch.
+    """
+    if asset in {"BTC", "ETH"}:
+        df = fetch_coinbase_hourly(f"{asset}-USD", days=crypto_days)
+        if timeframe == "4H":
+            df = resample_ohlcv(df, "4h")
+    else:
+        df = fetch_daily_bars(asset, days=etf_days)
+
+    if df.empty:
+        raise RuntimeError(f"independently fetched {asset} data is empty")
+    eligible = df.index[df.index <= target_ts]
+    if len(eligible) == 0:
+        raise RuntimeError(f"no independently-verified bar at or before {target_ts} for {asset} (lookback window too short?)")
+    bar_ts = eligible[-1]
+    return float(df.loc[bar_ts, "close"]), bar_ts
 
 
 def pct_diff(a: float, b: float) -> float:
     if b == 0:
         return math.inf
     return (a - b) / b
+
+
+def parse_naive_ts(value: str | None) -> pd.Timestamp | None:
+    if not value:
+        return None
+    ts = pd.to_datetime(value, errors="coerce")
+    if pd.isna(ts):
+        return None
+    if ts.tzinfo is not None:
+        ts = ts.tz_convert(None)
+    return ts
 
 
 def age_hours(ts: str | None) -> float | None:
@@ -109,45 +225,91 @@ def audit(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     failures: list[str] = []
 
-    for sleeve, asset in ASSETS.items():
-        s = sleeves.get(sleeve, {})
-        t = telemetry.get(sleeve, {})
-        quote = fresh_quote(asset)
-        state_price = float(s.get("last_price") or 0.0)
-        fresh_price = float(quote["price"])
-        diff = pct_diff(state_price, fresh_price)
+    for sleeve_meta in SELECTED_CORE_V1_SLEEVES:
+        label = sleeve_meta.label
+        asset = sleeve_meta.asset
+        timeframe = sleeve_meta.timeframe
+        s = sleeves.get(label, {})
+        t = telemetry.get(label, {})
+
+        strategy_bar_price = float(s.get("last_price") or 0.0)
+        strategy_bar_ts = parse_naive_ts(s.get("last_timestamp"))
+        bar_age = age_hours(s.get("last_timestamp"))
+
+        verified_bar_price: float | None = None
+        verified_bar_ts: pd.Timestamp | None = None
+        bar_error: str | None = None
+        if strategy_bar_ts is None:
+            bar_error = "no stored bar timestamp to verify"
+        else:
+            try:
+                verified_bar_price, verified_bar_ts = reconstruct_bar(
+                    asset, timeframe, strategy_bar_ts, args.crypto_lookback_days, args.etf_lookback_days
+                )
+            except Exception as e:
+                bar_error = str(e)
+
+        if bar_error is not None:
+            bar_price_ok = False
+            bar_price_diff = None
+        else:
+            bar_price_diff = pct_diff(strategy_bar_price, verified_bar_price)
+            bar_price_ok = abs(bar_price_diff) <= args.max_bar_price_diff
+
+        live_price: float | None = None
+        live_drift_pct: float | None = None
+        live_error: str | None = None
+        try:
+            quote = fresh_quote(asset)
+            live_price = float(quote["price"])
+            reference_price = verified_bar_price if verified_bar_price is not None else strategy_bar_price
+            live_drift_pct = pct_diff(live_price, reference_price) if reference_price else None
+        except Exception as e:
+            live_error = str(e)
+
         qty = float(t.get("qty") or s.get("qty") or 0.0)
         cost_basis = float(t.get("cost_basis") or s.get("cost_basis") or 0.0)
         avg_entry = float(t.get("avg_entry") or s.get("avg_entry") or 0.0)
         stored_position_value = float(t.get("position_value") or 0.0)
         stored_unrealized = float(t.get("unrealized_pnl") or 0.0)
-        recomputed_position_value = qty * state_price
+        recomputed_position_value = qty * strategy_bar_price
         recomputed_unrealized = recomputed_position_value - cost_basis if abs(qty) > 1e-12 else 0.0
         recomputed_avg_entry = cost_basis / qty if abs(qty) > 1e-12 and cost_basis else 0.0
-        bar_age = age_hours(s.get("last_timestamp"))
-        price_ok = abs(diff) <= args.max_price_diff
         position_value_ok = abs(stored_position_value - recomputed_position_value) <= args.dollar_tolerance
         unrealized_ok = abs(stored_unrealized - recomputed_unrealized) <= args.dollar_tolerance
         avg_entry_ok = abs(avg_entry - recomputed_avg_entry) <= args.price_tolerance
+        stale = asset in {"SPY", "QQQ", "GLD"} and bar_age is not None and bar_age > args.max_etf_bar_age_hours
 
-        if asset in {"SPY", "QQQ", "GLD"} and bar_age is not None and bar_age > args.max_etf_bar_age_hours:
-            failures.append(f"{sleeve}: stale bar age {bar_age:.1f}h")
-        if not price_ok:
-            failures.append(f"{sleeve}: state price {state_price:.4f} differs from fresh {fresh_price:.4f} by {diff:.2%}")
+        if stale:
+            failures.append(f"{label}: stale bar age {bar_age:.1f}h")
+        if bar_error is not None:
+            failures.append(f"{label}: could not independently verify bar — {bar_error}")
+        elif not bar_price_ok:
+            failures.append(
+                f"{label}: stored bar price {strategy_bar_price:.4f} for {strategy_bar_ts} does not match "
+                f"independently verified price {verified_bar_price:.4f} ({bar_price_diff:.2%})"
+            )
         if not position_value_ok:
-            failures.append(f"{sleeve}: stored market value does not equal qty * state price")
+            failures.append(f"{label}: stored market value does not equal qty * strategy bar price")
         if not unrealized_ok:
-            failures.append(f"{sleeve}: stored unrealized P&L does not reconcile")
+            failures.append(f"{label}: stored unrealized P&L does not reconcile")
         if not avg_entry_ok:
-            failures.append(f"{sleeve}: avg entry does not equal cost basis / qty")
+            failures.append(f"{label}: avg entry does not equal cost basis / qty")
 
         rows.append({
-            "sleeve": sleeve,
+            "sleeve": label,
             "asset": asset,
-            "state_price": state_price,
-            "fresh_price": fresh_price,
-            "price_diff_pct": diff,
-            "bar_timestamp": s.get("last_timestamp"),
+            "timeframe": timeframe,
+            "strategy_bar_timestamp": str(strategy_bar_ts) if strategy_bar_ts is not None else None,
+            "strategy_bar_price": strategy_bar_price,
+            "verified_bar_timestamp": str(verified_bar_ts) if verified_bar_ts is not None else None,
+            "verified_bar_price": verified_bar_price,
+            "bar_price_diff_pct": bar_price_diff,
+            "bar_price_ok": bar_price_ok,
+            "bar_verification_error": bar_error,
+            "live_price": live_price,
+            "live_drift_pct": live_drift_pct,
+            "live_quote_error": live_error,
             "bar_age_hours": bar_age,
             "qty": qty,
             "cost_basis": cost_basis,
@@ -157,8 +319,6 @@ def audit(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             "recomputed_position_value": recomputed_position_value,
             "stored_unrealized_pnl": stored_unrealized,
             "recomputed_unrealized_pnl": recomputed_unrealized,
-            "quote": quote,
-            "price_ok": price_ok,
             "position_value_ok": position_value_ok,
             "unrealized_ok": unrealized_ok,
             "avg_entry_ok": avg_entry_ok,
@@ -182,12 +342,14 @@ def write_report_atomic(path: Path, report: dict[str, Any]) -> None:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Audit Core v1 paper state against fresh external prices")
+    p = argparse.ArgumentParser(description="Independently verify Core v1 paper runtime state against re-fetched market data")
     p.add_argument("--state-path", default=os.getenv("CORE_V1_STATE_PATH", "/opt/itera/runtime/core_v1/state.json"))
-    p.add_argument("--max-price-diff", type=float, default=float(os.getenv("CORE_V1_AUDIT_MAX_PRICE_DIFF", "0.01")))
+    p.add_argument("--max-bar-price-diff", type=float, default=float(os.getenv("CORE_V1_AUDIT_MAX_BAR_PRICE_DIFF", "0.001")))
     p.add_argument("--max-etf-bar-age-hours", type=float, default=float(os.getenv("CORE_V1_MAX_ETF_BAR_AGE_HOURS", "96")))
     p.add_argument("--dollar-tolerance", type=float, default=0.05)
     p.add_argument("--price-tolerance", type=float, default=0.0001)
+    p.add_argument("--crypto-lookback-days", type=float, default=float(os.getenv("CORE_V1_AUDIT_CRYPTO_LOOKBACK_DAYS", "5")))
+    p.add_argument("--etf-lookback-days", type=float, default=float(os.getenv("CORE_V1_AUDIT_ETF_LOOKBACK_DAYS", "15")))
     p.add_argument("--json", action="store_true")
     p.add_argument(
         "--output",
@@ -204,9 +366,11 @@ def main() -> None:
         status = "PASS" if report["ok"] else "FAIL"
         print(f"Core v1 audit: {status} @ {report['timestamp']}")
         for row in report["rows"]:
+            drift = f"{row['live_drift_pct']:.2%}" if row["live_drift_pct"] is not None else "n/a"
+            bar_diff = f"{row['bar_price_diff_pct']:.4%}" if row["bar_price_diff_pct"] is not None else "n/a"
             print(
-                f"{row['sleeve']}: state={row['state_price']:.4f} fresh={row['fresh_price']:.4f} "
-                f"diff={row['price_diff_pct']:.2%} bar_age={row['bar_age_hours']}h "
+                f"{row['sleeve']}: bar={row['strategy_bar_price']:.4f} verified={row['verified_bar_price']} "
+                f"bar_diff={bar_diff} live_drift={drift} bar_age={row['bar_age_hours']}h "
                 f"qty={row['qty']:.6f} basis={row['cost_basis']:.2f} avg={row['avg_entry']:.4f}"
             )
         for failure in report["failures"]:
