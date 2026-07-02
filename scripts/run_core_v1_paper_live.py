@@ -154,10 +154,19 @@ def fetch_coinbase_hourly(product: str, days: int = 420) -> pd.DataFrame:
 
 
 def fetch_stooq_daily(symbol: str, days: int = 520) -> pd.DataFrame:
-    """Fetch fresh daily ETF data from Yahoo chart API.
+    """Fetch fresh daily ETF/gold/cash data from Yahoo chart API.
 
     Kept function name for compatibility, but this no longer relies on Stooq.
+
+    Only fully-closed daily candles are returned. Yahoo's intraday response
+    includes a mutable "today" row (dated at today's session, but whose OHLC
+    keeps changing until market close) — the same class of problem the
+    crypto fetch already guards against for its current, still-forming hour.
+    Filtering it out here (via drop_incomplete_bars, using the same
+    midnight-to-midnight bar convention) ensures daily equity/gold/cash
+    sleeves only ever see a bar once its full session has closed.
     """
+    now = utc_now()
     params = urllib.parse.urlencode({"range": f"{max(days, 30)}d", "interval": "1d", "includePrePost": "false"})
     data = fetch_json(YAHOO_CHART_URL.format(symbol=symbol, params=params))
     result = data["chart"]["result"][0]
@@ -175,9 +184,12 @@ def fetch_stooq_daily(symbol: str, days: int = 520) -> pd.DataFrame:
         "volume": quote.get("volume", []),
     })
     df = df.dropna(subset=["open", "high", "low", "close"]).drop_duplicates("timestamp")
-    df = df.set_index("timestamp").sort_index()
-    cutoff = pd.Timestamp.utcnow().tz_localize(None) - pd.Timedelta(days=days)
-    return df.loc[df.index >= cutoff][["open", "high", "low", "close", "volume"]].astype(float)
+    df = df.set_index("timestamp").sort_index()[["open", "high", "low", "close", "volume"]].astype(float)
+    df = drop_incomplete_bars(df, timedelta(days=1), now)
+    if df.empty:
+        raise RuntimeError(f"No completed daily bars available for {symbol} (all fetched bars still in progress)")
+    cutoff = pd.Timestamp(now.replace(tzinfo=None)) - pd.Timedelta(days=days)
+    return df.loc[df.index >= cutoff]
 
 
 def bar_age_hours(df: pd.DataFrame) -> float:
