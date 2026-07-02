@@ -190,18 +190,27 @@ def maybe_load_local(path: Path) -> pd.DataFrame | None:
         return None
 
 
-def load_market_data(args: argparse.Namespace) -> dict[str, pd.DataFrame]:
+def load_market_data(args: argparse.Namespace) -> tuple[dict[str, pd.DataFrame], dict[str, dict[str, Any]]]:
+    """Fetch market data for all assets.
+
+    Returns (data, provenance) where provenance[asset] records which source
+    actually supplied the data (for observability/export only — it never
+    affects which bar the strategy uses).
+    """
     data: dict[str, pd.DataFrame] = {}
+    provenance: dict[str, dict[str, Any]] = {}
     errors: dict[str, str] = {}
 
     for asset, product in {"BTC": "BTC-USD", "ETH": "ETH-USD"}.items():
         try:
             data[asset] = fetch_coinbase_hourly(product, days=args.crypto_days)
+            provenance[asset] = {"source": "coinbase_candles", "fallback": False}
         except Exception as e:
             errors[asset] = str(e)
             local = maybe_load_local(Path(args.data_dir) / f"{asset.lower()}usd_3600s_2018-01-01_to_2025-12-31.csv")
             if local is not None:
                 data[asset] = local
+                provenance[asset] = {"source": "local_fallback_csv", "fallback": True}
 
     for asset in ("SPY", "QQQ", "GLD", "BIL"):
         try:
@@ -209,19 +218,21 @@ def load_market_data(args: argparse.Namespace) -> dict[str, pd.DataFrame]:
             if fetched.empty:
                 raise RuntimeError(f"Empty ETF data returned for {asset}")
             data[asset] = fetched
+            provenance[asset] = {"source": "yahoo_chart", "fallback": False}
         except Exception as e:
             errors[asset] = str(e)
             if args.allow_stale_local_fallback:
                 local = maybe_load_local(Path(args.data_dir) / f"{asset}_1D.csv")
                 if local is not None and not local.empty:
                     data[asset] = local
+                    provenance[asset] = {"source": "local_fallback_csv", "fallback": True}
 
     required = {"BTC", "ETH", "SPY", "QQQ", "GLD", "BIL"}
     missing = sorted(required - set(data))
     if missing:
         raise RuntimeError(f"Missing market data for {missing}; errors={errors}")
     validate_market_freshness(data, args)
-    return data
+    return data, provenance
 
 
 def latest_price(df: pd.DataFrame) -> float:
@@ -264,6 +275,54 @@ def sleeve_dataframe(sleeve, data: dict[str, pd.DataFrame]) -> pd.DataFrame:
         btc_cols = btc_state_columns(data, df.index)
         df["btc_in_parabolic"] = btc_cols["btc_in_parabolic"]
     return df.dropna(subset=["open", "high", "low", "close"])
+
+
+TIMEFRAME_DURATION = {"1H": timedelta(hours=1), "4H": timedelta(hours=4), "1D": timedelta(days=1)}
+
+
+def market_data_bar_row(
+    *,
+    cycle: int,
+    sleeve_label: str,
+    asset: str,
+    timeframe: str,
+    df: pd.DataFrame,
+    source: str | None,
+) -> dict[str, Any]:
+    """Build one observability row describing the exact bar the strategy used.
+
+    This only reads the same dataframe already handed to the strategy — it
+    never selects a different bar and never touches a live quote.
+    """
+    bar_ts = df.index[-1]
+    bar = df.iloc[-1]
+    bar_ts_aware = pd.Timestamp(bar_ts)
+    if bar_ts_aware.tzinfo is None:
+        bar_ts_aware = bar_ts_aware.tz_localize(UTC)
+    now = utc_now()
+    data_age_hours = (now - bar_ts_aware.to_pydatetime()).total_seconds() / 3600.0
+    duration = TIMEFRAME_DURATION.get(timeframe)
+    bar_completed = bool(now >= (bar_ts_aware.to_pydatetime() + duration)) if duration is not None else None
+    volume = bar.get("volume") if "volume" in df.columns else None
+    return {
+        "timestamp": now.isoformat(),
+        "cycle": cycle,
+        "sleeve": sleeve_label,
+        "asset": asset,
+        "timeframe": timeframe,
+        "source": source,
+        "bar_timestamp": str(bar_ts),
+        "open": float(bar["open"]),
+        "high": float(bar["high"]),
+        "low": float(bar["low"]),
+        "close": float(bar["close"]),
+        "volume": float(volume) if volume is not None and pd.notna(volume) else None,
+        "data_age_hours": data_age_hours,
+        "runtime_version": STATE_VERSION,
+        "bar_selection_mode": "last_row_of_strategy_input_series",
+        "bar_completed": bar_completed,
+        "window_rows": int(len(df)),
+    }
 
 
 def classify_regime(df: pd.DataFrame) -> RegimeLabel:
@@ -478,14 +537,16 @@ def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
     validate_selected_allocation()
     state_path = Path(args.state_path)
     state = load_state(state_path, args.capital)
-    data = load_market_data(args)
+    data, market_provenance = load_market_data(args)
 
     signals: list[dict[str, Any]] = []
     fills: list[dict[str, Any]] = []
+    sleeve_dfs: dict[str, pd.DataFrame] = {}
     cash_yield_total = 0.0
 
     for sleeve in SELECTED_CORE_V1_SLEEVES:
         df = sleeve_dataframe(sleeve, data)
+        sleeve_dfs[sleeve.label] = df
         price = latest_price(df)
         ts = df.index[-1]
         s_state = state["sleeves"][sleeve.label]
@@ -576,6 +637,35 @@ def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
     state["open_position_count"] = int(sum(1 for v in sleeve_telemetry.values() if abs(v["qty"]) > 1e-12))
     write_json_atomic(state_path, state)
 
+    # Observability only: record the exact bar each sleeve's strategy call used
+    # this cycle (plus BIL, used for cash-yield accrual). Never influences
+    # trading — purely an append-only export/replay log.
+    market_data_rows: list[dict[str, Any]] = []
+    for sleeve in SELECTED_CORE_V1_SLEEVES:
+        market_data_rows.append(
+            market_data_bar_row(
+                cycle=state["cycle"],
+                sleeve_label=sleeve.label,
+                asset=sleeve.asset,
+                timeframe=sleeve.timeframe,
+                df=sleeve_dfs[sleeve.label],
+                source=market_provenance.get(sleeve.asset, {}).get("source"),
+            )
+        )
+    if "BIL" in data:
+        market_data_rows.append(
+            market_data_bar_row(
+                cycle=state["cycle"],
+                sleeve_label="BIL_yield",
+                asset="BIL",
+                timeframe="1D",
+                df=data["BIL"],
+                source=market_provenance.get("BIL", {}).get("source"),
+            )
+        )
+    for row in market_data_rows:
+        append_jsonl(Path(args.market_data_log), row)
+
     event = {
         "timestamp": state["last_cycle_at"],
         "version": STATE_VERSION,
@@ -612,6 +702,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--state-path", default=os.getenv("CORE_V1_STATE_PATH", "/opt/itera/runtime/core_v1/state.json"))
     p.add_argument("--signals-log", default=os.getenv("CORE_V1_SIGNALS_LOG", "/opt/itera/logs/core_v1_signals.jsonl"))
     p.add_argument("--fills-log", default=os.getenv("CORE_V1_FILLS_LOG", "/opt/itera/logs/core_v1_fills.jsonl"))
+    p.add_argument("--market-data-log", default=os.getenv("CORE_V1_MARKET_DATA_LOG", "/opt/itera/logs/core_v1_market_data.jsonl"))
     p.add_argument("--data-dir", default=os.getenv("DATA_DIR", "data"))
     p.add_argument("--crypto-days", type=int, default=int(os.getenv("CORE_V1_CRYPTO_DAYS", "420")))
     p.add_argument("--etf-days", type=int, default=int(os.getenv("CORE_V1_ETF_DAYS", "520")))

@@ -24,8 +24,10 @@ from runtime.core_v1.allocation import SELECTED_CORE_V1_SCENARIO, SELECTED_CORE_
 STATE_PATH = Path(os.getenv("CORE_V1_STATE_PATH", "/opt/itera/runtime/core_v1/state.json"))
 SIGNALS_LOG = Path(os.getenv("CORE_V1_SIGNALS_LOG", "/opt/itera/logs/core_v1_signals.jsonl"))
 FILLS_LOG = Path(os.getenv("CORE_V1_FILLS_LOG", "/opt/itera/logs/core_v1_fills.jsonl"))
+MARKET_DATA_LOG = Path(os.getenv("CORE_V1_MARKET_DATA_LOG", "/opt/itera/logs/core_v1_market_data.jsonl"))
 ERROR_LOG = SIGNALS_LOG.with_name("core_v1_errors.jsonl")
 AUDIT_REPORT_PATH = Path(os.getenv("CORE_V1_AUDIT_REPORT_PATH", str(STATE_PATH.with_name("core_v1_audit_report.json"))))
+PAPER_EXPORT_DIR = Path(os.getenv("CORE_V1_PAPER_EXPORT_DIR", str(REPO_ROOT / "artifacts" / "core_v1_paper_export")))
 EXPECTED_POLL_SECONDS = int(os.getenv("CORE_V1_POLL_SECONDS", "3600"))
 STALE_AFTER_SECONDS = int(os.getenv("CORE_V1_STALE_AFTER_SECONDS", str(EXPECTED_POLL_SECONDS * 2 + 300)))
 STALE_AUDIT_AFTER_SECONDS = int(os.getenv("CORE_V1_STALE_AUDIT_AFTER_SECONDS", str(EXPECTED_POLL_SECONDS * 6)))
@@ -1118,5 +1120,36 @@ with st.expander("Diagnostics: price audit report", expanded=False):
         st.markdown(f'<div class="audit-note">No audit report found at {esc(str(AUDIT_REPORT_PATH))}. Run <span class="mono">scripts/audit_core_v1_prices.py --output {esc(str(AUDIT_REPORT_PATH))}</span> on a schedule to populate this.</div>', unsafe_allow_html=True)
     else:
         st.markdown(html_table(audit_report.get("rows", []), [("sleeve", "Sleeve"), ("asset", "Asset"), ("strategy_bar_price", "Bar price"), ("verified_bar_price", "Verified price"), ("bar_price_diff_pct", "Bar diff"), ("bar_price_ok", "Bar OK"), ("live_price", "Live price"), ("live_drift_pct", "Live drift"), ("bar_age_hours", "Bar age (h)"), ("position_value_ok", "Value OK"), ("unrealized_ok", "uPnL OK"), ("avg_entry_ok", "Avg OK")], "No audit rows recorded."), unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Paper Data Export — low-priority operator diagnostic, not part of the main
+# Mission Control narrative. Shows whether market-data capture is running
+# and points at the most recent local export, if any.
+# ---------------------------------------------------------------------------
+with st.expander("Paper Data Export", expanded=False):
+    market_data_rows = read_jsonl(MARKET_DATA_LOG)
+    latest_market_data_ts = None
+    for row in reversed(market_data_rows):
+        candidate_ts = parse_ts(row.get("timestamp"))
+        if candidate_ts is not None:
+            latest_market_data_ts = candidate_ts
+            break
+    capture_age = age_seconds(latest_market_data_ts)
+    capture_active = MARKET_DATA_LOG.exists() and capture_age is not None and capture_age <= STALE_AFTER_SECONDS
+
+    latest_export_dir = None
+    if PAPER_EXPORT_DIR.exists():
+        export_subdirs = [d for d in PAPER_EXPORT_DIR.iterdir() if d.is_dir()]
+        if export_subdirs:
+            latest_export_dir = max(export_subdirs, key=lambda d: d.stat().st_mtime)
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown(f"**Market data capture active:** {'Yes' if capture_active else 'No'}")
+        st.markdown(f"**Latest market-data row:** {friendly_ts(str(latest_market_data_ts)) if latest_market_data_ts is not None else 'None captured yet'}")
+    with col_b:
+        st.markdown(f"**Captured rows:** {len(market_data_rows):,}")
+        st.markdown(f"**Latest export:** {esc(str(latest_export_dir)) if latest_export_dir is not None else 'No exports found'}")
+    st.caption(f"Log: {MARKET_DATA_LOG} · Run scripts/export_core_v1_paper_data.py for a local replay-ready export (raw JSONL + normalized CSVs + manifest).")
 
 st.caption(f"State {STATE_PATH} · Signals {SIGNALS_LOG} · Fills {FILLS_LOG} · Generated {datetime.now(UTC).isoformat()}")
