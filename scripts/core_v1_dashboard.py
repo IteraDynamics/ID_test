@@ -890,12 +890,20 @@ def lookup_fill_reason(sleeve: str, ts_value: Any) -> str:
         return ""
     return str(subset.loc[idx, "reason"] or "")
 
+latest_error = errors[-1] if errors else None
+latest_error_ts = parse_ts(latest_error.get("timestamp")) if latest_error else None
+latest_success_ts = last_ts
+active_error = latest_error is not None and (
+    latest_success_ts is None or latest_error_ts is None or latest_error_ts >= latest_success_ts
+)
+resolved_error = latest_error is not None and not active_error
+
 issues: list[str] = []
 if is_stale:
     issues.append(f"Runtime stale: last cycle {age_text(last_ts)}; expected every {EXPECTED_POLL_SECONDS}s.")
 if missing_sleeves:
     issues.append(f"Missing sleeves in state: {', '.join(missing_sleeves)}.")
-if errors:
+if active_error:
     issues.append(f"Latest runtime error: {errors[-1].get('error', 'unknown error')}")
 if not state_is_v2:
     issues.append("Runtime has not completed a v2 telemetry cycle yet.")
@@ -903,7 +911,7 @@ if audit_available and not audit_ok:
     issues.append(f"Price/accounting audit failing: {audit_report.get('failures', ['unknown'])[0]}")
 if audit_stale:
     issues.append(f"Audit report stale: last run {age_text(audit_ts)}.")
-health_status = "err" if is_stale or missing_sleeves or (audit_available and not audit_ok) else "warn" if errors or not state_is_v2 or audit_stale else "ok"
+health_status = "err" if is_stale or missing_sleeves or (audit_available and not audit_ok) else "warn" if active_error or not state_is_v2 or audit_stale else "ok"
 health_label = "ALERT" if health_status == "err" else "CHECK" if health_status == "warn" else "VERIFIED"
 
 st.markdown(
@@ -1209,7 +1217,18 @@ if last_fill_overall:
     fill_sleeve_name = SLEEVE_NAMES.get(last_fill_overall.get("sleeve"), last_fill_overall.get("sleeve"))
     last_fill_sub = f"{fill_sleeve_name} · {age_text(parse_ts(last_fill_overall.get('timestamp')))}"
 
-errors_sub = f"last error {age_text(parse_ts(errors[-1].get('timestamp')))}" if errors else "0 logged"
+if active_error:
+    errors_value = "CHECK"
+    errors_klass = "warn"
+    errors_sub = f"active {age_text(latest_error_ts)}"
+elif resolved_error:
+    errors_value = "RESOLVED"
+    errors_klass = "ok"
+    errors_sub = f"last error {age_text(latest_error_ts)} · recovered {friendly_ts(latest_success_ts)}"
+else:
+    errors_value = "CLEAR"
+    errors_klass = "ok"
+    errors_sub = "0 logged"
 
 checks = [
     ("Runtime", "RUNNING" if not is_stale else "STALE", "ok" if not is_stale else "err", f"poll every {poll_minutes}m", runtime_detail),
@@ -1217,7 +1236,7 @@ checks = [
     ("Price Audit", audit_value, audit_klass, audit_sub, audit_detail),
     ("Scheduler", "ON", "ok", f"every {poll_minutes}m", scheduler_detail),
     ("Last Fill", last_fill_value, last_fill_klass, last_fill_sub, []),
-    ("Errors", "CLEAR" if not errors else "CHECK", "ok" if not errors else "warn", errors_sub, []),
+    ("Errors", errors_value, errors_klass, errors_sub, []),
     ("State Persistence", "V2" if state_is_v2 else "V1", "ok" if state_is_v2 else "warn", STATE_PATH.name, []),
     ("Cost & Fees", money(fees_total + slippage_total), "neutral", "fees + slippage to date", []),
 ]
