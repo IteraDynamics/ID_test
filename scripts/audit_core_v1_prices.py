@@ -46,8 +46,20 @@ import urllib.request
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
+from pandas.tseries.holiday import (
+    AbstractHolidayCalendar,
+    GoodFriday,
+    Holiday,
+    USLaborDay,
+    USMartinLutherKingJr,
+    USMemorialDay,
+    USPresidentsDay,
+    USThanksgivingDay,
+    nearest_workday,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
@@ -252,6 +264,77 @@ def age_hours(ts: str | None) -> float | None:
         return None
 
 
+class _NYSEHolidayCalendar(AbstractHolidayCalendar):
+    """Approximate NYSE trading holiday calendar.
+
+    Deliberately duplicated from the live runtime's own copy of this same
+    calendar (scripts/run_core_v1_paper_live.py) rather than imported —
+    this script re-derives its notion of market freshness independently,
+    same as it re-derives market data independently, so a bug in one
+    doesn't silently pass unnoticed in the other.
+    """
+
+    rules = [
+        Holiday("New Year's Day", month=1, day=1, observance=nearest_workday),
+        USMartinLutherKingJr,
+        USPresidentsDay,
+        GoodFriday,
+        USMemorialDay,
+        Holiday("Juneteenth", month=6, day=19, start_date="2022-01-01", observance=nearest_workday),
+        Holiday("Independence Day", month=7, day=4, observance=nearest_workday),
+        USLaborDay,
+        USThanksgivingDay,
+        Holiday("Christmas Day", month=12, day=25, observance=nearest_workday),
+    ]
+
+
+_NYSE_CALENDAR = _NYSEHolidayCalendar()
+_NYSE_ET = ZoneInfo("America/New_York")
+
+
+def _is_nyse_trading_day(date: pd.Timestamp) -> bool:
+    if date.weekday() >= 5:
+        return False
+    holidays = _NYSE_CALENDAR.holidays(start=date - pd.Timedelta(days=1), end=date + pd.Timedelta(days=1))
+    return date.normalize() not in holidays
+
+
+def _previous_nyse_trading_day(date: pd.Timestamp) -> pd.Timestamp:
+    d = date.normalize() - pd.Timedelta(days=1)
+    while not _is_nyse_trading_day(d):
+        d -= pd.Timedelta(days=1)
+    return d
+
+
+def expected_completed_daily_bar_date(now_utc: datetime) -> pd.Timestamp:
+    """The most recent trading day whose regular session should be fully closed by `now_utc`."""
+    now_et = now_utc.astimezone(_NYSE_ET)
+    today_et = pd.Timestamp(now_et.date())
+    market_close_et = now_et.replace(hour=16, minute=0, second=0, microsecond=0)
+    if _is_nyse_trading_day(today_et) and now_et >= market_close_et:
+        return today_et
+    return _previous_nyse_trading_day(today_et)
+
+
+def daily_etf_freshness_status(last_bar_ts: pd.Timestamp, now_utc: datetime) -> tuple[str, str]:
+    """Classify a daily ETF/gold bar as PASS / WAITING / FAIL.
+
+    Market-aware, unlike a naive elapsed-hours check: only FAIL if a newer
+    completed session should exist by now and doesn't. Mirrors the runtime's
+    own daily_etf_freshness_status (scripts/run_core_v1_paper_live.py).
+    """
+    last_bar_date = pd.Timestamp(last_bar_ts).normalize()
+    now_et = now_utc.astimezone(_NYSE_ET)
+    today_et = pd.Timestamp(now_et.date())
+    expected_date = expected_completed_daily_bar_date(now_utc)
+
+    if last_bar_date < expected_date:
+        return "FAIL", f"newer completed bar expected by now (expected>={expected_date.date()}, last={last_bar_date.date()})"
+    if last_bar_date == today_et:
+        return "PASS", f"latest completed bar is today's closed session (last={last_bar_date.date()})"
+    return "WAITING", f"market session in progress or closed; no newer completed bar expected yet (last={last_bar_date.date()}, expected={expected_date.date()})"
+
+
 def audit(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     state_path = Path(args.state_path)
     state = json.loads(state_path.read_text(encoding="utf-8"))
@@ -317,10 +400,20 @@ def audit(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         position_value_ok = abs(stored_position_value - recomputed_position_value) <= args.dollar_tolerance
         unrealized_ok = abs(stored_unrealized - recomputed_unrealized) <= args.dollar_tolerance
         avg_entry_ok = abs(avg_entry - recomputed_avg_entry) <= args.price_tolerance
-        stale = asset in {"SPY", "QQQ", "GLD"} and bar_age is not None and bar_age > args.max_etf_bar_age_hours
 
-        if stale:
-            failures.append(f"{label}: stale bar age {bar_age:.1f}h")
+        # Daily ETF/gold bars: a naive "age > threshold" check produces false
+        # failures across any weekend/holiday gap wider than the fixed
+        # threshold (e.g. a holiday Friday plus a weekend). Use the same
+        # market-calendar-aware PASS/WAITING/FAIL semantics as the runtime's
+        # own validate_market_freshness — only FAIL if a newer completed
+        # session should exist by now and doesn't.
+        freshness_status: str | None = None
+        freshness_detail: str | None = None
+        if asset in {"SPY", "QQQ", "GLD"} and strategy_bar_ts is not None:
+            freshness_status, freshness_detail = daily_etf_freshness_status(strategy_bar_ts, datetime.now(UTC))
+            if freshness_status == "FAIL":
+                failures.append(f"{label}: {freshness_detail}")
+
         if bar_completed is False and timeframe in ("1H", "4H"):
             # Wall-clock "bar_start + duration <= now" is only a valid
             # completeness test for continuously-trading crypto. Daily
@@ -361,6 +454,8 @@ def audit(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             "live_drift_pct": live_drift_pct,
             "live_quote_error": live_error,
             "bar_age_hours": bar_age,
+            "freshness_status": freshness_status,
+            "freshness_detail": freshness_detail,
             "qty": qty,
             "cost_basis": cost_basis,
             "avg_entry": avg_entry,
@@ -418,9 +513,10 @@ def main() -> None:
         for row in report["rows"]:
             drift = f"{row['live_drift_pct']:.2%}" if row["live_drift_pct"] is not None else "n/a"
             bar_diff = f"{row['bar_price_diff_pct']:.4%}" if row["bar_price_diff_pct"] is not None else "n/a"
+            freshness = f" freshness={row['freshness_status']}" if row.get("freshness_status") is not None else ""
             print(
                 f"{row['sleeve']}: bar={row['strategy_bar_price']:.4f} verified={row['verified_bar_price']} "
-                f"bar_diff={bar_diff} live_drift={drift} bar_age={row['bar_age_hours']}h "
+                f"bar_diff={bar_diff} live_drift={drift} bar_age={row['bar_age_hours']}h{freshness} "
                 f"qty={row['qty']:.6f} basis={row['cost_basis']:.2f} avg={row['avg_entry']:.4f}"
             )
         for failure in report["failures"]:
