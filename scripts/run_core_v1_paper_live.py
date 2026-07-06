@@ -185,6 +185,7 @@ def fetch_stooq_daily(symbol: str, days: int = 520) -> pd.DataFrame:
     })
     df = df.dropna(subset=["open", "high", "low", "close"]).drop_duplicates("timestamp")
     df = df.set_index("timestamp").sort_index()[["open", "high", "low", "close", "volume"]].astype(float)
+    print(f"DEBUG[{symbol}] raw Yahoo download, last 5 timestamps: {df.index[-5:].tolist()}", file=sys.stderr)
     df = drop_incomplete_bars(df, timedelta(days=1), now)
     if df.empty:
         raise RuntimeError(f"No completed daily bars available for {symbol} (all fetched bars still in progress)")
@@ -267,6 +268,8 @@ def load_market_data(args: argparse.Namespace) -> tuple[dict[str, pd.DataFrame],
     missing = sorted(required - set(data))
     if missing:
         raise RuntimeError(f"Missing market data for {missing}; errors={errors}")
+    for asset in ("SPY", "QQQ", "GLD", "BIL"):
+        print(f"DEBUG[{asset}] pre-validate_market_freshness, last 5 timestamps: {data[asset].index[-5:].tolist()}", file=sys.stderr)
     validate_market_freshness(data, args)
     return data, provenance
 
