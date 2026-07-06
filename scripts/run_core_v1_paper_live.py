@@ -31,8 +31,20 @@ import urllib.request
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
+from pandas.tseries.holiday import (
+    AbstractHolidayCalendar,
+    GoodFriday,
+    Holiday,
+    USLaborDay,
+    USMartinLutherKingJr,
+    USMemorialDay,
+    USPresidentsDay,
+    USThanksgivingDay,
+    nearest_workday,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
@@ -200,15 +212,99 @@ def bar_age_hours(df: pd.DataFrame) -> float:
     return (pd.Timestamp.utcnow().tz_localize(None) - ts).total_seconds() / 3600.0
 
 
+class _NYSEHolidayCalendar(AbstractHolidayCalendar):
+    """Approximate NYSE trading holiday calendar.
+
+    Close enough for freshness purposes: it need only tell us which
+    calendar days had no regular session at all (so no completed daily bar
+    was ever going to exist), not reproduce every NYSE special-closure rule.
+    Built from pandas' US federal calendar (already a dependency) rather
+    than a new one, swapping in the two holidays where NYSE and the federal
+    calendar diverge (Good Friday observed, Columbus/Veterans Day not).
+    """
+
+    rules = [
+        Holiday("New Year's Day", month=1, day=1, observance=nearest_workday),
+        USMartinLutherKingJr,
+        USPresidentsDay,
+        GoodFriday,
+        USMemorialDay,
+        Holiday("Juneteenth", month=6, day=19, start_date="2022-01-01", observance=nearest_workday),
+        Holiday("Independence Day", month=7, day=4, observance=nearest_workday),
+        USLaborDay,
+        USThanksgivingDay,
+        Holiday("Christmas Day", month=12, day=25, observance=nearest_workday),
+    ]
+
+
+_NYSE_CALENDAR = _NYSEHolidayCalendar()
+_NYSE_ET = ZoneInfo("America/New_York")
+
+
+def _is_nyse_trading_day(date: pd.Timestamp) -> bool:
+    if date.weekday() >= 5:
+        return False
+    holidays = _NYSE_CALENDAR.holidays(start=date - pd.Timedelta(days=1), end=date + pd.Timedelta(days=1))
+    return date.normalize() not in holidays
+
+
+def _previous_nyse_trading_day(date: pd.Timestamp) -> pd.Timestamp:
+    d = date.normalize() - pd.Timedelta(days=1)
+    while not _is_nyse_trading_day(d):
+        d -= pd.Timedelta(days=1)
+    return d
+
+
+def expected_completed_daily_bar_date(now_utc: datetime) -> pd.Timestamp:
+    """The most recent trading day whose regular session should be fully closed by `now_utc`.
+
+    Weekends and NYSE holidays never had a session to complete, so they are
+    skipped entirely rather than counted as "missing" days.
+    """
+    now_et = now_utc.astimezone(_NYSE_ET)
+    today_et = pd.Timestamp(now_et.date())
+    market_close_et = now_et.replace(hour=16, minute=0, second=0, microsecond=0)
+    if _is_nyse_trading_day(today_et) and now_et >= market_close_et:
+        return today_et
+    return _previous_nyse_trading_day(today_et)
+
+
+def daily_etf_freshness_status(df: pd.DataFrame, now_utc: datetime) -> tuple[str, str]:
+    """Classify a daily ETF/gold/cash bar as PASS / WAITING / FAIL.
+
+    Market-aware, unlike a naive elapsed-hours check: a completed bar is
+    only ever FAIL if a *newer* completed session should exist by now and
+    doesn't. It is expected (WAITING), not a failure, for the latest
+    available bar to trail "today" while today's own session is still in
+    progress, or while today isn't a trading day at all (weekend/holiday) —
+    that in-progress/incomplete bar is never the one handed to strategy
+    logic (drop_incomplete_bars already stripped it out upstream).
+    """
+    last_bar_date = pd.Timestamp(df.index[-1]).normalize()
+    now_et = now_utc.astimezone(_NYSE_ET)
+    today_et = pd.Timestamp(now_et.date())
+    expected_date = expected_completed_daily_bar_date(now_utc)
+
+    if last_bar_date < expected_date:
+        return "FAIL", f"newer completed bar expected by now (expected>={expected_date.date()}, last={last_bar_date.date()})"
+    if last_bar_date == today_et:
+        return "PASS", f"latest completed bar is today's closed session (last={last_bar_date.date()})"
+    return "WAITING", f"market session in progress or closed; no newer completed bar expected yet (last={last_bar_date.date()}, expected={expected_date.date()})"
+
+
 def validate_market_freshness(data: dict[str, pd.DataFrame], args: argparse.Namespace) -> None:
     failures = []
+    now_utc = utc_now()
     for asset in ("SPY", "QQQ", "GLD", "BIL"):
-        age = bar_age_hours(data[asset])
-        if age > args.max_etf_bar_age_hours:
-            failures.append(f"{asset} daily bar stale: age={age:.1f}h max={args.max_etf_bar_age_hours}h last={data[asset].index[-1]}")
+        status, detail = daily_etf_freshness_status(data[asset], now_utc)
+        print(f"[freshness] {asset}: {status} — {detail}", file=sys.stderr)
+        if status == "FAIL":
+            failures.append(f"{asset} daily bar stale: {detail}")
     for asset in ("BTC", "ETH"):
         age = bar_age_hours(data[asset])
-        if age > args.max_crypto_bar_age_hours:
+        status = "FAIL" if age > args.max_crypto_bar_age_hours else "PASS"
+        print(f"[freshness] {asset}: {status} — age={age:.1f}h max={args.max_crypto_bar_age_hours}h last={data[asset].index[-1]}", file=sys.stderr)
+        if status == "FAIL":
             failures.append(f"{asset} hourly bar stale: age={age:.1f}h max={args.max_crypto_bar_age_hours}h last={data[asset].index[-1]}")
     if failures:
         raise RuntimeError("Market data freshness check failed: " + "; ".join(failures))
