@@ -248,25 +248,26 @@ def _is_nyse_trading_day(date: pd.Timestamp) -> bool:
     return date.normalize() not in holidays
 
 
-def _previous_nyse_trading_day(date: pd.Timestamp) -> pd.Timestamp:
-    d = date.normalize() - pd.Timedelta(days=1)
-    while not _is_nyse_trading_day(d):
-        d -= pd.Timedelta(days=1)
-    return d
-
-
 def expected_completed_daily_bar_date(now_utc: datetime) -> pd.Timestamp:
-    """The most recent trading day whose regular session should be fully closed by `now_utc`.
+    """The most recent trading day whose daily bar `fetch_stooq_daily` would
+    already treat as a completed, immutable observation by `now_utc`.
 
-    Weekends and NYSE holidays never had a session to complete, so they are
-    skipped entirely rather than counted as "missing" days.
+    This must mirror drop_incomplete_bars' actual 1D completion rule, not a
+    naive "market closed at 4pm ET" assumption. A daily bar's timestamp is
+    Yahoo's session timestamp normalized to that trading day's UTC midnight,
+    and drop_incomplete_bars only admits it once a full timedelta(days=1) has
+    elapsed past that instant — i.e. at the *next* UTC midnight, which lands
+    several hours after the 4pm ET close, not right at it. Using the 4pm-ET
+    cutoff here would make this function (and anything comparing against it,
+    like an independent audit) expect a bar before the runtime has actually
+    consumed it. Weekends and NYSE holidays never had a session to complete,
+    so they are skipped entirely rather than counted as "missing" days.
     """
     now_et = now_utc.astimezone(_NYSE_ET)
-    today_et = pd.Timestamp(now_et.date())
-    market_close_et = now_et.replace(hour=16, minute=0, second=0, microsecond=0)
-    if _is_nyse_trading_day(today_et) and now_et >= market_close_et:
-        return today_et
-    return _previous_nyse_trading_day(today_et)
+    candidate = pd.Timestamp(now_et.date())
+    while not _is_nyse_trading_day(candidate) or (candidate.tz_localize(UTC) + pd.Timedelta(days=1)) > now_utc:
+        candidate -= pd.Timedelta(days=1)
+    return candidate
 
 
 def daily_etf_freshness_status(df: pd.DataFrame, now_utc: datetime) -> tuple[str, str]:
