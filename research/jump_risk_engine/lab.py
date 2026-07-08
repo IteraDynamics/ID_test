@@ -14,6 +14,32 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
+FEATURE_COLS = [
+    "ret_1",
+    "abs_ret_1",
+    "ret_3",
+    "ret_12",
+    "ret_fast",
+    "ret_slow",
+    "realized_vol",
+    "fast_vol",
+    "slow_vol",
+    "vol_ratio_fast_slow",
+    "vol_rank",
+    "atr_proxy",
+    "range_rank",
+    "vol_of_vol",
+    "skew",
+    "kurt",
+    "volume_z",
+    "distance_sma_fast",
+    "distance_sma_slow",
+    "trend_fast_gt_slow",
+    "hour_utc",
+    "day_of_week",
+]
+
+
 @dataclass(frozen=True)
 class JumpRiskConfig:
     """Configuration for the research-only discontinuity-risk lab.
@@ -115,7 +141,10 @@ def build_feature_label_frame(df: pd.DataFrame, cfg: JumpRiskConfig) -> pd.DataF
 
     if df["volume"].notna().sum() > 0:
         volume = df["volume"].astype(float).replace(0, np.nan)
-        volume_z = (np.log(volume).replace([np.inf, -np.inf], np.nan) - np.log(volume).rolling(cfg.slow_window, min_periods=20).mean()) / np.log(volume).rolling(cfg.slow_window, min_periods=20).std()
+        log_volume = np.log(volume).replace([np.inf, -np.inf], np.nan)
+        volume_z = (log_volume - log_volume.rolling(cfg.slow_window, min_periods=20).mean()) / log_volume.rolling(
+            cfg.slow_window, min_periods=20
+        ).std()
     else:
         volume_z = pd.Series(0.0, index=df.index)
 
@@ -181,7 +210,16 @@ def _make_model(model_name: str) -> Pipeline:
     if model_name == "rf":
         return Pipeline(
             [
-                ("model", RandomForestClassifier(n_estimators=250, max_depth=5, min_samples_leaf=25, class_weight="balanced", random_state=42)),
+                (
+                    "model",
+                    RandomForestClassifier(
+                        n_estimators=250,
+                        max_depth=5,
+                        min_samples_leaf=25,
+                        class_weight="balanced",
+                        random_state=42,
+                    ),
+                ),
             ]
         )
     if model_name == "gbm":
@@ -204,38 +242,117 @@ def _safe_ap(y: np.ndarray, p: np.ndarray) -> float | None:
 def _calibration_table(y: np.ndarray, p: np.ndarray, buckets: tuple[float, ...]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     cuts = list(buckets)
+    base = float(y.mean()) if len(y) else 0.0
     for lo, hi in zip(cuts[:-1], cuts[1:]):
         mask = (p >= lo) & (p < hi)
         n = int(mask.sum())
+        event_rate = float(y[mask].mean()) if n else None
         rows.append(
             {
                 "bucket": f"[{lo:.2f},{hi:.2f})",
                 "n": n,
                 "avg_pred": float(p[mask].mean()) if n else None,
-                "event_rate": float(y[mask].mean()) if n else None,
-                "lift_vs_unconditional": float(y[mask].mean() / y.mean()) if n and y.mean() > 0 else None,
+                "event_rate": event_rate,
+                "lift_vs_unconditional": float(event_rate / base) if n and base > 0 and event_rate is not None else None,
             }
         )
     return rows
 
 
-def _top_risk_event_study(frame: pd.DataFrame, probs: pd.Series, top_n: int = 25) -> list[dict[str, Any]]:
-    ranked = probs.sort_values(ascending=False).head(top_n)
+def _lift_at_top_quantiles(y: pd.Series, probs: pd.Series, quantiles: tuple[float, ...] = (0.01, 0.05, 0.10, 0.20)) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for ts, prob in ranked.items():
+    joined = pd.DataFrame({"y": y.astype(int), "p": probs.astype(float)}).dropna().sort_values("p", ascending=False)
+    base = float(joined["y"].mean()) if not joined.empty else 0.0
+    for q in quantiles:
+        n = max(1, int(round(len(joined) * q))) if not joined.empty else 0
+        top = joined.head(n)
+        rate = float(top["y"].mean()) if n else None
+        rows.append(
+            {
+                "top_quantile": q,
+                "n": n,
+                "avg_pred": float(top["p"].mean()) if n else None,
+                "event_rate": rate,
+                "lift_vs_unconditional": float(rate / base) if rate is not None and base > 0 else None,
+            }
+        )
+    return rows
+
+
+def _window_rows(frame: pd.DataFrame, probs: pd.Series, label: pd.Series, mask: pd.Series, limit: int = 50) -> list[dict[str, Any]]:
+    idx = probs[mask.reindex(probs.index).fillna(False)].sort_values(ascending=False).head(limit).index
+    rows: list[dict[str, Any]] = []
+    for ts in idx:
         r = frame.loc[ts]
         rows.append(
             {
                 "timestamp": ts.isoformat(),
-                "jump_probability": float(prob),
+                "jump_probability": float(probs.loc[ts]),
+                "label": int(label.loc[ts]),
+                "close": float(r["close"]),
                 "future_abs": float(r["future_abs"]),
                 "future_up": float(r["future_up"]),
                 "future_down": float(r["future_down"]),
                 "threshold": float(r["jump_threshold"]),
-                "jump_any": int(r["jump_any"]),
+                "realized_vol": float(r["realized_vol"]),
+                "vol_rank": float(r["vol_rank"]),
+                "range_rank": float(r["range_rank"]),
+                "vol_ratio_fast_slow": float(r["vol_ratio_fast_slow"]),
+                "distance_sma_fast": float(r["distance_sma_fast"]),
+                "distance_sma_slow": float(r["distance_sma_slow"]),
+                "ret_fast": float(r["ret_fast"]),
+                "ret_slow": float(r["ret_slow"]),
             }
         )
     return rows
+
+
+def _feature_profile(frame: pd.DataFrame, idx: pd.Index, baseline_idx: pd.Index) -> list[dict[str, Any]]:
+    if len(idx) == 0:
+        return []
+    subset = frame.loc[idx, FEATURE_COLS]
+    baseline = frame.loc[baseline_idx, FEATURE_COLS]
+    rows: list[dict[str, Any]] = []
+    for col in FEATURE_COLS:
+        b_std = float(baseline[col].std()) if len(baseline) > 1 else 0.0
+        rows.append(
+            {
+                "feature": col,
+                "subset_mean": float(subset[col].mean()),
+                "baseline_mean": float(baseline[col].mean()),
+                "mean_diff": float(subset[col].mean() - baseline[col].mean()),
+                "std_units": float((subset[col].mean() - baseline[col].mean()) / b_std) if b_std and not np.isnan(b_std) else None,
+            }
+        )
+    rows.sort(key=lambda r: abs(r["std_units"] or 0.0), reverse=True)
+    return rows
+
+
+def _diagnostics(frame: pd.DataFrame, probs: pd.Series, labels: pd.Series, threshold: float) -> dict[str, Any]:
+    common = probs.index.intersection(labels.index).intersection(frame.index)
+    p = probs.loc[common]
+    y = labels.loc[common].astype(int)
+    pred = p >= threshold
+    top_decile_cut = float(p.quantile(0.90)) if len(p) else 1.0
+    top_decile_idx = p[p >= top_decile_cut].index
+    positive_idx = y[y == 1].index
+
+    tp = pred & (y == 1)
+    fp = pred & (y == 0)
+    fn = (~pred) & (y == 1)
+
+    return {
+        "policy_threshold": threshold,
+        "top_decile_probability_cutoff": top_decile_cut,
+        "lift_at_top_quantiles": _lift_at_top_quantiles(y, p),
+        "true_positive_windows": _window_rows(frame.loc[common], p, y, tp, limit=50),
+        "false_positive_windows": _window_rows(frame.loc[common], p, y, fp, limit=50),
+        "false_negative_windows": _window_rows(frame.loc[common], p, y, fn, limit=50),
+        "feature_profiles": {
+            "top_decile_vs_all": _feature_profile(frame, top_decile_idx, common),
+            "actual_jump_vs_all": _feature_profile(frame, positive_idx, common),
+        },
+    }
 
 
 def _feature_importance(model: Pipeline, cols: list[str]) -> list[dict[str, Any]]:
@@ -252,30 +369,6 @@ def _feature_importance(model: Pipeline, cols: list[str]) -> list[dict[str, Any]
 
 
 def run_walk_forward(frame: pd.DataFrame, cfg: JumpRiskConfig, target: str, model_name: str) -> dict[str, Any]:
-    feature_cols = [
-        "ret_1",
-        "abs_ret_1",
-        "ret_3",
-        "ret_12",
-        "ret_fast",
-        "ret_slow",
-        "realized_vol",
-        "fast_vol",
-        "slow_vol",
-        "vol_ratio_fast_slow",
-        "vol_rank",
-        "atr_proxy",
-        "range_rank",
-        "vol_of_vol",
-        "skew",
-        "kurt",
-        "volume_z",
-        "distance_sma_fast",
-        "distance_sma_slow",
-        "trend_fast_gt_slow",
-        "hour_utc",
-        "day_of_week",
-    ]
     y_col = f"jump_{target}"
     if y_col not in frame.columns:
         raise ValueError(f"Unknown target {target!r}; expected one of any/down/up")
@@ -304,11 +397,12 @@ def run_walk_forward(frame: pd.DataFrame, cfg: JumpRiskConfig, target: str, mode
             continue
 
         model = _make_model(model_name)
-        model.fit(train[feature_cols].astype(float), train[y_col].astype(int))
-        p = model.predict_proba(test[feature_cols].astype(float))[:, 1]
+        model.fit(train[FEATURE_COLS].astype(float), train[y_col].astype(int))
+        p = model.predict_proba(test[FEATURE_COLS].astype(float))[:, 1]
         y = test[y_col].astype(int).to_numpy()
         unconditional = float(train[y_col].mean())
-        pred_class = (p >= max(0.50, unconditional * 2.0)).astype(int)
+        policy_threshold = max(0.50, unconditional * 2.0)
+        pred_class = (p >= policy_threshold).astype(int)
         precision, recall, f1, _ = precision_recall_fscore_support(y, pred_class, average="binary", zero_division=0)
 
         folds.append(
@@ -327,8 +421,8 @@ def run_walk_forward(frame: pd.DataFrame, cfg: JumpRiskConfig, target: str, mode
                 "precision_at_policy_threshold": float(precision),
                 "recall_at_policy_threshold": float(recall),
                 "f1_at_policy_threshold": float(f1),
-                "policy_threshold": float(max(0.50, unconditional * 2.0)),
-                "top_feature_importance": _feature_importance(model, feature_cols),
+                "policy_threshold": float(policy_threshold),
+                "top_feature_importance": _feature_importance(model, FEATURE_COLS),
             }
         )
         all_probs.append(pd.Series(p, index=test.index))
@@ -339,21 +433,31 @@ def run_walk_forward(frame: pd.DataFrame, cfg: JumpRiskConfig, target: str, mode
         y_all = pd.concat(all_y).sort_index()
         y_arr = y_all.to_numpy(dtype=int)
         p_arr = probs.to_numpy(dtype=float)
+        base_rate = float(y_all.mean())
+        policy_threshold = max(0.50, base_rate * 2.0)
+        diag = _diagnostics(frame.loc[probs.index], probs, y_all, policy_threshold)
         aggregate = {
             "status": "PASS" if len(folds) and any(f.get("status") == "PASS" for f in folds) else "PARTIAL",
             "rows": int(len(y_all)),
             "events": int(y_all.sum()),
-            "event_rate": float(y_all.mean()),
+            "event_rate": base_rate,
             "roc_auc": _safe_auc(y_arr, p_arr),
             "average_precision": _safe_ap(y_arr, p_arr),
             "brier": float(brier_score_loss(y_arr, p_arr)) if len(set(y_arr.tolist())) > 1 else None,
             "calibration": _calibration_table(y_arr, p_arr, cfg.probability_buckets),
-            "top_risk_windows": _top_risk_event_study(frame.loc[probs.index], probs),
+            "diagnostics": diag,
         }
+        pred_frame = frame.loc[probs.index, ["asset", "close", "future_abs", "future_up", "future_down", "jump_threshold", y_col, *FEATURE_COLS]].copy()
+        pred_frame["target"] = target
+        pred_frame["model"] = model_name
+        pred_frame["jump_probability"] = probs
+        pred_frame["probability_rank_pct"] = probs.rank(pct=True)
+        pred_frame["policy_prediction"] = (probs >= policy_threshold).astype(int)
     else:
         aggregate = {"status": "PARTIAL", "reason": "no walk-forward fold had enough samples/classes"}
+        pred_frame = pd.DataFrame()
 
-    return {"target": target, "model": model_name, "folds": folds, "aggregate": aggregate}
+    return {"target": target, "model": model_name, "folds": folds, "aggregate": aggregate, "_predictions": pred_frame}
 
 
 def run_jump_risk_lab(
@@ -388,17 +492,28 @@ def run_jump_risk_lab(
     }
 
     runs: list[dict[str, Any]] = []
+    prediction_paths: list[str] = []
+    stem = f"{cfg.asset.lower()}_h{cfg.horizon_bars}_z{cfg.jump_z:g}_abs{cfg.absolute_jump:g}".replace(".", "p")
+
     for target in targets:
         for model in models:
-            runs.append(run_walk_forward(frame, cfg, target, model))
+            run = run_walk_forward(frame, cfg, target, model)
+            pred_frame = run.pop("_predictions", pd.DataFrame())
+            if not pred_frame.empty:
+                pred_path = out / f"{stem}_{target}_{model}_oos_predictions.csv"
+                pred_frame.reset_index().to_csv(pred_path, index=False)
+                prediction_paths.append(str(pred_path))
+                run["aggregate"]["oos_predictions_csv"] = str(pred_path)
+            runs.append(run)
 
-    report = {"config": asdict(cfg), "label_summary": label_summary, "runs": runs}
+    report = {"config": asdict(cfg), "label_summary": label_summary, "prediction_csvs": prediction_paths, "runs": runs}
 
-    stem = f"{cfg.asset.lower()}_h{cfg.horizon_bars}_z{cfg.jump_z:g}_abs{cfg.absolute_jump:g}".replace(".", "p")
     (out / f"{stem}_report.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
     frame.reset_index().to_csv(out / f"{stem}_dataset.csv", index=False)
 
     summary_rows: list[dict[str, Any]] = []
+    lift_rows: list[dict[str, Any]] = []
+    profile_rows: list[dict[str, Any]] = []
     for run in runs:
         agg = run["aggregate"]
         summary_rows.append(
@@ -414,7 +529,17 @@ def run_jump_risk_lab(
                 "average_precision": agg.get("average_precision"),
                 "brier": agg.get("brier"),
                 "reason": agg.get("reason"),
+                "oos_predictions_csv": agg.get("oos_predictions_csv"),
             }
         )
+        diag = agg.get("diagnostics") or {}
+        for row in diag.get("lift_at_top_quantiles", []):
+            lift_rows.append({"asset": cfg.asset, "target": run["target"], "model": run["model"], **row})
+        for group_name, rows in (diag.get("feature_profiles") or {}).items():
+            for row in rows:
+                profile_rows.append({"asset": cfg.asset, "target": run["target"], "model": run["model"], "group": group_name, **row})
+
     pd.DataFrame(summary_rows).to_csv(out / f"{stem}_summary.csv", index=False)
+    pd.DataFrame(lift_rows).to_csv(out / f"{stem}_lift.csv", index=False)
+    pd.DataFrame(profile_rows).to_csv(out / f"{stem}_feature_profiles.csv", index=False)
     return report
