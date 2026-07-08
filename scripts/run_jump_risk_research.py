@@ -30,6 +30,30 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def _fmt(x: object) -> str:
+    if x is None:
+        return "n/a"
+    if isinstance(x, float):
+        return f"{x:.4f}"
+    return str(x)
+
+
+def _best_lift_line(run: dict) -> str:
+    diag = (run.get("aggregate") or {}).get("diagnostics") or {}
+    lifts = diag.get("lift_at_top_quantiles") or []
+    top_10 = next((r for r in lifts if abs(float(r.get("top_quantile", -1)) - 0.10) < 1e-9), None)
+    top_5 = next((r for r in lifts if abs(float(r.get("top_quantile", -1)) - 0.05) < 1e-9), None)
+    if not top_10 and not top_5:
+        return "lift=n/a"
+    parts = []
+    for label, row in (("top5", top_5), ("top10", top_10)):
+        if row:
+            rate = row.get("event_rate")
+            lift = row.get("lift_vs_unconditional")
+            parts.append(f"{label}_rate={rate:.2%} lift={lift:.2f}x" if rate is not None and lift is not None else f"{label}=n/a")
+    return " ".join(parts)
+
+
 def main() -> None:
     args = parse_args()
     cfg = JumpRiskConfig(
@@ -63,8 +87,13 @@ def main() -> None:
         status = agg.get("status")
         print(
             f"- target={run['target']:<4} model={run['model']:<8} status={status:<7} "
-            f"auc={auc if auc is not None else 'n/a'} ap={ap if ap is not None else 'n/a'}"
+            f"auc={_fmt(auc)} ap={_fmt(ap)} {_best_lift_line(run)}"
         )
+
+    print()
+    print("Diagnostics written:")
+    for path in report.get("prediction_csvs", []):
+        print(f"- {path}")
 
 
 if __name__ == "__main__":
