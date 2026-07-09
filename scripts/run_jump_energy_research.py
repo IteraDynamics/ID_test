@@ -6,6 +6,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -90,7 +91,6 @@ def _best_lift_line(run: dict) -> str:
 
 def _write_outputs(report: dict, frame: pd.DataFrame, out: Path, cfg: JumpRiskConfig) -> None:
     stem = f"{cfg.asset.lower()}_h{cfg.horizon_bars}_z{cfg.jump_z:g}_abs{cfg.absolute_jump:g}".replace(".", "p")
-    (out / f"{stem}_report.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
     frame.reset_index().to_csv(out / f"{stem}_dataset.csv", index=False)
 
     summary_rows: list[dict] = []
@@ -156,12 +156,13 @@ def main() -> None:
 
     ohlcv = read_ohlcv(args.data)
     base_frame = lab.build_feature_label_frame(ohlcv, cfg)
+    log_ret = np.log(ohlcv["close"].astype(float)).diff()
     enriched = add_market_energy_features(
         base_frame,
         close=ohlcv["close"].astype(float),
         high=ohlcv["high"].astype(float),
         low=ohlcv["low"].astype(float),
-        ret=pd.Series(pd.NA, index=ohlcv.index).astype("float64").combine_first((ohlcv["close"].astype(float).pipe(lambda s: s / s.shift(1)).pipe(lambda s: s.apply(lambda x: pd.NA if pd.isna(x) else x))).pipe(lambda s: pd.Series(pd.NA, index=s.index))),
+        ret=log_ret,
         realized_vol=base_frame["realized_vol"],
         fast_vol=base_frame["fast_vol"],
         slow_vol=base_frame["slow_vol"],
@@ -169,54 +170,17 @@ def main() -> None:
         range_rank=base_frame["range_rank"],
         fast_window=cfg.fast_window,
         slow_window=cfg.slow_window,
-    )
-
-    # The intentionally ugly ret construction above keeps the function signature explicit,
-    # but for actual energy calculations we want log returns aligned to the raw OHLCV index.
-    enriched = add_market_energy_features(
-        base_frame,
-        close=ohlcv["close"].astype(float),
-        high=ohlcv["high"].astype(float),
-        low=ohlcv["low"].astype(float),
-        ret=pd.Series(pd.NA, index=ohlcv.index).astype("float64").combine_first(
-            pd.Series(pd.NA, index=ohlcv.index).astype("float64")
-        ).fillna((ohlcv["close"].astype(float).pipe(lambda s: s.apply(lambda _: 0.0)))),
-        realized_vol=base_frame["realized_vol"],
-        fast_vol=base_frame["fast_vol"],
-        slow_vol=base_frame["slow_vol"],
-        vol_rank=base_frame["vol_rank"],
-        range_rank=base_frame["range_rank"],
-        fast_window=cfg.fast_window,
-        slow_window=cfg.slow_window,
-    )
-
-    # Correct the return-dependent energy columns using real log returns. We do this after
-    # preserving the explicit module call above so the runner remains a thin research layer.
-    log_ret = (ohlcv["close"].astype(float).pipe(lambda s: s / s.shift(1))).apply(lambda x: pd.NA if pd.isna(x) else __import__("math").log(float(x)))
-    enriched = add_market_energy_features(
-        base_frame,
-        close=ohlcv["close"].astype(float),
-        high=ohlcv["high"].astype(float),
-        low=ohlcv["low"].astype(float),
-        ret=log_ret.astype(float),
-        realized_vol=base_frame["realized_vol"],
-        fast_vol=base_frame["fast_vol"],
-        slow_vol=base_frame["slow_vol"],
-        vol_rank=base_frame["vol_rank"],
-        range_rank=base_frame["range_rank"],
-        fast_window=cfg.fast_window,
-        slow_window=cfg.slow_window,
-    ).replace([float("inf"), float("-inf")], pd.NA).dropna()
+    ).replace([np.inf, -np.inf], np.nan).dropna()
 
     original_features = list(lab.FEATURE_COLS)
     for col in ENERGY_FEATURE_COLS:
         if col not in lab.FEATURE_COLS:
             lab.FEATURE_COLS.append(col)
 
-    runs: list[dict] = []
-    for target in targets:
-        for model in models:
-            runs.append(lab.run_walk_forward(enriched, cfg, target, model))
+    try:
+        runs = [lab.run_walk_forward(enriched, cfg, target, model) for target in targets for model in models]
+    finally:
+        lab.FEATURE_COLS[:] = original_features
 
     label_summary = {
         "asset": cfg.asset,
@@ -234,9 +198,9 @@ def main() -> None:
         "p99_future_abs": float(enriched["future_abs"].quantile(0.99)),
         "base_feature_count": len(original_features),
         "energy_feature_count": len(ENERGY_FEATURE_COLS),
-        "total_feature_count": len(lab.FEATURE_COLS),
+        "total_feature_count": len(original_features) + len(ENERGY_FEATURE_COLS),
     }
-    report = {"config": asdict(cfg), "experiment": "market_energy_v0", "label_summary": label_summary, "runs": runs}
+    report = {"config": asdict(cfg), "experiment": "market_energy_v0", "artifact_dir": str(out), "label_summary": label_summary, "runs": runs}
     _write_outputs(report, enriched, out, cfg)
 
     print("Market Energy Jump Risk research complete")
