@@ -15,26 +15,58 @@ from sklearn.preprocessing import StandardScaler
 
 
 FEATURE_COLS = [
+    # Basic return / volatility state
     "ret_1",
     "abs_ret_1",
     "ret_3",
     "ret_12",
     "ret_fast",
     "ret_slow",
+    "ret_accel_fast_vs_slow",
     "realized_vol",
     "fast_vol",
     "slow_vol",
     "vol_ratio_fast_slow",
     "vol_rank",
+    "vol_compression_score",
+    "vol_slope_12",
+    "vol_slope_24",
+    "vol_accel_12_24",
     "atr_proxy",
     "range_rank",
     "vol_of_vol",
     "skew",
     "kurt",
     "volume_z",
+    # Compression / squeeze features
+    "bb_width_fast",
+    "bb_width_slow",
+    "bb_width_ratio",
+    "bb_width_rank",
+    "bb_compression_score",
+    "range_ratio_fast_slow",
+    "squeeze_flag",
+    "squeeze_duration",
+    "range_squeeze_flag",
+    "range_squeeze_duration",
+    # Market structure / positioning
     "distance_sma_fast",
     "distance_sma_slow",
     "trend_fast_gt_slow",
+    "distance_high_fast",
+    "distance_high_slow",
+    "distance_low_fast",
+    "distance_low_slow",
+    "drawdown_fast",
+    "drawdown_slow",
+    "breakout_proximity_fast",
+    "breakout_proximity_slow",
+    "breakdown_proximity_fast",
+    "breakdown_proximity_slow",
+    "trend_strength_fast_slow",
+    "range_position_fast",
+    "range_position_slow",
+    # Calendar / seasonality controls
     "hour_utc",
     "day_of_week",
 ]
@@ -118,26 +150,44 @@ def _future_window_stat(series: pd.Series, horizon: int, fn: str) -> pd.Series:
     return out.iloc[::-1]
 
 
+def _consecutive_count(flag: pd.Series) -> pd.Series:
+    """Count consecutive True bars up to and including the current bar."""
+    clean = flag.fillna(False).astype(bool)
+    groups = clean.ne(clean.shift(fill_value=False)).cumsum()
+    counts = clean.groupby(groups).cumcount() + 1
+    return counts.where(clean, 0).astype(float)
+
+
+def _safe_ratio(numerator: pd.Series, denominator: pd.Series) -> pd.Series:
+    return numerator / denominator.replace(0, np.nan)
+
+
 def build_feature_label_frame(df: pd.DataFrame, cfg: JumpRiskConfig) -> pd.DataFrame:
     px = df["close"].astype(float)
+    high = df["high"].astype(float)
+    low = df["low"].astype(float)
     ret = np.log(px).diff()
     simple_ret = px.pct_change()
-    high_low = np.log(df["high"] / df["low"]).replace([np.inf, -np.inf], np.nan)
+    high_low = np.log(high / low).replace([np.inf, -np.inf], np.nan)
 
-    realized_vol = ret.rolling(cfg.vol_window, min_periods=cfg.vol_window // 2).std()
-    fast_vol = ret.rolling(cfg.fast_window, min_periods=max(5, cfg.fast_window // 2)).std()
-    slow_vol = ret.rolling(cfg.slow_window, min_periods=max(20, cfg.slow_window // 2)).std()
-    atr_proxy = high_low.rolling(cfg.vol_window, min_periods=cfg.vol_window // 2).mean()
+    min_fast = max(5, cfg.fast_window // 2)
+    min_slow = max(20, cfg.slow_window // 2)
+    min_vol = max(20, cfg.vol_window // 2)
 
-    sma_fast = px.rolling(cfg.fast_window, min_periods=max(5, cfg.fast_window // 2)).mean()
-    sma_slow = px.rolling(cfg.slow_window, min_periods=max(20, cfg.slow_window // 2)).mean()
+    realized_vol = ret.rolling(cfg.vol_window, min_periods=min_vol).std()
+    fast_vol = ret.rolling(cfg.fast_window, min_periods=min_fast).std()
+    slow_vol = ret.rolling(cfg.slow_window, min_periods=min_slow).std()
+    atr_proxy = high_low.rolling(cfg.vol_window, min_periods=min_vol).mean()
 
-    vol_rank = realized_vol.rolling(cfg.slow_window, min_periods=max(20, cfg.slow_window // 2)).rank(pct=True)
-    range_rank = high_low.rolling(cfg.slow_window, min_periods=max(20, cfg.slow_window // 2)).rank(pct=True)
+    sma_fast = px.rolling(cfg.fast_window, min_periods=min_fast).mean()
+    sma_slow = px.rolling(cfg.slow_window, min_periods=min_slow).mean()
+
+    vol_rank = realized_vol.rolling(cfg.slow_window, min_periods=min_slow).rank(pct=True)
+    range_rank = high_low.rolling(cfg.slow_window, min_periods=min_slow).rank(pct=True)
 
     vol_of_vol = realized_vol.pct_change().replace([np.inf, -np.inf], np.nan).rolling(cfg.fast_window, min_periods=5).std()
-    skew = ret.rolling(cfg.vol_window, min_periods=cfg.vol_window // 2).skew()
-    kurt = ret.rolling(cfg.vol_window, min_periods=cfg.vol_window // 2).kurt()
+    skew = ret.rolling(cfg.vol_window, min_periods=min_vol).skew()
+    kurt = ret.rolling(cfg.vol_window, min_periods=min_vol).kurt()
 
     if df["volume"].notna().sum() > 0:
         volume = df["volume"].astype(float).replace(0, np.nan)
@@ -147,6 +197,53 @@ def build_feature_label_frame(df: pd.DataFrame, cfg: JumpRiskConfig) -> pd.DataF
         ).std()
     else:
         volume_z = pd.Series(0.0, index=df.index)
+
+    # Compression and squeeze features. These are intentionally state features,
+    # not future features: every value is derived from data available at t.
+    rolling_std_fast = px.rolling(cfg.fast_window, min_periods=min_fast).std()
+    rolling_std_slow = px.rolling(cfg.slow_window, min_periods=min_slow).std()
+    bb_width_fast = (4.0 * rolling_std_fast) / sma_fast
+    bb_width_slow = (4.0 * rolling_std_slow) / sma_slow
+    bb_width_ratio = _safe_ratio(bb_width_fast, bb_width_slow)
+    bb_width_rank = bb_width_fast.rolling(cfg.slow_window, min_periods=min_slow).rank(pct=True)
+    bb_compression_score = 1.0 - bb_width_rank
+
+    range_fast = high.rolling(cfg.fast_window, min_periods=min_fast).max() / low.rolling(cfg.fast_window, min_periods=min_fast).min() - 1.0
+    range_slow = high.rolling(cfg.slow_window, min_periods=min_slow).max() / low.rolling(cfg.slow_window, min_periods=min_slow).min() - 1.0
+    range_ratio_fast_slow = _safe_ratio(range_fast, range_slow)
+
+    squeeze_flag = ((bb_width_rank <= 0.20) & (vol_rank <= 0.30)).astype(float)
+    squeeze_duration = _consecutive_count(squeeze_flag.astype(bool))
+    range_squeeze_flag = ((range_rank <= 0.20) | (range_ratio_fast_slow <= 0.35)).astype(float)
+    range_squeeze_duration = _consecutive_count(range_squeeze_flag.astype(bool))
+
+    # Market-structure features: proximity to recent highs/lows, current drawdown,
+    # and where price sits inside the fast/slow range. These are often more useful
+    # for tail-risk research than raw momentum alone.
+    high_fast = high.rolling(cfg.fast_window, min_periods=min_fast).max()
+    high_slow = high.rolling(cfg.slow_window, min_periods=min_slow).max()
+    low_fast = low.rolling(cfg.fast_window, min_periods=min_fast).min()
+    low_slow = low.rolling(cfg.slow_window, min_periods=min_slow).min()
+
+    distance_high_fast = px / high_fast - 1.0
+    distance_high_slow = px / high_slow - 1.0
+    distance_low_fast = px / low_fast - 1.0
+    distance_low_slow = px / low_slow - 1.0
+    drawdown_fast = px / high_fast - 1.0
+    drawdown_slow = px / high_slow - 1.0
+    breakout_proximity_fast = 1.0 + distance_high_fast
+    breakout_proximity_slow = 1.0 + distance_high_slow
+    breakdown_proximity_fast = distance_low_fast
+    breakdown_proximity_slow = distance_low_slow
+    trend_strength_fast_slow = sma_fast / sma_slow - 1.0
+    range_position_fast = (px - low_fast) / (high_fast - low_fast).replace(0, np.nan)
+    range_position_slow = (px - low_slow) / (high_slow - low_slow).replace(0, np.nan)
+
+    vol_slope_12 = realized_vol / realized_vol.shift(12) - 1.0
+    vol_slope_24 = realized_vol / realized_vol.shift(24) - 1.0
+    vol_accel_12_24 = vol_slope_12 - vol_slope_24
+    ret_accel_fast_vs_slow = px.pct_change(cfg.fast_window) - px.pct_change(cfg.slow_window)
+    vol_compression_score = 1.0 - vol_rank
 
     future_max = _future_window_stat(px, cfg.horizon_bars, "max")
     future_min = _future_window_stat(px, cfg.horizon_bars, "min")
@@ -169,20 +266,48 @@ def build_feature_label_frame(df: pd.DataFrame, cfg: JumpRiskConfig) -> pd.DataF
             "ret_12": px.pct_change(12),
             "ret_fast": px.pct_change(cfg.fast_window),
             "ret_slow": px.pct_change(cfg.slow_window),
+            "ret_accel_fast_vs_slow": ret_accel_fast_vs_slow,
             "realized_vol": realized_vol,
             "fast_vol": fast_vol,
             "slow_vol": slow_vol,
             "vol_ratio_fast_slow": fast_vol / slow_vol,
             "vol_rank": vol_rank,
+            "vol_compression_score": vol_compression_score,
+            "vol_slope_12": vol_slope_12,
+            "vol_slope_24": vol_slope_24,
+            "vol_accel_12_24": vol_accel_12_24,
             "atr_proxy": atr_proxy,
             "range_rank": range_rank,
             "vol_of_vol": vol_of_vol,
             "skew": skew,
             "kurt": kurt,
             "volume_z": volume_z,
+            "bb_width_fast": bb_width_fast,
+            "bb_width_slow": bb_width_slow,
+            "bb_width_ratio": bb_width_ratio,
+            "bb_width_rank": bb_width_rank,
+            "bb_compression_score": bb_compression_score,
+            "range_ratio_fast_slow": range_ratio_fast_slow,
+            "squeeze_flag": squeeze_flag,
+            "squeeze_duration": squeeze_duration,
+            "range_squeeze_flag": range_squeeze_flag,
+            "range_squeeze_duration": range_squeeze_duration,
             "distance_sma_fast": px / sma_fast - 1.0,
             "distance_sma_slow": px / sma_slow - 1.0,
             "trend_fast_gt_slow": (sma_fast > sma_slow).astype(float),
+            "distance_high_fast": distance_high_fast,
+            "distance_high_slow": distance_high_slow,
+            "distance_low_fast": distance_low_fast,
+            "distance_low_slow": distance_low_slow,
+            "drawdown_fast": drawdown_fast,
+            "drawdown_slow": drawdown_slow,
+            "breakout_proximity_fast": breakout_proximity_fast,
+            "breakout_proximity_slow": breakout_proximity_slow,
+            "breakdown_proximity_fast": breakdown_proximity_fast,
+            "breakdown_proximity_slow": breakdown_proximity_slow,
+            "trend_strength_fast_slow": trend_strength_fast_slow,
+            "range_position_fast": range_position_fast,
+            "range_position_slow": range_position_slow,
             "hour_utc": df.index.hour.astype(float),
             "day_of_week": df.index.dayofweek.astype(float),
             "future_up": future_up,
@@ -296,10 +421,18 @@ def _window_rows(frame: pd.DataFrame, probs: pd.Series, label: pd.Series, mask: 
                 "threshold": float(r["jump_threshold"]),
                 "realized_vol": float(r["realized_vol"]),
                 "vol_rank": float(r["vol_rank"]),
+                "bb_width_rank": float(r["bb_width_rank"]),
+                "bb_compression_score": float(r["bb_compression_score"]),
+                "squeeze_duration": float(r["squeeze_duration"]),
+                "range_squeeze_duration": float(r["range_squeeze_duration"]),
                 "range_rank": float(r["range_rank"]),
                 "vol_ratio_fast_slow": float(r["vol_ratio_fast_slow"]),
                 "distance_sma_fast": float(r["distance_sma_fast"]),
                 "distance_sma_slow": float(r["distance_sma_slow"]),
+                "distance_high_fast": float(r["distance_high_fast"]),
+                "distance_high_slow": float(r["distance_high_slow"]),
+                "range_position_fast": float(r["range_position_fast"]),
+                "range_position_slow": float(r["range_position_slow"]),
                 "ret_fast": float(r["ret_fast"]),
                 "ret_slow": float(r["ret_slow"]),
             }
@@ -372,6 +505,10 @@ def run_walk_forward(frame: pd.DataFrame, cfg: JumpRiskConfig, target: str, mode
     y_col = f"jump_{target}"
     if y_col not in frame.columns:
         raise ValueError(f"Unknown target {target!r}; expected one of any/down/up")
+
+    missing_features = [c for c in FEATURE_COLS if c not in frame.columns]
+    if missing_features:
+        raise ValueError(f"Missing feature columns: {missing_features}")
 
     years = sorted(y for y in frame.index.year.unique() if y >= cfg.test_start_year)
     folds: list[dict[str, Any]] = []
@@ -489,6 +626,7 @@ def run_jump_risk_lab(
         "median_threshold": float(frame["jump_threshold"].median()),
         "p90_future_abs": float(frame["future_abs"].quantile(0.90)),
         "p99_future_abs": float(frame["future_abs"].quantile(0.99)),
+        "feature_count": len(FEATURE_COLS),
     }
 
     runs: list[dict[str, Any]] = []
