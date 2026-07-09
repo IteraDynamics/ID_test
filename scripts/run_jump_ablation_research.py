@@ -127,6 +127,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--test-start-year", type=int, default=2020)
     p.add_argument("--models", default="logistic,gbm", help="Comma-separated: logistic,gbm,rf")
     p.add_argument("--targets", default="any,down,up", help="Comma-separated: any,down,up")
+    p.add_argument("--write-predictions", action="store_true", help="Write full OOS prediction CSVs. Off by default because these files are large.")
+    p.add_argument("--write-dataset", action="store_true", help="Write the full ablation dataset CSV. Off by default because it is large.")
     return p.parse_args()
 
 
@@ -171,9 +173,9 @@ def _metric_row(experiment: str, run: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _write_prediction_outputs(run_dir: Path, stem: str, experiment: str, run: dict[str, Any]) -> str | None:
+def _write_prediction_outputs(run_dir: Path, stem: str, experiment: str, run: dict[str, Any], write_predictions: bool) -> str | None:
     pred_frame = run.pop("_predictions", pd.DataFrame())
-    if pred_frame.empty:
+    if pred_frame.empty or not write_predictions:
         return None
     pred_dir = run_dir / experiment / "predictions"
     pred_dir.mkdir(parents=True, exist_ok=True)
@@ -259,14 +261,32 @@ def _diff(a: Any, b: Any) -> float | None:
     return float(a) - float(b)
 
 
-def _run_with_features(frame: pd.DataFrame, cfg: JumpRiskConfig, features: list[str], targets: tuple[str, ...], models: tuple[str, ...]) -> list[dict[str, Any]]:
+def _run_with_features(
+    frame: pd.DataFrame,
+    cfg: JumpRiskConfig,
+    features: list[str],
+    targets: tuple[str, ...],
+    models: tuple[str, ...],
+    experiment: str,
+    progress_state: dict[str, int],
+) -> list[dict[str, Any]]:
     missing = [c for c in features if c not in frame.columns]
     if missing:
         raise ValueError(f"Missing ablation features: {missing}")
     original_features = list(lab.FEATURE_COLS)
     lab.FEATURE_COLS[:] = list(dict.fromkeys(features))
     try:
-        return [lab.run_walk_forward(frame, cfg, target, model) for target in targets for model in models]
+        runs: list[dict[str, Any]] = []
+        for target in targets:
+            for model in models:
+                progress_state["current"] += 1
+                print(
+                    f"[{progress_state['current']}/{progress_state['total']}] "
+                    f"experiment={experiment:<18} target={target:<4} model={model:<8} features={len(lab.FEATURE_COLS)}",
+                    flush=True,
+                )
+                runs.append(lab.run_walk_forward(frame, cfg, target, model))
+        return runs
     finally:
         lab.FEATURE_COLS[:] = original_features
 
@@ -288,6 +308,7 @@ def main() -> None:
     run_dir = make_run_dir(args.out_dir, "ablation", cfg, args.run_name)
     stem = f"{cfg.asset.lower()}_h{cfg.horizon_bars}_z{cfg.jump_z:g}_abs{cfg.absolute_jump:g}".replace(".", "p")
 
+    print("Preparing ablation dataset...", flush=True)
     ohlcv = read_ohlcv(args.data)
     base_frame = lab.build_feature_label_frame(ohlcv, cfg)
     log_ret = np.log(ohlcv["close"].astype(float)).diff()
@@ -306,17 +327,24 @@ def main() -> None:
         slow_window=cfg.slow_window,
     ).replace([np.inf, -np.inf], np.nan).dropna()
 
+    print(f"Rows: {len(frame)}", flush=True)
+    print(f"Out dir: {run_dir}", flush=True)
+    print(f"Full prediction CSVs: {'ON' if args.write_predictions else 'OFF'}", flush=True)
+    print(f"Full dataset CSV: {'ON' if args.write_dataset else 'OFF'}", flush=True)
+    print(flush=True)
+
     summary_rows: list[dict[str, Any]] = []
     feature_importance_rows: list[dict[str, Any]] = []
     reports: dict[str, Any] = {}
+    progress_state = {"current": 0, "total": len(EXPERIMENTS) * len(targets) * len(models)}
 
     for experiment, features in EXPERIMENTS.items():
         exp_dir = run_dir / experiment
         exp_dir.mkdir(parents=True, exist_ok=True)
-        runs = _run_with_features(frame, cfg, features, targets, models)
+        runs = _run_with_features(frame, cfg, features, targets, models, experiment, progress_state)
         prediction_paths: list[str] = []
         for run in runs:
-            prediction_path = _write_prediction_outputs(run_dir, stem, experiment, run)
+            prediction_path = _write_prediction_outputs(run_dir, stem, experiment, run, args.write_predictions)
             if prediction_path:
                 prediction_paths.append(prediction_path)
             summary_rows.append(_metric_row(experiment, run))
@@ -342,7 +370,19 @@ def main() -> None:
     deltas.to_csv(run_dir / f"{stem}_ablation_deltas.csv", index=False)
     feature_importance.to_csv(run_dir / f"{stem}_feature_importance_by_fold.csv", index=False)
     stability.to_csv(run_dir / f"{stem}_feature_importance_stability.csv", index=False)
-    frame.reset_index().to_csv(run_dir / f"{stem}_ablation_dataset.csv", index=False)
+    dataset_path = None
+    if args.write_dataset:
+        dataset_path = run_dir / f"{stem}_ablation_dataset.csv"
+        frame.reset_index().to_csv(dataset_path, index=False)
+
+    manifest_outputs = {
+        "summary": str(run_dir / f"{stem}_ablation_summary.csv"),
+        "deltas": str(run_dir / f"{stem}_ablation_deltas.csv"),
+        "feature_importance_by_fold": str(run_dir / f"{stem}_feature_importance_by_fold.csv"),
+        "feature_importance_stability": str(run_dir / f"{stem}_feature_importance_stability.csv"),
+    }
+    if dataset_path:
+        manifest_outputs["dataset"] = str(dataset_path)
 
     manifest = {
         "experiment": "feature_ablation_v0",
@@ -353,19 +393,15 @@ def main() -> None:
         "rows": int(len(frame)),
         "start": frame.index.min().isoformat(),
         "end": frame.index.max().isoformat(),
+        "write_predictions": bool(args.write_predictions),
+        "write_dataset": bool(args.write_dataset),
         "feature_families": {
             "baseline": BASELINE_FEATURES,
             "structure": STRUCTURE_FEATURES,
             "energy": ENERGY_FEATURES,
         },
         "experiments": {name: {"feature_count": len(features)} for name, features in EXPERIMENTS.items()},
-        "outputs": {
-            "summary": str(run_dir / f"{stem}_ablation_summary.csv"),
-            "deltas": str(run_dir / f"{stem}_ablation_deltas.csv"),
-            "feature_importance_by_fold": str(run_dir / f"{stem}_feature_importance_by_fold.csv"),
-            "feature_importance_stability": str(run_dir / f"{stem}_feature_importance_stability.csv"),
-            "dataset": str(run_dir / f"{stem}_ablation_dataset.csv"),
-        },
+        "outputs": manifest_outputs,
     }
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
 
@@ -390,6 +426,10 @@ def main() -> None:
     print(f"- {run_dir / f'{stem}_ablation_summary.csv'}")
     print(f"- {run_dir / f'{stem}_ablation_deltas.csv'}")
     print(f"- {run_dir / f'{stem}_feature_importance_stability.csv'}")
+    if args.write_predictions:
+        print("- prediction CSVs written under each experiment/predictions folder")
+    else:
+        print("- prediction CSVs skipped; rerun with --write-predictions if needed")
 
 
 if __name__ == "__main__":
