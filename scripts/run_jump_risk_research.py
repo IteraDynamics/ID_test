@@ -8,6 +8,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from research.jump_risk_engine import JumpRiskConfig, run_jump_risk_lab
+from research.jump_risk_engine.artifacts import make_run_dir
 
 
 def parse_args() -> argparse.Namespace:
@@ -18,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--asset", required=True, help="Asset label, e.g. BTC, ETH, SPY, QQQ, GLD")
     p.add_argument("--data", required=True, help="CSV containing timestamp/date + OHLCV columns")
     p.add_argument("--out-dir", default="artifacts/jump_risk_engine_v0")
+    p.add_argument("--run-name", default="baseline-generic-plus-structure")
     p.add_argument("--horizon-bars", type=int, default=24)
     p.add_argument("--vol-window", type=int, default=96)
     p.add_argument("--fast-window", type=int, default=24)
@@ -68,7 +70,9 @@ def main() -> None:
     )
     models = tuple(x.strip() for x in args.models.split(",") if x.strip())
     targets = tuple(x.strip() for x in args.targets.split(",") if x.strip())
-    report = run_jump_risk_lab(args.data, cfg, args.out_dir, models=models, targets=targets)
+    run_dir = make_run_dir(args.out_dir, "jump_risk", cfg, args.run_name)
+    report = run_jump_risk_lab(args.data, cfg, run_dir, models=models, targets=targets)
+    report["artifact_dir"] = str(run_dir)
 
     print("Jump Risk Engine v0 research complete")
     print(f"Asset: {cfg.asset}")
@@ -77,7 +81,7 @@ def main() -> None:
     print(f"Jump-any rate: {report['label_summary']['jump_any_rate']:.2%}")
     print(f"Jump-down rate: {report['label_summary']['jump_down_rate']:.2%}")
     print(f"Jump-up rate: {report['label_summary']['jump_up_rate']:.2%}")
-    print(f"Out dir: {args.out_dir}")
+    print(f"Out dir: {run_dir}")
     print()
     print("Model summary:")
     for run in report["runs"]:
