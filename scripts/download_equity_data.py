@@ -81,38 +81,72 @@ def _validate_dates(start: str, end: str) -> None:
         raise ValueError(f"End date {end!r} is before start date {start!r}")
 
 
+def _flatten_yfinance_columns(frame: pd.DataFrame, asset: str) -> pd.DataFrame:
+    if not isinstance(frame.columns, pd.MultiIndex):
+        return frame
+
+    # yfinance may return either (Price, Ticker) or (Ticker, Price), depending
+    # on version and invocation. Select the requested ticker when possible,
+    # then collapse the remaining level to the OHLCV field names.
+    for level in range(frame.columns.nlevels):
+        values = {str(value).upper() for value in frame.columns.get_level_values(level)}
+        if asset.upper() in values:
+            frame = frame.xs(asset, axis=1, level=level, drop_level=True)
+            break
+
+    if isinstance(frame.columns, pd.MultiIndex):
+        # A single ticker can still leave a redundant one-value level.
+        while isinstance(frame.columns, pd.MultiIndex) and frame.columns.nlevels > 1:
+            unique_counts = [frame.columns.get_level_values(level).nunique() for level in range(frame.columns.nlevels)]
+            removable = next((level for level, count in enumerate(unique_counts) if count == 1), None)
+            if removable is None:
+                break
+            frame.columns = frame.columns.droplevel(removable)
+
+    if isinstance(frame.columns, pd.MultiIndex):
+        raise RuntimeError(
+            f"Could not normalize yfinance MultiIndex columns for {asset}: {list(frame.columns)[:10]}"
+        )
+    return frame
+
+
 def _normalize_download(raw: pd.DataFrame, asset: str) -> pd.DataFrame:
     if raw.empty:
         raise RuntimeError(f"yfinance returned no rows for {asset}")
 
-    frame = raw.copy()
-    if isinstance(frame.columns, pd.MultiIndex):
-        if asset in frame.columns.get_level_values(-1):
-            frame = frame.xs(asset, axis=1, level=-1)
-        else:
-            frame.columns = frame.columns.get_level_values(0)
+    frame = _flatten_yfinance_columns(raw.copy(), asset)
+    frame.columns = [str(column).strip().lower() for column in frame.columns]
 
-    rename = {str(column).strip().lower(): column for column in frame.columns}
     required = ["open", "high", "low", "close"]
-    missing = [name for name in required if name not in rename]
+    missing = [name for name in required if name not in frame.columns]
     if missing:
-        raise RuntimeError(f"Downloaded data for {asset} is missing columns: {missing}")
+        raise RuntimeError(
+            f"Downloaded data for {asset} is missing columns {missing}; received columns: {list(frame.columns)}"
+        )
 
-    output = pd.DataFrame(index=pd.to_datetime(frame.index, utc=True))
-    output["open"] = pd.to_numeric(frame[rename["open"]], errors="coerce")
-    output["high"] = pd.to_numeric(frame[rename["high"]], errors="coerce")
-    output["low"] = pd.to_numeric(frame[rename["low"]], errors="coerce")
-    output["close"] = pd.to_numeric(frame[rename["close"]], errors="coerce")
-    if "volume" in rename:
-        output["volume"] = pd.to_numeric(frame[rename["volume"]], errors="coerce")
+    # Normalize the source frame's index first. Assigning Series from the old
+    # naive Date index into a new UTC index causes pandas label alignment to
+    # produce all-NaN columns.
+    normalized_index = pd.to_datetime(frame.index, utc=True, errors="coerce")
+    valid_index = ~normalized_index.isna()
+    frame = frame.loc[valid_index].copy()
+    frame.index = normalized_index[valid_index]
+    frame.index.name = "timestamp"
+
+    output = pd.DataFrame(index=frame.index)
+    for column in required:
+        output[column] = pd.to_numeric(frame[column], errors="coerce").to_numpy()
+    if "volume" in frame.columns:
+        output["volume"] = pd.to_numeric(frame["volume"], errors="coerce").fillna(0.0).to_numpy()
     else:
         output["volume"] = 0.0
 
     output = output.dropna(subset=required).sort_index()
     output = output[~output.index.duplicated(keep="last")]
-    output.index.name = "timestamp"
     if output.empty:
-        raise RuntimeError(f"No usable normalized rows for {asset}")
+        raise RuntimeError(
+            f"No usable normalized rows for {asset}; raw rows={len(raw)}, columns={list(frame.columns)}"
+        )
     return output
 
 
@@ -189,6 +223,8 @@ def main() -> None:
             progress=False,
             actions=False,
             threads=False,
+            group_by="column",
+            multi_level_index=False,
         )
         frame = _normalize_download(raw, asset)
         _write_csv(path, frame, overwrite=args.overwrite)
