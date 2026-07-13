@@ -15,36 +15,37 @@ sys.path.insert(0, str(REPO_ROOT))
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description=(
             "Phase 2 locked-candidate Jump Risk validation across Core v1 assets. "
-            "Runs the exact BTC-selected candidates at z=3.0 and abs=5% without retuning."
+            "Runs the exact BTC-selected candidates at z=3.0 and abs=5% without retuning. "
+            "Input data must be hourly."
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument(
+    parser.add_argument(
         "--asset-data",
         action="append",
         required=True,
         metavar="ASSET=PATH",
         help=(
-            "Asset and OHLCV CSV mapping. Repeat for ETH, SPY, QQQ, and GLD. "
+            "Asset and hourly OHLCV CSV mapping. Repeat for ETH, SPY, QQQ, and GLD. "
             "SOL is intentionally outside this Phase 2 Core-universe validation."
         ),
     )
-    p.add_argument("--out-dir", default="artifacts/jump_risk_engine_v0")
-    p.add_argument("--cache-dir", default="artifacts/research_engine_v1/cache")
-    p.add_argument("--run-name", default="cross-asset-validation-v0")
-    p.add_argument("--test-start-year", type=int, default=2020)
-    p.add_argument("--vol-window", type=int, default=96)
-    p.add_argument("--fast-window", type=int, default=24)
-    p.add_argument("--slow-window", type=int, default=240)
-    p.add_argument(
+    parser.add_argument("--out-dir", default="artifacts/jump_risk_engine_v0")
+    parser.add_argument("--cache-dir", default="artifacts/research_engine_v1/cache")
+    parser.add_argument("--run-name", default="cross-asset-validation-v0")
+    parser.add_argument("--test-start-year", type=int, default=2020)
+    parser.add_argument("--vol-window", type=int, default=96)
+    parser.add_argument("--fast-window", type=int, default=24)
+    parser.add_argument("--slow-window", type=int, default=240)
+    parser.add_argument(
         "--allow-noncore-assets",
         action="store_true",
-        help="Permit assets outside ETH, SPY, QQQ, and GLD. Off by default to preserve the locked Phase 2 scope.",
+        help="Permit assets outside ETH, SPY, QQQ, and GLD for a separately scoped experiment.",
     )
-    return p.parse_args()
+    return parser.parse_args()
 
 
 def _slug(value: str) -> str:
@@ -52,9 +53,52 @@ def _slug(value: str) -> str:
     return "-".join(part for part in cleaned.split("-") if part) or "unnamed"
 
 
-def _parse_asset_data(values: list[str], allow_noncore: bool) -> dict[str, Path]:
+def _detect_timestamp_column(frame: pd.DataFrame) -> str:
+    lower = {str(column).strip().lower(): str(column) for column in frame.columns}
+    for candidate in ("timestamp", "datetime", "date", "time"):
+        if candidate in lower:
+            return lower[candidate]
+    first = str(frame.columns[0])
+    parsed = pd.to_datetime(frame[first], utc=True, errors="coerce")
+    if parsed.notna().mean() > 0.8:
+        return first
+    raise ValueError("Unable to identify a timestamp column")
+
+
+def _validate_hourly_file(asset: str, path: Path) -> dict[str, Any]:
+    sample = pd.read_csv(path, nrows=5000)
+    if sample.empty:
+        raise ValueError(f"Data file is empty for {asset}: {path}")
+    timestamp_column = _detect_timestamp_column(sample)
+    timestamps = pd.to_datetime(sample[timestamp_column], utc=True, errors="coerce").dropna().sort_values()
+    if len(timestamps) < 3:
+        raise ValueError(f"Not enough valid timestamps to validate cadence for {asset}: {path}")
+
+    deltas = timestamps.diff().dropna().dt.total_seconds()
+    positive = deltas[deltas > 0]
+    if positive.empty:
+        raise ValueError(f"Unable to determine cadence for {asset}: {path}")
+
+    median_seconds = float(positive.median())
+    if not 3000 <= median_seconds <= 5400:
+        raise ValueError(
+            f"{asset} file is not hourly: median spacing is {median_seconds / 3600.0:.2f} hours ({path}). "
+            "Daily SPY/QQQ/GLD files are not valid for the locked hourly transfer test."
+        )
+
+    return {
+        "path": str(path),
+        "timestamp_column": timestamp_column,
+        "sample_rows": int(len(timestamps)),
+        "median_spacing_seconds": median_seconds,
+        "validated_as_hourly": True,
+    }
+
+
+def _parse_asset_data(values: list[str], allow_noncore: bool) -> tuple[dict[str, Path], dict[str, Any]]:
     allowed = {"ETH", "SPY", "QQQ", "GLD"}
     mappings: dict[str, Path] = {}
+    validations: dict[str, Any] = {}
     for raw in values:
         if "=" not in raw:
             raise ValueError(f"Expected ASSET=PATH, received: {raw!r}")
@@ -73,19 +117,20 @@ def _parse_asset_data(values: list[str], allow_noncore: bool) -> dict[str, Path]
         if not path.exists():
             raise FileNotFoundError(f"Data file not found for {asset}: {path}")
         mappings[asset] = path
-    return mappings
+        validations[asset] = _validate_hourly_file(asset, path)
+    return mappings, validations
 
 
 def _atomic_json(path: Path, payload: Any) -> None:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
-    tmp.replace(path)
+    temp = path.with_suffix(path.suffix + ".tmp")
+    temp.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    temp.replace(path)
 
 
 def _latest_child_run(root: Path, asset: str) -> Path:
     candidates = sorted(
-        [p for p in root.glob(f"*_{asset.lower()}_*") if p.is_dir()],
-        key=lambda p: p.stat().st_mtime,
+        [path for path in root.glob(f"*_{asset.lower()}_*") if path.is_dir()],
+        key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
     if not candidates:
@@ -127,12 +172,12 @@ def _asset_summary(summary: pd.DataFrame) -> pd.DataFrame:
         "elapsed_seconds",
         "source_run_dir",
     ]
-    return summary[[col for col in keep if col in summary.columns]].copy()
+    return summary[[column for column in keep if column in summary.columns]].copy()
 
 
 def main() -> None:
     args = parse_args()
-    mappings = _parse_asset_data(args.asset_data, args.allow_noncore_assets)
+    mappings, cadence_validation = _parse_asset_data(args.asset_data, args.allow_noncore_assets)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = Path(args.out_dir) / "cross_asset_validation" / f"{timestamp}_{_slug(args.run_name)}"
@@ -142,18 +187,18 @@ def main() -> None:
     state_path = run_dir / "state.json"
     manifest_path = run_dir / "manifest.json"
     state: dict[str, Any] = {"completed": {}, "failed": {}}
-
-    manifest = {
+    manifest: dict[str, Any] = {
         "experiment": "jump_risk_cross_asset_validation_v0",
         "artifact_dir": str(run_dir),
         "scope": {
             "included_assets": list(mappings),
             "excluded_asset": "SOL",
             "reason": "Phase 2 is restricted to the current Core v1 research universe.",
-            "gld_included": True,
+            "gld_included_when_hourly_data_is_available": True,
         },
         "locked_candidate_policy": {
             "source_asset": "BTC",
+            "bar_interval": "1h",
             "jump_z": 3.0,
             "absolute_jump": 0.05,
             "retuning_allowed": False,
@@ -165,6 +210,7 @@ def main() -> None:
             ],
         },
         "asset_data": {asset: str(path) for asset, path in mappings.items()},
+        "cadence_validation": cadence_validation,
         "config": {
             "test_start_year": args.test_start_year,
             "vol_window": args.vol_window,
@@ -177,6 +223,7 @@ def main() -> None:
 
     print("Jump Risk Phase 2 cross-asset validation")
     print(f"Assets: {list(mappings)}")
+    print("Validated cadence: hourly")
     print("Locked thresholds: z=3.0, absolute jump=5%")
     print(f"Run dir: {run_dir}")
     print()
@@ -238,28 +285,18 @@ def main() -> None:
     years: list[pd.DataFrame] = []
     calibration: list[pd.DataFrame] = []
     stability: list[pd.DataFrame] = []
-
     for asset, child_dir_raw in child_dirs.items():
         child_dir = Path(child_dir_raw)
-        summary = _read_csv(child_dir, "robustness_summary.csv")
-        summary["asset"] = asset
-        summary["source_run_dir"] = str(child_dir)
-        summaries.append(summary)
-
-        by_year = _read_csv(child_dir, "robustness_by_year.csv")
-        by_year["asset"] = asset
-        by_year["source_run_dir"] = str(child_dir)
-        years.append(by_year)
-
-        cal = _read_csv(child_dir, "robustness_calibration.csv")
-        cal["asset"] = asset
-        cal["source_run_dir"] = str(child_dir)
-        calibration.append(cal)
-
-        stable = _read_csv(child_dir, "robustness_year_stability.csv")
-        stable["asset"] = asset
-        stable["source_run_dir"] = str(child_dir)
-        stability.append(stable)
+        for filename, destination in (
+            ("robustness_summary.csv", summaries),
+            ("robustness_by_year.csv", years),
+            ("robustness_calibration.csv", calibration),
+            ("robustness_year_stability.csv", stability),
+        ):
+            frame = _read_csv(child_dir, filename)
+            frame["asset"] = asset
+            frame["source_run_dir"] = str(child_dir)
+            destination.append(frame)
 
     summary_all = pd.concat(summaries, ignore_index=True) if summaries else pd.DataFrame()
     years_all = pd.concat(years, ignore_index=True) if years else pd.DataFrame()
@@ -293,8 +330,7 @@ def main() -> None:
     print()
     print("Candidate results by asset:")
     if not summary_all.empty:
-        ordered = summary_all.sort_values(["asset", "candidate"])
-        for _, row in ordered.iterrows():
+        for _, row in summary_all.sort_values(["asset", "candidate"]).iterrows():
             print(
                 f"- asset={row['asset']:<4} candidate={row['candidate']:<22} "
                 f"auc={row['roc_auc']:.4f} ap={row['average_precision']:.4f} "
