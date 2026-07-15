@@ -189,10 +189,22 @@ def _load_matrix(path: Path) -> pd.DataFrame:
     frame = pd.read_csv(path, index_col=0, parse_dates=True)
     frame.index = pd.to_datetime(frame.index).tz_localize(None)
     frame = frame.apply(pd.to_numeric, errors="coerce").sort_index().ffill().dropna(how="all")
-    expected = set(SCENARIOS[CORE_SCENARIO])
+
+    # Scenario dictionaries retain explicit zero-weight sleeves for comparison and
+    # provenance. Canonical matrix exports correctly omit those inactive sleeves,
+    # so validation must require only sleeves with positive deployed weight.
+    expected = {
+        sleeve
+        for sleeve, weight in SCENARIOS[CORE_SCENARIO].items()
+        if float(weight) > 0.0
+    }
     missing = sorted(expected - set(frame.columns))
     if missing:
-        raise ValueError(f"Sleeve matrix is missing canonical sleeves: {missing}")
+        raise ValueError(f"Sleeve matrix is missing active canonical sleeves: {missing}")
+
+    unexpected = sorted(set(frame.columns) - expected)
+    if unexpected:
+        raise ValueError(f"Sleeve matrix contains unexpected canonical sleeves: {unexpected}")
     return frame
 
 
