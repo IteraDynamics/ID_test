@@ -1,0 +1,52 @@
+{
+  "experiment_id": "trend_persistence_v0",
+  "title": "Trend Persistence Engine v0",
+  "status": "DISCOVERY",
+  "hypothesis": "Observable trend structure at time t contains out-of-sample information about whether directional movement will persist over a future horizon.",
+  "research_only": true,
+  "runtime_integration_allowed": false,
+  "asset_tracks": {
+    "crypto_hourly": {
+      "assets": ["BTC", "ETH"],
+      "timeframe": "1h",
+      "horizons_bars": [6, 12, 24, 72, 120]
+    },
+    "etf_daily": {
+      "assets": ["SPY", "QQQ", "GLD"],
+      "timeframe": "1d",
+      "horizons_bars": [5, 10, 20, 40, 60]
+    }
+  },
+  "target_definition": {
+    "trend_direction": "sign of trailing fast return at time t",
+    "continuation": "future return over the selected horizon has the same sign as the trend direction and exceeds the configured volatility-aware magnitude floor",
+    "failure": "future return reverses against the trend direction and exceeds the same magnitude floor",
+    "neutral": "neither continuation nor failure threshold is reached"
+  },
+  "initial_feature_families": [
+    "baseline_returns",
+    "trend_structure",
+    "volatility_state",
+    "compression",
+    "breakout_proximity",
+    "volume_state"
+  ],
+  "initial_models": ["logistic", "gbm"],
+  "validation": {
+    "method": "expanding annual walk-forward",
+    "test_start_year": 2020,
+    "primary_metrics": ["roc_auc", "average_precision", "top5_lift", "brier"],
+    "required_followups": [
+      "threshold robustness",
+      "year stability",
+      "cross-asset transfer",
+      "validity audit",
+      "portfolio integration simulation"
+    ]
+  },
+  "promotion_policy": {
+    "candidate": "survives discovery, sample-size audit, and nearby-threshold robustness",
+    "champion": "also demonstrates stable portfolio value under predefined exposure policies",
+    "production": "requires a separate runtime design and explicit approval"
+  }
+}
