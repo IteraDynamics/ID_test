@@ -1,0 +1,50 @@
+{
+  "program": "jump_risk_engine_v0",
+  "research_status": "complete",
+  "predictive_status": "validated",
+  "cross_asset_transfer_status": "validated_btc_to_eth",
+  "daily_etf_status": "warn_only_not_promoted",
+  "portfolio_status": "pass",
+  "paper_trading_status": "approved_subject_to_timing_audit",
+  "production_runtime_status": "not_approved",
+  "winning_overlay": "btc_eth_aligned_upside",
+  "frozen_parameters": {
+    "risk_quantile": 0.95,
+    "boosted_scale": 1.15,
+    "overlay_turnover_cost_bps": 6.0,
+    "effective_probability_lag_bars": 1
+  },
+  "canonical_core": {
+    "cagr_pct": 19.93,
+    "sharpe": 1.318,
+    "calmar": 1.208,
+    "max_drawdown_pct": -16.50,
+    "final_nav": 297331.76,
+    "oos_rows": 52374
+  },
+  "candidate": {
+    "cagr_pct": 21.02,
+    "sharpe": 1.400,
+    "calmar": 1.347,
+    "max_drawdown_pct": -15.60,
+    "delta_cagr_pct_points": 1.09,
+    "delta_sharpe": 0.082,
+    "delta_calmar": 0.139,
+    "delta_max_drawdown_pct_points": 0.90,
+    "nearby_pass_count": 18,
+    "nearby_test_count": 18,
+    "btc_active_fraction": 0.0651,
+    "eth_active_fraction": 0.0885,
+    "btc_gross_incremental_pnl": 10039.55,
+    "eth_gross_incremental_pnl": 16502.08
+  },
+  "rejected_mappings": [
+    "btc_down_governor",
+    "btc_eth_down_governor",
+    "combined_asymmetric"
+  ],
+  "critical_constraint": "Benefit decays after the first hourly implementation bar; exact live timing must be verified before paper activation.",
+  "research_branch": "research/jump-risk-portfolio-v0",
+  "recommended_engineering_branch": "feature/core-v1-jump-risk-paper",
+  "as_of": "2026-07-16"
+}
