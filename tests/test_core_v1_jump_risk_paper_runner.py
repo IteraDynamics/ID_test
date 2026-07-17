@@ -4,17 +4,39 @@ from pathlib import Path
 
 import pytest
 
-from scripts.run_core_v1_jump_risk_paper import parse_args, validate_args
+from scripts.run_core_v1_jump_risk_paper import (
+    PRODUCTION_CANDIDATE_PATHS,
+    parse_args,
+    validate_args,
+)
 
 
-def test_candidate_defaults_are_isolated_from_legacy() -> None:
+def test_production_defaults_target_isolated_server_paths() -> None:
     args = parse_args([])
 
-    assert args.state_path == "/opt/itera/runtime/core_v1_jump_risk/state.json"
-    assert args.signals_log == "/opt/itera/logs/core_v1_jump_risk/signals.jsonl"
-    assert args.fills_log == "/opt/itera/logs/core_v1_jump_risk/fills.jsonl"
-    assert args.market_data_log == "/opt/itera/logs/core_v1_jump_risk/market_data.jsonl"
+    assert args.state_path == PRODUCTION_CANDIDATE_PATHS["state_path"]
+    assert args.signals_log == PRODUCTION_CANDIDATE_PATHS["signals_log"]
+    assert args.fills_log == PRODUCTION_CANDIDATE_PATHS["fills_log"]
+    assert args.market_data_log == PRODUCTION_CANDIDATE_PATHS["market_data_log"]
     assert args.jump_risk_enabled is False
+    validate_args(args)
+
+
+def test_local_overrides_validate_with_temporary_paths(tmp_path: Path) -> None:
+    root = tmp_path / "core_v1_jump_risk"
+    args = parse_args(
+        [
+            "--state-path",
+            str(root / "state.json"),
+            "--signals-log",
+            str(root / "signals.jsonl"),
+            "--fills-log",
+            str(root / "fills.jsonl"),
+            "--market-data-log",
+            str(root / "market_data.jsonl"),
+        ]
+    )
+
     validate_args(args)
 
 
@@ -34,7 +56,23 @@ def test_jump_risk_activation_is_rejected_during_parity_phase() -> None:
         ("--market-data-log", "/opt/itera/logs/core_v1_market_data.jsonl"),
     ],
 )
-def test_legacy_path_overlap_is_rejected(flag: str, legacy_path: str) -> None:
+def test_legacy_path_overlap_is_rejected_on_any_host(flag: str, legacy_path: str) -> None:
+    args = parse_args([flag, legacy_path])
+
+    with pytest.raises(RuntimeError, match="overlaps legacy Core v1"):
+        validate_args(args)
+
+
+@pytest.mark.parametrize(
+    "flag,legacy_path",
+    [
+        ("--state-path", r"\opt\itera\runtime\core_v1\state.json"),
+        ("--signals-log", r"\opt\itera\logs\core_v1_signals.jsonl"),
+        ("--fills-log", r"\opt\itera\logs\core_v1_fills.jsonl"),
+        ("--market-data-log", r"\opt\itera\logs\core_v1_market_data.jsonl"),
+    ],
+)
+def test_windows_rendering_of_legacy_path_is_also_rejected(flag: str, legacy_path: str) -> None:
     args = parse_args([flag, legacy_path])
 
     with pytest.raises(RuntimeError, match="overlaps legacy Core v1"):
