@@ -6,6 +6,10 @@ Phase-1 engineering objective:
 - execute the exact legacy Core cycle while Jump Risk remains disabled,
 - establish a clean parity baseline before model scoring or overlay scaling is wired.
 
+Production defaults intentionally target the DigitalOcean Linux runtime. Local
+engineering must override them with temporary or repository-local paths. Path
+validation is host-independent so Windows tests can still protect Linux paths.
+
 This script intentionally refuses ``--jump-risk-enabled`` until the frozen
 scoring adapter and replay/parity gates are implemented. That prevents the
 candidate instance from drifting ahead of the engineering acceptance sequence.
@@ -32,6 +36,22 @@ from scripts.run_core_v1_paper_live import (  # noqa: E402
 INSTANCE_ID = "core_v1_jump_risk"
 CANDIDATE_STATE_VERSION = "core_v1_jump_risk_paper_shell_v1"
 
+PRODUCTION_CANDIDATE_PATHS = {
+    "state_path": "/opt/itera/runtime/core_v1_jump_risk/state.json",
+    "signals_log": "/opt/itera/logs/core_v1_jump_risk/signals.jsonl",
+    "fills_log": "/opt/itera/logs/core_v1_jump_risk/fills.jsonl",
+    "market_data_log": "/opt/itera/logs/core_v1_jump_risk/market_data.jsonl",
+}
+
+PROTECTED_LEGACY_PATHS = frozenset(
+    {
+        "/opt/itera/runtime/core_v1/state.json",
+        "/opt/itera/logs/core_v1_signals.jsonl",
+        "/opt/itera/logs/core_v1_fills.jsonl",
+        "/opt/itera/logs/core_v1_market_data.jsonl",
+    }
+)
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
@@ -42,19 +62,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--max-cycles", type=int, default=None)
     p.add_argument(
         "--state-path",
-        default=os.getenv("CORE_V1_JR_STATE_PATH", "/opt/itera/runtime/core_v1_jump_risk/state.json"),
+        default=os.getenv("CORE_V1_JR_STATE_PATH", PRODUCTION_CANDIDATE_PATHS["state_path"]),
     )
     p.add_argument(
         "--signals-log",
-        default=os.getenv("CORE_V1_JR_SIGNALS_LOG", "/opt/itera/logs/core_v1_jump_risk/signals.jsonl"),
+        default=os.getenv("CORE_V1_JR_SIGNALS_LOG", PRODUCTION_CANDIDATE_PATHS["signals_log"]),
     )
     p.add_argument(
         "--fills-log",
-        default=os.getenv("CORE_V1_JR_FILLS_LOG", "/opt/itera/logs/core_v1_jump_risk/fills.jsonl"),
+        default=os.getenv("CORE_V1_JR_FILLS_LOG", PRODUCTION_CANDIDATE_PATHS["fills_log"]),
     )
     p.add_argument(
         "--market-data-log",
-        default=os.getenv("CORE_V1_JR_MARKET_DATA_LOG", "/opt/itera/logs/core_v1_jump_risk/market_data.jsonl"),
+        default=os.getenv("CORE_V1_JR_MARKET_DATA_LOG", PRODUCTION_CANDIDATE_PATHS["market_data_log"]),
     )
     p.add_argument("--data-dir", default=os.getenv("DATA_DIR", "data"))
     p.add_argument("--crypto-days", type=int, default=int(os.getenv("CORE_V1_CRYPTO_DAYS", "420")))
@@ -96,20 +116,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _portable_path_key(value: str | os.PathLike[str]) -> str:
-    """Normalize a configured path without applying host-specific path semantics.
-
-    Candidate configuration is commonly validated on Windows but deployed on
-    Linux. ``Path('/opt/...')`` renders as ``'\\opt\\...'`` on Windows, which
-    previously prevented exact comparisons against the protected POSIX legacy
-    paths. Converting separators directly keeps the guard deterministic on both
-    platforms while avoiding filesystem access or symlink resolution.
-    """
+    """Normalize configured paths without applying host filesystem semantics."""
     raw = os.fspath(value).strip().replace("\\", "/")
     while "//" in raw:
         raw = raw.replace("//", "/")
     if len(raw) > 1:
         raw = raw.rstrip("/")
-    return raw.casefold() if os.name == "nt" else raw
+    return raw.casefold()
 
 
 def validate_args(args: argparse.Namespace) -> None:
@@ -119,19 +132,14 @@ def validate_args(args: argparse.Namespace) -> None:
             "baseline parity, and runtime cadence gates first."
         )
 
-    legacy_defaults = {
-        _portable_path_key("/opt/itera/runtime/core_v1/state.json"),
-        _portable_path_key("/opt/itera/logs/core_v1_signals.jsonl"),
-        _portable_path_key("/opt/itera/logs/core_v1_fills.jsonl"),
-        _portable_path_key("/opt/itera/logs/core_v1_market_data.jsonl"),
-    }
+    protected = {_portable_path_key(path) for path in PROTECTED_LEGACY_PATHS}
     candidate_paths = {
         _portable_path_key(args.state_path),
         _portable_path_key(args.signals_log),
         _portable_path_key(args.fills_log),
         _portable_path_key(args.market_data_log),
     }
-    overlap = sorted(legacy_defaults & candidate_paths)
+    overlap = sorted(protected & candidate_paths)
     if overlap:
         raise RuntimeError(f"Candidate runner path overlaps legacy Core v1: {overlap}")
 
