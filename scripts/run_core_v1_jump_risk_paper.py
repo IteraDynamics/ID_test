@@ -95,6 +95,23 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
+def _portable_path_key(value: str | os.PathLike[str]) -> str:
+    """Normalize a configured path without applying host-specific path semantics.
+
+    Candidate configuration is commonly validated on Windows but deployed on
+    Linux. ``Path('/opt/...')`` renders as ``'\\opt\\...'`` on Windows, which
+    previously prevented exact comparisons against the protected POSIX legacy
+    paths. Converting separators directly keeps the guard deterministic on both
+    platforms while avoiding filesystem access or symlink resolution.
+    """
+    raw = os.fspath(value).strip().replace("\\", "/")
+    while "//" in raw:
+        raw = raw.replace("//", "/")
+    if len(raw) > 1:
+        raw = raw.rstrip("/")
+    return raw.casefold() if os.name == "nt" else raw
+
+
 def validate_args(args: argparse.Namespace) -> None:
     if args.jump_risk_enabled:
         raise RuntimeError(
@@ -103,16 +120,16 @@ def validate_args(args: argparse.Namespace) -> None:
         )
 
     legacy_defaults = {
-        "/opt/itera/runtime/core_v1/state.json",
-        "/opt/itera/logs/core_v1_signals.jsonl",
-        "/opt/itera/logs/core_v1_fills.jsonl",
-        "/opt/itera/logs/core_v1_market_data.jsonl",
+        _portable_path_key("/opt/itera/runtime/core_v1/state.json"),
+        _portable_path_key("/opt/itera/logs/core_v1_signals.jsonl"),
+        _portable_path_key("/opt/itera/logs/core_v1_fills.jsonl"),
+        _portable_path_key("/opt/itera/logs/core_v1_market_data.jsonl"),
     }
     candidate_paths = {
-        str(Path(args.state_path)),
-        str(Path(args.signals_log)),
-        str(Path(args.fills_log)),
-        str(Path(args.market_data_log)),
+        _portable_path_key(args.state_path),
+        _portable_path_key(args.signals_log),
+        _portable_path_key(args.fills_log),
+        _portable_path_key(args.market_data_log),
     }
     overlap = sorted(legacy_defaults & candidate_paths)
     if overlap:
