@@ -95,10 +95,14 @@ class ReplayProbabilityProvider:
                     raise ValueError(f"Malformed decision row for {asset}")
                 decision_at = _as_utc(str(raw["decision_at"]))
                 source_bar_ts = _as_utc(str(raw["source_bar_ts"]))
-                if source_bar_ts >= decision_at:
-                    raise ValueError(f"Non-historical source bar for {asset} at {decision_at.isoformat()}")
+
+                # Validate the replay sequence first. A duplicated or regressed
+                # decision timestamp is the primary structural defect even when
+                # that mutation also makes the associated source bar non-historical.
                 if previous is not None and decision_at <= previous:
                     raise ValueError(f"Replay timestamps must be unique and increasing for {asset}")
+                if source_bar_ts >= decision_at:
+                    raise ValueError(f"Non-historical source bar for {asset} at {decision_at.isoformat()}")
                 previous = decision_at
 
                 row = {
