@@ -1,31 +1,38 @@
 #!/usr/bin/env python
-"""Isolated Core v1 + Jump Risk paper-runner shell.
+"""Isolated Core v1 + Jump Risk paper candidate.
 
-Phase-1 engineering objective:
-- run a second paper instance without touching legacy Core v1 state or logs,
-- execute the exact legacy Core cycle while Jump Risk remains disabled,
-- establish a clean parity baseline before model scoring or overlay scaling is wired.
+The candidate always runs the canonical Core v1 paper cycle against isolated
+state and log paths. Jump Risk can be evaluated only through explicitly injected
+probability inputs during local engineering. Its result is observation-only:
+no order, fill, target exposure, NAV, or Core state mutation is permitted.
 
 Production defaults intentionally target the DigitalOcean Linux runtime. Local
 engineering must override them with temporary or repository-local paths. Path
 validation is host-independent so Windows tests can still protect Linux paths.
 
-This script intentionally refuses ``--jump-risk-enabled`` until the frozen
-scoring adapter and replay/parity gates are implemented. That prevents the
-candidate instance from drifting ahead of the engineering acceptance sequence.
+The command-line flag remains fail-closed until a frozen scoring adapter,
+deterministic replay, and runtime cadence gate exist. This prevents accidental
+activation on the server before the complete input pipeline is approved.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
+from typing import Mapping
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
+from runtime.core_v1.jump_risk_overlay import (  # noqa: E402
+    ProbabilityInput,
+    decide_asset_scale,
+)
 from scripts.run_core_v1_paper_live import (  # noqa: E402
     STATE_VERSION,
     append_jsonl,
@@ -34,7 +41,7 @@ from scripts.run_core_v1_paper_live import (  # noqa: E402
 )
 
 INSTANCE_ID = "core_v1_jump_risk"
-CANDIDATE_STATE_VERSION = "core_v1_jump_risk_paper_shell_v1"
+CANDIDATE_STATE_VERSION = "core_v1_jump_risk_shadow_runtime_v1"
 
 PRODUCTION_CANDIDATE_PATHS = {
     "state_path": "/opt/itera/runtime/core_v1_jump_risk/state.json",
@@ -52,10 +59,13 @@ PROTECTED_LEGACY_PATHS = frozenset(
     }
 )
 
+ProbabilityMap = Mapping[str, ProbabilityInput]
+InjectedInputs = Mapping[str, ProbabilityMap | None]
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Isolated Core v1 + Jump Risk paper candidate (Jump Risk disabled during parity phase)"
+        description="Isolated Core v1 + Jump Risk paper candidate (shadow evaluation only)"
     )
     p.add_argument("--capital", type=float, default=float(os.getenv("CORE_V1_JR_CAPITAL", "100000")))
     p.add_argument("--poll", type=int, default=int(os.getenv("CORE_V1_JR_POLL_SECONDS", "3600")))
@@ -110,7 +120,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--jump-risk-enabled",
         action="store_true",
-        help="Reserved for the later frozen-overlay phase; currently rejected fail-closed.",
+        help="Reserved for injected local shadow evaluation; CLI activation remains blocked.",
     )
     return p.parse_args(argv)
 
@@ -125,11 +135,11 @@ def _portable_path_key(value: str | os.PathLike[str]) -> str:
     return raw.casefold()
 
 
-def validate_args(args: argparse.Namespace) -> None:
-    if args.jump_risk_enabled:
+def validate_args(args: argparse.Namespace, *, injected_shadow_inputs: bool = False) -> None:
+    if args.jump_risk_enabled and not injected_shadow_inputs:
         raise RuntimeError(
-            "Jump Risk activation is not yet allowed. Complete scoring adapter, deterministic replay, "
-            "baseline parity, and runtime cadence gates first."
+            "Jump Risk activation is not yet allowed without explicit injected shadow inputs. "
+            "Complete the frozen scoring adapter, deterministic replay, and runtime cadence gates first."
         )
 
     protected = {_portable_path_key(path) for path in PROTECTED_LEGACY_PATHS}
@@ -147,23 +157,103 @@ def validate_args(args: argparse.Namespace) -> None:
         raise RuntimeError("Candidate state and log paths must be distinct")
 
 
-def run_cycle(args: argparse.Namespace) -> dict:
-    """Run the exact legacy Core cycle against isolated candidate paths.
+def _replace_last_jsonl_record(path: Path, record: dict) -> None:
+    """Replace the just-written candidate event while preserving prior JSONL rows."""
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    encoded = json.dumps(record, default=str, sort_keys=True)
+    if lines:
+        lines[-1] = encoded
+    else:
+        lines.append(encoded)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    During parity phase this is deliberately a thin delegation. Any mismatch
-    therefore points to state initialization, market-data timing, or environment,
-    not duplicated strategy logic.
-    """
-    validate_args(args)
-    event = run_legacy_core_cycle(args)
+
+def _decorate_shadow_event(
+    event: dict,
+    *,
+    jump_risk_inputs: InjectedInputs,
+    decision_at: datetime,
+) -> dict:
+    decorated_signals: list[dict] = []
+    decisions: list[dict] = []
+
+    for signal in event["signals"]:
+        row = dict(signal)
+        asset = str(row.get("asset", "")).upper()
+        core_target = float(row.get("target_exposure", 0.0) or 0.0)
+
+        if asset in {"BTC", "ETH"}:
+            decision = decide_asset_scale(
+                asset=asset,
+                probabilities=jump_risk_inputs.get(asset),
+                core_aligned=core_target > 0.0,
+                decision_at=decision_at,
+                enabled=True,
+                paper_mode=True,
+            )
+            shadow = {
+                **decision.to_dict(),
+                "core_target_exposure": core_target,
+                "shadow_scaled_target_exposure": min(1.0, core_target * decision.scale),
+                "orders_mutated": False,
+                "state_mutated": False,
+                "nav_mutated": False,
+            }
+            row["jump_risk_shadow"] = shadow
+            decisions.append({"sleeve": row.get("sleeve"), **shadow})
+
+        decorated_signals.append(row)
+
     return {
         **event,
+        "signals": decorated_signals,
         "candidate_instance": INSTANCE_ID,
         "candidate_state_version": CANDIDATE_STATE_VERSION,
         "legacy_engine_state_version": STATE_VERSION,
-        "jump_risk_enabled": False,
-        "jump_risk_mode": "PARITY_BASELINE_ONLY",
+        "jump_risk_enabled": True,
+        "jump_risk_mode": "INJECTED_SHADOW_ONLY",
+        "jump_risk_decisions": decisions,
+        "jump_risk_orders_mutated": False,
+        "jump_risk_state_mutated": False,
+        "jump_risk_nav_mutated": False,
     }
+
+
+def run_cycle(
+    args: argparse.Namespace,
+    *,
+    jump_risk_inputs: InjectedInputs | None = None,
+    decision_at: datetime | None = None,
+) -> dict:
+    """Run canonical Core and optionally attach injected shadow decisions.
+
+    With the feature disabled, this remains a thin delegation and preserves the
+    byte-for-byte parity gate. With injected inputs enabled, Core executes first
+    without any overlay influence; decisions are then attached to the candidate
+    event and candidate signals log for observation and testing.
+    """
+    injected = args.jump_risk_enabled and jump_risk_inputs is not None
+    validate_args(args, injected_shadow_inputs=injected)
+    event = run_legacy_core_cycle(args)
+
+    if not injected:
+        return {
+            **event,
+            "candidate_instance": INSTANCE_ID,
+            "candidate_state_version": CANDIDATE_STATE_VERSION,
+            "legacy_engine_state_version": STATE_VERSION,
+            "jump_risk_enabled": False,
+            "jump_risk_mode": "PARITY_BASELINE_ONLY",
+        }
+
+    decorated = _decorate_shadow_event(
+        event,
+        jump_risk_inputs=jump_risk_inputs,
+        decision_at=decision_at or utc_now(),
+    )
+    _replace_last_jsonl_record(Path(args.signals_log), decorated)
+    return decorated
 
 
 def main() -> None:
