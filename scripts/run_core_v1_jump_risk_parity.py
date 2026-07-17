@@ -78,7 +78,14 @@ def _args(root: Path, *, is_candidate: bool) -> argparse.Namespace:
         "--market-data-log", str(root / prefix / "market_data.jsonl"),
         "--data-dir", str(root / "unused_data"),
     ]
-    return candidate.parse_args(argv) if is_candidate else legacy.parse_args(argv)
+    if is_candidate:
+        return candidate.parse_args(argv)
+
+    # The legacy CLI predates injectable argv support and reads sys.argv
+    # directly. Patch it only while constructing the deterministic local
+    # Namespace; no process-level arguments leak into or out of the harness.
+    with patch.object(sys, "argv", ["run_core_v1_paper_live.py", *argv]):
+        return legacy.parse_args()
 
 
 def _read_bytes(path: Path) -> bytes:
