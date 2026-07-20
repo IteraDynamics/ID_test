@@ -43,7 +43,9 @@ def parse_args() -> argparse.Namespace:
 
 def _atomic_json(path: Path, payload: Any) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8"
+    )
     temporary.replace(path)
 
 
@@ -87,8 +89,12 @@ def main() -> None:
                 "asset": report.asset,
                 "model": report.model,
                 "severity": report.severity,
+                "risk_score": report.risk_score,
                 "drift_detected": report.drift_detected,
                 "reasons": "|".join(report.reasons),
+                "score_components": json.dumps(
+                    report.score_components, sort_keys=True, separators=(",", ":")
+                ),
                 "psi": report.probability.psi,
                 "ks_statistic": report.probability.ks_statistic,
                 "standardized_mean_shift": report.probability.standardized_mean_shift,
@@ -96,16 +102,22 @@ def main() -> None:
                 "observation_mean_probability": report.probability.observation_mean,
                 "reference_exceedance_rate": report.probability.reference_exceedance_rate,
                 "observation_exceedance_rate": report.probability.observation_exceedance_rate,
-                "brier_score": report.outcomes.brier_score,
-                "calibration_error": report.outcomes.calibration_error,
-                "threshold_precision": report.outcomes.threshold_precision,
+                "reference_brier_score": report.outcomes.reference.brier_score,
+                "observation_brier_score": report.outcomes.observation.brier_score,
+                "brier_deterioration": report.outcomes.brier_deterioration,
+                "reference_calibration_error": report.outcomes.reference.calibration_error,
+                "observation_calibration_error": report.outcomes.observation.calibration_error,
+                "calibration_deterioration": report.outcomes.calibration_deterioration,
+                "reference_threshold_precision": report.outcomes.reference.threshold_precision,
+                "observation_threshold_precision": report.outcomes.observation.threshold_precision,
+                "threshold_precision_drop": report.outcomes.threshold_precision_drop,
                 "digest": report.digest,
             }
         )
 
     aggregate = aggregate_severity(reports)
     payload = {
-        "experiment": "core_v1_jump_risk_drift_monitoring_v1",
+        "experiment": "core_v1_jump_risk_drift_monitoring_v2",
         "observation_only": True,
         "runtime_integration_allowed": False,
         "exposure_mutation_allowed": False,
@@ -116,6 +128,7 @@ def main() -> None:
             "reference_rows": args.reference_rows,
             "observation_rows": args.observation_rows,
             "streams": list(EXPECTED_STREAMS),
+            "severity_policy": "weighted_trust_score",
         },
         "inputs": input_files,
         "reports": [report.to_dict() for report in reports],
@@ -131,6 +144,7 @@ def main() -> None:
             "source_predictions_dir": str(predictions_dir),
             "created_at_utc": payload["created_at_utc"],
             "aggregate_severity": aggregate,
+            "severity_policy": "weighted_trust_score",
         },
     )
 
@@ -140,7 +154,8 @@ def main() -> None:
     print(f"Aggregate severity: {aggregate}")
     for row in rows:
         print(
-            f"- {row['asset']:<3} {row['model']:<12} severity={row['severity']:<4} "
+            f"- {row['asset']:<3} {row['model']:<12} "
+            f"severity={row['severity']:<4} score={row['risk_score']:<2} "
             f"psi={row['psi']:.4f} ks={row['ks_statistic']:.4f} "
             f"mean_shift={row['standardized_mean_shift']:.4f}"
         )
