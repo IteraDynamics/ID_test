@@ -78,9 +78,11 @@ def test_large_probability_shift_is_high_severity() -> None:
 
 
 def test_psi_only_high_is_low_trust_severity() -> None:
-    rng = np.random.default_rng(23)
-    reference = np.clip(rng.beta(2.0, 8.0, 500), 0.0, 1.0)
-    observed = np.clip(rng.beta(2.6, 10.4, 100), 0.0, 1.0)
+    # Keep the mean and threshold behavior unchanged while compressing the
+    # distribution. This produces a large PSI without corroborating drift
+    # signals, so the weighted policy should remain LOW.
+    reference = np.linspace(0.10, 0.30, 500)
+    observed = np.linspace(0.15, 0.25, 100)
     report = detect_drift(
         _frame(reference, observed, threshold=0.8),
         asset="BTC",
