@@ -76,10 +76,11 @@ def evaluate_persistence(
 ) -> tuple[DriftReport, PersistenceAssessment]:
     """Evaluate consecutive non-overlapping observation windows, oldest first.
 
-    Each window uses the immediately preceding ``reference_rows`` as its reference.
-    The newest available window is always returned as the current report. When
-    history is insufficient, the assessment remains deterministic and explicitly
-    reports that persistence could not yet be confirmed.
+    All evaluated observation windows are compared with the same frozen reference
+    segment immediately preceding the oldest evaluated window. This prevents an
+    earlier drifted observation from contaminating the baseline for later windows.
+    When history is insufficient, the assessment remains deterministic and reports
+    that persistence could not yet be confirmed.
     """
     if requested_windows < 1:
         raise ValueError("requested_windows must be >= 1")
@@ -93,14 +94,21 @@ def evaluate_persistence(
         needed = reference_rows + observation_rows
         raise ValueError(f"Need at least {needed} rows, received {len(clean)}")
 
+    history_rows = available * observation_rows
+    reference_start = len(clean) - history_rows - reference_rows
+    reference_end = reference_start + reference_rows
+    frozen_reference = clean.iloc[reference_start:reference_end]
+
     kwargs = dict(detect_kwargs or {})
     reports: list[DriftReport] = []
-    for offset in range(available - 1, -1, -1):
-        end = len(clean) - offset * observation_rows
-        window = clean.iloc[:end]
+    for index in range(available):
+        observation_start = reference_end + index * observation_rows
+        observation_end = observation_start + observation_rows
+        observed = clean.iloc[observation_start:observation_end]
+        comparison = pd.concat([frozen_reference, observed])
         reports.append(
             detect_drift(
-                window,
+                comparison,
                 asset=asset,
                 model=model,
                 reference_rows=reference_rows,
