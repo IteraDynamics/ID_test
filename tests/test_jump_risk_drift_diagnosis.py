@@ -35,7 +35,7 @@ def test_regime_change_when_activation_collapses_with_broad_shift() -> None:
     reference = np.tile(np.array([0.42, 0.48, 0.52, 0.58]), 25)
     observation = np.tile(np.array([0.20, 0.24, 0.28, 0.32]), 6)
     reference_label = (reference >= 0.5).astype(int)
-    observation_label = (observation >= 0.5).astype(int)
+    observation_label = np.tile(np.array([0, 0, 0, 1]), 6)
     report = diagnose_stream(
         _frame(
             reference,
@@ -59,7 +59,7 @@ def test_threshold_mismatch_when_predictions_cluster_just_below_threshold() -> N
     reference = np.tile(np.array([0.45, 0.49, 0.51, 0.55]), 25)
     observation = np.tile(np.array([0.481, 0.486, 0.491, 0.496]), 6)
     reference_label = (reference >= 0.5).astype(int)
-    observation_label = np.zeros(24, dtype=int)
+    observation_label = np.tile(np.array([0, 1]), 12)
     report = diagnose_stream(
         _frame(
             reference,
