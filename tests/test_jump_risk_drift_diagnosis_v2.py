@@ -8,12 +8,10 @@ from research.ml.validation.drift_diagnosis_v2 import diagnose_stream_v2
 
 def _prediction_frame(reference: np.ndarray, observation: np.ndarray, threshold: float = 0.5) -> pd.DataFrame:
     probability = np.concatenate([reference, observation])
-    label = (probability >= threshold).astype(int)
     return pd.DataFrame(
         {
             "probability": probability,
             "train_threshold": np.full(len(probability), threshold),
-            "label": label,
         },
         index=pd.date_range("2025-01-01", periods=len(probability), freq="h"),
     )
