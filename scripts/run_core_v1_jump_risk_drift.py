@@ -14,7 +14,8 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from research.ml.validation.drift_detector import aggregate_severity, detect_drift
+from research.ml.validation.drift_detector import aggregate_severity
+from research.ml.validation.drift_persistence import evaluate_persistence
 
 EXPECTED_STREAMS = (
     "btc_medium_up",
@@ -38,6 +39,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-name", default="core-v1-jump-risk-drift")
     parser.add_argument("--reference-rows", type=int, default=24 * 90)
     parser.add_argument("--observation-rows", type=int, default=24 * 14)
+    parser.add_argument("--persistence-windows", type=int, default=3)
+    parser.add_argument("--required-consecutive", type=int, default=2)
     return parser.parse_args()
 
 
@@ -68,6 +71,7 @@ def main() -> None:
     run_dir.mkdir(parents=True, exist_ok=False)
 
     reports = []
+    assessments = []
     rows: list[dict[str, Any]] = []
     input_files: dict[str, str] = {}
 
@@ -75,14 +79,17 @@ def main() -> None:
         asset, model = stream.split("_", 1)
         path = predictions_dir / f"{stream}.csv"
         frame = _read_stream(path)
-        report = detect_drift(
+        report, persistence = evaluate_persistence(
             frame,
             asset=asset.upper(),
             model=model,
             reference_rows=args.reference_rows,
             observation_rows=args.observation_rows,
+            requested_windows=args.persistence_windows,
+            required_consecutive=args.required_consecutive,
         )
         reports.append(report)
+        assessments.append(persistence)
         input_files[stream] = str(path)
         rows.append(
             {
@@ -91,6 +98,14 @@ def main() -> None:
                 "severity": report.severity,
                 "risk_score": report.risk_score,
                 "drift_detected": report.drift_detected,
+                "persistence_state": persistence.state,
+                "persistence_breaches": persistence.persistence_breaches,
+                "evaluated_windows": persistence.evaluated_windows,
+                "requested_windows": persistence.requested_windows,
+                "persistence_sufficient": persistence.persistence_sufficient,
+                "consecutive_high_windows": persistence.consecutive_high_windows,
+                "consecutive_non_low_windows": persistence.consecutive_non_low_windows,
+                "window_severities": "|".join(persistence.window_severities),
                 "reasons": "|".join(report.reasons),
                 "score_components": json.dumps(
                     report.score_components, sort_keys=True, separators=(",", ":")
@@ -116,8 +131,15 @@ def main() -> None:
         )
 
     aggregate = aggregate_severity(reports)
+    report_payloads = []
+    for report, persistence in zip(reports, assessments, strict=True):
+        report_payload = report.to_dict()
+        report_payload["persistence_breaches"] = persistence.persistence_breaches
+        report_payload["persistence"] = persistence.to_dict()
+        report_payloads.append(report_payload)
+
     payload = {
-        "experiment": "core_v1_jump_risk_drift_monitoring_v2",
+        "experiment": "core_v1_jump_risk_drift_monitoring_v3",
         "observation_only": True,
         "runtime_integration_allowed": False,
         "exposure_mutation_allowed": False,
@@ -127,11 +149,13 @@ def main() -> None:
         "config": {
             "reference_rows": args.reference_rows,
             "observation_rows": args.observation_rows,
+            "persistence_windows": args.persistence_windows,
+            "required_consecutive": args.required_consecutive,
             "streams": list(EXPECTED_STREAMS),
-            "severity_policy": "weighted_trust_score",
+            "severity_policy": "weighted_trust_score_with_rolling_persistence",
         },
         "inputs": input_files,
-        "reports": [report.to_dict() for report in reports],
+        "reports": report_payloads,
     }
 
     _atomic_json(run_dir / "jump_risk_drift_summary.json", payload)
@@ -144,7 +168,9 @@ def main() -> None:
             "source_predictions_dir": str(predictions_dir),
             "created_at_utc": payload["created_at_utc"],
             "aggregate_severity": aggregate,
-            "severity_policy": "weighted_trust_score",
+            "severity_policy": "weighted_trust_score_with_rolling_persistence",
+            "persistence_windows": args.persistence_windows,
+            "required_consecutive": args.required_consecutive,
         },
     )
 
@@ -153,9 +179,12 @@ def main() -> None:
     print(f"Out dir: {run_dir}")
     print(f"Aggregate severity: {aggregate}")
     for row in rows:
+        sufficiency = "confirmed" if row["persistence_sufficient"] else "history-limited"
         print(
             f"- {row['asset']:<3} {row['model']:<12} "
             f"severity={row['severity']:<4} score={row['risk_score']:<2} "
+            f"persistence={row['persistence_state']:<15} ({sufficiency}, "
+            f"{row['evaluated_windows']}/{row['requested_windows']} windows) "
             f"psi={row['psi']:.4f} ks={row['ks_statistic']:.4f} "
             f"mean_shift={row['standardized_mean_shift']:.4f}"
         )
