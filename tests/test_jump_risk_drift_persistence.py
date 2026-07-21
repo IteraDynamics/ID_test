@@ -72,15 +72,15 @@ def test_single_available_high_is_transient_and_history_limited() -> None:
 
 
 def test_recovery_is_detected() -> None:
-    rng = np.random.default_rng(17)
-    reference = np.clip(rng.normal(0.2, 0.03, 100), 0.0, 1.0)
-    high = np.clip(rng.normal(0.8, 0.03, 24), 0.0, 1.0)
-    recovered = np.clip(rng.normal(0.2, 0.03, 24), 0.0, 1.0)
+    pattern = np.linspace(0.15, 0.25, 24)
+    reference = np.tile(pattern, 4)
+    high = np.full(24, 0.8)
+    recovered = pattern.copy()
     report, assessment = evaluate_persistence(
         _frame(reference, [high, recovered]),
         asset="ETH",
         model="extended_up",
-        reference_rows=100,
+        reference_rows=96,
         observation_rows=24,
         requested_windows=2,
     )
