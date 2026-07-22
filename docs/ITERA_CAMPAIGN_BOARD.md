@@ -10,7 +10,7 @@ The board is descriptive project state. It does not authorize production, thresh
 
 **Campaign:** Core v1 Historical Regime Taxonomy
 
-**Status:** Active — classifier verified on real artifacts; reporting implementation committed and awaiting data-bearing checkout verification
+**Status:** Complete — classifier and reporting milestones verified on real artifacts; branch ready for review
 
 **Working branch:** `feature/core-v1-historical-regime-taxonomy`
 
@@ -84,7 +84,7 @@ Verified on 2026-07-22 from a data-bearing Windows checkout using Python 3.14.6:
 
 - Required historical JSON, episode CSV, and signature CSV were present.
 - Episode CSV and signature artifact aligned exactly using deterministic positional episode IDs `0` through `121`.
-- Focused suite `tests/test_historical_regime_taxonomy.py`: 6 passed.
+- Focused classifier suite: 6 passed.
 - Real classified episode count: 122.
 - Deterministic taxonomy digest: `7e18d3a9f963029588d01deaa27427279c172a1d948cf696a0df79d91142b547`.
 - Runner exit code: 0.
@@ -107,18 +107,10 @@ Observed from the generated taxonomy artifacts:
 - Ten intrinsic subtypes were observed.
 - Dominant subtype: `SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL`, 87 episodes, descriptive recovered fraction 0.758621, median recovery 1392 rows, median activation ratio 0.0, median similarity-to-current 0.144540.
 - The classified artifact's inherited `top_shifted_features` field is a string representation, not a JSON list.
-- Subtype feature reporting must therefore use the numeric episode-signature artifact.
+- Subtype feature reporting therefore uses the numeric episode-signature artifact.
 - Deterministic feature ranking is median absolute standardized signature descending, then feature name ascending; median signed signature preserves direction.
 
-## Current milestone
-
-### Human-readable taxonomy report
-
-Build and run a deterministic reporting layer over the verified real historical taxonomy artifacts.
-
-The report should let a human understand the historical regime distribution in approximately two minutes without inspecting raw CSV or JSON files.
-
-### Reporting implementation committed
+### Human-readable taxonomy reporting implementation
 
 Created:
 
@@ -143,78 +135,84 @@ The implementation:
 - preserves research-only, observation-only, and no-runtime-mutation flags;
 - includes overlapping-window and bounded-censoring caveats.
 
-Synthetic preflight completed before commit:
+### Real report execution and replay
 
-- Combined focused suite: 10 passed.
-- Synthetic JSON and Markdown report artifacts were byte-identical across replay.
+Verified on 2026-07-22 from the same data-bearing checkout:
 
-These synthetic checks do not replace verification against the real data-bearing artifacts or the full repository test suite.
+- Combined focused classifier/report suite: 10 passed.
+- Real report episode count: 122.
+- Source taxonomy digest: `7e18d3a9f963029588d01deaa27427279c172a1d948cf696a0df79d91142b547`.
+- Deterministic report digest: `c0717f2227b7fe060cbe71e3010b3ce90800143c3f90c9d90af883c8c1d23198`.
+- Report runner exit code: 0.
+- Generated report artifacts:
+  - `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_taxonomy_report.json`
+  - `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_taxonomy_report.md`
+- A second report run reproduced the same embedded report digest.
+- Report JSON and Markdown were byte-identical across replay.
+- The uploaded report JSON reconciled to 122 episodes, 74 recovered, and 48 persistent.
+- The Markdown report was consistent with the compact JSON and included all required distributions, subtype metrics, feature rankings, and caveats.
+- Generated report artifacts remain ignored and were not committed.
 
-### Required report outputs
+### Full repository verification
 
-At minimum, report:
+Executed on Windows with Python 3.14.6, pytest 9.1.1:
 
-- total episodes analyzed;
-- taxonomy digest and report digest;
-- counts by collapse severity;
-- counts by feature displacement;
-- counts by volatility state;
-- counts by recovery outcome;
-- counts by composite regime label;
-- recovered fraction by intrinsic subtype;
-- median recovery rows by intrinsic subtype where recovery occurred;
-- median activation ratio by subtype;
-- median or average similarity-to-current by subtype;
-- dominant subtypes;
-- top shifted features by subtype from the numeric signature artifact;
-- explicit overlapping-window and bounded-censoring caveats.
+- Collected: 398 tests.
+- Result: 398 passed.
+- Exit code: 0.
+- Runtime: 233.71 seconds.
+- Warnings: 75.
+- Warning classes were deprecations involving `datetime.utcnow()` and pytest class-scoped fixture behavior; no test failed and no warning was suppressed as part of this campaign.
+
+## Acceptance result
+
+All campaign acceptance criteria are satisfied:
+
+- Real classifier execution remained at 122 episodes with the verified taxonomy digest.
+- Focused classifier and report tests passed on the data-bearing checkout.
+- Report JSON and Markdown were generated from real artifacts.
+- Taxonomy and report outputs were deterministic and byte-identical across replay.
+- Report counts reconciled to the taxonomy summary.
+- Subtype feature rankings used the numeric signature artifact rather than the inherited string field.
+- The full repository suite passed 398/398.
+- Original generated source artifacts were not modified.
+- Generated report artifacts were not committed.
+- Work remained research-only and observation-only.
+- No Core state, model threshold, order, NAV, exposure, or production-runtime behavior changed.
 
 ## Verified branch state
 
-Verified immediately before this board update on 2026-07-22:
+Verified on 2026-07-22:
 
-- `feature/core-v1-historical-regime-taxonomy` was 13 commits ahead of `main` and 0 commits behind.
-- This board update adds documentation only.
+- The working branch was fast-forwarded cleanly into the data-bearing checkout.
+- The checkout had no modified tracked files after the pull and verification runs.
+- Existing local exports, data manifests, server data, and runtime-state files remained untracked and untouched.
 - Generated `artifacts/*` and `data/*.csv` remain intentionally ignored.
-- No runtime, threshold, order, NAV, or exposure files were changed by the committed implementation.
+- The committed campaign scope is limited to the taxonomy specification, deterministic classifier, report model/runner, focused tests, and campaign-board documentation.
 
 ## Next executable step
 
-From the data-bearing checkout:
+Review the complete branch diff against `main`, then open a pull request for the completed research-only taxonomy campaign.
 
-1. Discard or stash only the two tracked local edits that are now incorporated in the remote branch:
-   - `scripts/run_core_v1_historical_regime_taxonomy.py`
-   - `tests/test_historical_regime_taxonomy.py`
-2. Pull `feature/core-v1-historical-regime-taxonomy` with fast-forward only.
-3. Run the focused taxonomy and report tests.
-4. Run the report runner against the verified real artifacts.
-5. Capture the report digest and generated JSON/Markdown paths.
-6. Run the report runner a second time and confirm byte-identical JSON and Markdown.
-7. Run the full repository test suite.
-8. Inspect the Markdown report for clarity and fidelity to the generated JSON.
-9. Update this board with real report verification, full-suite status, and the next decision.
+The pull request should record:
 
-Do not commit generated report artifacts unless explicitly authorized; repository rules currently ignore `artifacts/*`.
+- 122 real classified episodes;
+- taxonomy digest `7e18d3a9f963029588d01deaa27427279c172a1d948cf696a0df79d91142b547`;
+- report digest `c0717f2227b7fe060cbe71e3010b3ce90800143c3f90c9d90af883c8c1d23198`;
+- focused result: 10 passed;
+- full-suite result: 398 passed, 75 warnings;
+- deterministic byte-identical taxonomy and report replay;
+- research-only and observation-only scope;
+- no runtime, threshold, order, NAV, or exposure changes.
 
-## Acceptance criteria
+Before merge, confirm the PR diff contains no generated artifacts, data files, local exports, or runtime-state files.
 
-- Real classifier execution remains 122 episodes with taxonomy digest `7e18d3a9f963029588d01deaa27427279c172a1d948cf696a0df79d91142b547`.
-- Focused classifier and report tests pass on the data-bearing checkout.
-- Report JSON and Markdown are generated from real artifacts.
-- Report output is deterministic and byte-identical across replay.
-- Report counts reconcile to the taxonomy summary.
-- Subtype feature rankings use the numeric signature artifact, not the inherited string field.
-- Full repository test suite passes, or any unrelated failure is documented without weakening fail-closed behavior.
-- Original source artifacts remain unmodified.
-- Work remains research-only and observation-only.
-- Branch is committed, pushed, and resumable.
+## Resolved questions
 
-## Open questions
-
-- What report digest is produced by the real 122-episode artifacts?
-- Are the generated Markdown and JSON byte-identical across real replay?
-- Does the full repository test suite pass with the reporting layer?
-- Does the Markdown report communicate the main findings in approximately two minutes without overstating dependent historical observations?
+- Real report digest: `c0717f2227b7fe060cbe71e3010b3ce90800143c3f90c9d90af883c8c1d23198`.
+- Real report JSON and Markdown are byte-identical across replay.
+- Full repository suite passes with the reporting layer: 398 passed.
+- The Markdown report communicates the primary distribution and dominant subtype in its executive sections while preserving explicit dependent-observation and bounded-censoring caveats.
 
 ## Explicitly deferred
 
@@ -230,13 +228,13 @@ Do not commit generated report artifacts unless explicitly authorized; repositor
 
 - **Daily Mission Check:** choose one concrete finish line, identify the next executable command or edit, and leave the branch resumable.
 - **Weekly Campaign Review:** record shipped evidence, blockers, roadmap changes, next acceptance criteria, and update this board.
-- **Current milestone target:** Taxonomy Report Complete.
+- **Current milestone status:** Taxonomy Report Complete.
 
 ## New-chat handoff prompt
 
 Use this prompt in a fresh ChatGPT conversation:
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`, verify the current branch state, and continue the active campaign from the documented next executable step. Preserve deterministic, replay-safe, observation-only, and fail-closed constraints. Do not introduce runtime integration, threshold changes, orders, NAV, or exposure mutation.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`, verify the current branch state, and continue from the documented next executable step. Preserve deterministic, replay-safe, observation-only, and fail-closed constraints. Do not introduce runtime integration, threshold changes, orders, NAV, or exposure mutation.
 
 ## Board maintenance rule
 
