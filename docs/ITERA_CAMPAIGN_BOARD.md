@@ -81,6 +81,15 @@ Verification:
 - Focused suite: `tests/test_historical_regime_taxonomy.py`
 - Result: 5 passed.
 
+## Verified branch state
+
+Verified on 2026-07-22 through the GitHub repository interface:
+
+- `feature/core-v1-historical-regime-taxonomy` is 6 commits ahead of `main` and 0 commits behind.
+- The campaign board is the only branch change after the recorded pandas 3 / Python 3.14 test-fix commit.
+- The taxonomy implementation, runner, specification, and focused tests are present on the working branch.
+- Repository rules intentionally ignore generated `artifacts/*` and `data/*.csv` content.
+
 ## Current milestone
 
 ### Human-readable taxonomy report
@@ -120,9 +129,21 @@ At minimum, report:
 - Keep all work research-only and observation-only.
 - Commit and push a clean, resumable branch state.
 
+## Current blocker
+
+The required real runner inputs are generated research artifacts and are not committed to the repository:
+
+- `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json`
+- `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv`
+- `artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv`
+
+A remote branch inspection cannot execute the taxonomy runner because these ignored files are unavailable there. No episode count, digest, generated path, schema mismatch, or validation result has been inferred or fabricated. The campaign remains fail-closed until the command is run from a data-bearing checkout containing the original generated artifacts.
+
 ## Next executable step
 
-Inspect the real input artifact schemas and run the existing taxonomy runner:
+From a data-bearing checkout of `feature/core-v1-historical-regime-taxonomy`, first verify that all three required source artifacts listed above exist. If any are absent, stop and regenerate them only through the existing research-only historical-regime and recovery-subtype scripts against the locked prediction and feature evidence; do not substitute synthetic or assumed values.
+
+Then run:
 
 ```powershell
 python scripts/run_core_v1_historical_regime_taxonomy.py
