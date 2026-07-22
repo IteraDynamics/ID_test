@@ -80,7 +80,7 @@ def test_concentrated_shift_when_fewer_than_quarter_shifted() -> None:
 
 def test_recovery_validation_fails_closed() -> None:
     recovered_without_rows = _episodes().iloc[[0]].copy()
-    recovered_without_rows.loc[:, "recovery_rows"] = None
+    recovered_without_rows.loc[:, "recovery_rows"] = float("nan")
     with pytest.raises(ValueError, match="requires positive recovery_rows"):
         classify_episodes(
             recovered_without_rows,
