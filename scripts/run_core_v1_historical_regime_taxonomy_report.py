@@ -13,6 +13,10 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
+from research.ml.validation.historical_regime_artifact_io import (
+    stable_artifact_identifier,
+    write_text_lf,
+)
 from research.ml.validation.historical_regime_taxonomy_report import (
     build_report_model,
     render_markdown,
@@ -63,8 +67,8 @@ def _write_outputs_atomically(
     json_temp = json_path.with_suffix(json_path.suffix + ".tmp")
     markdown_temp = markdown_path.with_suffix(markdown_path.suffix + ".tmp")
     try:
-        json_temp.write_text(json_text, encoding="utf-8")
-        markdown_temp.write_text(markdown_text, encoding="utf-8")
+        write_text_lf(json_temp, json_text)
+        write_text_lf(markdown_temp, markdown_text)
         json_temp.replace(json_path)
         markdown_temp.replace(markdown_path)
     finally:
@@ -95,9 +99,15 @@ def main() -> None:
         taxonomy_summary,
         top_features=args.top_features,
         source_artifacts={
-            "taxonomy_summary": str(summary_path),
-            "classified_episodes": str(episodes_path),
-            "episode_signatures": str(signatures_path),
+            "taxonomy_summary": stable_artifact_identifier(
+                summary_path, REPOSITORY_ROOT
+            ),
+            "classified_episodes": stable_artifact_identifier(
+                episodes_path, REPOSITORY_ROOT
+            ),
+            "episode_signatures": stable_artifact_identifier(
+                signatures_path, REPOSITORY_ROOT
+            ),
         },
     )
     report_json = json.dumps(report, indent=2, sort_keys=True, allow_nan=False)
