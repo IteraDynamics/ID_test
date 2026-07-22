@@ -85,8 +85,9 @@ Verification:
 
 Verified on 2026-07-22 through the GitHub repository interface:
 
-- `feature/core-v1-historical-regime-taxonomy` is 6 commits ahead of `main` and 0 commits behind.
-- The campaign board is the only branch change after the recorded pandas 3 / Python 3.14 test-fix commit.
+- At the start of this verification, `feature/core-v1-historical-regime-taxonomy` was 6 commits ahead of `main` and 0 commits behind.
+- The original campaign board was the only branch change after the recorded pandas 3 / Python 3.14 test-fix commit.
+- Subsequent blocker-recording commits are board-only maintenance and do not alter research calculations or runtime behavior.
 - The taxonomy implementation, runner, specification, and focused tests are present on the working branch.
 - Repository rules intentionally ignore generated `artifacts/*` and `data/*.csv` content.
 
