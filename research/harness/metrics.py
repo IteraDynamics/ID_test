@@ -246,6 +246,16 @@ def compute_metrics(
         turnover_x_nav_adj,
     ) = _notional_stats(trades, eq)
 
+        # ── Grok collab: Drift monitoring hook ─────────────────────────────
+    drift_info = {}
+    try:
+        from research.ml.validation.drift_detector import detect_drift
+        # Placeholder - in full integration, pass jump_probs from intent or result
+        # For now, skip or use dummy
+        drift_info = {"status": "hook_ready"}
+    except Exception as e:
+        drift_info = {"error": str(e)}
+
     return BacktestMetrics(
         total_return_pct=round(total_ret, 4),
         cagr_pct=round(cagr, 4),
