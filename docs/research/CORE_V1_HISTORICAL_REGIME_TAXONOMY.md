@@ -2,13 +2,13 @@
 
 ## Status
 
-Research-only specification for `feature/core-v1-historical-regime-taxonomy`.
+Implemented research-only taxonomy and reporting workflow on `feature/core-v1-historical-regime-taxonomy`.
 
 This taxonomy extends the existing Core v1 Jump Risk drift diagnosis framework beneath the `REGIME_CHANGE` branch. It does not replace the top-level diagnosis classes and does not authorize runtime, threshold, order, NAV, or exposure changes.
 
 ## Purpose
 
-Historical collapse episodes are already identified by comparing observation-window activation with a preceding reference window. Recovery subtype analysis already separates episodes that recovered without retraining from episodes that remained persistent. This specification defines the next layer: deterministic labels for the shape, severity, and recovery behavior of those historical regime episodes.
+Historical collapse episodes are identified by comparing observation-window activation with a preceding reference window. Recovery subtype analysis separates episodes that recovered without retraining from episodes that remained persistent. This taxonomy adds deterministic labels for the shape, severity, feature state, and bounded recovery behavior of those historical regime episodes.
 
 The taxonomy is designed to answer three distinct questions:
 
@@ -52,13 +52,14 @@ Episodes above the configured `collapse_ratio` are not taxonomy candidates becau
 
 ### 2. Feature displacement
 
-Feature displacement uses the per-episode standardized feature signature already produced from observation-window mean shifts relative to the episode reference distribution.
+Feature displacement uses the per-episode standardized feature signature produced from observation-window mean shifts relative to the episode reference distribution.
 
 For each episode define:
 
 - `signature_l2`: Euclidean norm of the full standardized signature;
 - `max_abs_shift`: maximum absolute standardized feature shift;
-- `shifted_feature_count`: count of features with absolute standardized shift at least `1.0`.
+- `shifted_feature_count`: count of features with absolute standardized shift at least `1.0`;
+- `shifted_feature_fraction`: shifted feature count divided by total feature count.
 
 Labels:
 
@@ -156,9 +157,9 @@ Each classified episode MUST contain at least:
 - `recovery_outcome`
 - `composite_regime_label`
 
-## Required summary artifact schema
+## Required taxonomy summary schema
 
-The summary MUST contain:
+The taxonomy summary MUST contain:
 
 - experiment name and research-only safety flags;
 - exact threshold configuration;
@@ -169,7 +170,27 @@ The summary MUST contain:
 - median recovery rows by intrinsic subtype where recovery occurred;
 - latest-window metadata copied from the historical regime artifact;
 - matched volatility-feature names;
-- source artifact paths or identifiers.
+- normalized source artifact identifiers;
+- deterministic SHA-256 digest.
+
+## Required report model
+
+The compact report model and Markdown rendering MUST include:
+
+- source taxonomy digest and report digest;
+- total, recovered, and persistent episode counts;
+- descriptive recovered fraction;
+- counts by taxonomy dimension and composite label;
+- dominant intrinsic subtypes;
+- subtype episode count, recovered count and fraction;
+- subtype median recovery rows where recovery occurred;
+- subtype median activation ratio;
+- subtype median and mean similarity to the latest signature;
+- top shifted features by subtype;
+- source artifact identifiers;
+- overlapping-window, bounded-censoring, and research-only caveats.
+
+Top shifted features are calculated from the numeric episode-signature artifact, not from the inherited string representation of `top_shifted_features` in the historical episode CSV. Features are ordered by median absolute standardized signature descending, with feature name ascending as the deterministic tie-breaker. Median signed signature preserves direction.
 
 ## Determinism and validation requirements
 
@@ -180,22 +201,94 @@ The implementation MUST:
 - reject missing required fields;
 - reject non-numeric activation ratios and signature values;
 - reject recovered episodes without valid positive `recovery_rows`;
-- reject persistent episodes with non-null `recovery_rows` unless explicitly documented as censored legacy input;
-- emit the same JSON digest for identical ordered inputs and configuration;
-- preserve the original episode rows without mutation.
+- reject persistent episodes with non-null `recovery_rows`;
+- require exact identity between classified episode IDs and signature episode IDs;
+- reconcile report counts and subtype recovery summaries to the taxonomy summary;
+- serialize missing optional scalars as strict JSON `null`, never non-standard `NaN`;
+- normalize repository artifact identifiers to slash-separated repo-relative form;
+- emit generated text and CSV artifacts with explicit LF line endings;
+- emit the same digest and byte-identical artifacts for identical inputs and configuration;
+- preserve original source rows and signature artifacts without mutation.
+
+## Source artifacts
+
+The default workflow requires these generated, intentionally uncommitted inputs:
+
+- `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json`
+- `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv`
+- `artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv`
+
+If any required artifact is absent, stop and regenerate it only through the existing research-only historical-regime and recovery-subtype workflows. Do not substitute synthetic values for a real verification run.
+
+## Reproduction commands
+
+Run from the repository root:
+
+```powershell
+python scripts/run_core_v1_historical_regime_taxonomy.py
+python scripts/run_core_v1_historical_regime_taxonomy_report.py
+```
+
+Focused verification:
+
+```powershell
+python -m pytest `
+    tests/test_historical_regime_artifact_io.py `
+    tests/test_historical_regime_taxonomy.py `
+    tests/test_historical_regime_taxonomy_report.py `
+    -q
+```
+
+Full repository verification:
+
+```powershell
+python -m pytest -q
+```
+
+## Generated outputs
+
+Classifier outputs:
+
+- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_classified_episodes.csv`
+- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_classified_episodes.json`
+- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_taxonomy_summary.json`
+
+Report outputs:
+
+- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_taxonomy_report.json`
+- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_taxonomy_report.md`
+
+Generated artifacts remain ignored and MUST NOT be committed unless explicitly authorized.
+
+## Verification protocol
+
+A release-quality verification requires:
+
+1. successful focused tests;
+2. successful classifier execution against the full real artifact set;
+3. confirmation of the expected episode count;
+4. capture of the taxonomy digest;
+5. a second classifier run with byte-identical CSV, JSON, and summary outputs;
+6. successful report execution;
+7. capture of the report digest;
+8. a second report run with byte-identical JSON and Markdown outputs;
+9. successful full repository test suite;
+10. human inspection that Markdown and compact JSON agree and retain all caveats.
+
+The portability-hardening change that canonicalizes artifact identifiers and line endings requires a fresh real-data verification before merge. Earlier same-machine digests remain historical evidence but are superseded for the final branch head.
 
 ## Statistical interpretation
 
 Historical episodes are sampled from overlapping rolling windows. Counts and recovered fractions are therefore descriptive and dependent, not independent Bernoulli trials. The taxonomy is intended for structured diagnosis, analogue retrieval, and hypothesis generation. It is not a calibrated probability model and must not be presented as one.
 
-## Initial implementation boundary
+## Explicitly out of scope
 
-The first implementation should:
-
-1. read the historical-regime episode CSV and recovery-subtype signature CSV;
-2. deterministically assign all taxonomy dimensions;
-3. emit episode-level CSV and JSON summary artifacts;
-4. include focused unit tests for thresholds, precedence, censored recovery, missing volatility features, and deterministic ordering;
-5. remain separate from production runtime and Core exposure logic.
-
-Predictive modeling, clustering, learned subtype boundaries, and runtime integration are explicitly out of scope for this branch's initial milestone.
+- runtime integration;
+- threshold changes;
+- order generation or routing changes;
+- NAV or exposure mutation;
+- model retraining;
+- learned clustering;
+- predictive recovery modeling;
+- calibrated recovery probabilities;
+- automated production actions from taxonomy labels.
