@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import copy
+import json
 
 import pandas as pd
 import pytest
 
 from research.ml.validation.historical_regime_taxonomy import build_summary, classify_episodes
+from scripts.run_core_v1_historical_regime_taxonomy import _strict_json_records
 
 
 def _episodes() -> pd.DataFrame:
@@ -115,6 +117,24 @@ def test_classification_preserves_inputs_and_orders_deterministically() -> None:
     assert result["episode_id"].tolist() == [1, 2]
 
 
+def test_strict_json_records_normalizes_missing_scalars() -> None:
+    episodes = _episodes()
+    episodes["recovery_rate"] = [0.75, float("nan")]
+
+    classified = classify_episodes(
+        episodes,
+        _signatures(),
+        collapse_ratio=0.35,
+        observation_rows=720,
+    )
+    records = _strict_json_records(classified)
+    records_by_id = {record["episode_id"]: record for record in records}
+
+    assert records_by_id[1]["recovery_rate"] is None
+    assert records_by_id[2]["recovery_rate"] == pytest.approx(0.75)
+    json.dumps(records, sort_keys=True, allow_nan=False)
+
+
 def test_summary_is_deterministic_and_sorted() -> None:
     classified = classify_episodes(
         _episodes(), _signatures(), collapse_ratio=0.35, observation_rows=720
@@ -126,7 +146,9 @@ def test_summary_is_deterministic_and_sorted() -> None:
     }
 
     first = build_summary(classified, **copy.deepcopy(kwargs))
-    second = build_summary(classified.sample(frac=1.0, random_state=7), **copy.deepcopy(kwargs))
+    second = build_summary(
+        classified.sample(frac=1.0, random_state=7), **copy.deepcopy(kwargs)
+    )
 
     assert first == second
     assert list(first["counts"]["collapse_severity"]) == sorted(
