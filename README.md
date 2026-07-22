@@ -7,6 +7,13 @@ trading strategies with a hard architectural separation between research and exe
 It is built for correctness, auditability, and modular extensibility — not for speed
 or complexity for its own sake.
 
+## Active research handoff
+
+- Authoritative campaign state: [`docs/ITERA_CAMPAIGN_BOARD.md`](docs/ITERA_CAMPAIGN_BOARD.md)
+- Core v1 Historical Regime Taxonomy specification and reproduction runbook: [`docs/research/CORE_V1_HISTORICAL_REGIME_TAXONOMY.md`](docs/research/CORE_V1_HISTORICAL_REGIME_TAXONOMY.md)
+
+The campaign board is descriptive only. It does not authorize production, threshold, order, NAV, exposure, or runtime changes.
+
 ---
 
 ## Architecture
