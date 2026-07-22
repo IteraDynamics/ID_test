@@ -13,6 +13,10 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
+from research.ml.validation.historical_regime_artifact_io import (
+    stable_artifact_identifier,
+    write_text_lf,
+)
 from research.ml.validation.historical_regime_taxonomy import build_summary, classify_episodes
 
 
@@ -92,9 +96,15 @@ def main() -> None:
         config=config,
         latest_window=latest_window,
         source_artifacts={
-            "historical_json": str(historical_json_path),
-            "historical_episodes": str(episodes_path),
-            "episode_signatures": str(signatures_path),
+            "historical_json": stable_artifact_identifier(
+                historical_json_path, REPOSITORY_ROOT
+            ),
+            "historical_episodes": stable_artifact_identifier(
+                episodes_path, REPOSITORY_ROOT
+            ),
+            "episode_signatures": stable_artifact_identifier(
+                signatures_path, REPOSITORY_ROOT
+            ),
         },
     )
 
@@ -121,9 +131,9 @@ def main() -> None:
     csv_frame["volatility_features"] = csv_frame["volatility_features"].map(
         lambda values: json.dumps(values, separators=(",", ":"))
     )
-    csv_frame.to_csv(episode_csv_path, index=False)
-    episode_json_path.write_text(episode_json_text, encoding="utf-8")
-    summary_path.write_text(summary_json_text, encoding="utf-8")
+    csv_frame.to_csv(episode_csv_path, index=False, lineterminator="\n")
+    write_text_lf(episode_json_path, episode_json_text)
+    write_text_lf(summary_path, summary_json_text)
 
     print()
     print("Core v1 Jump Risk historical regime taxonomy complete")
