@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from research.ml.validation.historical_regime_taxonomy import build_summary, classify_episodes
 
@@ -34,6 +39,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--stream", default="btc_extended_up")
     return parser.parse_args()
+
+
+def _strict_json_records(frame: pd.DataFrame) -> list[dict[str, object]]:
+    """Normalize pandas missing scalars to JSON null without changing the frame."""
+    normalized = frame.astype(object).where(pd.notna(frame), None)
+    return normalized.to_dict(orient="records")
 
 
 def main() -> None:
@@ -87,6 +98,19 @@ def main() -> None:
         },
     )
 
+    episode_json_text = json.dumps(
+        _strict_json_records(classified),
+        indent=2,
+        sort_keys=True,
+        allow_nan=False,
+    )
+    summary_json_text = json.dumps(
+        summary,
+        indent=2,
+        sort_keys=True,
+        allow_nan=False,
+    )
+
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     episode_csv_path = out_dir / f"{args.stream}_classified_episodes.csv"
@@ -98,14 +122,8 @@ def main() -> None:
         lambda values: json.dumps(values, separators=(",", ":"))
     )
     csv_frame.to_csv(episode_csv_path, index=False)
-    episode_json_path.write_text(
-        json.dumps(classified.to_dict(orient="records"), indent=2, sort_keys=True, allow_nan=False),
-        encoding="utf-8",
-    )
-    summary_path.write_text(
-        json.dumps(summary, indent=2, sort_keys=True, allow_nan=False),
-        encoding="utf-8",
-    )
+    episode_json_path.write_text(episode_json_text, encoding="utf-8")
+    summary_path.write_text(summary_json_text, encoding="utf-8")
 
     print()
     print("Core v1 Jump Risk historical regime taxonomy complete")
