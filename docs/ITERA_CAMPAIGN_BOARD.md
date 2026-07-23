@@ -12,7 +12,7 @@ The board is descriptive project state and authorization record. It does not aut
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Active — deterministic core and expanded focused suite verified; two governed real-artifact runs completed successfully with identical headline counts; byte-for-byte replay comparison and full repository suite remain pending
+**Status:** Active — deterministic core and expanded focused suite verified; two governed real-artifact runs completed successfully with identical headline counts; first independent replay comparison attempt was invalid because a relative .NET path resolved under `C:\Windows\System32`; corrected absolute-path replay comparison remains pending
 
 **Working branch:** `feature/core-v1-historical-event-families-implementation`
 
@@ -87,31 +87,14 @@ The pure module remains side-effect free. The CLI requires explicit governed pat
 
 ## Local verification evidence
 
-### Pure-core verification
+### Focused suites
 
-At commit `b98dc4e`:
-
-- command: `python -m pytest -q tests/test_historical_event_families.py`;
-- collected: `9`;
-- passed: `9`;
-- failed: `0`;
-- elapsed: `3.95s`;
-- environment: Windows, Python `3.14.6`.
-
-### Expanded-suite verification
-
-After the cadence import fix:
-
-- command: `python -m pytest -q tests/test_historical_event_families.py`;
-- collected: `12`;
-- passed: `12`;
-- failed: `0`;
-- elapsed: `1.07s`;
-- environment: Windows, Python `3.14.6`.
+- original pure-core suite: `9 passed` on Windows / Python `3.14.6`;
+- expanded suite: `12 passed in 1.07s` on Windows / Python `3.14.6`.
 
 ### Governed two-run execution
 
-Both governed commands completed successfully into separate output directories:
+Both governed commands completed successfully into:
 
 - `artifacts/core_v1_historical_event_families/replay_a`;
 - `artifacts/core_v1_historical_event_families/replay_b`.
@@ -123,9 +106,19 @@ Each run reported:
 - observation-only completion;
 - no runtime, threshold, order, NAV, or exposure changes.
 
-Because the runner completed, its fail-closed pre-publication checks passed for each run, including governed prediction identity, input reconciliation, source-hash stability before and after execution, and complete output publication. Byte-for-byte equality between the two directories has not yet been independently demonstrated.
+Because the runner completed, its fail-closed checks passed within each run, including governed prediction identity, input reconciliation, source-hash stability, and complete output publication.
 
-`git status --short` after both runs showed only the same pre-existing untracked local data and runtime files. No tracked governed source, runtime, production, or implementation file was modified by execution.
+`git status --short` after execution showed only the same pre-existing untracked local data and runtime files. No tracked governed source, runtime, production, or implementation file was modified by execution.
+
+### Invalid replay-comparison attempt
+
+The first independent PowerShell comparison did not produce valid replay evidence.
+
+The script built `$fileB` as a relative path and passed it to `[System.IO.File]::ReadAllBytes`. The .NET call resolved that relative path under `C:\Windows\System32`, causing five `DirectoryNotFoundException` errors.
+
+The displayed rows showing `HashEqual=True`, `LFOnlyB=True`, and `All byte-identical: True` are not accepted because the loop continued after each exception and reused stale values from the prior iteration. `LengthEqual=False` in every row further demonstrates the result object was internally inconsistent.
+
+No generated file was changed by this failed comparison attempt.
 
 ## Required generated artifacts
 
@@ -137,16 +130,16 @@ Each successful governed run emitted exactly:
 - `btc_extended_up_event_family_report.md`;
 - `btc_extended_up_event_family_manifest.json`.
 
-The two replay directories are validation outputs. No canonical Campaign #41 output set has yet been accepted or committed.
+The replay directories are validation outputs. No canonical Campaign #41 output set has yet been accepted or committed.
 
 ## Acceptance gates before merge
 
 - expanded focused tests pass — complete;
 - real-artifact execution succeeds twice into separate empty output directories — complete;
-- governed source hashes remain unchanged before and after both runs — complete through runner fail-closed checks;
-- membership, family records, summary, report, and manifest reconcile exactly — complete within each run through runner validation;
-- all five outputs are byte-identical across replay — pending independent comparison;
-- all generated text artifacts are LF-only — pending independent comparison/inspection;
+- governed source hashes remain unchanged before and after both runs — complete through runner checks;
+- membership, family records, summary, report, and manifest reconcile within each run — complete through runner validation;
+- all five outputs are byte-identical across replay — pending valid absolute-path comparison;
+- all generated text artifacts are LF-only — pending valid absolute-path comparison;
 - full repository suite passes — pending;
 - no prohibited surface changes — maintained so far;
 - exact hashes and final replay evidence are recorded here — pending.
@@ -159,13 +152,13 @@ No existing artifact may be rewritten in place.
 
 ## Next executable step
 
-Pull this board update, then independently compare the two generated directories by filename, byte length, and SHA-256. Confirm all five files are identical and contain no carriage-return bytes. Do not edit either replay directory before comparison.
+Pull this board update, then rerun the independent comparison using fully resolved absolute paths and terminating error behavior. Reset all loop-local values on every iteration and treat any missing file, read error, length mismatch, hash mismatch, or carriage-return byte as failure.
 
-After replay equality is established, run the full repository suite.
+Do not edit either replay directory before comparison. After valid replay equality is established, run the full repository suite.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and expanded focused suite pass. Two governed real-artifact executions completed successfully, each producing 122 episode memberships grouped into 14 event families. Independently compare all five files in `replay_a` and `replay_b` for byte-identical SHA-256 and LF-only content, then run the full repository suite. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and expanded focused suite pass. Two governed runs completed, each producing 122 episode memberships grouped into 14 families. The first PowerShell replay comparison was invalid because a relative .NET path resolved under `C:\Windows\System32` and stale loop values produced misleading success fields. Rerun with absolute resolved paths and fail-closed error handling, then run the full repository suite. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
 
 ## Board maintenance rule
 
