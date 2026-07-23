@@ -12,7 +12,7 @@ The board is a descriptive project-state and authorization record. It does not a
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Active — artifact CLI implementation published; expanded focused suite blocked at collection by a missing exported cadence constant; compatibility fix published and pending local verification
+**Status:** Active — deterministic core and artifact CLI locally verified by the expanded focused suite; governed two-run real-artifact execution is the next gate
 
 **Working branch:** `feature/core-v1-historical-event-families-implementation`
 
@@ -92,7 +92,8 @@ No inferred cadence, interpolation, expanded tolerance, or learned gap rule is p
 - `124961b` — deterministic artifact runner;
 - `d0ced4e` — runner-contract tests;
 - `4322d05` — recorded CLI milestone;
-- `b5fd593` — exported governed `CANONICAL_BAR_CADENCE = "PT1H"` required by the runner import contract.
+- `b5fd593` — exported governed `CANONICAL_BAR_CADENCE = "PT1H"` required by the runner import contract;
+- `dc7c98e` — recorded the collection failure and compatibility fix.
 
 The pure module remains side-effect free. The CLI requires explicit governed paths, verifies prediction identity and source hashes, recomputes and reconciles Campaign #40 classification, stages a complete deterministic output set, refuses unauthorized or non-empty output directories, and emits LF-only text artifacts.
 
@@ -100,34 +101,33 @@ The pure module remains side-effect free. The CLI requires explicit governed pat
 
 ### Pure-core verification
 
-Command:
+At commit `b98dc4e`, Windows / Python `3.14.6`:
 
-`python -m pytest -q tests/test_historical_event_families.py`
-
-At commit `b98dc4e`:
-
+- command: `python -m pytest -q tests/test_historical_event_families.py`;
 - collected: `9`;
 - passed: `9`;
 - failed: `0`;
-- elapsed: `3.95s`;
-- environment: Windows, Python `3.14.6`.
+- elapsed: `3.95s`.
 
-### Expanded-suite collection failure
+### Expanded-suite collection failure and correction
 
-After pulling through `4322d05`, the same command produced:
+After pulling through `4322d05`, the suite failed during collection because the runner imported `CANONICAL_BAR_CADENCE` but the core module had not exported it. Commit `b5fd593` added only the governed constant `CANONICAL_BAR_CADENCE = "PT1H"`; no algorithm, cadence value, threshold, runtime, order, NAV, or exposure behavior changed.
 
-- collected: `0`;
-- collection errors: `1`;
-- failing import: `scripts/run_core_v1_historical_event_families.py`;
-- cause: `CANONICAL_BAR_CADENCE` was imported from `research.ml.validation.historical_event_families` but not exported there.
+### Expanded focused-suite verification
 
-This was a module/runner contract omission, not an executed grouping or artifact-generation failure. Commit `b5fd593` adds only the governed constant `CANONICAL_BAR_CADENCE = "PT1H"`; no algorithm, cadence value, threshold, runtime, order, NAV, or exposure behavior changed.
+After pulling through `dc7c98e`, Windows / Python `3.14.6`:
 
-The user's `git status --short` was empty after the failed run. No tracked or untracked changes were reported in that invocation.
+- command: `python -m pytest -q tests/test_historical_event_families.py`;
+- collected: `12`;
+- passed: `12`;
+- failed: `0`;
+- elapsed: `1.07s`.
+
+`git status --short` showed only the same pre-existing untracked local data, export, manifest, server-data, and runtime-state files. No tracked governed source, production, runtime, or implementation file was modified by the test run.
 
 ## Required generated artifacts
 
-A successful governed run must emit exactly:
+Each successful governed run must emit exactly:
 
 - `btc_extended_up_event_family_membership.csv`;
 - `btc_extended_up_event_families.json`;
@@ -139,17 +139,9 @@ No real Campaign #41 output artifact has yet been accepted or committed.
 
 ## Current acceptance gates
 
-Before real-artifact execution:
-
-1. pull commit `b5fd593` and this Board update;
-2. rerun `python -m pytest -q tests/test_historical_event_families.py`;
-3. record the exact result;
-4. correct any remaining failure without expanding scope;
-5. confirm tracked changes remain limited to authorized surfaces.
-
 Before merge:
 
-- expanded focused tests pass;
+- expanded focused tests pass — satisfied: `12 passed`;
 - full repository suite passes;
 - real-artifact execution succeeds twice into separate empty output directories;
 - all five outputs are byte-identical across replay;
@@ -171,19 +163,31 @@ Learned clustering, generated event labels, predictive recovery modeling, calibr
 
 ## Next executable step
 
-Pull the compatibility fix and rerun:
+Pull this board update, then execute the governed runner twice into two new output directories:
 
 ```powershell
-git pull --ff-only
-python -m pytest -q tests/test_historical_event_families.py
-git status --short
+python scripts/run_core_v1_historical_event_families.py `
+  --historical-json artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json `
+  --historical-episodes artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv `
+  --episode-signatures artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv `
+  --predictions artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv `
+  --out-dir artifacts/core_v1_historical_event_families/replay_a `
+  --bar-cadence PT1H
+
+python scripts/run_core_v1_historical_event_families.py `
+  --historical-json artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json `
+  --historical-episodes artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv `
+  --episode-signatures artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv `
+  --predictions artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv `
+  --out-dir artifacts/core_v1_historical_event_families/replay_b `
+  --bar-cadence PT1H
 ```
 
-Do not begin the governed real-artifact run until the expanded focused suite passes and the result is recorded.
+Both output directories must be absent or explicitly empty before execution. Do not delete or overwrite any existing artifact to make room.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The pure core previously passed nine tests. The expanded suite then failed during collection because the runner imported a missing governed cadence constant. Commit `b5fd593` fixes that contract and awaits local verification. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and artifact CLI pass the expanded focused suite (`12 passed` on Windows / Python 3.14.6). The next gate is two governed real-artifact runs into separate new directories, followed by byte-identity, LF-only, source-hash, and reconciliation verification. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
 
 ## Board maintenance rule
 
