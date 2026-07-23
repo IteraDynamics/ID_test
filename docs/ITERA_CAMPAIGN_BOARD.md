@@ -12,7 +12,7 @@ The board is descriptive project state and authorization record. It does not aut
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Active — authorized implementation in progress; pure core and focused tests published but not yet locally verified
+**Status:** Active — deterministic core locally verified; artifact CLI and expanded focused tests published, pending local verification
 
 **Working branch:** `feature/core-v1-historical-event-families-implementation`
 
@@ -93,15 +93,18 @@ Immediate adjacency is exactly:
 
 No inferred cadence, interpolation, tolerance expansion, or learned gap rule is permitted.
 
-## Current implementation evidence
+## Published implementation evidence
 
-Published commits:
+Commits:
 
 - `405a86b` — initial deterministic historical event-family core;
 - `1ae3298` — hardened validation and canonical construction core;
-- `62d0b05` — focused event-family core tests.
+- `62d0b05` — focused event-family core tests;
+- `b98dc4e` — recorded initial core implementation progress;
+- `124961b` — deterministic artifact runner;
+- `d0ced4e` — artifact runner contract tests.
 
-Implemented module responsibilities:
+Implemented core responsibilities:
 
 - zero-based episode identity insertion from persisted source row order;
 - exact source/classified reconciliation;
@@ -117,28 +120,42 @@ Implemented module responsibilities:
 - deterministic latest, maximum, and median similarity summaries;
 - complete exactly-once membership reconciliation;
 - research-only and mutation-control flags;
-- no file writes, network access, randomness, runtime integration, or wall-clock behavior.
+- no file writes, network access, randomness, runtime integration, or wall-clock behavior in the pure module.
 
-Focused tests currently cover:
+Implemented CLI responsibilities:
 
-- deterministic identity insertion and exact reconciliation;
-- governed-field mismatch rejection;
-- transitive grouping;
-- one-hour adjacency and larger-gap splitting;
-- canonical ordering independent of input order;
-- canonical family digest;
-- mixed composition;
-- latest-member tie-breaking;
-- maximum and median similarity;
-- missing-bar preservation;
-- malformed, reversed, absent-boundary, duplicate-ID, duplicate-timestamp, and non-finite failures;
-- strict JSON compatibility and complete exactly-once membership.
+- requires explicit paths for all four governed inputs, output directory, and cadence;
+- enforces Campaign #41 cadence `PT1H`;
+- verifies the governed prediction SHA-256, row count, and timestamp bounds;
+- recomputes Campaign #40 classification from the immutable source artifacts rather than trusting an external classified file;
+- reconciles classified rows exactly to persisted source episode order and fields;
+- computes source hashes before execution and verifies them again before publication;
+- writes through a deterministic staging directory and publishes only a complete output set;
+- refuses non-empty output directories and output paths outside the authorized artifact tree;
+- serializes stable LF-only CSV, JSON, and Markdown;
+- emits four primary artifacts and one integrity manifest;
+- records replay status as pending until a separate second run is compared.
 
-These tests have been committed but have not yet been executed in the user's local repository environment. No pass count is recorded until command output is captured.
+## Local verification evidence
+
+Command executed on Windows / Python 3.14.6:
+
+`python -m pytest -q tests/test_historical_event_families.py`
+
+Result captured from the user:
+
+- collected: `9`;
+- passed: `9`;
+- failed: `0`;
+- elapsed: `3.95s`.
+
+This verifies commit `b98dc4e` and the original nine-test pure-core suite. It does not yet verify the later CLI commit or expanded focused tests.
+
+`git status --short` showed only pre-existing untracked local data/runtime artifacts. No tracked governed source, runtime, or production file was modified.
 
 ## Required generated artifacts
 
-A later CLI milestone must emit exactly:
+A successful governed run must emit exactly:
 
 - `btc_extended_up_event_family_membership.csv`;
 - `btc_extended_up_event_families.json`;
@@ -146,28 +163,29 @@ A later CLI milestone must emit exactly:
 - `btc_extended_up_event_family_report.md`;
 - `btc_extended_up_event_family_manifest.json`.
 
-No generated artifact work is complete yet.
+No real Campaign #41 output artifact has yet been accepted or committed.
 
 ## Current acceptance gates
 
-Before the pure-core milestone can advance:
+Before real-artifact execution:
 
-1. pull the implementation commits locally;
-2. run `python -m pytest -q tests/test_historical_event_families.py`;
-3. record the exact result;
-4. correct any focused failures without expanding scope;
-5. confirm the tracked diff contains only authorized surfaces.
+1. pull commits `124961b`, `d0ced4e`, and this Board update locally;
+2. run the expanded focused suite;
+3. record the exact pass/fail result;
+4. correct failures without expanding authorized scope;
+5. confirm tracked changes remain limited to authorized surfaces.
 
 Before merge:
 
-- focused tests pass;
+- expanded focused tests pass;
 - full repository suite passes;
 - real-artifact execution succeeds twice into separate output directories;
 - all five outputs are byte-identical across replay;
 - all generated text artifacts are LF-only;
 - governed source hashes remain unchanged before and after both runs;
 - membership, family records, summary, report, and manifest reconcile exactly;
-- no prohibited surface changes.
+- no prohibited surface changes;
+- the Board records exact commands, hashes, counts, and replay evidence.
 
 ## Prohibited surfaces
 
@@ -205,15 +223,15 @@ No existing artifact may be rewritten in place.
 
 ## Next executable step
 
-Pull the implementation commits locally and execute:
+Pull the latest implementation commits and execute:
 
 `python -m pytest -q tests/test_historical_event_families.py`
 
-If the focused suite passes, inspect the tracked diff and then continue only with remaining fail-closed core validation gaps before beginning the CLI milestone.
+Do not begin the governed real-artifact run until the expanded focused suite passes and the result is recorded.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The pure event-family core and focused tests are committed but require local test verification. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, model retraining, orders, NAV, exposure, or dashboard changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core passed its original nine focused tests. The artifact CLI and expanded runner-contract tests are published but still require local verification. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, model retraining, orders, NAV, exposure, or dashboard changes.
 
 ## Board maintenance rule
 
