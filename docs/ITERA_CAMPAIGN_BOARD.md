@@ -12,7 +12,7 @@ The board is descriptive project state. It does not authorize production, thresh
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Active — specification-only milestone opened
+**Status:** Active — specification reconnaissance complete except cadence evidence
 
 **Working branch:** `feature/core-v1-historical-event-families-spec`
 
@@ -59,24 +59,58 @@ Can overlapping or immediately adjacent historical collapse episode windows be g
 
 ## Specification artifact
 
-Created:
+Updated:
 
 - `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES.md`
 
-The initial specification defines:
+The specification now documents:
 
-- interval-connected event-family grouping;
-- stable ordering and identity requirements;
-- exact source membership requirements;
-- mixed subtype and recovery composition handling;
-- latest-window similarity requirements;
-- strict output and replay requirements;
-- fail-closed validation;
-- explicit deferred scope.
+- the exact Campaign #40 source and classified episode fields;
+- the inserted zero-based `episode_id` identity contract;
+- closed timestamp interval semantics for `window_start` and `window_end`;
+- timestamp, rather than row-index, as the native boundary unit;
+- explicit validated `bar_cadence` as the only permitted adjacency unit;
+- deterministic interval-connected grouping;
+- canonical SHA-256 family identity payload;
+- composition-only subtype and recovery handling;
+- latest, maximum, and median similarity summaries;
+- exact membership, family-record, summary, and report schemas;
+- complete fail-closed validation requirements;
+- replay, source-integrity, ordering, and reconciliation gates.
+
+## Artifact reconnaissance findings
+
+Repository inspection established:
+
+- the source historical episode CSV contains no persisted `episode_id`;
+- Campaign #40 inserts `episode_id` deterministically from zero-based persisted CSV row order;
+- `window_start` and `window_end` are emitted from the prediction timestamp index;
+- each interval is closed: `[window_start, window_end]`;
+- the artifacts do not contain source row indices;
+- `step_rows` controls rolling-window traversal and is not bar cadence;
+- no governed Campaign #40 artifact encodes the prediction bar cadence;
+- cadence must not be inferred from episode gaps or stream naming.
+
+Therefore immediate adjacency is specified as:
+
+`next_start <= current_family_end + bar_cadence`
+
+where `bar_cadence` must be explicit, positive, canonical, and validated against the governed prediction timestamp source. Missing or irregular cadence evidence is a fail-closed blocker.
+
+## Finalized specification decisions
+
+- **Episode identity:** integer `episode_id` assigned from persisted source CSV row order and reconciled exactly across artifacts.
+- **Boundaries:** normalized closed timestamp intervals using `window_start` and `window_end`.
+- **Adjacency:** overlap or exactly one validated source bar cadence; no implicit tolerance.
+- **Intrinsic subtype:** `collapse_severity + feature_displacement + volatility_state`.
+- **Recovery:** complete `recovery_outcome` composition only.
+- **Dominant labels:** not emitted.
+- **Similarity:** latest-member, maximum, and median similarity-to-current.
+- **Family identity:** SHA-256 of strict canonical JSON containing specification version, normalized source identifier, canonical cadence, family bounds, and ordered episode identities.
 
 ## Itera operating documents
 
-Created on the active branch:
+Present on the active branch:
 
 - `docs/ITERA_VISION.md`
 - `docs/ITERA_CONSTITUTION.md`
@@ -89,35 +123,43 @@ These documents establish identity, governance, research philosophy, strategic d
 
 ## Current milestone acceptance gates
 
-The specification-only milestone is complete when:
+Completed:
 
-1. real source boundary fields and units are documented;
-2. immediate adjacency is defined exactly;
-3. canonical family identity is finalized;
-4. mixed subtype and recovery rules are finalized;
-5. family similarity summary fields are finalized;
-6. output schemas and ordering are explicit;
-7. fail-closed validation rules are complete;
-8. verification commands and evidence requirements are documented;
-9. no implementation code has been introduced.
+1. real source identity, boundary, subtype, recovery, and similarity fields documented;
+2. native boundary unit resolved as timestamp;
+3. immediate adjacency formula defined exactly;
+4. canonical family identity finalized;
+5. mixed subtype and recovery rules finalized;
+6. family similarity fields finalized;
+7. output schemas and ordering made explicit;
+8. fail-closed validation rules completed;
+9. no implementation code introduced.
 
-## Open decisions
+Remaining:
 
-- Which real source fields define episode identity, start, and end boundaries?
-- Is immediate adjacency expressed by row index or expected bar cadence?
-- Should event families expose a dominant subtype/recovery label, or composition only?
-- Which similarity statistics accompany the required latest-window similarity?
-- What exact canonical payload produces the stable family identifier?
+10. establish the exact `btc_extended_up` bar cadence from the governed prediction timestamp source and document validation evidence.
 
-No decision may be resolved by an implicit tolerance, incidental ordering, learned clustering, or undocumented heuristic.
+## Current blocker
+
+The committed Campaign #40 artifacts and code do not encode the prediction bar cadence. The local data-bearing checkout must identify the exact prediction CSV used for the historical analysis and inspect its timestamp index.
+
+This is an evidence requirement, not authorization to modify the prediction source.
 
 ## First executable step
 
-Inspect the three Campaign #40 source artifacts and the existing taxonomy implementation to document the exact episode identity, boundary, subtype, recovery, and similarity fields. Resolve the native adjacency unit from those governed inputs, then update the specification.
+On the real data-bearing checkout, identify the `btc_extended_up.csv` prediction file passed through `--predictions-dir` when producing `btc_extended_up_historical_regimes.json`. Inspect the timestamp index for:
+
+- timezone convention;
+- minimum, maximum, and unique consecutive deltas;
+- duplicate timestamps;
+- monotonic ordering;
+- any irregular gaps.
+
+Record the exact source path, SHA-256, row count, first timestamp, last timestamp, and cadence evidence. Then update the specification and this board. Do not implement event-family code yet.
 
 ## Explicitly deferred
 
-- implementation during the current milestone;
+- event-family implementation during the current milestone;
 - learned clustering;
 - semantic or model-generated event labels;
 - predictive recovery modeling;
@@ -133,11 +175,11 @@ Inspect the three Campaign #40 source artifacts and the existing taxonomy implem
 
 - **Daily Mission Check:** show the current specification finish line, required evidence, and one next action.
 - **Weekly Campaign Review:** record knowledge gained, evidence, methodological risk, time allocation, and the next milestone.
-- **Current finish line:** document the governed source schema and finalize exact interval adjacency.
+- **Current finish line:** establish and validate the governed `btc_extended_up` prediction cadence.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 from the documented specification-only milestone. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce implementation code, runtime integration, threshold changes, model retraining, orders, NAV, or exposure mutation unless explicitly authorized.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 from the cadence-evidence gate. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce implementation code, runtime integration, threshold changes, model retraining, orders, NAV, or exposure mutation unless explicitly authorized.
 
 ## Board maintenance rule
 
