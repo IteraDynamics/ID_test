@@ -32,118 +32,322 @@ The specification and any later implementation must remain:
 - independent of model retraining;
 - independent of thresholds, orders, NAV, and exposure mutation.
 
-## Source model
+## Governed source artifacts
 
-Each source episode must provide a stable episode identity and a closed or half-open interval representation derived from existing artifact fields. The final field mapping must be documented from the real source schema before implementation begins.
+Campaign #41 consumes the same three immutable source artifacts governed by Campaign #40:
+
+1. `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json`;
+2. `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv`;
+3. `artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv`.
+
+The Campaign #40 classified episode artifacts may be consumed as derived inputs only when their source identity and episode membership reconcile exactly to the three governed source artifacts.
+
+No source artifact may be rewritten, reordered in place, relabeled, or mutated.
+
+## Artifact reconnaissance findings
+
+### Historical episode source fields
+
+The historical episode generator emits one source row per qualifying rolling observation window with these fields:
+
+| Field | Type | Role | Stability requirement |
+|---|---|---|---|
+| `window_start` | timestamp string | Inclusive first timestamp of the observation window | Required; parsed and normalized deterministically |
+| `window_end` | timestamp string | Inclusive last timestamp of the observation window | Required; parsed and normalized deterministically |
+| `reference_activation_rate` | finite numeric | Descriptive source metric | Preserved |
+| `observation_activation_rate` | finite numeric | Descriptive source metric | Preserved |
+| `activation_ratio` | finite numeric | Collapse severity input | Preserved |
+| `feature_cosine_similarity_to_latest` | finite numeric | Episode similarity-to-current input | Preserved |
+| `recovered_without_retraining` | boolean | Recovery input | Preserved |
+| `recovery_rows` | positive integer or null | Bounded recovery distance | Preserved and validated against recovery state |
+| `recovery_rate` | finite numeric or null | Descriptive recovery metric | Preserved |
+| `top_shifted_features` | ordered list representation | Descriptive feature summary | Not used for family identity |
+
+The source CSV does not emit an `episode_id`. Campaign #40 deterministically inserts a zero-based integer `episode_id` after reading the CSV in its persisted row order. That inserted identifier is therefore the governed episode identity for Campaign #41, provided the source artifact identity and row count match exactly.
+
+### Campaign #40 classified fields
+
+Campaign #40 preserves the complete source row and adds deterministic descriptive fields:
+
+- `collapse_severity`;
+- `similarity_band`;
+- `signature_l2`;
+- `max_abs_shift`;
+- `shifted_feature_count`;
+- `shifted_feature_fraction`;
+- `feature_displacement`;
+- `volatility_feature_count`;
+- `volatility_features`;
+- `volatility_median_signature`;
+- `volatility_state`;
+- normalized `recovery_rows`;
+- `recovery_outcome`;
+- `composite_regime_label`.
+
+For Campaign #41:
+
+- episode identity is `episode_id`;
+- interval boundaries are `window_start` and `window_end`;
+- subtype is the intrinsic three-part label `collapse_severity + feature_displacement + volatility_state`;
+- recovery is `recovery_outcome`;
+- similarity is `feature_cosine_similarity_to_latest`;
+- `composite_regime_label` is not used as the intrinsic subtype because it embeds recovery outcome.
+
+### Boundary semantics
+
+The historical generator constructs each episode from a positional observation slice and emits:
+
+- `window_start = predictions.index[obs_start]`;
+- `window_end = predictions.index[end - 1]`.
+
+The emitted interval is therefore a **closed timestamp interval**: `[window_start, window_end]`.
+
+The governed episode artifacts do not emit source row indices and do not encode bar cadence. `step_rows` controls rolling-window traversal; it is not the source bar cadence and must not be reused as an adjacency duration.
+
+## Canonical parsing and normalization
+
+Before grouping, each episode boundary must be parsed as a timezone-aware or timezone-naive timestamp under one uniform source convention.
 
 The implementation must fail closed when:
 
-- required identity or boundary fields are missing;
-- timestamps or row indices are malformed;
-- an interval ends before it begins;
-- duplicate episode identities disagree;
-- source artifact identities do not reconcile;
-- non-finite numeric values enter governed output.
+- any timestamp cannot be parsed;
+- timezone awareness is mixed;
+- normalized timestamps are non-finite or out of supported range;
+- `window_end < window_start`;
+- duplicate `episode_id` values exist;
+- source and classified episode identities do not match exactly;
+- two rows with the same identity disagree on any governed field.
 
-## Proposed grouping rule
+Canonical timestamp serialization must use one documented ISO-8601 form and must not depend on host locale.
+
+## Deterministic adjacency unit
+
+The native boundary unit is timestamp, not row index.
+
+Immediate adjacency is defined only through an explicit positive `bar_cadence` duration supplied as governed configuration for the event-family run:
+
+`next_start <= current_family_end + bar_cadence`
+
+This combines strict overlap and exactly one-bar adjacency for closed timestamp intervals.
+
+The following are prohibited:
+
+- inferring cadence from episode gaps;
+- treating `step_rows` as cadence;
+- using a tolerance larger than one configured bar;
+- silently defaulting cadence from the stream name;
+- accepting irregular source timestamps without validation.
+
+Before grouping, the later implementation must validate `bar_cadence` against the governed prediction timestamp index or another explicitly governed cadence manifest. If that validating source is unavailable, inconsistent, or irregular under the documented policy, the implementation must fail closed rather than degrade to overlap-only behavior or infer a cadence.
+
+For this campaign's `btc_extended_up` implementation milestone, the exact cadence value must be obtained from and reconciled against the governed prediction source before code is authorized. The specification intentionally does not guess the value.
+
+## Grouping rule
 
 Event families are connected components under deterministic interval adjacency.
 
-After sorting source episodes by:
+Sort source episodes by:
 
-1. start boundary ascending;
-2. end boundary ascending;
-3. stable episode identity ascending;
+1. normalized `window_start` ascending;
+2. normalized `window_end` ascending;
+3. integer `episode_id` ascending.
 
-an episode belongs to the current family when its start boundary overlaps the current family interval or is immediately adjacent under the explicitly selected boundary unit. Otherwise, it starts a new family.
+Initialize the current family from the first episode. Each subsequent episode belongs to the current family when:
 
-The family interval expands to the minimum member start and maximum member end.
+`episode.window_start <= current_family.window_end + bar_cadence`
 
-### Open specification decision
+Otherwise it starts a new family.
 
-The exact meaning of "immediately adjacent" must be resolved from the source artifact's native boundary representation:
+When an episode joins a family:
 
-- row-index adjacency: `next_start <= current_end + 1`; or
-- timestamp adjacency based on the expected bar cadence.
+- family start remains the minimum member start;
+- family end becomes the maximum member end;
+- the ordered membership list appends the episode according to canonical sort order.
 
-No tolerance, learned distance, or heuristic gap may be introduced implicitly.
+This sweep is equivalent to deterministic connected components for closed intervals under one-bar adjacency.
 
-## Stable identity
+## Stable family identity
 
-Each family must have a stable identifier derived only from canonical governed content. The canonical identity payload should include:
+Each family identifier must be the lowercase hexadecimal SHA-256 digest of canonical strict JSON containing exactly:
 
-- specification version;
-- normalized source artifact identifier;
-- ordered source episode identities;
-- family start boundary;
-- family end boundary.
+```json
+{
+  "specification_version": "1",
+  "source_artifact": "<normalized repository-relative historical episode artifact identifier>",
+  "bar_cadence": "<canonical duration>",
+  "family_start": "<canonical ISO-8601 timestamp>",
+  "family_end": "<canonical ISO-8601 timestamp>",
+  "episode_ids": [0, 1]
+}
+```
 
-The identifier must not depend on absolute paths, operating system separators, dictionary iteration order, runtime time, or random values.
+Canonical JSON requirements:
+
+- keys sorted lexicographically;
+- separators `(',', ':')`;
+- UTF-8 encoding;
+- no NaN or Infinity;
+- ordered integer episode identities;
+- no absolute paths;
+- no operating-system-specific separators;
+- no runtime timestamps or random values.
+
+The complete digest is authoritative. A shortened display form may be shown in reports but must never replace the complete identifier in governed artifacts.
 
 ## Required family record
 
-Each event-family record must include at least:
+Each event-family record must contain:
 
-- family identifier;
-- stable ordinal in the full output;
-- start and end boundary;
-- duration in the source boundary unit;
-- ordered source episode identities;
-- source episode count;
-- subtype composition counts;
-- recovery-outcome composition counts;
-- similarity-to-current summary;
-- explicit mixed-label flags;
-- research-only and observation-only markers.
+- `family_id`;
+- `family_ordinal`, zero-based after canonical family ordering;
+- `window_start`;
+- `window_end`;
+- `duration_bars`;
+- `bar_cadence`;
+- ordered `episode_ids`;
+- `episode_count`;
+- `intrinsic_subtype_counts`;
+- `intrinsic_subtype_mixed`;
+- `recovery_outcome_counts`;
+- `recovery_outcome_mixed`;
+- `latest_episode_id`;
+- `latest_episode_similarity_to_current`;
+- `maximum_similarity_to_current`;
+- `median_similarity_to_current`;
+- `research_only: true`;
+- `observation_only: true`;
+- `runtime_integration_allowed: false`;
+- `exposure_mutation_allowed: false`.
+
+`duration_bars` is inclusive for a closed regular-cadence interval:
+
+`((window_end - window_start) / bar_cadence) + 1`
+
+The value must be an exact positive integer. Non-integral duration is a fail-closed error.
 
 ## Mixed-label handling
 
-Source labels must be preserved, never collapsed through an undocumented winner rule.
+Composition is authoritative. No dominant subtype or dominant recovery label is emitted in Campaign #41.
 
-For subtype and recovery outcome, each family must report:
+For intrinsic subtype and recovery outcome:
 
-- deterministic count by label;
-- whether the family is homogeneous or mixed;
-- a dominant label only when a deterministic rule is specified;
-- ties explicitly, rather than resolved through incidental ordering.
+- counts are emitted as dictionaries with labels sorted lexicographically;
+- homogeneous means exactly one distinct label;
+- mixed means more than one distinct label;
+- ties require no special winner handling because no winner is selected.
 
-The specification must decide whether a dominant label is necessary. Composition counts are mandatory; a dominant label is optional.
+This avoids hiding within-family heterogeneity and prevents incidental ordering from becoming semantics.
 
 ## Similarity-to-current handling
 
-The family-level similarity summary must remain descriptive. Candidate measures include maximum, median, and latest-window similarity, but the final specification must state which values are emitted and why.
+Each family emits three descriptive similarity values:
 
-The Campaign #40 recommendation specifically requires latest-window similarity. "Latest" must be determined by the governed episode boundary and then stable episode identity as a tie-breaker.
+1. `latest_episode_similarity_to_current` — similarity of the member with greatest `window_end`, then greatest `window_start`, then greatest `episode_id` as deterministic tie-breakers;
+2. `maximum_similarity_to_current` — maximum finite member similarity;
+3. `median_similarity_to_current` — deterministic numeric median across all finite member similarities.
+
+All member similarity values are required to be finite. No probability, calibration, forecast, or family-level predictive score is inferred.
 
 ## Recovery handling
 
-Recovery outcomes remain bounded-horizon descriptions. Persistent collapse means no recovery observed within the governed horizon, not permanent non-recovery.
+Recovery outcomes remain bounded-horizon descriptions. `PERSISTENT_COLLAPSE` means no recovery observed within the governed horizon, not permanent non-recovery.
 
-Family reporting must preserve the complete member outcome composition. It must not infer a family recovery probability or calibrated forecast.
+Family reporting preserves complete recovery composition and does not infer a family recovery probability, family recovery date, or calibrated forecast.
 
-## Required outputs for a later implementation milestone
+## Output schemas for a later implementation milestone
 
-Provisional outputs:
+### Membership CSV
 
-- event-family membership CSV;
-- event-family records JSON;
-- event-family summary JSON;
-- human-readable event-family report Markdown.
+One row per source episode, ordered by `family_ordinal`, canonical member order:
+
+- `family_id`;
+- `family_ordinal`;
+- `episode_id`;
+- `member_ordinal`;
+- `window_start`;
+- `window_end`;
+- `intrinsic_subtype`;
+- `recovery_outcome`;
+- `feature_cosine_similarity_to_latest`.
+
+Every governed episode identity must appear exactly once.
+
+### Family records JSON
+
+A strict JSON array of required family records ordered by:
+
+1. family `window_start` ascending;
+2. family `window_end` ascending;
+3. `family_id` ascending.
+
+### Family summary JSON
+
+A strict JSON object containing at least:
+
+- experiment identity;
+- specification version;
+- research and mutation-control flags;
+- governed configuration, including canonical `bar_cadence`;
+- source artifact identifiers;
+- source episode count;
+- event-family count;
+- family-size distribution;
+- homogeneous and mixed family counts by dimension;
+- family-level recovery composition totals;
+- family-level intrinsic subtype composition totals;
+- deterministic digest.
+
+### Human-readable report Markdown
+
+The report must reconcile exactly to the JSON artifacts and explicitly state:
+
+- episode rows are dependent rolling-window observations;
+- event-family counts are deterministic interval rollups, not proof of statistical independence;
+- one-bar adjacency is configuration-governed;
+- recovery remains bounded-horizon and descriptive;
+- no runtime or portfolio behavior changed.
 
 All generated text artifacts must use strict serialization, stable ordering, normalized repository-relative source identifiers, and explicit LF line endings.
+
+## Fail-closed validation rules
+
+A later implementation must reject:
+
+- missing governed artifacts;
+- source identity mismatch;
+- missing required columns;
+- duplicate or non-integer episode identities;
+- episode/signature identity mismatch;
+- malformed or mixed-timezone boundaries;
+- reversed intervals;
+- missing, zero, negative, inferred, or unvalidated `bar_cadence`;
+- intervals not aligned to validated cadence;
+- non-finite governed numeric values;
+- invalid recovery state/row combinations;
+- unknown nulls in required labels;
+- incomplete or duplicate family membership;
+- family bounds inconsistent with member extrema;
+- non-canonical ordering;
+- digest mismatch;
+- source mutation detected by hash comparison.
 
 ## Verification requirements
 
 Before any implementation milestone can merge:
 
 - focused unit tests pass;
-- real source schema and identity reconciliation pass;
+- the exact real source schema is captured and reconciled;
+- the explicit cadence source is documented and validated;
 - source episode membership is complete and exactly once;
 - family ordering and identifiers are stable;
+- all summary counts reconcile to records and membership;
 - generated artifacts are byte-identical across replay;
-- source artifacts retain identical hashes;
-- full repository regression suite passes;
+- all generated text artifacts are LF-only;
+- source artifacts retain identical SHA-256 hashes;
+- the full repository regression suite passes;
 - no runtime, threshold, order, NAV, or exposure behavior changes.
+
+The implementation campaign must document exact commands after its scripts and test paths exist. This specification milestone cannot truthfully prescribe commands for files that are not yet authorized or created.
 
 ## Explicit non-goals
 
@@ -151,6 +355,7 @@ Before any implementation milestone can merge:
 - semantic or model-generated event labels;
 - predictive recovery modeling;
 - calibrated probabilities;
+- dominant-label inference;
 - deletion or mutation of Campaign #40 artifacts;
 - strategy logic;
 - runtime integration;
@@ -158,20 +363,24 @@ Before any implementation milestone can merge:
 - model retraining;
 - order, NAV, or exposure mutation.
 
-## Specification acceptance gates
+## Specification acceptance status
 
-The specification-only milestone is complete when:
+Resolved:
 
-1. the real source boundary fields and units are documented;
-2. immediate adjacency is defined exactly;
-3. canonical family identity is finalized;
-4. mixed subtype and recovery rules are finalized;
-5. similarity summary fields are finalized;
-6. output schemas and ordering are explicit;
-7. fail-closed validation rules are complete;
-8. verification commands and expected evidence are documented;
+1. real source identity, boundary, subtype, recovery, and similarity fields are documented;
+2. the native boundary unit is timestamp;
+3. immediate adjacency is exactly one explicitly configured and validated bar cadence;
+4. canonical family identity is finalized;
+5. subtype and recovery composition rules are finalized with no dominant label;
+6. latest, maximum, and median similarity fields are finalized;
+7. output schemas and ordering are explicit;
+8. fail-closed validation rules are explicit;
 9. no implementation code has been introduced.
 
-## First executable step
+Remaining evidence gate:
 
-Inspect the three Campaign #40 source artifacts and existing taxonomy code to document the exact episode identity, start boundary, end boundary, recovery, subtype, and similarity fields. Resolve the adjacency unit from those governed inputs before finalizing the grouping rule.
+- inspect the real governed prediction timestamp source to establish and validate the exact `btc_extended_up` bar cadence before implementation authorization.
+
+## Next executable step
+
+Identify the governed Campaign #40 prediction source used to generate `btc_extended_up_historical_regimes.json`, inspect its timestamp index, record the exact fixed cadence and validation evidence, and update this specification and the campaign board. Do not implement event-family code yet.
