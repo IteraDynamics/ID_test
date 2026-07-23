@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 SPECIFICATION_VERSION = "1"
+CANONICAL_BAR_CADENCE = "PT1H"
 SOURCE_REQUIRED_COLUMNS = {
     "window_start", "window_end", "reference_activation_rate",
     "observation_activation_rate", "activation_ratio",
