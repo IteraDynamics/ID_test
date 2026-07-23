@@ -12,7 +12,7 @@ The board is descriptive project state and authorization record. It does not aut
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Active — deterministic core and expanded focused suite verified; two governed real-artifact runs completed successfully with identical headline counts; first independent replay comparison attempt was invalid because a relative .NET path resolved under `C:\Windows\System32`; corrected absolute-path replay comparison remains pending
+**Status:** Active — deterministic core, expanded focused suite, governed two-run execution, byte-for-byte replay equality, and LF-only serialization verified; full repository suite and exact full-hash capture remain pending
 
 **Working branch:** `feature/core-v1-historical-event-families-implementation`
 
@@ -110,15 +110,28 @@ Because the runner completed, its fail-closed checks passed within each run, inc
 
 `git status --short` after execution showed only the same pre-existing untracked local data and runtime files. No tracked governed source, runtime, production, or implementation file was modified by execution.
 
-### Invalid replay-comparison attempt
+### Valid replay comparison
 
-The first independent PowerShell comparison did not produce valid replay evidence.
+A corrected PowerShell comparison used fully resolved absolute paths, `Set-StrictMode`, terminating error behavior, explicit filename-set checks, byte-length checks, SHA-256 checks, and carriage-return-byte checks.
 
-The script built `$fileB` as a relative path and passed it to `[System.IO.File]::ReadAllBytes`. The .NET call resolved that relative path under `C:\Windows\System32`, causing five `DirectoryNotFoundException` errors.
+Results:
 
-The displayed rows showing `HashEqual=True`, `LFOnlyB=True`, and `All byte-identical: True` are not accepted because the loop continued after each exception and reused stale values from the prior iteration. `LengthEqual=False` in every row further demonstrates the result object was internally inconsistent.
+- replay A files: `5`;
+- replay B files: `5`;
+- identical filename sets: verified;
+- all lengths equal: verified;
+- all SHA-256 values equal between replay A and replay B: verified;
+- all files LF-only in both directories: verified.
 
-No generated file was changed by this failed comparison attempt.
+Per-file lengths and displayed SHA-256 prefixes:
+
+- `btc_extended_up_event_families.json`: `15245` bytes; SHA-256 prefix `be4fc3e45f8728313a...`;
+- `btc_extended_up_event_family_manifest.json`: `2326` bytes; SHA-256 prefix `e59c27fd40b4a5994c...`;
+- `btc_extended_up_event_family_membership.csv`: `26117` bytes; SHA-256 prefix `6bba0128dac682194d...`;
+- `btc_extended_up_event_family_report.md`: `1209` bytes; SHA-256 prefix `f63dbb3fa66c0fb66d...`;
+- `btc_extended_up_event_family_summary.json`: `2110` bytes; SHA-256 prefix `cd8235ec0572060bc3...`.
+
+The console table truncated the hashes, so exact 64-character SHA-256 values remain to be captured before final acceptance.
 
 ## Required generated artifacts
 
@@ -138,11 +151,11 @@ The replay directories are validation outputs. No canonical Campaign #41 output 
 - real-artifact execution succeeds twice into separate empty output directories — complete;
 - governed source hashes remain unchanged before and after both runs — complete through runner checks;
 - membership, family records, summary, report, and manifest reconcile within each run — complete through runner validation;
-- all five outputs are byte-identical across replay — pending valid absolute-path comparison;
-- all generated text artifacts are LF-only — pending valid absolute-path comparison;
+- all five outputs are byte-identical across replay — complete;
+- all generated text artifacts are LF-only — complete;
 - full repository suite passes — pending;
 - no prohibited surface changes — maintained so far;
-- exact hashes and final replay evidence are recorded here — pending.
+- exact full SHA-256 values and final test evidence are recorded here — pending.
 
 ## Prohibited surfaces
 
@@ -152,13 +165,17 @@ No existing artifact may be rewritten in place.
 
 ## Next executable step
 
-Pull this board update, then rerun the independent comparison using fully resolved absolute paths and terminating error behavior. Reset all loop-local values on every iteration and treat any missing file, read error, length mismatch, hash mismatch, or carriage-return byte as failure.
+Pull this board update and run the full repository suite:
 
-Do not edit either replay directory before comparison. After valid replay equality is established, run the full repository suite.
+`python -m pytest -q`
+
+Then capture exact full SHA-256 values for the five files in one replay directory using output that does not truncate the hash, and run `git status --short`.
+
+Do not edit either replay directory before final evidence capture.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and expanded focused suite pass. Two governed runs completed, each producing 122 episode memberships grouped into 14 families. The first PowerShell replay comparison was invalid because a relative .NET path resolved under `C:\Windows\System32` and stale loop values produced misleading success fields. Rerun with absolute resolved paths and fail-closed error handling, then run the full repository suite. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and expanded focused suite pass. Two governed runs completed, each producing 122 episode memberships grouped into 14 families. A corrected absolute-path, fail-closed replay comparison verified all five files are byte-identical and LF-only. Run the full repository suite, capture the exact full SHA-256 values without truncation, and record final worktree status. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
 
 ## Board maintenance rule
 
