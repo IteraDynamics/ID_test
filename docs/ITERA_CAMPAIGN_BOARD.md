@@ -12,7 +12,7 @@ The board is descriptive project state and authorization record. It does not aut
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Active — deterministic core, expanded focused suite, governed two-run execution, byte-for-byte replay equality, and LF-only serialization verified; full repository suite and exact full-hash capture remain pending
+**Status:** Active — implementation and all validation gates complete; canonical artifact acceptance, artifact commit scope, and pull-request publication remain pending explicit authorization
 
 **Working branch:** `feature/core-v1-historical-event-families-implementation`
 
@@ -85,7 +85,7 @@ No inferred cadence, interpolation, expanded tolerance, or learned gap rule is p
 
 The pure module remains side-effect free. The CLI requires explicit governed paths, verifies prediction identity and source hashes, recomputes and reconciles Campaign #40 classification, stages a complete deterministic output set, refuses unauthorized or non-empty output directories, and emits LF-only text artifacts.
 
-## Local verification evidence
+## Validation evidence
 
 ### Focused suites
 
@@ -106,32 +106,48 @@ Each run reported:
 - observation-only completion;
 - no runtime, threshold, order, NAV, or exposure changes.
 
-Because the runner completed, its fail-closed checks passed within each run, including governed prediction identity, input reconciliation, source-hash stability, and complete output publication.
+The runner's fail-closed checks passed within each run, including governed prediction identity, input reconciliation, source-hash stability, and complete output publication.
 
-`git status --short` after execution showed only the same pre-existing untracked local data and runtime files. No tracked governed source, runtime, production, or implementation file was modified by execution.
+### Replay verification
 
-### Valid replay comparison
+A corrected PowerShell comparison used absolute paths, strict mode, terminating errors, filename-set checks, byte-length checks, SHA-256 checks, and carriage-return-byte checks.
 
-A corrected PowerShell comparison used fully resolved absolute paths, `Set-StrictMode`, terminating error behavior, explicit filename-set checks, byte-length checks, SHA-256 checks, and carriage-return-byte checks.
-
-Results:
+Verified:
 
 - replay A files: `5`;
 - replay B files: `5`;
-- identical filename sets: verified;
-- all lengths equal: verified;
-- all SHA-256 values equal between replay A and replay B: verified;
-- all files LF-only in both directories: verified.
+- identical filename sets;
+- equal byte lengths for every file;
+- identical SHA-256 values for every file;
+- LF-only content in both directories.
 
-Per-file lengths and displayed SHA-256 prefixes:
+Exact accepted replay hashes:
 
-- `btc_extended_up_event_families.json`: `15245` bytes; SHA-256 prefix `be4fc3e45f8728313a...`;
-- `btc_extended_up_event_family_manifest.json`: `2326` bytes; SHA-256 prefix `e59c27fd40b4a5994c...`;
-- `btc_extended_up_event_family_membership.csv`: `26117` bytes; SHA-256 prefix `6bba0128dac682194d...`;
-- `btc_extended_up_event_family_report.md`: `1209` bytes; SHA-256 prefix `f63dbb3fa66c0fb66d...`;
-- `btc_extended_up_event_family_summary.json`: `2110` bytes; SHA-256 prefix `cd8235ec0572060bc3...`.
+- `btc_extended_up_event_families.json` — `be4fc3e45f8728313a714cd5f4ea932e6822dcea138f145126f9b0392756e584`;
+- `btc_extended_up_event_family_manifest.json` — `e59c27fd40b4a5994cbe2b46e9585a75f8470bdcb5a9bf9998cfb32a3873da9a`;
+- `btc_extended_up_event_family_membership.csv` — `6bba0128dac682194da20126e1c36c81a38e809c8f8867e1a5946747e692f744`;
+- `btc_extended_up_event_family_report.md` — `f63dbb3fa66c0fb66dbcd244f0e83a890ecc011d8ac8e5c55a043e9b2638bab5`;
+- `btc_extended_up_event_family_summary.json` — `cd8235ec0572060bc36872e2d6771b298d41102f91d383d5cfc4df0e0e85b922`.
 
-The console table truncated the hashes, so exact 64-character SHA-256 values remain to be captured before final acceptance.
+### Full repository suite
+
+Command:
+
+`python -m pytest -q`
+
+Result on Windows / Python `3.14.6`:
+
+- collected: `413`;
+- passed: `413`;
+- failed: `0`;
+- warnings: `75`;
+- elapsed: `241.42s` (`0:04:01`).
+
+Warnings were existing deprecation warnings involving `datetime.utcnow()` and pytest class-scoped instance-method fixtures. No test failed.
+
+### Worktree status
+
+Final `git status --short` showed only the same pre-existing untracked local export, data, server-data, and runtime-state files. No tracked governed source, generated replay artifact, production, runtime, threshold, order, NAV, exposure, model-training, or dashboard file was modified by validation.
 
 ## Required generated artifacts
 
@@ -143,19 +159,21 @@ Each successful governed run emitted exactly:
 - `btc_extended_up_event_family_report.md`;
 - `btc_extended_up_event_family_manifest.json`.
 
-The replay directories are validation outputs. No canonical Campaign #41 output set has yet been accepted or committed.
+The two replay directories remain validation outputs. No canonical Campaign #41 output set has yet been explicitly accepted or committed.
 
 ## Acceptance gates before merge
 
 - expanded focused tests pass — complete;
 - real-artifact execution succeeds twice into separate empty output directories — complete;
-- governed source hashes remain unchanged before and after both runs — complete through runner checks;
-- membership, family records, summary, report, and manifest reconcile within each run — complete through runner validation;
+- governed source hashes remain unchanged before and after both runs — complete;
+- membership, family records, summary, report, and manifest reconcile within each run — complete;
 - all five outputs are byte-identical across replay — complete;
 - all generated text artifacts are LF-only — complete;
-- full repository suite passes — pending;
-- no prohibited surface changes — maintained so far;
-- exact full SHA-256 values and final test evidence are recorded here — pending.
+- full repository suite passes — complete;
+- no prohibited surface changes — complete;
+- exact hashes and final replay evidence are recorded here — complete.
+
+All technical validation gates are complete. This does not itself authorize canonical artifact selection, artifact movement or copying, artifact commit, branch merge, pull-request opening, or any production/runtime integration.
 
 ## Prohibited surfaces
 
@@ -165,17 +183,18 @@ No existing artifact may be rewritten in place.
 
 ## Next executable step
 
-Pull this board update and run the full repository suite:
+Await explicit authorization for the publication decision:
 
-`python -m pytest -q`
+1. whether one byte-identical replay set should be accepted as the canonical Campaign #41 artifact set;
+2. the exact canonical destination within `artifacts/core_v1_historical_event_families/`;
+3. whether generated artifacts should be committed on the working branch;
+4. whether to open a pull request after final scope review.
 
-Then capture exact full SHA-256 values for the five files in one replay directory using output that does not truncate the hash, and run `git status --short`.
-
-Do not edit either replay directory before final evidence capture.
+Until authorized, do not copy, rename, delete, move, or commit either replay directory and do not open or merge a pull request.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and expanded focused suite pass. Two governed runs completed, each producing 122 episode memberships grouped into 14 families. A corrected absolute-path, fail-closed replay comparison verified all five files are byte-identical and LF-only. Run the full repository suite, capture the exact full SHA-256 values without truncation, and record final worktree status. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. All implementation and validation gates pass: focused suite 12/12, full suite 413/413, two governed runs each produced 122 episode memberships grouped into 14 families, and all five files are byte-identical and LF-only with exact hashes recorded on the board. Await explicit authorization before selecting or committing a canonical artifact set or opening a pull request. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
 
 ## Board maintenance rule
 
