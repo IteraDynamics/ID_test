@@ -12,7 +12,7 @@ The board is descriptive project state and authorization record. It does not aut
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Active — deterministic core and expanded focused suite verified; first governed two-run execution attempt blocked before output publication because the authorized artifact-root directory was absent from the checkout; tracked artifact root published and pending rerun
+**Status:** Active — deterministic core and expanded focused suite verified; two governed real-artifact runs completed successfully with identical headline counts; byte-for-byte replay comparison and full repository suite remain pending
 
 **Working branch:** `feature/core-v1-historical-event-families-implementation`
 
@@ -109,24 +109,27 @@ After the cadence import fix:
 - elapsed: `1.07s`;
 - environment: Windows, Python `3.14.6`.
 
-The user's `git status --short` showed only the same pre-existing untracked local data and runtime files. No tracked governed source, runtime, or production file was modified.
+### Governed two-run execution
 
-### First governed execution attempt
+Both governed commands completed successfully into separate output directories:
 
-Both `replay_a` and `replay_b` attempts failed before any output directory or artifact was published.
+- `artifacts/core_v1_historical_event_families/replay_a`;
+- `artifacts/core_v1_historical_event_families/replay_b`.
 
-Failure:
+Each run reported:
 
-`FileNotFoundError: [WinError 3]` while creating:
+- source episodes: `122`;
+- event families: `14`;
+- observation-only completion;
+- no runtime, threshold, order, NAV, or exposure changes.
 
-- `artifacts/core_v1_historical_event_families/.replay_a.staging`;
-- `artifacts/core_v1_historical_event_families/.replay_b.staging`.
+Because the runner completed, its fail-closed pre-publication checks passed for each run, including governed prediction identity, input reconciliation, source-hash stability before and after execution, and complete output publication. Byte-for-byte equality between the two directories has not yet been independently demonstrated.
 
-Cause: Git does not preserve empty directories, so the authorized artifact root did not exist in the checkout. Commit `6afed4f` tracks that root with an empty `.gitkeep`. No algorithm, cadence, source, runtime, threshold, order, NAV, exposure, model, or dashboard behavior changed.
+`git status --short` after both runs showed only the same pre-existing untracked local data and runtime files. No tracked governed source, runtime, production, or implementation file was modified by execution.
 
 ## Required generated artifacts
 
-Each successful governed run must emit exactly:
+Each successful governed run emitted exactly:
 
 - `btc_extended_up_event_family_membership.csv`;
 - `btc_extended_up_event_families.json`;
@@ -134,19 +137,19 @@ Each successful governed run must emit exactly:
 - `btc_extended_up_event_family_report.md`;
 - `btc_extended_up_event_family_manifest.json`.
 
-No real Campaign #41 output artifact has yet been accepted or committed.
+The two replay directories are validation outputs. No canonical Campaign #41 output set has yet been accepted or committed.
 
 ## Acceptance gates before merge
 
-- expanded focused tests pass;
-- full repository suite passes;
-- real-artifact execution succeeds twice into separate empty output directories;
-- all five outputs are byte-identical across replay;
-- all generated text artifacts are LF-only;
-- governed source hashes remain unchanged before and after both runs;
-- membership, family records, summary, report, and manifest reconcile exactly;
-- no prohibited surface changes;
-- exact commands, hashes, counts, and replay evidence are recorded here.
+- expanded focused tests pass — complete;
+- real-artifact execution succeeds twice into separate empty output directories — complete;
+- governed source hashes remain unchanged before and after both runs — complete through runner fail-closed checks;
+- membership, family records, summary, report, and manifest reconcile exactly — complete within each run through runner validation;
+- all five outputs are byte-identical across replay — pending independent comparison;
+- all generated text artifacts are LF-only — pending independent comparison/inspection;
+- full repository suite passes — pending;
+- no prohibited surface changes — maintained so far;
+- exact hashes and final replay evidence are recorded here — pending.
 
 ## Prohibited surfaces
 
@@ -156,13 +159,13 @@ No existing artifact may be rewritten in place.
 
 ## Next executable step
 
-Pull commit `6afed4f` and this Board update. Confirm the artifact root exists, then rerun the same two governed commands into `replay_a` and `replay_b`.
+Pull this board update, then independently compare the two generated directories by filename, byte length, and SHA-256. Confirm all five files are identical and contain no carriage-return bytes. Do not edit either replay directory before comparison.
 
-Do not manually create, delete, rename, or edit generated files between runs.
+After replay equality is established, run the full repository suite.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and expanded focused suite pass. The first two governed runs failed before publication because the authorized artifact root did not exist in the checkout. Commit `6afed4f` tracks that root with `.gitkeep`; rerun both governed executions after pulling. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and expanded focused suite pass. Two governed real-artifact executions completed successfully, each producing 122 episode memberships grouped into 14 event families. Independently compare all five files in `replay_a` and `replay_b` for byte-identical SHA-256 and LF-only content, then run the full repository suite. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
 
 ## Board maintenance rule
 
