@@ -12,7 +12,7 @@ The board is descriptive project state. It does not authorize production, thresh
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Active — specification reconnaissance complete except cadence evidence
+**Status:** Active — specification milestone complete; implementation not yet authorized
 
 **Working branch:** `feature/core-v1-historical-event-families-spec`
 
@@ -34,7 +34,7 @@ All work remains:
 - independent of model retraining;
 - independent of threshold, order, NAV, and exposure mutation.
 
-No implementation code is authorized during the current specification-only milestone.
+No implementation code has been authorized on the current specification branch.
 
 ## Campaign #40 closeout
 
@@ -57,26 +57,24 @@ The principal methodological limitation carried forward is that many classified 
 
 Can overlapping or immediately adjacent historical collapse episode windows be grouped into deterministic, replay-safe event families so Itera can report both episode-level and event-family-level descriptive results without mutating existing episode artifacts?
 
-## Specification artifact
-
-Updated:
+## Specification artifacts
 
 - `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES.md`
+- `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES_CADENCE_EVIDENCE.md`
 
-The specification now documents:
+Together they document:
 
 - the exact Campaign #40 source and classified episode fields;
 - the inserted zero-based `episode_id` identity contract;
 - closed timestamp interval semantics for `window_start` and `window_end`;
 - timestamp, rather than row-index, as the native boundary unit;
-- explicit validated `bar_cadence` as the only permitted adjacency unit;
+- canonical `PT1H` bar cadence with explicit missing-bar handling;
 - deterministic interval-connected grouping;
 - canonical SHA-256 family identity payload;
 - composition-only subtype and recovery handling;
 - latest, maximum, and median similarity summaries;
 - exact membership, family-record, summary, and report schemas;
-- complete fail-closed validation requirements;
-- replay, source-integrity, ordering, and reconciliation gates.
+- fail-closed validation, replay, source-integrity, ordering, and reconciliation gates.
 
 ## Artifact reconnaissance findings
 
@@ -88,25 +86,93 @@ Repository inspection established:
 - each interval is closed: `[window_start, window_end]`;
 - the artifacts do not contain source row indices;
 - `step_rows` controls rolling-window traversal and is not bar cadence;
-- no governed Campaign #40 artifact encodes the prediction bar cadence;
 - cadence must not be inferred from episode gaps or stream naming.
 
-Therefore immediate adjacency is specified as:
+## Cadence evidence
 
-`next_start <= current_family_end + bar_cadence`
+The inspected governed prediction source is:
 
-where `bar_cadence` must be explicit, positive, canonical, and validated against the governed prediction timestamp source. Missing or irregular cadence evidence is a fail-closed blocker.
+`artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv`
+
+Evidence:
+
+- SHA-256: `36b6ffcc9e993f4869dd8f75cde13e7058e101949a577bd24c84e79e58f1dca7`;
+- 52,453 rows;
+- first timestamp: `2020-01-01 01:00:00`;
+- last timestamp: `2025-12-26 00:00:00`;
+- timezone-naive;
+- strictly monotonic increasing;
+- zero duplicate timestamps;
+- 52,447 one-hour deltas;
+- three two-hour gaps;
+- one four-hour gap;
+- one six-hour gap.
+
+Determination:
+
+- canonical bar cadence is `PT1H`;
+- the five larger deltas are missing-bar gaps, not alternate cadence;
+- larger source gaps are not silently bridged;
+- every accepted timestamp delta must be a positive integer multiple of `PT1H`;
+- episode boundaries must exist in the governed timestamp index.
+
+Immediate adjacency is finalized as:
+
+`next_start <= current_family_end + PT1H`
+
+No implicit tolerance, interpolation, inferred rows, or learned gap rule is permitted.
 
 ## Finalized specification decisions
 
 - **Episode identity:** integer `episode_id` assigned from persisted source CSV row order and reconciled exactly across artifacts.
 - **Boundaries:** normalized closed timestamp intervals using `window_start` and `window_end`.
-- **Adjacency:** overlap or exactly one validated source bar cadence; no implicit tolerance.
+- **Adjacency:** overlap or exactly one `PT1H` source bar; no implicit tolerance.
+- **Missing bars:** preserved as gaps and never synthesized or treated as adjacency beyond `PT1H`.
 - **Intrinsic subtype:** `collapse_severity + feature_displacement + volatility_state`.
 - **Recovery:** complete `recovery_outcome` composition only.
 - **Dominant labels:** not emitted.
 - **Similarity:** latest-member, maximum, and median similarity-to-current.
 - **Family identity:** SHA-256 of strict canonical JSON containing specification version, normalized source identifier, canonical cadence, family bounds, and ordered episode identities.
+
+## Specification acceptance gates
+
+Completed:
+
+1. real source identity, boundary, subtype, recovery, and similarity fields documented;
+2. native boundary unit resolved as timestamp;
+3. exact `btc_extended_up` cadence established as `PT1H`;
+4. irregular source gaps documented and bounded by fail-closed policy;
+5. immediate adjacency formula finalized;
+6. canonical family identity finalized;
+7. mixed subtype and recovery rules finalized;
+8. family similarity fields finalized;
+9. output schemas and ordering made explicit;
+10. fail-closed validation rules completed;
+11. no implementation code introduced.
+
+## Milestone conclusion
+
+The Campaign #41 specification-only milestone is complete.
+
+Completion does not itself authorize implementation. Implementation should begin only through an explicit campaign transition that preserves this specification, creates a dedicated implementation branch or formally repurposes the current branch, and defines focused tests plus real-artifact verification evidence.
+
+## Next executable step
+
+Prepare the implementation-milestone handoff for deterministic event-family construction. The handoff must define the authorized files, test matrix, real-artifact commands, source-hash checks, replay checks, and non-goals before implementation code is introduced.
+
+## Explicitly deferred
+
+- implementation until explicitly authorized;
+- learned clustering;
+- semantic or model-generated event labels;
+- predictive recovery modeling;
+- calibrated recovery probabilities;
+- deletion or mutation of existing episode artifacts;
+- strategy logic;
+- runtime integration;
+- threshold changes;
+- model retraining;
+- order, NAV, or exposure mutation.
 
 ## Itera operating documents
 
@@ -121,65 +187,15 @@ Present on the active branch:
 
 These documents establish identity, governance, research philosophy, strategic direction, knowledge maturity, and calendar/campaign operating cadence. They do not authorize behavioral changes.
 
-## Current milestone acceptance gates
-
-Completed:
-
-1. real source identity, boundary, subtype, recovery, and similarity fields documented;
-2. native boundary unit resolved as timestamp;
-3. immediate adjacency formula defined exactly;
-4. canonical family identity finalized;
-5. mixed subtype and recovery rules finalized;
-6. family similarity fields finalized;
-7. output schemas and ordering made explicit;
-8. fail-closed validation rules completed;
-9. no implementation code introduced.
-
-Remaining:
-
-10. establish the exact `btc_extended_up` bar cadence from the governed prediction timestamp source and document validation evidence.
-
-## Current blocker
-
-The committed Campaign #40 artifacts and code do not encode the prediction bar cadence. The local data-bearing checkout must identify the exact prediction CSV used for the historical analysis and inspect its timestamp index.
-
-This is an evidence requirement, not authorization to modify the prediction source.
-
-## First executable step
-
-On the real data-bearing checkout, identify the `btc_extended_up.csv` prediction file passed through `--predictions-dir` when producing `btc_extended_up_historical_regimes.json`. Inspect the timestamp index for:
-
-- timezone convention;
-- minimum, maximum, and unique consecutive deltas;
-- duplicate timestamps;
-- monotonic ordering;
-- any irregular gaps.
-
-Record the exact source path, SHA-256, row count, first timestamp, last timestamp, and cadence evidence. Then update the specification and this board. Do not implement event-family code yet.
-
-## Explicitly deferred
-
-- event-family implementation during the current milestone;
-- learned clustering;
-- semantic or model-generated event labels;
-- predictive recovery modeling;
-- calibrated recovery probabilities;
-- deletion or mutation of existing episode artifacts;
-- strategy logic;
-- runtime integration;
-- threshold changes;
-- model retraining;
-- order, NAV, or exposure mutation.
-
 ## Calendar operating cadence
 
-- **Daily Mission Check:** show the current specification finish line, required evidence, and one next action.
+- **Daily Mission Check:** show the current milestone finish line, required evidence, and one next action.
 - **Weekly Campaign Review:** record knowledge gained, evidence, methodological risk, time allocation, and the next milestone.
-- **Current finish line:** establish and validate the governed `btc_extended_up` prediction cadence.
+- **Current finish line:** explicitly authorize and scope the implementation milestone, or pause with the completed specification.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 from the cadence-evidence gate. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce implementation code, runtime integration, threshold changes, model retraining, orders, NAV, or exposure mutation unless explicitly authorized.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 from the completed specification milestone. Do not introduce implementation code unless the implementation milestone is explicitly authorized and scoped. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, model retraining, orders, NAV, or exposure mutation.
 
 ## Board maintenance rule
 
