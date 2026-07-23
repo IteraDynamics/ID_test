@@ -4,7 +4,7 @@
 
 This file is the authoritative, version-controlled handoff for active Itera work. Read it before proposing or implementing the next step.
 
-The board is a descriptive project-state and authorization record. It does not authorize production, runtime, threshold, order, NAV, exposure, model-training, or dashboard changes.
+The board is descriptive project state and authorization record. It does not authorize production, runtime, threshold, order, NAV, exposure, model-training, or dashboard changes.
 
 ## Active campaign
 
@@ -12,7 +12,7 @@ The board is a descriptive project-state and authorization record. It does not a
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Active — deterministic core and artifact CLI locally verified by the expanded focused suite; governed two-run real-artifact execution is the next gate
+**Status:** Active — deterministic core and expanded focused suite verified; first governed two-run execution attempt blocked before output publication because the authorized artifact-root directory was absent from the checkout; tracked artifact root published and pending rerun
 
 **Working branch:** `feature/core-v1-historical-event-families-implementation`
 
@@ -22,19 +22,9 @@ The board is a descriptive project-state and authorization record. It does not a
 
 ## Governing constraints
 
-All work remains:
+All work remains deterministic, replay-safe, observation-only, fail-closed, additive to Campaign #40 artifacts, separate from production runtime, independent of model retraining, and independent of threshold, order, NAV, and exposure mutation.
 
-- deterministic;
-- replay-safe;
-- observation-only;
-- fail-closed;
-- additive to Campaign #40 artifacts;
-- separate from production runtime;
-- independent of model retraining;
-- independent of threshold, order, NAV, and exposure mutation;
-- incapable of mutating governed source artifacts.
-
-Implementation is authorized only on the named branch and only within:
+Authorized surfaces only:
 
 - `research/ml/validation/historical_event_families.py`;
 - `scripts/run_core_v1_historical_event_families.py`;
@@ -51,7 +41,7 @@ No other implementation surface is authorized.
 - `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES_CADENCE_EVIDENCE.md`;
 - `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES_IMPLEMENTATION_HANDOFF.md`.
 
-These govern source identities, zero-based episode identity, closed timestamp intervals, canonical `PT1H` cadence, missing-bar handling, grouping, family identity, composition, similarity, serialization, replay, and fail-closed behavior.
+These govern source identities, zero-based episode identity, closed timestamp intervals, canonical `PT1H` cadence, missing-bar handling, deterministic grouping, family identity, composition, similarity, serialization, replay, and fail-closed behavior.
 
 ## Governed inputs
 
@@ -88,12 +78,10 @@ No inferred cadence, interpolation, expanded tolerance, or learned gap rule is p
 - `405a86b` — initial deterministic event-family core;
 - `1ae3298` — hardened validation and canonical construction core;
 - `62d0b05` — original focused core tests;
-- `b98dc4e` — recorded initial core progress;
 - `124961b` — deterministic artifact runner;
 - `d0ced4e` — runner-contract tests;
-- `4322d05` — recorded CLI milestone;
-- `b5fd593` — exported governed `CANONICAL_BAR_CADENCE = "PT1H"` required by the runner import contract;
-- `dc7c98e` — recorded the collection failure and compatibility fix.
+- `b5fd593` — exported governed `CANONICAL_BAR_CADENCE = "PT1H"`;
+- `6afed4f` — tracked the authorized Campaign #41 artifact root with `.gitkeep`.
 
 The pure module remains side-effect free. The CLI requires explicit governed paths, verifies prediction identity and source hashes, recomputes and reconciles Campaign #40 classification, stages a complete deterministic output set, refuses unauthorized or non-empty output directories, and emits LF-only text artifacts.
 
@@ -101,29 +89,40 @@ The pure module remains side-effect free. The CLI requires explicit governed pat
 
 ### Pure-core verification
 
-At commit `b98dc4e`, Windows / Python `3.14.6`:
+At commit `b98dc4e`:
 
 - command: `python -m pytest -q tests/test_historical_event_families.py`;
 - collected: `9`;
 - passed: `9`;
 - failed: `0`;
-- elapsed: `3.95s`.
+- elapsed: `3.95s`;
+- environment: Windows, Python `3.14.6`.
 
-### Expanded-suite collection failure and correction
+### Expanded-suite verification
 
-After pulling through `4322d05`, the suite failed during collection because the runner imported `CANONICAL_BAR_CADENCE` but the core module had not exported it. Commit `b5fd593` added only the governed constant `CANONICAL_BAR_CADENCE = "PT1H"`; no algorithm, cadence value, threshold, runtime, order, NAV, or exposure behavior changed.
-
-### Expanded focused-suite verification
-
-After pulling through `dc7c98e`, Windows / Python `3.14.6`:
+After the cadence import fix:
 
 - command: `python -m pytest -q tests/test_historical_event_families.py`;
 - collected: `12`;
 - passed: `12`;
 - failed: `0`;
-- elapsed: `1.07s`.
+- elapsed: `1.07s`;
+- environment: Windows, Python `3.14.6`.
 
-`git status --short` showed only the same pre-existing untracked local data, export, manifest, server-data, and runtime-state files. No tracked governed source, production, runtime, or implementation file was modified by the test run.
+The user's `git status --short` showed only the same pre-existing untracked local data and runtime files. No tracked governed source, runtime, or production file was modified.
+
+### First governed execution attempt
+
+Both `replay_a` and `replay_b` attempts failed before any output directory or artifact was published.
+
+Failure:
+
+`FileNotFoundError: [WinError 3]` while creating:
+
+- `artifacts/core_v1_historical_event_families/.replay_a.staging`;
+- `artifacts/core_v1_historical_event_families/.replay_b.staging`.
+
+Cause: Git does not preserve empty directories, so the authorized artifact root did not exist in the checkout. Commit `6afed4f` tracks that root with an empty `.gitkeep`. No algorithm, cadence, source, runtime, threshold, order, NAV, exposure, model, or dashboard behavior changed.
 
 ## Required generated artifacts
 
@@ -137,11 +136,9 @@ Each successful governed run must emit exactly:
 
 No real Campaign #41 output artifact has yet been accepted or committed.
 
-## Current acceptance gates
+## Acceptance gates before merge
 
-Before merge:
-
-- expanded focused tests pass — satisfied: `12 passed`;
+- expanded focused tests pass;
 - full repository suite passes;
 - real-artifact execution succeeds twice into separate empty output directories;
 - all five outputs are byte-identical across replay;
@@ -157,37 +154,15 @@ Do not modify production runtime code, live state, strategy logic, training code
 
 No existing artifact may be rewritten in place.
 
-## Explicit non-goals
-
-Learned clustering, generated event labels, predictive recovery modeling, calibrated probabilities, dominant-label inference, runtime integration, model retraining, threshold changes, orders, NAV, exposure mutation, and dashboard integration remain out of scope.
-
 ## Next executable step
 
-Pull this board update, then execute the governed runner twice into two new output directories:
+Pull commit `6afed4f` and this Board update. Confirm the artifact root exists, then rerun the same two governed commands into `replay_a` and `replay_b`.
 
-```powershell
-python scripts/run_core_v1_historical_event_families.py `
-  --historical-json artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json `
-  --historical-episodes artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv `
-  --episode-signatures artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv `
-  --predictions artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv `
-  --out-dir artifacts/core_v1_historical_event_families/replay_a `
-  --bar-cadence PT1H
-
-python scripts/run_core_v1_historical_event_families.py `
-  --historical-json artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json `
-  --historical-episodes artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv `
-  --episode-signatures artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv `
-  --predictions artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv `
-  --out-dir artifacts/core_v1_historical_event_families/replay_b `
-  --bar-cadence PT1H
-```
-
-Both output directories must be absent or explicitly empty before execution. Do not delete or overwrite any existing artifact to make room.
+Do not manually create, delete, rename, or edit generated files between runs.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and artifact CLI pass the expanded focused suite (`12 passed` on Windows / Python 3.14.6). The next gate is two governed real-artifact runs into separate new directories, followed by byte-identity, LF-only, source-hash, and reconciliation verification. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue Campaign #41 on `feature/core-v1-historical-event-families-implementation`. The deterministic core and expanded focused suite pass. The first two governed runs failed before publication because the authorized artifact root did not exist in the checkout. Commit `6afed4f` tracks that root with `.gitkeep`; rerun both governed executions after pulling. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
 
 ## Board maintenance rule
 
