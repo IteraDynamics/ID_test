@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from argparse import Namespace
 from hashlib import sha256
 import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -13,6 +15,13 @@ from research.ml.validation.historical_event_families import (
     insert_episode_ids,
     reconcile_source_and_classified,
     validate_prediction_timestamps,
+)
+from scripts.run_core_v1_historical_event_families import (
+    _build_report,
+    _build_summary,
+    _reconcile_outputs,
+    _strict_json,
+    _validate_output_directory,
 )
 
 SOURCE_ARTIFACT = "artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv"
@@ -209,3 +218,38 @@ def test_outputs_are_complete_once_and_strict_json() -> None:
     assert all(record["observation_only"] for record in families)
     assert all(not record["runtime_integration_allowed"] for record in families)
     assert all(not record["exposure_mutation_allowed"] for record in families)
+
+
+def test_summary_report_and_serialization_are_deterministic() -> None:
+    membership, families = _build()
+    sources = {"predictions": "z.csv", "historical_episodes": "a.csv"}
+    first = _build_summary(membership, families, sources)
+    second = _build_summary(membership.copy(), json.loads(json.dumps(families)), dict(sources))
+
+    assert first == second
+    assert _strict_json(first).endswith("\n")
+    assert "\r" not in _strict_json(first)
+    report = _build_report(first)
+    assert report.endswith("\n")
+    assert "not proof of statistical independence" in report
+    assert "No runtime, threshold, model, order, NAV, exposure" in report
+
+
+def test_output_reconciliation_rejects_disagreement() -> None:
+    membership, families = _build()
+    summary = _build_summary(membership, families, {"historical_episodes": "a.csv"})
+    _reconcile_outputs(membership, families, summary)
+
+    changed = membership.copy()
+    changed.loc[0, "family_id"] = "wrong"
+    with pytest.raises(EventFamilyValidationError, match="identifiers disagree"):
+        _reconcile_outputs(changed, families, summary)
+
+
+def test_output_directory_must_be_authorized_and_empty(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    source.write_text("x\n", encoding="utf-8")
+
+    outside = tmp_path / "outside"
+    with pytest.raises(EventFamilyValidationError, match="must be inside"):
+        _validate_output_directory(outside, (source,))
