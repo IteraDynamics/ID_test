@@ -1,0 +1,174 @@
+{
+  "counting_rules": {
+    "episode_resolution": "each governed episode contributes one label observation",
+    "event_family_homogeneous": "a family contributes only when exactly one label is present",
+    "event_family_presence": "each family contributes at most one presence observation per label",
+    "mixed_family_dominant_label_inference": false
+  },
+  "deterministic_digest_sha256": "0c837e746832c64b4a163ab1e968fccccf8ac338c11ce546fd08fa12278dd3b4",
+  "episode_count": 122,
+  "event_family_count": 14,
+  "experiment": "core_v1_event_robustness",
+  "exposure_mutation_allowed": false,
+  "family_composition": {
+    "intrinsic_subtype_homogeneous": 8,
+    "intrinsic_subtype_mixed": 6,
+    "recovery_outcome_homogeneous": 9,
+    "recovery_outcome_mixed": 5
+  },
+  "intrinsic_subtype": [
+    {
+      "episode_amplification_ratio": 1.0,
+      "episode_count": 1,
+      "episode_share": 0.00819672131147541,
+      "event_family_homogeneous_count": 0,
+      "event_family_homogeneous_share": 0.0,
+      "event_family_presence_count": 1,
+      "event_family_presence_share": 0.07142857142857142,
+      "label": "MAJOR_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL",
+      "presence_minus_episode_share": 0.06323185011709602
+    },
+    {
+      "episode_amplification_ratio": 3.0,
+      "episode_count": 9,
+      "episode_share": 0.07377049180327869,
+      "event_family_homogeneous_count": 0,
+      "event_family_homogeneous_share": 0.0,
+      "event_family_presence_count": 3,
+      "event_family_presence_share": 0.21428571428571427,
+      "label": "MAJOR_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL",
+      "presence_minus_episode_share": 0.1405152224824356
+    },
+    {
+      "episode_amplification_ratio": 2.0,
+      "episode_count": 2,
+      "episode_share": 0.01639344262295082,
+      "event_family_homogeneous_count": 0,
+      "event_family_homogeneous_share": 0.0,
+      "event_family_presence_count": 1,
+      "event_family_presence_share": 0.07142857142857142,
+      "label": "MODERATE_COLLAPSE__BROAD_SHIFT__VOLATILITY_EXPANSION",
+      "presence_minus_episode_share": 0.0550351288056206
+    },
+    {
+      "episode_amplification_ratio": 1.0,
+      "episode_count": 1,
+      "episode_share": 0.00819672131147541,
+      "event_family_homogeneous_count": 0,
+      "event_family_homogeneous_share": 0.0,
+      "event_family_presence_count": 1,
+      "event_family_presence_share": 0.07142857142857142,
+      "label": "MODERATE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL",
+      "presence_minus_episode_share": 0.06323185011709602
+    },
+    {
+      "episode_amplification_ratio": 1.0,
+      "episode_count": 1,
+      "episode_share": 0.00819672131147541,
+      "event_family_homogeneous_count": 0,
+      "event_family_homogeneous_share": 0.0,
+      "event_family_presence_count": 1,
+      "event_family_presence_share": 0.07142857142857142,
+      "label": "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_EXPANSION",
+      "presence_minus_episode_share": 0.06323185011709602
+    },
+    {
+      "episode_amplification_ratio": 1.5555555555555556,
+      "episode_count": 14,
+      "episode_share": 0.11475409836065574,
+      "event_family_homogeneous_count": 3,
+      "event_family_homogeneous_share": 0.21428571428571427,
+      "event_family_presence_count": 9,
+      "event_family_presence_share": 0.6428571428571429,
+      "label": "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL",
+      "presence_minus_episode_share": 0.5281030444964872
+    },
+    {
+      "episode_amplification_ratio": 4.0,
+      "episode_count": 4,
+      "episode_share": 0.03278688524590164,
+      "event_family_homogeneous_count": 0,
+      "event_family_homogeneous_share": 0.0,
+      "event_family_presence_count": 1,
+      "event_family_presence_share": 0.07142857142857142,
+      "label": "SEVERE_COLLAPSE__BROAD_SHIFT__VOLATILITY_EXPANSION",
+      "presence_minus_episode_share": 0.038641686182669784
+    },
+    {
+      "episode_amplification_ratio": 1.0,
+      "episode_count": 1,
+      "episode_share": 0.00819672131147541,
+      "event_family_homogeneous_count": 0,
+      "event_family_homogeneous_share": 0.0,
+      "event_family_presence_count": 1,
+      "event_family_presence_share": 0.07142857142857142,
+      "label": "SEVERE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_EXPANSION",
+      "presence_minus_episode_share": 0.06323185011709602
+    },
+    {
+      "episode_amplification_ratio": 1.0,
+      "episode_count": 2,
+      "episode_share": 0.01639344262295082,
+      "event_family_homogeneous_count": 0,
+      "event_family_homogeneous_share": 0.0,
+      "event_family_presence_count": 2,
+      "event_family_presence_share": 0.14285714285714285,
+      "label": "SEVERE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL",
+      "presence_minus_episode_share": 0.12646370023419204
+    },
+    {
+      "episode_amplification_ratio": 9.666666666666666,
+      "episode_count": 87,
+      "episode_share": 0.7131147540983607,
+      "event_family_homogeneous_count": 5,
+      "event_family_homogeneous_share": 0.35714285714285715,
+      "event_family_presence_count": 9,
+      "event_family_presence_share": 0.6428571428571429,
+      "label": "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL",
+      "presence_minus_episode_share": -0.07025761124121777
+    }
+  ],
+  "observation_only": true,
+  "recovery_outcome": [
+    {
+      "episode_amplification_ratio": 7.5,
+      "episode_count": 45,
+      "episode_share": 0.36885245901639346,
+      "event_family_homogeneous_count": 1,
+      "event_family_homogeneous_share": 0.07142857142857142,
+      "event_family_presence_count": 6,
+      "event_family_presence_share": 0.42857142857142855,
+      "label": "DELAYED_RECOVERY",
+      "presence_minus_episode_share": 0.059718969555035084
+    },
+    {
+      "episode_amplification_ratio": 12.0,
+      "episode_count": 48,
+      "episode_share": 0.39344262295081966,
+      "event_family_homogeneous_count": 2,
+      "event_family_homogeneous_share": 0.14285714285714285,
+      "event_family_presence_count": 4,
+      "event_family_presence_share": 0.2857142857142857,
+      "label": "PERSISTENT_COLLAPSE",
+      "presence_minus_episode_share": -0.10772833723653397
+    },
+    {
+      "episode_amplification_ratio": 2.9,
+      "episode_count": 29,
+      "episode_share": 0.23770491803278687,
+      "event_family_homogeneous_count": 6,
+      "event_family_homogeneous_share": 0.42857142857142855,
+      "event_family_presence_count": 10,
+      "event_family_presence_share": 0.7142857142857143,
+      "label": "RAPID_RECOVERY",
+      "presence_minus_episode_share": 0.47658079625292743
+    }
+  ],
+  "research_only": true,
+  "runtime_integration_allowed": false,
+  "source_artifacts": {
+    "event_families": "artifacts/core_v1_historical_event_families/btc_extended_up_event_families.json",
+    "event_family_membership": "artifacts/core_v1_historical_event_families/btc_extended_up_event_family_membership.csv"
+  },
+  "specification_version": "1"
+}
