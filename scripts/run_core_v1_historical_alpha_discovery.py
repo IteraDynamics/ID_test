@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-"""Fail-closed governed-source preflight for Campaign #43.
+"""Fail-closed governed-source preflight for Campaign #43-R1.
 
-This increment validates source identity and structure only. It does not calculate,
-rank, serialize, or publish predictive results.
+This increment validates source identity, structure, numeric integrity, and exact
+anchor/horizon coverage only. It does not calculate, rank, serialize, or publish
+predictive results.
 """
 
 import argparse
@@ -13,6 +14,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -20,10 +22,20 @@ if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from research.ml.validation.historical_alpha_discovery import (
+    HORIZON_HOURS,
     HistoricalAlphaDiscoveryValidationError,
     order_event_families,
     validate_candidate_inventory,
     validate_price_series,
+)
+
+PRICE_COLUMNS: tuple[str, ...] = (
+    "timestamp",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
 )
 
 SOURCE_SPECS: dict[str, dict[str, Any]] = {
@@ -62,19 +74,21 @@ SOURCE_SPECS: dict[str, dict[str, Any]] = {
         "kind": "json_object",
     },
     "btc_hourly": {
-        "path": "artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv",
-        "sha256": "36b6ffcc9e993f4869dd8f75cde13e7058e101949a577bd24c84e79e58f1dca7",
+        "path": "data/btcusd_3600s_2018-01-01_to_2025-12-31.csv",
+        "sha256": "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079",
         "kind": "price_csv",
-        "rows": 52453,
-        "first": "2020-01-01 01:00:00",
-        "last": "2025-12-26 00:00:00",
+        "bytes": 4792028,
+        "rows": 70069,
+        "columns": PRICE_COLUMNS,
+        "first": "2018-01-01 00:00:00",
+        "last": "2025-12-31 00:00:00",
     },
 }
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Validate Campaign #43 governed source identity and structure only."
+        description="Validate Campaign #43-R1 governed source identity and structure only."
     )
     parser.add_argument(
         "--repository-root",
@@ -85,7 +99,7 @@ def parse_args() -> argparse.Namespace:
         "--preflight-only",
         action="store_true",
         required=True,
-        help="Required safety flag. Campaign #43 result generation is not implemented in this increment.",
+        help="Required safety flag. Campaign #43-R1 result generation is prohibited in this increment.",
     )
     return parser.parse_args()
 
@@ -111,6 +125,198 @@ def _require_source(root: Path, relative_path: str) -> Path:
     return path
 
 
+def _parse_naive_timestamps(values: pd.Series, field: str) -> pd.DatetimeIndex:
+    try:
+        parsed = pd.to_datetime(values, errors="raise")
+    except (TypeError, ValueError) as exc:
+        raise HistoricalAlphaDiscoveryValidationError(
+            f"{field} contains invalid timestamps"
+        ) from exc
+    index = pd.DatetimeIndex(parsed)
+    if index.tz is not None:
+        raise HistoricalAlphaDiscoveryValidationError(
+            f"{field} must use timezone-naive timestamps"
+        )
+    return index
+
+
+def _validate_price_frame(path: Path, spec: dict[str, Any]) -> tuple[pd.Series, dict[str, Any]]:
+    if path.stat().st_size != int(spec["bytes"]):
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly byte count does not match frozen evidence"
+        )
+
+    frame = pd.read_csv(path)
+    expected_columns = tuple(str(column) for column in spec["columns"])
+    if tuple(frame.columns) != expected_columns:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly ordered schema does not match frozen evidence"
+        )
+    if len(frame) != int(spec["rows"]):
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly row count does not match frozen evidence"
+        )
+
+    timestamps = _parse_naive_timestamps(frame["timestamp"], "btc_hourly timestamp")
+    if timestamps.has_duplicates:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly contains duplicate timestamps"
+        )
+    if not timestamps.is_monotonic_increasing:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly timestamps must be strictly increasing"
+        )
+    if not (
+        (timestamps.minute == 0)
+        & (timestamps.second == 0)
+        & (timestamps.microsecond == 0)
+        & (timestamps.nanosecond == 0)
+    ).all():
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly timestamps must be exactly hour-aligned"
+        )
+    if str(timestamps[0]) != spec["first"]:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly first timestamp does not match frozen evidence"
+        )
+    if str(timestamps[-1]) != spec["last"]:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly last timestamp does not match frozen evidence"
+        )
+
+    numeric_columns = ("open", "high", "low", "close", "volume")
+    numeric = frame.loc[:, numeric_columns].apply(pd.to_numeric, errors="coerce")
+    if numeric.isna().any().any():
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly numeric columns must be numeric and non-null"
+        )
+    values = numeric.to_numpy(dtype=float)
+    if not np.isfinite(values).all():
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly numeric columns must be finite"
+        )
+    if (numeric.loc[:, ("open", "high", "low", "close")].to_numpy() <= 0).any():
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly OHLC values must be strictly positive"
+        )
+    if (numeric["volume"].to_numpy() < 0).any():
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly volume must be nonnegative"
+        )
+    if (numeric["high"] < numeric[["open", "close", "low"]].max(axis=1)).any():
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly high is inconsistent with OHLC values"
+        )
+    if (numeric["low"] > numeric[["open", "close", "high"]].min(axis=1)).any():
+        raise HistoricalAlphaDiscoveryValidationError(
+            "btc_hourly low is inconsistent with OHLC values"
+        )
+
+    indexed = numeric.copy()
+    indexed.index = timestamps
+    close = validate_price_series(indexed)
+    deltas = timestamps.to_series(index=timestamps).diff().dropna()
+    discontinuities = deltas[deltas != pd.Timedelta(hours=1)]
+    missing_hours = int(
+        sum(int(delta / pd.Timedelta(hours=1)) - 1 for delta in discontinuities)
+    )
+
+    return close, {
+        "byte_count": path.stat().st_size,
+        "row_count": len(close),
+        "ordered_schema": list(expected_columns),
+        "first_timestamp": str(close.index[0]),
+        "last_timestamp": str(close.index[-1]),
+        "price_column": "close",
+        "timezone_convention": "timezone-naive",
+        "timestamp_discontinuity_count": int(len(discontinuities)),
+        "missing_hour_count": missing_hours,
+    }
+
+
+def _validate_exact_coverage(
+    close: pd.Series,
+    episodes: pd.DataFrame,
+    membership: pd.DataFrame,
+) -> dict[str, Any]:
+    episode_required = {"window_start", "window_end"}
+    membership_required = {"family_id", "episode_id", "window_start", "window_end"}
+    episode_missing = sorted(episode_required - set(episodes.columns))
+    membership_missing = sorted(membership_required - set(membership.columns))
+    if episode_missing:
+        raise HistoricalAlphaDiscoveryValidationError(
+            f"historical episodes missing required columns: {episode_missing}"
+        )
+    if membership_missing:
+        raise HistoricalAlphaDiscoveryValidationError(
+            f"membership missing coverage columns: {membership_missing}"
+        )
+
+    episode_windows = {
+        (str(start), str(end))
+        for start, end in episodes[["window_start", "window_end"]].itertuples(index=False)
+    }
+    membership_windows = {
+        (str(start), str(end))
+        for start, end in membership[["window_start", "window_end"]].itertuples(index=False)
+    }
+    if episode_windows != membership_windows:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "historical episode windows do not reconcile to membership"
+        )
+
+    episode_anchors = _parse_naive_timestamps(
+        membership["window_end"], "episode window_end"
+    )
+    family_rows = membership.copy()
+    family_rows["_window_end"] = episode_anchors
+    family_anchors = pd.DatetimeIndex(
+        family_rows.groupby("family_id", sort=True)["_window_end"].max().tolist()
+    )
+    if len(family_anchors) != 14:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "membership must reconcile to exactly 14 family anchors"
+        )
+
+    close_index = close.index
+
+    def summarize(anchors: pd.DatetimeIndex) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "observation_count": len(anchors),
+            "anchors_missing": int((~anchors.isin(close_index)).sum()),
+            "unavailable_by_horizon": {},
+        }
+        for horizon in HORIZON_HOURS:
+            unavailable = 0
+            for anchor in anchors:
+                expected = pd.date_range(anchor, periods=horizon + 1, freq="1h")
+                if not expected.isin(close_index).all():
+                    unavailable += 1
+            result["unavailable_by_horizon"][str(horizon)] = unavailable
+        return result
+
+    episode_coverage = summarize(episode_anchors)
+    family_coverage = summarize(family_anchors)
+    if episode_coverage["anchors_missing"] or family_coverage["anchors_missing"]:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "governed episode or family anchor is absent from btc_hourly"
+        )
+    unavailable = sum(episode_coverage["unavailable_by_horizon"].values()) + sum(
+        family_coverage["unavailable_by_horizon"].values()
+    )
+    if unavailable:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "governed episode or family horizon coverage is unavailable"
+        )
+
+    return {
+        "episode": episode_coverage,
+        "family": family_coverage,
+        "episode_windows_not_in_membership": 0,
+        "membership_windows_not_in_episodes": 0,
+    }
+
+
 def _validate_source(name: str, spec: dict[str, Any], root: Path) -> dict[str, Any]:
     relative = str(spec["path"])
     path = _require_source(root, relative)
@@ -121,10 +327,7 @@ def _validate_source(name: str, spec: dict[str, Any], root: Path) -> dict[str, A
         )
 
     kind = spec["kind"]
-    evidence: dict[str, Any] = {
-        "artifact": relative,
-        "sha256": actual_hash,
-    }
+    evidence: dict[str, Any] = {"artifact": relative, "sha256": actual_hash}
 
     if kind == "json_object":
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -152,7 +355,13 @@ def _validate_source(name: str, spec: dict[str, Any], root: Path) -> dict[str, A
                 f"{name} row count does not match frozen evidence"
             )
         if kind == "membership":
-            required = {"family_id", "family_ordinal", "episode_id", "window_end"}
+            required = {
+                "family_id",
+                "family_ordinal",
+                "episode_id",
+                "window_start",
+                "window_end",
+            }
             missing = sorted(required - set(frame.columns))
             if missing:
                 raise HistoricalAlphaDiscoveryValidationError(
@@ -168,31 +377,8 @@ def _validate_source(name: str, spec: dict[str, Any], root: Path) -> dict[str, A
                 )
         evidence["row_count"] = len(frame)
     elif kind == "price_csv":
-        frame = pd.read_csv(path, index_col=0)
-        close = validate_price_series(frame)
-        if len(close) != int(spec["rows"]):
-            raise HistoricalAlphaDiscoveryValidationError(
-                "btc_hourly row count does not match frozen evidence"
-            )
-        if str(close.index[0]) != spec["first"]:
-            raise HistoricalAlphaDiscoveryValidationError(
-                "btc_hourly first timestamp does not match frozen evidence"
-            )
-        if str(close.index[-1]) != spec["last"]:
-            raise HistoricalAlphaDiscoveryValidationError(
-                "btc_hourly last timestamp does not match frozen evidence"
-            )
-        evidence.update(
-            {
-                "row_count": len(close),
-                "first_timestamp": str(close.index[0]),
-                "last_timestamp": str(close.index[-1]),
-                "price_column": "close",
-                "timezone_convention": "timezone-naive"
-                if close.index.tz is None
-                else str(close.index.tz),
-            }
-        )
+        _, price_evidence = _validate_price_frame(path, spec)
+        evidence.update(price_evidence)
     else:
         raise HistoricalAlphaDiscoveryValidationError(
             f"unknown governed source kind for {name}: {kind}"
@@ -225,6 +411,17 @@ def run_preflight(repository_root: Path) -> dict[str, Any]:
         name: _validate_source(name, spec, root)
         for name, spec in sorted(SOURCE_SPECS.items())
     }
+
+    price_path = _require_source(root, str(SOURCE_SPECS["btc_hourly"]["path"]))
+    close, _ = _validate_price_frame(price_path, SOURCE_SPECS["btc_hourly"])
+    episodes = pd.read_csv(
+        _require_source(root, str(SOURCE_SPECS["historical_episodes"]["path"]))
+    )
+    membership = pd.read_csv(
+        _require_source(root, str(SOURCE_SPECS["event_family_membership"]["path"]))
+    )
+    coverage = _validate_exact_coverage(close, episodes, membership)
+
     hashes_after = {
         name: sha256_path(_require_source(root, str(spec["path"])))
         for name, spec in sorted(SOURCE_SPECS.items())
@@ -235,7 +432,7 @@ def run_preflight(repository_root: Path) -> dict[str, Any]:
         )
 
     return {
-        "experiment": "core_v1_historical_alpha_discovery",
+        "experiment": "core_v1_historical_alpha_discovery_r1",
         "phase": "source_preflight_only",
         "research_only": True,
         "observation_only": True,
@@ -243,6 +440,7 @@ def run_preflight(repository_root: Path) -> dict[str, Any]:
         "exposure_mutation_allowed": False,
         "candidate_inventory_valid": True,
         "sources": evidence,
+        "coverage": coverage,
         "source_count": len(evidence),
         "predictive_results_generated": False,
     }
@@ -251,8 +449,10 @@ def run_preflight(repository_root: Path) -> dict[str, Any]:
 def main() -> None:
     args = parse_args()
     result = run_preflight(Path(args.repository_root))
-    print("Campaign #43 governed source preflight passed")
+    print("Campaign #43-R1 governed source preflight passed")
     print(f"Sources validated: {result['source_count']}")
+    print("Episode observations covered: 122")
+    print("Family observations covered: 14")
     print("Predictive results generated: false")
     print("Observation only: no runtime, threshold, order, NAV, or exposure changed.")
 
