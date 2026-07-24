@@ -12,7 +12,7 @@ The board is project state and authorization record. It does not authorize produ
 
 **Classification:** Research primary; deterministic historical predictive-signal discovery
 
-**Status:** GOVERNANCE TRANSITION COMPLETE — local BTC OHLCV source explicitly governed; implementation and preflight update are next; predictive result generation remains prohibited
+**Status:** PREFLIGHT ACCEPTED — governed source validation and repository tests passed; deterministic result-generation implementation is authorized; canonical results have not been generated or inspected
 
 **Working branch:** `agent/campaign-43-historical-alpha-discovery-r1`
 
@@ -24,9 +24,11 @@ Which governed, anchor-available Core v1 historical descriptors exhibit repeatab
 
 ## Authorization
 
-**Decision:** GO for Campaign #43-R1 source-governance implementation, focused tests, and preflight execution. Predictive result generation remains prohibited until the updated preflight and all required validation gates pass.
+**Decision:** GO for implementation of the frozen Campaign #43-R1 calculations, deterministic canonical serialization, focused tests, and two-run replay validation.
 
-The user explicitly authorized Campaign #43 on July 24, 2026 and explicitly authorized this R1 source-governance transition after the original source failed closed. The campaign may evaluate and rank historical predictive relationships for later falsification only after preflight authorization. It may not alter production behavior or claim deployable alpha.
+The user explicitly authorized Campaign #43 on July 24, 2026 and explicitly authorized the R1 source-governance transition after the original source failed closed. Updated focused tests, governed preflight, and the full repository suite now pass. Predictive result generation may proceed only according to the original frozen specification and R1 source amendment.
+
+The campaign may evaluate and rank historical predictive relationships for later falsification. It may not alter production behavior, train or replace a model, or claim deployable alpha.
 
 ## Governing constraints
 
@@ -95,9 +97,9 @@ The original source selection remains in the audit record:
 - `artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv`
   - SHA-256 `36b6ffcc9e993f4869dd8f75cde13e7058e101949a577bd24c84e79e58f1dca7`; `52,453` rows; `2020-01-01 01:00:00` through `2025-12-26 00:00:00`
 
-Observation-only inspection established that this is a prediction artifact and has no exact `close` column. It is not a valid Campaign #43-R1 price source.
+Observation-only inspection established that this is a prediction artifact and has no exact `close` column. It is not a valid Campaign #43-R1 price source. The original preflight failed closed before predictive outputs were generated or inspected.
 
-### Newly governed local BTC hourly source
+### Governed local BTC hourly source
 
 - repository-relative local path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`
 - provisioning class: externally provisioned local research input; bytes intentionally excluded from Git
@@ -112,18 +114,46 @@ Observation-only inspection established that this is a prediction artifact and h
 
 The local file is governed by exact path and exact identity even though it is not Git-tracked. The implementation must not search for alternates, infer a fallback, substitute another field, interpolate, fill, resample, use nearest-row or as-of matching, or infer cadence.
 
-## Source-preflight history
+## Accepted Campaign #43-R1 preflight evidence
 
-User-run original preflight evidence on July 24, 2026:
+Environment:
 
-- branch HEAD: `496a8b8471b601060e98f9a9e25d24e4a36be4bc`;
+- Windows;
+- Python `3.14.6`;
+- pytest `9.1.1`.
+
+Focused suite:
+
+- command: `python -m pytest -q tests/test_historical_alpha_discovery.py`;
+- result: `11 passed in 1.58s`;
+- failures: `0`.
+
+Governed preflight:
+
 - command: `python scripts/run_core_v1_historical_alpha_discovery.py --preflight-only`;
-- result: failed closed in `validate_price_series`;
-- exact error: `governed BTC series must contain exact close column`.
+- result: passed;
+- governed sources validated: `7`;
+- episode observations covered: `122`;
+- family observations covered: `14`;
+- predictive results generated: `false`;
+- runtime, threshold, order, NAV, and exposure changes: none.
 
-This was an accepted safety outcome. No predictive outcomes, rankings, or canonical Campaign #43 result artifacts were generated or inspected.
+Full repository suite:
 
-Observation-only validation of the replacement local source established:
+- command: `python -m pytest -q`;
+- result: `431 passed, 75 warnings in 221.45s`;
+- failures: `0`;
+- warnings were deprecation warnings outside Campaign #43-R1 and were not new test failures.
+
+Working-tree checks before the reconciliation commit:
+
+- `git diff --cached --check`: clean;
+- unrelated local runtime and data files remained untracked and unstaged;
+- no local governed market-data file was staged or modified.
+
+## Exact coverage and integrity evidence
+
+Observation-only validation established:
 
 - exact schema and row evidence passed;
 - timestamp parsing failures: `0`;
@@ -164,23 +194,23 @@ Completed:
 - source mutation detection;
 - explicit preflight-only safety flag;
 - fail-closed discovery that the original prediction artifact is not a governed close-price source;
-- observation-only integrity validation of the candidate local OHLCV source;
+- observation-only integrity validation of the local OHLCV source;
 - episode and event-family exact-coverage reconciliation;
-- Campaign #43-R1 source-governance amendment.
+- Campaign #43-R1 source-governance amendment;
+- exact ordered OHLCV preflight implementation;
+- timestamp-serialization reconciliation fix and regression test;
+- updated focused suite, governed preflight, and full repository suite acceptance.
 
 Key commits:
 
 - specification freeze: `57472a2fc4594e9d4e9ea1681cecef8d0c15dc25`;
 - pure primitives: `e462c91628136d7429c58e4706da7a3a7d484b30`;
 - focused tests: `e41320c192f6223f5e707aed82ed80a1b59647ac`;
-- source preflight runner: `9810a88360dbda6bb3901f0052e3caa2f3e0a41e`;
-- R1 source-governance amendment: `28a820eb167dde58615dc79bbf2f80c1ba792414`.
-
-Accepted focused-test evidence before R1 implementation update:
-
-- Windows / Python `3.14.6`;
-- `8 passed in 5.71s`;
-- failures: `0`.
+- original source preflight runner: `9810a88360dbda6bb3901f0052e3caa2f3e0a41e`;
+- R1 source-governance amendment: `28a820eb167dde58615dc79bbf2f80c1ba792414`;
+- R1 preflight implementation: `d4a296ab9ee501d681c87e1399244820f597c17e`;
+- R1 focused tests: `0986ed6aa327b089398b3a53ae901214cf87e0cd`;
+- timestamp reconciliation fix: `a77a2e11fea3851581b1a077d1c639f94a2e9694`.
 
 ## Authorized file surfaces
 
@@ -208,18 +238,18 @@ Under `artifacts/core_v1_historical_alpha_discovery/`:
 
 ## Acceptance gates
 
-1. Original frozen specification and R1 source amendment predate predictive result inspection.
-2. Focused Campaign #43-R1 tests pass.
-3. The governed local BTC source passes explicit path/hash/bytes/schema/timestamp/count/numeric/OHLC/coverage preflight.
-4. Full repository suite passes with no new failures.
-5. Two governed runs produce byte-identical outputs.
-6. Canonical text outputs are LF-only.
-7. Governed source identities and hashes remain unchanged.
-8. Episode, event-family, mixed-family, unavailable-outcome, and fold counts reconcile.
-9. Chronological folds contain no look-ahead.
-10. Null, insufficient-support, contradictory, unstable, and unavailable evidence remain visible and fail closed.
-11. Scope review finds no runtime, strategy, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, or cross-asset changes.
-12. The report makes no deployable-alpha or production recommendation.
+1. Original frozen specification and R1 source amendment predate predictive result inspection. **Passed.**
+2. Focused Campaign #43-R1 tests pass. **Passed: 11 tests.**
+3. The governed local BTC source passes explicit path/hash/bytes/schema/timestamp/count/numeric/OHLC/coverage preflight. **Passed.**
+4. Full repository suite passes with no new failures. **Passed: 431 tests.**
+5. Two governed runs produce byte-identical outputs. **Pending.**
+6. Canonical text outputs are LF-only. **Pending.**
+7. Governed source identities and hashes remain unchanged. **Passed through preflight; must be reverified around generation.**
+8. Episode, event-family, mixed-family, unavailable-outcome, and fold counts reconcile. **Preflight coverage passed; result reconciliation pending.**
+9. Chronological folds contain no look-ahead. **Implementation tests pending.**
+10. Null, insufficient-support, contradictory, unstable, and unavailable evidence remain visible and fail closed. **Implementation tests pending.**
+11. Scope review finds no runtime, strategy, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, or cross-asset changes. **Passed through preflight; must remain true.**
+12. The report makes no deployable-alpha or production recommendation. **Pending report generation.**
 
 ## Campaign #42 awaiting merge
 
@@ -253,27 +283,27 @@ Accepted results include `122` governed episodes and `14` deterministic event fa
 
 ## Next executable step
 
-Update only the Campaign #43-R1 preflight implementation and focused tests to validate the newly governed local BTC OHLCV source.
+Implement only the frozen Campaign #43-R1 deterministic result-generation and publication path.
 
 Required behavior:
 
-- use exact path `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`;
-- validate exact SHA-256, byte count, row count, ordered schema, timestamp boundaries, timestamp integrity, numeric integrity, OHLC consistency, and governed anchor/horizon coverage;
-- fail closed when the file is absent or any evidence differs;
-- preserve exact timestamp matching and observation unavailability;
-- do not interpolate, fill, resample, search for alternate files, or substitute fields;
-- do not generate predictive results or canonical artifacts yet;
-- do not stage or modify the local data file.
+- consume only the seven governed sources and exact R1 BTC source identity;
+- implement the frozen episode and homogeneous event-family observations;
+- calculate only the frozen forward outcomes at `2`, `6`, `24`, `72`, and `168` hours;
+- implement the fixed chronological folds, support gates, evidence states, and ranking tuple exactly as frozen;
+- retain null, contradictory, insufficient, unstable, and unavailable rows;
+- serialize only the five planned canonical outputs with strict finite JSON, sorted keys, stable ordering, LF-only text, no generated timestamps, and deterministic payload digest;
+- publish through a staging directory into a newly created or explicitly empty output directory;
+- verify all governed hashes before and after generation;
+- add focused tests for calculations, folds, support, states, ranking, serialization, fail-closed publication, source immutability, and replay identity;
+- do not alter or stage the local governed BTC file;
+- do not inspect or interpret generated predictive results until two-run byte identity and all required tests pass.
 
-After implementation and focused tests, run:
-
-`python scripts/run_core_v1_historical_alpha_discovery.py --preflight-only`
-
-Predictive generation remains prohibited until the updated focused tests, updated preflight, and full repository suite pass and the board records those results.
+After implementation, run the focused Campaign #43-R1 suite and full repository suite before the first governed generation. Then execute two governed runs into separate empty directories and compare every canonical byte.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #43-R1 has completed an explicit governance transition from the invalid prediction artifact to the externally provisioned local BTC OHLCV file at `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`, governed by SHA-256 `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`, `4,792,028` bytes, `70,069` rows, exact ordered OHLCV schema, timezone-naive hourly timestamps, and exact `close`. The amendment is `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY_R1.md` at commit `28a820eb167dde58615dc79bbf2f80c1ba792414`. Pre-result reconciliation found all `122` episode and `14` family anchors and complete exact coverage for all frozen horizons. No predictive results were generated or inspected. Next, update only the Campaign #43-R1 preflight and focused tests, then run preflight-only. Preserve deterministic, replay-safe, research-only, observation-only, and fail-closed behavior. Do not change runtime, training, thresholds, signals, orders, portfolio, NAV, exposure, dashboards, cross-asset scope, or the frozen research design. Do not add or modify the local market-data file.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #43-R1 has passed its updated source-governance gates on Windows/Python 3.14.6: focused suite `11 passed`, governed preflight passed with `7` sources, `122` episode observations and `14` family observations covered, and the full repository suite passed `431 passed` with no failures. The timestamp reconciliation fix is commit `a77a2e11fea3851581b1a077d1c639f94a2e9694`. No predictive results were generated or inspected. The next authorized step is implementation of the exact frozen calculations, canonical outputs, focused tests, and two-run replay validation. Preserve deterministic, replay-safe, research-only, observation-only, and fail-closed behavior. Do not change runtime, training, thresholds, signals, orders, portfolio, NAV, exposure, dashboards, cross-asset scope, or the frozen research design. Do not add, stage, or modify the local market-data file.
 
 ## Board maintenance rule
 
