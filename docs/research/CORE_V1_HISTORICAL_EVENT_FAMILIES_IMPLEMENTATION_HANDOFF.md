@@ -1,16 +1,16 @@
-# Core v1 Historical Event Families — Implementation Handoff
+# Core v1 Historical Event Families — Final Implementation Handoff
 
 ## Campaign
 
 **Campaign #41 — Deterministic overlap-aware historical event families**
 
-**Milestone:** Implementation handoff only.
+**Milestone:** Implementation, validation, canonical artifact publication, and draft-PR preparation complete.
 
-This document scopes and governs a later implementation milestone. It does not itself authorize code changes.
+This document is the final implementation handoff for Campaign #41. It records completed work and acceptance evidence. It does not authorize production runtime integration, model retraining, threshold changes, order behavior, NAV behavior, exposure behavior, or dashboard integration.
 
 ## Governing constraints
 
-All later implementation work must remain:
+All Campaign #41 work remains:
 
 - deterministic;
 - replay-safe;
@@ -19,122 +19,49 @@ All later implementation work must remain:
 - separate from production runtime;
 - independent of model retraining;
 - independent of threshold, order, NAV, and exposure mutation;
-- additive to existing Campaign #40 artifacts;
+- additive to Campaign #40 artifacts;
 - incapable of mutating governed source artifacts.
 
-The normative research specification is:
+## Governing documents
 
-- `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES.md`
+- `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES.md`;
+- `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES_CADENCE_EVIDENCE.md`;
+- `docs/ITERA_CAMPAIGN_BOARD.md`.
 
-The governed cadence evidence is:
-
-- `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES_CADENCE_EVIDENCE.md`
-
-## Authorization boundary
-
-Implementation may begin only after an explicit Campaign Board transition authorizes the implementation milestone and names the implementation branch.
-
-Before that transition, only documentation, review, and planning changes are authorized.
-
-## Authorized implementation surfaces
-
-A later implementation milestone may create or modify only the following surfaces unless the Campaign Board explicitly expands scope:
-
-1. one research module under `research/ml/validation/` for deterministic event-family construction;
-2. one command-line script under `scripts/` for real-artifact execution;
-3. one focused test module under `tests/` for unit, validation, replay, and source-integrity behavior;
-4. generated research artifacts under a dedicated non-runtime artifact directory;
-5. Campaign #41 research documentation and the Campaign Board.
-
-Recommended paths:
+## Implemented surfaces
 
 - `research/ml/validation/historical_event_families.py`;
 - `scripts/run_core_v1_historical_event_families.py`;
 - `tests/test_historical_event_families.py`;
-- `artifacts/core_v1_historical_event_families/`.
+- `artifacts/core_v1_historical_event_families/`;
+- Campaign #41 research documentation;
+- the Campaign Board.
 
-These paths are recommendations, not authorization to implement before the Board transition.
-
-## Prohibited surfaces
-
-The implementation milestone must not modify:
-
-- production runtime code;
-- live state readers or writers;
-- strategy logic;
-- model training or retraining code;
-- model thresholds;
-- order generation, routing, or execution;
-- portfolio construction;
-- NAV calculations;
-- exposure calculations or controls;
-- dashboard behavior;
-- existing Campaign #40 source artifacts;
-- the governed prediction CSV;
-- any runtime state file.
-
-No existing artifact may be rewritten in place.
+No production runtime, live-state, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard surface was changed.
 
 ## Governed inputs
 
-The implementation must consume and reconcile the same immutable Campaign #40 artifacts specified in the research specification:
+Immutable Campaign #40 sources:
 
 - `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json`;
 - `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv`;
 - `artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv`.
 
-The cadence-validation source is:
+Cadence-validation source:
 
 - `artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv`.
 
-Governed prediction-source evidence:
+Governed cadence evidence:
 
 - SHA-256: `36b6ffcc9e993f4869dd8f75cde13e7058e101949a577bd24c84e79e58f1dca7`;
-- row count: `52453`;
+- rows: `52453`;
 - first timestamp: `2020-01-01 01:00:00`;
 - last timestamp: `2025-12-26 00:00:00`;
-- timezone convention: timezone-naive;
+- timezone-naive;
+- strictly increasing;
+- no duplicates;
 - canonical cadence: `PT1H`;
-- duplicate timestamps: zero;
-- timestamp order: strictly increasing;
-- irregular gaps: three two-hour gaps, one four-hour gap, and one six-hour gap.
-
-The larger gaps are missing bars and must never be treated as alternate cadence or silently bridged.
-
-## Required module responsibilities
-
-The research module must provide deterministic, side-effect-free logic for:
-
-- loading and validating governed episode rows;
-- reconciling inserted zero-based `episode_id` values to persisted CSV row order;
-- validating source and classified identities exactly;
-- parsing and normalizing timestamp boundaries;
-- validating `PT1H` against the governed prediction timestamp index;
-- confirming that episode boundaries exist in the governed prediction index;
-- grouping closed intervals by overlap or exactly one validated source bar;
-- computing stable family identifiers;
-- computing family composition and similarity summaries;
-- producing canonical in-memory records suitable for strict serialization;
-- failing closed on every validation violation.
-
-The module must not perform file writes, runtime integration, network access, random sampling, or wall-clock-dependent behavior.
-
-## Required CLI responsibilities
-
-The command-line script must:
-
-- accept explicit input and output paths;
-- accept no hidden environment-dependent defaults for governed inputs;
-- validate all sources before emitting outputs;
-- compute source hashes before execution;
-- invoke only the research module for grouping and record construction;
-- serialize outputs with stable ordering and LF line endings;
-- write only to a newly created or explicitly empty output directory;
-- refuse to overwrite governed source artifacts;
-- emit a machine-readable manifest containing source identities, hashes, row counts, canonical cadence, output hashes, and configuration;
-- exit nonzero on any validation, reconciliation, serialization, or integrity failure.
-
-No partial output set may be reported as successful.
+- larger timestamp deltas remain preserved missing-bar gaps.
 
 ## Canonical adjacency rule
 
@@ -142,11 +69,25 @@ For closed intervals, a later episode joins the current family only when:
 
 `next_start <= current_family_end + PT1H`
 
-A source timestamp gap larger than `PT1H` is preserved as a gap. No interpolation, inferred row, tolerance expansion, or learned gap rule is allowed.
+No inferred cadence, interpolation, tolerance expansion, or learned gap rule is permitted.
 
-## Required generated artifacts
+## Implementation properties
 
-A successful real-artifact run must emit exactly four primary artifacts plus one integrity manifest:
+The research module is side-effect free and performs deterministic loading, validation, reconciliation, grouping, family identity construction, composition summaries, similarity summaries, and canonical record construction.
+
+The command-line runner:
+
+- requires explicit governed paths;
+- verifies prediction identity and source hashes;
+- recomputes and reconciles Campaign #40 classification;
+- refuses unauthorized or non-empty output directories;
+- stages a complete output set before publication;
+- emits strict, stable, LF-only text artifacts;
+- exits nonzero on validation, integrity, reconciliation, or publication failure.
+
+## Canonical generated artifacts
+
+The following files are accepted and published directly under `artifacts/core_v1_historical_event_families/`:
 
 1. `btc_extended_up_event_family_membership.csv`;
 2. `btc_extended_up_event_families.json`;
@@ -154,190 +95,108 @@ A successful real-artifact run must emit exactly four primary artifacts plus one
 4. `btc_extended_up_event_family_report.md`;
 5. `btc_extended_up_event_family_manifest.json`.
 
-The first four schemas are governed by `CORE_V1_HISTORICAL_EVENT_FAMILIES.md`.
+Canonical publication commit:
 
-The manifest must contain at least:
+- `d850307d53236b369af87ef5d10908d7ce0108f1` — `Publish Campaign 41 historical event-family artifacts`.
 
-- specification version;
-- canonical cadence;
-- normalized repository-relative source identifiers;
-- SHA-256 and row count for every governed source;
-- source timestamp evidence;
-- output filenames and SHA-256 hashes;
-- source episode count;
-- event-family count;
-- replay verification status;
-- research-only and mutation-control flags.
+Exact canonical SHA-256 values:
 
-All JSON must be strict JSON with sorted keys, stable separators, no NaN or Infinity, UTF-8 encoding, and a final LF.
+- `btc_extended_up_event_families.json` — `be4fc3e45f8728313a714cd5f4ea932e6822dcea138f145126f9b0392756e584`;
+- `btc_extended_up_event_family_manifest.json` — `e59c27fd40b4a5994cbe2b46e9585a75f8470bdcb5a9bf9998cfb32a3873da9a`;
+- `btc_extended_up_event_family_membership.csv` — `6bba0128dac682194da20126e1c36c81a38e809c8f8867e1a5946747e692f744`;
+- `btc_extended_up_event_family_report.md` — `f63dbb3fa66c0fb66dbcd244f0e83a890ecc011d8ac8e5c55a043e9b2638bab5`;
+- `btc_extended_up_event_family_summary.json` — `cd8235ec0572060bc36872e2d6771b298d41102f91d383d5cfc4df0e0e85b922`.
 
-## Focused test matrix
+The canonical files were copied from `replay_a` only after exact hash verification. `replay_a` and `replay_b` remain local validation outputs and are not committed.
 
-The focused test module must cover at least:
+## Validation evidence
 
-### Happy-path grouping
+### Focused tests
 
-- strict overlap;
-- exact one-hour adjacency;
-- non-adjacency across a gap greater than one hour;
-- transitive interval-connected grouping;
-- canonical sort order independent of input order;
-- closed-interval boundary behavior;
-- exact inclusive `duration_bars`.
+- original pure-core suite: `9 passed`;
+- expanded Campaign #41 suite: `12 passed in 1.07s`;
+- environment: Windows / Python `3.14.6`.
 
-### Identity and reconciliation
+### Governed two-run execution
 
-- deterministic zero-based episode identity from persisted row order;
-- duplicate episode identity rejection;
-- source/classified membership mismatch rejection;
-- governed-field disagreement rejection;
-- incomplete or duplicate family membership rejection.
+Two governed runs completed into separate empty directories. Each produced:
 
-### Cadence and timestamp validation
+- source episodes: `122`;
+- event families: `14`;
+- exactly five output files;
+- observation-only completion;
+- no runtime, threshold, order, NAV, or exposure changes.
 
-- explicit `PT1H` acceptance;
-- missing cadence rejection;
-- zero or negative cadence rejection;
-- inferred cadence rejection;
-- non-hour-multiple timestamp delta rejection;
-- duplicate prediction timestamps rejection;
-- non-monotonic prediction timestamps rejection;
-- malformed timestamp rejection;
-- mixed timezone convention rejection;
-- reversed interval rejection;
-- episode boundary absent from governed prediction index rejection;
-- larger missing-bar gaps preserved without adjacency expansion.
+### Replay verification
 
-### Family identity and ordering
+The two output sets were verified using resolved absolute paths, strict PowerShell mode, terminating errors, exact filename-set comparison, byte-length comparison, SHA-256 comparison, and carriage-return-byte checks.
 
-- canonical JSON payload construction;
-- stable SHA-256 family identity;
-- identifier sensitivity to membership, bounds, cadence, source identifier, and specification version;
-- stable family ordering;
-- stable member ordering;
-- no absolute paths or operating-system-specific separators in identity payloads.
+Verified:
 
-### Composition and similarity
+- five files in each replay directory;
+- identical filename sets;
+- byte-identical content for every file;
+- identical SHA-256 values for every file;
+- LF-only content for every generated text artifact.
 
-- homogeneous subtype and recovery composition;
-- mixed subtype and recovery composition;
-- lexicographically ordered count dictionaries;
-- latest-member deterministic tie-breaking;
-- maximum similarity;
-- deterministic median for odd and even member counts;
-- non-finite similarity rejection.
+### Full repository suite
 
-### Serialization and integrity
+Command:
 
-- byte-identical repeated serialization;
-- LF-only text outputs;
-- strict JSON rejection of non-finite values;
-- manifest reconciliation to all outputs;
-- source hashes unchanged before and after execution;
-- refusal to overwrite governed sources or a non-empty output directory.
+`python -m pytest -q`
 
-## Real-artifact verification plan
+Result:
 
-The implementation PR must record exact executable commands after the authorized module, script, and test paths exist.
+- collected: `413`;
+- passed: `413`;
+- failed: `0`;
+- warnings: `75`;
+- elapsed: `241.42s` (`0:04:01`).
 
-At minimum, verification must include:
+Warnings were existing deprecation warnings involving `datetime.utcnow()` and pytest class-scoped instance-method fixtures.
 
-1. focused tests for Campaign #41;
-2. one real-artifact run against the governed inputs;
-3. a second run into a separate output directory with identical inputs;
-4. byte-for-byte comparison of all five generated artifacts;
-5. SHA-256 checks of all governed inputs before and after both runs;
-6. LF-only checks for all generated text artifacts;
-7. exact reconciliation of episode membership, family records, summary, report, and manifest;
-8. full repository regression tests.
+### Publication scope
 
-A real-artifact run is not accepted if any governed source hash differs from its pre-run value.
+The canonical publication commit added exactly the five accepted artifact files. The local worktree continued to show only pre-existing untracked export, data, server-data, and runtime-state files; none was staged or committed.
 
-## Replay contract
+Remote branch comparison against `main` showed no production runtime, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard file changes.
 
-Given identical source bytes, configuration, specification version, and implementation version, two runs must produce byte-identical artifacts.
+The branch also contains foundational Itera governance documents created earlier on the same branch. Those documents are disclosed in the draft PR scope and are not runtime behavior changes.
 
-The implementation must not include:
+## Acceptance gates
 
-- current timestamps;
-- random identifiers;
-- hostnames;
-- absolute paths;
-- locale-dependent formatting;
-- filesystem iteration order;
-- nondeterministic dictionary or set ordering;
-- environment-specific line endings.
+- approved Campaign #41 implementation surfaces respected — complete;
+- focused tests pass — complete;
+- full repository suite passes — complete;
+- governed real-artifact execution succeeds twice — complete;
+- source identities and hashes reconcile — complete;
+- every governed episode appears exactly once — complete;
+- membership, family, summary, report, and manifest counts reconcile — complete;
+- replay outputs are byte-identical — complete;
+- all generated text artifacts are LF-only — complete;
+- canonical artifacts accepted and committed — complete;
+- no prohibited behavior change — complete;
+- exact final evidence recorded — complete.
 
-## Fail-closed contract
+## Explicit non-goals and continuing prohibitions
 
-The CLI must exit nonzero and withhold the complete output set when any governed requirement fails.
-
-Failure must be explicit for:
-
-- missing or mutated sources;
-- unexpected source hash or schema;
-- timestamp or cadence validation failure;
-- identity or membership mismatch;
-- invalid interval bounds;
-- invalid labels or recovery state;
-- non-finite numeric input;
-- non-canonical ordering;
-- serialization failure;
-- output hash or reconciliation mismatch;
-- attempted source overwrite;
-- attempted write to a prohibited surface.
-
-The implementation must not degrade to overlap-only grouping, infer cadence, skip malformed rows, repair source data, or emit a partial success.
-
-## Acceptance gates for implementation authorization
-
-Before implementation begins, the Campaign Board must explicitly record:
-
-- implementation authorized;
-- implementation branch name;
-- authorized file paths;
-- governed input identifiers;
-- canonical cadence `PT1H`;
-- focused test path;
-- generated artifact directory;
-- real-artifact verification requirements;
-- prohibited surfaces;
-- merge acceptance gates.
-
-## Merge acceptance gates
-
-A later implementation PR may merge only when:
-
-- the approved file scope is respected;
-- focused tests pass;
-- the full repository suite passes;
-- real-artifact execution succeeds;
-- all source identities and hashes reconcile;
-- every governed episode appears exactly once in membership output;
-- all family, summary, report, and manifest counts reconcile;
-- replay outputs are byte-identical;
-- all generated text artifacts are LF-only;
-- no governed source artifact changes;
-- no production runtime, threshold, model, order, NAV, or exposure behavior changes;
-- the Campaign Board records exact final evidence.
-
-## Explicit non-goals
+Campaign #41 does not authorize:
 
 - learned clustering;
 - semantic or model-generated event labels;
 - predictive recovery modeling;
 - calibrated probabilities;
 - dominant-label inference;
-- mutation or deletion of Campaign #40 artifacts;
-- strategy logic;
+- Campaign #40 artifact mutation;
+- strategy logic changes;
 - runtime integration;
 - threshold changes;
 - model retraining;
 - order, NAV, or exposure mutation;
 - dashboard integration.
 
-## Handoff conclusion
+No existing governed artifact may be rewritten in place.
 
-This handoff is complete when committed and reflected in `docs/ITERA_CAMPAIGN_BOARD.md`.
+## Final handoff state
 
-Completion of the handoff does not authorize implementation. The next decision is an explicit go/no-go transition into a separately governed implementation milestone.
+Campaign #41 implementation and validation are complete. Canonical artifacts are published on the working branch. The remaining repository action is review and eventual merge of the draft pull request. Merge remains a separate explicit decision and must not be interpreted as authorization for runtime integration or any prohibited behavior change.
