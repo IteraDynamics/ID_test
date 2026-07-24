@@ -8,90 +8,82 @@ The board is descriptive project state and authorization record. It does not aut
 
 ## Active campaign
 
-**Campaign:** Campaign #41 — Deterministic overlap-aware historical event families
+**Campaign:** Campaign #42 — Episode-resolution versus event-family-resolution taxonomy
 
-**Classification:** Research primary; engineering secondary
+**Classification:** Research primary; engineering deferred
 
-**Status:** Closure authorized — implementation, validation, canonical artifact publication, documentation, scope review, and draft-PR review complete; PR #41 is authorized for squash merge
+**Status:** Planning only — Campaign #41 is complete and merged; Campaign #42 research question, specification, inputs, schemas, acceptance gates, branch, and implementation scope remain unapproved
 
-**Working branch:** `feature/core-v1-historical-event-families-implementation`
+**Working branch:** None authorized
+
+**Pull request:** None
+
+**Repository:** `IteraDynamics/ID_test`
+
+## Completed campaign
+
+### Campaign #41 — Deterministic overlap-aware historical event families
+
+**Final status:** Complete
 
 **Pull request:** PR #41 — `Campaign 41: deterministic historical event families`
 
 **Pull request URL:** `https://github.com/IteraDynamics/ID_test/pull/41`
 
-**Repository:** `IteraDynamics/ID_test`
+**Merge method:** Squash
+
+**Final merge SHA:** `af248fff93792100d57709df9ae1b1bc0c6a27e3`
+
+Campaign #41 implementation, validation, canonical artifact publication, final handoff, branch-scope review, PR review, and merge are complete.
 
 ## Governing constraints
 
-All work remains deterministic, replay-safe, observation-only, fail-closed, additive to Campaign #40 artifacts, separate from production runtime, independent of model retraining, and independent of threshold, order, NAV, and exposure mutation.
+All subsequent work must preserve deterministic, replay-safe, observation-only, and fail-closed behavior unless a later board transition explicitly authorizes a different research boundary.
 
-Campaign closure and merge do not authorize runtime integration or any prohibited behavior change.
+Campaign #41 closure and Campaign #42 planning do not authorize production runtime integration, model retraining, threshold changes, order generation or execution, portfolio construction, NAV changes, exposure mutation, or dashboard integration.
 
-## Governing documents
+## Campaign #41 governing documents
 
 - `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES.md`;
 - `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES_CADENCE_EVIDENCE.md`;
 - `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES_IMPLEMENTATION_HANDOFF.md`.
 
-These govern source identities, zero-based episode identity, closed timestamp intervals, canonical `PT1H` cadence, missing-bar handling, deterministic grouping, family identity, composition, similarity, serialization, replay, publication, and fail-closed behavior.
+## Campaign #41 accepted evidence
 
-## Governed inputs
-
-Immutable Campaign #40 sources:
+Governed inputs remained unchanged:
 
 - `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json`;
 - `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv`;
-- `artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv`.
-
-Cadence-validation source:
-
+- `artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv`;
 - `artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv`.
 
-Governed cadence evidence:
+Canonical cadence:
 
-- SHA-256: `36b6ffcc9e993f4869dd8f75cde13e7058e101949a577bd24c84e79e58f1dca7`;
-- rows: `52453`;
-- first timestamp: `2020-01-01 01:00:00`;
-- last timestamp: `2025-12-26 00:00:00`;
-- timezone-naive;
-- strictly increasing;
-- no duplicates;
-- canonical cadence: `PT1H`;
-- larger deltas remain preserved missing-bar gaps.
+- `PT1H`;
+- immediate adjacency: `next_start <= current_family_end + PT1H`;
+- no inferred cadence, interpolation, expanded tolerance, or learned gap rule.
 
-Immediate adjacency is exactly:
+Accepted results:
 
-`next_start <= current_family_end + PT1H`
+- governed episode rows: `122`;
+- deterministic event families: `14`;
+- canonical outputs: `5`;
+- observation-only: true;
+- research-only: true;
+- runtime integration allowed: false;
+- exposure mutation allowed: false.
 
-No inferred cadence, interpolation, expanded tolerance, or learned gap rule is permitted.
+Validation:
 
-## Published implementation evidence
+- focused suite: `12 passed in 1.07s` on Windows / Python `3.14.6`;
+- full repository suite: `413 passed`, `0 failed`, `75 warnings`, `241.42s`;
+- two governed real-artifact runs completed successfully;
+- all five replay outputs were byte-identical;
+- all generated text artifacts were LF-only;
+- governed source identities and hashes remained unchanged;
+- remote scope review found no production runtime, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard file changes.
 
-- `405a86b` — initial deterministic event-family core;
-- `1ae3298` — hardened validation and canonical construction core;
-- `62d0b05` — original focused core tests;
-- `124961b` — deterministic artifact runner;
-- `d0ced4e` — runner-contract tests;
-- `b5fd593` — exported governed `CANONICAL_BAR_CADENCE = "PT1H"`;
-- `6afed4f` — tracked the authorized Campaign #41 artifact root with `.gitkeep`;
-- `d850307d53236b369af87ef5d10908d7ce0108f1` — published the five canonical Campaign #41 artifacts;
-- `d9126ab4c34e6a7b89d7bf6d18c95527ce6b5f8b` — finalized the Campaign #41 implementation handoff;
-- `e02950aa2e39026dcc2208a19f100dc3c2b10b5d` — recorded Campaign #41 knowledge gain and the proposed Campaign #42 frontier.
-
-The pure module remains side-effect free. The CLI requires explicit governed paths, verifies prediction identity and source hashes, recomputes and reconciles Campaign #40 classification, stages a complete deterministic output set, refuses unauthorized or non-empty output directories, and emits LF-only text artifacts.
-
-## Canonical artifacts
-
-Accepted canonical files under `artifacts/core_v1_historical_event_families/`:
-
-- `btc_extended_up_event_families.json`;
-- `btc_extended_up_event_family_manifest.json`;
-- `btc_extended_up_event_family_membership.csv`;
-- `btc_extended_up_event_family_report.md`;
-- `btc_extended_up_event_family_summary.json`.
-
-Exact canonical SHA-256 values:
+Canonical artifacts under `artifacts/core_v1_historical_event_families/`:
 
 - `btc_extended_up_event_families.json` — `be4fc3e45f8728313a714cd5f4ea932e6822dcea138f145126f9b0392756e584`;
 - `btc_extended_up_event_family_manifest.json` — `e59c27fd40b4a5994cbe2b46e9585a75f8470bdcb5a9bf9998cfb32a3873da9a`;
@@ -99,58 +91,60 @@ Exact canonical SHA-256 values:
 - `btc_extended_up_event_family_report.md` — `f63dbb3fa66c0fb66dbcd244f0e83a890ecc011d8ac8e5c55a043e9b2638bab5`;
 - `btc_extended_up_event_family_summary.json` — `cd8235ec0572060bc36872e2d6771b298d41102f91d383d5cfc4df0e0e85b922`.
 
-The canonical set was copied from `replay_a` after exact hash and LF-only verification. `replay_a` and `replay_b` remain local validation outputs and are not committed.
+Publication commit on the working branch:
 
-## Validation evidence
+- `d850307d53236b369af87ef5d10908d7ce0108f1`.
 
-- focused suite: `12 passed in 1.07s` on Windows / Python `3.14.6`;
-- full repository suite: `413 passed`, `0 failed`, `75 warnings`, `241.42s`;
-- two governed runs completed successfully;
-- each run reconciled `122` governed episodes into `14` event families;
-- each run emitted exactly five outputs;
-- all replay filenames, byte lengths, and SHA-256 values matched;
-- all generated text artifacts were LF-only;
-- governed source identities and hashes remained unchanged;
-- publication staged and committed exactly five authorized canonical artifacts;
-- local unrelated runtime, server-data, export, and manifest files remained untracked and untouched;
-- remote scope review found no production runtime, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard file changes.
+Final implementation handoff commit:
 
-The branch also contains six foundational Itera governance documents created earlier on the same branch. They are documentation-only and were explicitly disclosed in PR #41.
+- `90435f80840bae2881e38e5e036655378d21ad78`.
 
-Three accidental temporary documentation files were created and deleted during connector operation. Their net branch diff is zero; none exists in the pull-request file set. Squash merge is selected so those transient commits do not enter `main` history.
+Final merged Campaign #41 state:
 
-## Acceptance gates
+- `af248fff93792100d57709df9ae1b1bc0c6a27e3`.
 
-- approved Campaign #41 implementation surfaces respected — complete;
-- focused tests pass — complete;
-- full repository suite passes — complete;
-- real-artifact execution succeeds twice — complete;
-- governed source hashes remain unchanged — complete;
-- all records and counts reconcile — complete;
-- all five outputs are byte-identical across replay — complete;
-- all generated text artifacts are LF-only — complete;
-- canonical artifacts accepted and committed — complete;
-- exact hashes and final evidence recorded — complete;
-- final implementation handoff updated — complete;
-- branch scope reviewed — complete;
-- draft pull request opened and reviewed — complete;
-- Campaign #41 closure and squash merge — authorized.
+## Campaign #42 provisional research question
 
-## Prohibited surfaces
+Compare the governed Core v1 descriptive taxonomy at episode resolution versus independent event-family resolution.
 
-Do not modify production runtime code, live state, strategy logic, training code, thresholds, order generation or execution, portfolio construction, NAV, exposure controls, dashboard behavior, Campaign #40 sources, the governed prediction CSV, or runtime state files.
+Planning should determine:
 
-No existing governed artifact may be rewritten in place.
+- which subtype and recovery distributions materially change after overlap de-duplication;
+- whether repeated episode windows overstate the apparent prevalence of particular historical structures;
+- which descriptive findings remain stable across both resolutions;
+- how mixed-label event families should be represented without dominant-label inference;
+- which conclusions are unsupported because the effective independent-event count is only `14`;
+- whether Campaign #42 should remain BTC-only or include a separately governed portability phase.
+
+## Campaign #42 authorization boundary
+
+No Campaign #42 code, generated artifact, branch, pull request, runtime integration, threshold change, retraining, order, NAV, exposure, or dashboard work is authorized.
+
+Before implementation, the board must explicitly record:
+
+1. the exact research question and non-goals;
+2. governed input identities and hashes;
+3. episode-resolution and family-resolution counting rules;
+4. mixed-label representation rules;
+5. output schemas and artifact paths;
+6. deterministic serialization and replay requirements;
+7. focused and full-suite acceptance gates;
+8. authorized file surfaces;
+9. implementation branch;
+10. explicit go/no-go authorization.
 
 ## Next executable step
 
-Squash-merge PR #41 into `main`, verify the merged state, record the final merge SHA here, and transition the board to Campaign #41 complete / Campaign #42 planning.
+Discuss and specify Campaign #42 at the research-design level only.
 
-Campaign #42 is not yet authorized for implementation. The provisional research frontier is comparison of the Core v1 taxonomy at episode resolution versus independent event-family resolution, as recorded in `docs/ITERA_RESEARCH_ROADMAP.md`.
+The preferred first decision is whether Campaign #42 should be:
+
+- a narrow BTC-only descriptive comparison using existing Campaign #40 and #41 artifacts; or
+- a broader comparison that also prepares, but does not yet execute, cross-asset portability work.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #41 implementation, validation, canonical artifact publication, documentation, and scope review are complete, and PR #41 is authorized for squash merge. After merge, record the merge SHA and transition to Campaign #42 planning only. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #41 is complete and was squash-merged through PR #41 at `af248fff93792100d57709df9ae1b1bc0c6a27e3`. Campaign #42 is planning-only and provisionally compares the Core v1 taxonomy at episode resolution versus independent event-family resolution. Do not implement, create a branch, generate artifacts, or introduce runtime, threshold, retraining, order, NAV, exposure, or dashboard changes until the Campaign #42 specification and authorization gates are explicitly approved.
 
 ## Board maintenance rule
 
