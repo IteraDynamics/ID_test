@@ -19,6 +19,7 @@ from research.ml.validation.historical_alpha_discovery import (
 )
 from scripts.run_core_v1_historical_alpha_discovery import (
     PRICE_COLUMNS,
+    _reconstruct_and_validate_candidate_labels,
     _validate_exact_coverage,
     _validate_price_frame,
 )
@@ -80,6 +81,53 @@ def _coverage_frames(start: str = "2024-01-02 00:00:00") -> tuple[pd.DataFrame, 
     )
     episodes = membership[["window_start", "window_end"]].copy()
     return episodes, membership
+
+
+def _candidate_reconstruction_frames() -> tuple[
+    dict[str, object], pd.DataFrame, pd.DataFrame, pd.DataFrame
+]:
+    historical = {
+        "config": {
+            "collapse_ratio": 0.50,
+            "observation_rows": 24,
+        }
+    }
+    episodes = pd.DataFrame(
+        [
+            {
+                "window_start": "2024-01-01 00:00:00",
+                "window_end": "2024-01-02 00:00:00",
+                "reference_activation_rate": 0.20,
+                "observation_activation_rate": 0.03,
+                "activation_ratio": 0.15,
+                "feature_cosine_similarity_to_latest": 0.0,
+                "recovered_without_retraining": False,
+                "recovery_rows": None,
+            }
+        ]
+    )
+    signatures = pd.DataFrame(
+        [
+            {
+                "episode_id": 0,
+                "atr_proxy": 0.25,
+                "ret_1": 0.10,
+                "distance_sma_fast": -0.20,
+                "volume_z": 0.15,
+            }
+        ]
+    )
+    membership = pd.DataFrame(
+        [
+            {
+                "episode_id": 0,
+                "intrinsic_subtype": (
+                    "MAJOR_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL"
+                ),
+            }
+        ]
+    )
+    return historical, episodes, signatures, membership
 
 
 def test_frozen_candidate_inventory_accepts_only_exact_rankable_fields() -> None:
@@ -151,7 +199,6 @@ def test_r1_exact_coverage_allows_unrelated_gap_but_rejects_affected_window() ->
     full_close = pd.Series(range(100, 600), index=full_index, dtype=float, name="close")
     episodes, membership = _coverage_frames("2024-01-02 00:00:00")
 
-    # Equivalent timestamps may use different deterministic serializations.
     episodes["window_start"] = pd.to_datetime(
         episodes["window_start"]
     ).dt.strftime("%Y-%m-%dT%H:%M:%S")
@@ -179,6 +226,36 @@ def test_r1_exact_coverage_allows_unrelated_gap_but_rejects_affected_window() ->
     affected = full_close.drop(pd.Timestamp("2024-01-02 01:00:00"))
     with pytest.raises(HistoricalAlphaDiscoveryValidationError, match="horizon coverage"):
         _validate_exact_coverage(affected, episodes, membership)
+
+
+def test_candidate_labels_reconstruct_and_reconcile_to_membership() -> None:
+    historical, episodes, signatures, membership = _candidate_reconstruction_frames()
+    classified, evidence = _reconstruct_and_validate_candidate_labels(
+        historical, episodes, signatures, membership
+    )
+
+    assert classified.loc[0, "collapse_severity"] == "MAJOR_COLLAPSE"
+    assert classified.loc[0, "feature_displacement"] == "LOW_DISPLACEMENT_COLLAPSE"
+    assert classified.loc[0, "volatility_state"] == "VOLATILITY_NEUTRAL"
+    assert classified.loc[0, "intrinsic_subtype"] == membership.loc[0, "intrinsic_subtype"]
+    assert evidence["episode_count"] == 1
+    assert evidence["intrinsic_subtype_mismatch_count"] == 0
+    assert evidence["episode_id_rule"] == "zero_based_governed_episode_csv_row_position"
+
+
+def test_candidate_label_reconstruction_fails_closed_on_membership_mismatch() -> None:
+    historical, episodes, signatures, membership = _candidate_reconstruction_frames()
+    membership.loc[0, "intrinsic_subtype"] = (
+        "SEVERE_COLLAPSE__BROAD_SHIFT__VOLATILITY_EXPANSION"
+    )
+
+    with pytest.raises(
+        HistoricalAlphaDiscoveryValidationError,
+        match="intrinsic_subtype does not reconcile",
+    ):
+        _reconstruct_and_validate_candidate_labels(
+            historical, episodes, signatures, membership
+        )
 
 
 def test_forward_outcome_uses_exact_hourly_path_without_lookahead_fill() -> None:
