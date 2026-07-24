@@ -12,11 +12,11 @@ The board is descriptive project state and authorization record. It does not aut
 
 **Classification:** Research primary; engineering secondary
 
-**Status:** Draft PR open — implementation, validation, canonical artifact publication, final handoff, and scope review complete; merge remains pending explicit review and authorization
+**Status:** Closure authorized — implementation, validation, canonical artifact publication, documentation, scope review, and draft-PR review complete; PR #41 is authorized for squash merge
 
 **Working branch:** `feature/core-v1-historical-event-families-implementation`
 
-**Pull request:** Draft PR #41 — `Campaign 41: deterministic historical event families`
+**Pull request:** PR #41 — `Campaign 41: deterministic historical event families`
 
 **Pull request URL:** `https://github.com/IteraDynamics/ID_test/pull/41`
 
@@ -26,7 +26,7 @@ The board is descriptive project state and authorization record. It does not aut
 
 All work remains deterministic, replay-safe, observation-only, fail-closed, additive to Campaign #40 artifacts, separate from production runtime, independent of model retraining, and independent of threshold, order, NAV, and exposure mutation.
 
-No merge or later campaign action may be interpreted as authorization for runtime integration or prohibited behavior changes.
+Campaign closure and merge do not authorize runtime integration or any prohibited behavior change.
 
 ## Governing documents
 
@@ -76,7 +76,8 @@ No inferred cadence, interpolation, expanded tolerance, or learned gap rule is p
 - `b5fd593` — exported governed `CANONICAL_BAR_CADENCE = "PT1H"`;
 - `6afed4f` — tracked the authorized Campaign #41 artifact root with `.gitkeep`;
 - `d850307d53236b369af87ef5d10908d7ce0108f1` — published the five canonical Campaign #41 artifacts;
-- `d9126ab4c34e6a7b89d7bf6d18c95527ce6b5f8b` — finalized the Campaign #41 implementation handoff.
+- `d9126ab4c34e6a7b89d7bf6d18c95527ce6b5f8b` — finalized the Campaign #41 implementation handoff;
+- `e02950aa2e39026dcc2208a19f100dc3c2b10b5d` — recorded Campaign #41 knowledge gain and the proposed Campaign #42 frontier.
 
 The pure module remains side-effect free. The CLI requires explicit governed paths, verifies prediction identity and source hashes, recomputes and reconciles Campaign #40 classification, stages a complete deterministic output set, refuses unauthorized or non-empty output directories, and emits LF-only text artifacts.
 
@@ -102,67 +103,21 @@ The canonical set was copied from `replay_a` after exact hash and LF-only verifi
 
 ## Validation evidence
 
-### Focused suites
+- focused suite: `12 passed in 1.07s` on Windows / Python `3.14.6`;
+- full repository suite: `413 passed`, `0 failed`, `75 warnings`, `241.42s`;
+- two governed runs completed successfully;
+- each run reconciled `122` governed episodes into `14` event families;
+- each run emitted exactly five outputs;
+- all replay filenames, byte lengths, and SHA-256 values matched;
+- all generated text artifacts were LF-only;
+- governed source identities and hashes remained unchanged;
+- publication staged and committed exactly five authorized canonical artifacts;
+- local unrelated runtime, server-data, export, and manifest files remained untracked and untouched;
+- remote scope review found no production runtime, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard file changes.
 
-- original pure-core suite: `9 passed` on Windows / Python `3.14.6`;
-- expanded suite: `12 passed in 1.07s` on Windows / Python `3.14.6`.
+The branch also contains six foundational Itera governance documents created earlier on the same branch. They are documentation-only and were explicitly disclosed in PR #41.
 
-### Governed two-run execution
-
-Both governed runs completed successfully. Each reported:
-
-- source episodes: `122`;
-- event families: `14`;
-- exactly five generated outputs;
-- observation-only completion;
-- no runtime, threshold, order, NAV, or exposure changes.
-
-### Replay verification
-
-Verified across `replay_a` and `replay_b`:
-
-- five files in each directory;
-- identical filename sets;
-- equal byte lengths;
-- identical SHA-256 values;
-- LF-only content.
-
-### Full repository suite
-
-Command:
-
-`python -m pytest -q`
-
-Result on Windows / Python `3.14.6`:
-
-- collected: `413`;
-- passed: `413`;
-- failed: `0`;
-- warnings: `75`;
-- elapsed: `241.42s` (`0:04:01`).
-
-Warnings were existing deprecation warnings involving `datetime.utcnow()` and pytest class-scoped instance-method fixtures.
-
-### Publication and worktree scope
-
-The canonical publication commit added exactly five authorized artifact files.
-
-Local `git status --short` continued to show only pre-existing untracked export, data, server-data, and runtime-state files. None was staged or committed.
-
-Remote comparison against `main` showed no production runtime, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard file changes.
-
-The branch also contains six foundational Itera governance documents created earlier on the same branch:
-
-- `docs/ITERA_CONSTITUTION.md`;
-- `docs/ITERA_KNOWLEDGE_REGISTRY.md`;
-- `docs/ITERA_OPERATING_CADENCE.md`;
-- `docs/ITERA_RESEARCH_MANIFESTO.md`;
-- `docs/ITERA_RESEARCH_ROADMAP.md`;
-- `docs/ITERA_VISION.md`.
-
-These documentation-only files are explicitly disclosed in draft PR #41 for review.
-
-Three accidental temporary documentation files were created and deleted during connector operation. Their net branch diff is zero; none exists in the pull request file set.
+Three accidental temporary documentation files were created and deleted during connector operation. Their net branch diff is zero; none exists in the pull-request file set. Squash merge is selected so those transient commits do not enter `main` history.
 
 ## Acceptance gates
 
@@ -178,8 +133,8 @@ Three accidental temporary documentation files were created and deleted during c
 - exact hashes and final evidence recorded — complete;
 - final implementation handoff updated — complete;
 - branch scope reviewed — complete;
-- draft pull request opened — complete;
-- merge review and explicit merge authorization — pending.
+- draft pull request opened and reviewed — complete;
+- Campaign #41 closure and squash merge — authorized.
 
 ## Prohibited surfaces
 
@@ -189,13 +144,13 @@ No existing governed artifact may be rewritten in place.
 
 ## Next executable step
 
-Review draft PR #41, including the disclosed foundational governance documents and the Campaign #41 implementation, tests, documentation, and canonical artifacts.
+Squash-merge PR #41 into `main`, verify the merged state, record the final merge SHA here, and transition the board to Campaign #41 complete / Campaign #42 planning.
 
-Do not mark the PR ready, merge it, begin runtime integration, or start threshold, retraining, order, NAV, exposure, or dashboard work without a separate explicit authorization.
+Campaign #42 is not yet authorized for implementation. The provisional research frontier is comparison of the Core v1 taxonomy at episode resolution versus independent event-family resolution, as recorded in `docs/ITERA_RESEARCH_ROADMAP.md`.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test` and continue from draft PR #41 on `feature/core-v1-historical-event-families-implementation`. Campaign #41 implementation, validation, canonical artifact publication, final handoff, and scope review are complete. Focused tests pass 12/12; the full suite passes 413/413; two governed runs each produced 122 episode memberships grouped into 14 families; all five outputs are byte-identical and LF-only; exact hashes are recorded. Review the draft PR and disclosed governance-document scope. Do not merge or introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes without explicit authorization.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #41 implementation, validation, canonical artifact publication, documentation, and scope review are complete, and PR #41 is authorized for squash merge. After merge, record the merge SHA and transition to Campaign #42 planning only. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
 
 ## Board maintenance rule
 
