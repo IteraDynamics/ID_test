@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-"""Fail-closed governed-source preflight for Campaign #43-R1.
+"""Fail-closed governed-source validation for Campaign #43-R1.
 
-This increment validates source identity, structure, numeric integrity, and exact
-anchor/horizon coverage only. It does not calculate, rank, serialize, or publish
-predictive results.
+This increment validates source identity, structure, numeric integrity, exact
+anchor/horizon coverage, and deterministic reconstruction of the frozen
+candidate labels. It does not calculate, rank, serialize, or publish predictive
+results.
 """
 
 import argparse
@@ -28,6 +29,7 @@ from research.ml.validation.historical_alpha_discovery import (
     validate_candidate_inventory,
     validate_price_series,
 )
+from research.ml.validation.historical_regime_taxonomy import classify_episodes
 
 PRICE_COLUMNS: tuple[str, ...] = (
     "timestamp",
@@ -77,8 +79,8 @@ SOURCE_SPECS: dict[str, dict[str, Any]] = {
         "path": "data/btcusd_3600s_2018-01-01_to_2025-12-31.csv",
         "sha256": "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079",
         "kind": "price_csv",
-        "bytes": 4792028,
-        "rows": 70069,
+        "bytes": 4_792_028,
+        "rows": 70_069,
         "columns": PRICE_COLUMNS,
         "first": "2018-01-01 00:00:00",
         "last": "2025-12-31 00:00:00",
@@ -88,7 +90,7 @@ SOURCE_SPECS: dict[str, dict[str, Any]] = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Validate Campaign #43-R1 governed source identity and structure only."
+        description="Validate Campaign #43-R1 governed source identity and candidate reconstruction."
     )
     parser.add_argument(
         "--repository-root",
@@ -99,7 +101,7 @@ def parse_args() -> argparse.Namespace:
         "--preflight-only",
         action="store_true",
         required=True,
-        help="Required safety flag. Campaign #43-R1 result generation is prohibited in this increment.",
+        help="Required safety flag. Predictive result generation remains disabled.",
     )
     return parser.parse_args()
 
@@ -113,11 +115,12 @@ def sha256_path(path: Path) -> str:
 
 
 def _require_source(root: Path, relative_path: str) -> Path:
-    if Path(relative_path).is_absolute() or ".." in Path(relative_path).parts:
+    relative = Path(relative_path)
+    if relative.is_absolute() or ".." in relative.parts:
         raise HistoricalAlphaDiscoveryValidationError(
             f"governed source path must be repository-relative: {relative_path}"
         )
-    path = root / relative_path
+    path = root / relative
     if not path.is_file():
         raise HistoricalAlphaDiscoveryValidationError(
             f"missing governed source: {relative_path}"
@@ -166,12 +169,13 @@ def _validate_price_frame(path: Path, spec: dict[str, Any]) -> tuple[pd.Series, 
         raise HistoricalAlphaDiscoveryValidationError(
             "btc_hourly timestamps must be strictly increasing"
         )
-    if not (
+    aligned = (
         (timestamps.minute == 0)
         & (timestamps.second == 0)
         & (timestamps.microsecond == 0)
         & (timestamps.nanosecond == 0)
-    ).all():
+    )
+    if not aligned.all():
         raise HistoricalAlphaDiscoveryValidationError(
             "btc_hourly timestamps must be exactly hour-aligned"
         )
@@ -220,7 +224,6 @@ def _validate_price_frame(path: Path, spec: dict[str, Any]) -> tuple[pd.Series, 
     missing_hours = int(
         sum(int(delta / pd.Timedelta(hours=1)) - 1 for delta in discontinuities)
     )
-
     return close, {
         "byte_count": path.stat().st_size,
         "row_count": len(close),
@@ -272,9 +275,7 @@ def _validate_exact_coverage(
             "historical episode windows do not reconcile to membership"
         )
 
-    episode_anchors = _parse_naive_timestamps(
-        membership["window_end"], "episode window_end"
-    )
+    episode_anchors = membership_ends
     family_rows = membership.copy()
     family_rows["_window_end"] = episode_anchors
     family_anchors = pd.DatetimeIndex(
@@ -324,6 +325,133 @@ def _validate_exact_coverage(
     }
 
 
+def _reconstruct_and_validate_candidate_labels(
+    historical: dict[str, Any],
+    episodes: pd.DataFrame,
+    signatures: pd.DataFrame,
+    membership: pd.DataFrame,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Rebuild frozen candidate labels and reconcile them to governed membership."""
+    config = historical.get("config")
+    if not isinstance(config, dict):
+        raise HistoricalAlphaDiscoveryValidationError(
+            "historical configuration missing config object"
+        )
+    for field in ("collapse_ratio", "observation_rows"):
+        if field not in config:
+            raise HistoricalAlphaDiscoveryValidationError(
+                f"historical configuration missing {field}"
+            )
+
+    reconstructed = episodes.reset_index(drop=True).copy()
+    if "episode_id" not in reconstructed.columns:
+        reconstructed.insert(0, "episode_id", reconstructed.index.astype(int))
+    expected_ids = pd.Series(range(len(reconstructed)), dtype="int64")
+    try:
+        actual_ids = pd.to_numeric(reconstructed["episode_id"], errors="raise").astype("int64")
+    except (TypeError, ValueError) as exc:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "historical episode_id must be deterministic integer row positions"
+        ) from exc
+    if not actual_ids.reset_index(drop=True).equals(expected_ids):
+        raise HistoricalAlphaDiscoveryValidationError(
+            "historical episode_id does not match deterministic row position"
+        )
+    reconstructed["episode_id"] = actual_ids
+
+    parsed_recovered = (
+        reconstructed["recovered_without_retraining"]
+        .astype(str)
+        .str.lower()
+        .map({"true": True, "false": False})
+    )
+    if parsed_recovered.isna().any():
+        raise HistoricalAlphaDiscoveryValidationError(
+            "could not parse recovered_without_retraining values"
+        )
+    reconstructed["recovered_without_retraining"] = parsed_recovered
+
+    if "episode_id" not in signatures.columns:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "episode signatures missing episode_id"
+        )
+    signature_frame = signatures.copy().set_index("episode_id", verify_integrity=True)
+    try:
+        signature_frame.index = signature_frame.index.astype("int64")
+    except (TypeError, ValueError) as exc:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "episode signature identifiers must be integers"
+        ) from exc
+
+    try:
+        classified = classify_episodes(
+            reconstructed,
+            signature_frame,
+            collapse_ratio=float(config["collapse_ratio"]),
+            observation_rows=int(config["observation_rows"]),
+        )
+    except (TypeError, ValueError) as exc:
+        raise HistoricalAlphaDiscoveryValidationError(
+            f"candidate label reconstruction failed: {exc}"
+        ) from exc
+
+    classified["intrinsic_subtype"] = (
+        classified["collapse_severity"].astype(str)
+        + "__"
+        + classified["feature_displacement"].astype(str)
+        + "__"
+        + classified["volatility_state"].astype(str)
+    )
+
+    required_membership = {"episode_id", "intrinsic_subtype"}
+    missing = sorted(required_membership - set(membership.columns))
+    if missing:
+        raise HistoricalAlphaDiscoveryValidationError(
+            f"membership missing candidate reconciliation columns: {missing}"
+        )
+    if membership["episode_id"].duplicated().any():
+        raise HistoricalAlphaDiscoveryValidationError(
+            "membership contains duplicate episode_id"
+        )
+
+    governed = membership.loc[:, ["episode_id", "intrinsic_subtype"]].copy()
+    try:
+        governed["episode_id"] = pd.to_numeric(
+            governed["episode_id"], errors="raise"
+        ).astype("int64")
+    except (TypeError, ValueError) as exc:
+        raise HistoricalAlphaDiscoveryValidationError(
+            "membership episode identifiers must be integers"
+        ) from exc
+    governed = governed.sort_values("episode_id", kind="mergesort").reset_index(drop=True)
+    derived = classified.loc[:, ["episode_id", "intrinsic_subtype"]].copy()
+    derived = derived.sort_values("episode_id", kind="mergesort").reset_index(drop=True)
+
+    if not governed["episode_id"].equals(derived["episode_id"]):
+        raise HistoricalAlphaDiscoveryValidationError(
+            "reconstructed episode identifiers do not reconcile to membership"
+        )
+    mismatch = governed["intrinsic_subtype"].astype(str) != derived["intrinsic_subtype"].astype(str)
+    if mismatch.any():
+        ids = governed.loc[mismatch, "episode_id"].astype(int).tolist()
+        raise HistoricalAlphaDiscoveryValidationError(
+            f"reconstructed intrinsic_subtype does not reconcile to membership: {ids}"
+        )
+
+    return classified, {
+        "episode_count": int(len(classified)),
+        "membership_count": int(len(governed)),
+        "intrinsic_subtype_mismatch_count": 0,
+        "descriptor_columns": [
+            "collapse_severity",
+            "feature_displacement",
+            "volatility_state",
+            "intrinsic_subtype",
+        ],
+        "episode_id_rule": "zero_based_governed_episode_csv_row_position",
+    }
+
+
 def _validate_source(name: str, spec: dict[str, Any], root: Path) -> dict[str, Any]:
     relative = str(spec["path"])
     path = _require_source(root, relative)
@@ -335,7 +463,6 @@ def _validate_source(name: str, spec: dict[str, Any], root: Path) -> dict[str, A
 
     kind = spec["kind"]
     evidence: dict[str, Any] = {"artifact": relative, "sha256": actual_hash}
-
     if kind == "json_object":
         payload = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
@@ -368,6 +495,7 @@ def _validate_source(name: str, spec: dict[str, Any], root: Path) -> dict[str, A
                 "episode_id",
                 "window_start",
                 "window_end",
+                "intrinsic_subtype",
             }
             missing = sorted(required - set(frame.columns))
             if missing:
@@ -390,7 +518,6 @@ def _validate_source(name: str, spec: dict[str, Any], root: Path) -> dict[str, A
         raise HistoricalAlphaDiscoveryValidationError(
             f"unknown governed source kind for {name}: {kind}"
         )
-
     return evidence
 
 
@@ -419,14 +546,26 @@ def run_preflight(repository_root: Path) -> dict[str, Any]:
         for name, spec in sorted(SOURCE_SPECS.items())
     }
 
-    price_path = _require_source(root, str(SOURCE_SPECS["btc_hourly"]["path"]))
-    close, _ = _validate_price_frame(price_path, SOURCE_SPECS["btc_hourly"])
+    historical = json.loads(
+        _require_source(root, str(SOURCE_SPECS["historical_configuration"]["path"])).read_text(
+            encoding="utf-8"
+        )
+    )
     episodes = pd.read_csv(
         _require_source(root, str(SOURCE_SPECS["historical_episodes"]["path"]))
+    )
+    signatures = pd.read_csv(
+        _require_source(root, str(SOURCE_SPECS["episode_signatures"]["path"]))
     )
     membership = pd.read_csv(
         _require_source(root, str(SOURCE_SPECS["event_family_membership"]["path"]))
     )
+    _, candidate_reconstruction = _reconstruct_and_validate_candidate_labels(
+        historical, episodes, signatures, membership
+    )
+
+    price_path = _require_source(root, str(SOURCE_SPECS["btc_hourly"]["path"]))
+    close, _ = _validate_price_frame(price_path, SOURCE_SPECS["btc_hourly"])
     coverage = _validate_exact_coverage(close, episodes, membership)
 
     hashes_after = {
@@ -440,12 +579,13 @@ def run_preflight(repository_root: Path) -> dict[str, Any]:
 
     return {
         "experiment": "core_v1_historical_alpha_discovery_r1",
-        "phase": "source_preflight_only",
+        "phase": "source_preflight_and_candidate_reconstruction",
         "research_only": True,
         "observation_only": True,
         "runtime_integration_allowed": False,
         "exposure_mutation_allowed": False,
         "candidate_inventory_valid": True,
+        "candidate_reconstruction": candidate_reconstruction,
         "sources": evidence,
         "coverage": coverage,
         "source_count": len(evidence),
@@ -458,6 +598,10 @@ def main() -> None:
     result = run_preflight(Path(args.repository_root))
     print("Campaign #43-R1 governed source preflight passed")
     print(f"Sources validated: {result['source_count']}")
+    print(
+        "Candidate labels reconciled: "
+        f"{result['candidate_reconstruction']['episode_count']}"
+    )
     print("Episode observations covered: 122")
     print("Family observations covered: 14")
     print("Predictive results generated: false")
