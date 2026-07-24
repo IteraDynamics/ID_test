@@ -12,7 +12,7 @@ The board is project state and authorization record. It does not authorize produ
 
 **Classification:** Research primary; deterministic historical predictive-signal discovery
 
-**Status:** Frozen specification and pure primitives validated; governed source preflight runner committed; local preflight pending
+**Status:** BLOCKED — governed BTC source preflight failed closed because the frozen artifact has no exact `close` column
 
 **Working branch:** `agent/campaign-43-historical-alpha-discovery`
 
@@ -24,11 +24,9 @@ Which governed, anchor-available Core v1 historical descriptors exhibit repeatab
 
 ## Authorization
 
-**Decision:** GO, subject to source preflight and acceptance gates.
+**Decision:** GO for research design and source diagnosis; predictive result generation remains prohibited until a valid price source is explicitly governed.
 
-The user explicitly authorized Campaign #43 on July 24, 2026. It is the first campaign whose explicit purpose is candidate alpha discovery.
-
-It may evaluate and rank historical predictive relationships for later falsification. It may not alter production behavior or claim deployable alpha.
+The user explicitly authorized Campaign #43 on July 24, 2026. It may evaluate and rank historical predictive relationships for later falsification. It may not alter production behavior or claim deployable alpha.
 
 ## Governing constraints
 
@@ -38,17 +36,15 @@ Campaign #43 does not authorize production runtime integration, model training o
 
 ## Frozen specification
 
-The pre-registration is committed at:
+- Governing document: `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY.md`
+- Specification freeze commit: `57472a2fc4594e9d4e9ea1681cecef8d0c15dc25`
 
-- `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY.md`
-- specification freeze commit: `57472a2fc4594e9d4e9ea1681cecef8d0c15dc25`
-
-It freezes before predictive result inspection:
+The specification froze, before predictive result inspection:
 
 - governed source paths, hashes, counts, and timestamp evidence;
-- candidate inventory and explicit leakage exclusions;
+- candidate inventory and leakage exclusions;
 - episode and event-family anchors;
-- homogeneous-only family candidate aggregation;
+- homogeneous-only family aggregation;
 - exact forward outcomes and exact `close` requirement;
 - horizons `2`, `6`, `24`, `72`, and `168` hours;
 - three deterministic expanding chronological folds;
@@ -88,7 +84,47 @@ Excluded as predictors:
 - `artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv`
   - SHA-256 `36b6ffcc9e993f4869dd8f75cde13e7058e101949a577bd24c84e79e58f1dca7`; `52,453` rows; `2020-01-01 01:00:00` through `2025-12-26 00:00:00`
 
-The hourly BTC artifact must contain an exact finite, strictly positive `close` column. No alternate field, interpolation, filling, resampling, or inferred market source is authorized. Absence or mismatch blocks result generation and requires a board transition.
+The frozen hourly artifact was required to contain an exact finite, strictly positive `close` column. No alternate field, interpolation, filling, resampling, or inferred source is authorized.
+
+## Source preflight blocker
+
+User-run preflight evidence on July 24, 2026:
+
+- branch HEAD: `496a8b8471b601060e98f9a9e25d24e4a36be4bc`;
+- command: `python scripts/run_core_v1_historical_alpha_discovery.py --preflight-only`;
+- result: failed closed in `validate_price_series`;
+- exact error: `governed BTC series must contain exact close column`.
+
+This is an accepted safety outcome, not an implementation bypass request. No predictive outcomes, rankings, or canonical Campaign #43 result artifacts were generated or inspected.
+
+A replacement or additional price source may not be selected implicitly. The source schema may be inspected observation-only. Any proposed price source must then receive an explicit board transition recording its repository-relative path, SHA-256, timestamp convention, row count, price field, and reconciliation rule before result generation.
+
+## Current implementation and validation state
+
+Completed:
+
+- Campaign #43 branch and authorization boundary;
+- frozen governing specification;
+- leakage-prone candidates excluded;
+- pure validation/calculation primitives;
+- focused unit tests;
+- governed source preflight runner;
+- source mutation detection;
+- explicit preflight-only safety flag;
+- fail-closed discovery that the frozen prediction artifact is not a governed close-price source.
+
+Key commits:
+
+- specification freeze: `57472a2fc4594e9d4e9ea1681cecef8d0c15dc25`;
+- pure primitives: `e462c91628136d7429c58e4706da7a3a7d484b30`;
+- focused tests: `e41320c192f6223f5e707aed82ed80a1b59647ac`;
+- source preflight runner: `9810a88360dbda6bb3901f0052e3caa2f3e0a41e`.
+
+Accepted focused-test evidence:
+
+- Windows / Python `3.14.6`;
+- `8 passed in 5.71s`;
+- failures: `0`.
 
 ## Authorized file surfaces
 
@@ -100,35 +136,6 @@ The hourly BTC artifact must contain an exact finite, strictly positive `close` 
 - `artifacts/core_v1_historical_alpha_discovery/**`.
 
 No other file surface is authorized without a board transition.
-
-## Current implementation and validation state
-
-Completed:
-
-- Campaign #43 branch and authorization boundary;
-- frozen governing specification;
-- leakage-prone candidates excluded;
-- pure validation/calculation primitives;
-- focused unit tests;
-- governed source preflight runner with exact path/hash/count/price validation;
-- source mutation detection before and after preflight;
-- explicit safety flag requiring preflight-only execution.
-
-Key commits:
-
-- specification freeze: `57472a2fc4594e9d4e9ea1681cecef8d0c15dc25`;
-- pure primitives: `e462c91628136d7429c58e4706da7a3a7d484b30`;
-- focused tests: `e41320c192f6223f5e707aed82ed80a1b59647ac`;
-- source preflight runner: `9810a88360dbda6bb3901f0052e3caa2f3e0a41e`.
-
-Accepted local focused-test evidence supplied by the user on July 24, 2026:
-
-- command: `python -m pytest tests/test_historical_alpha_discovery.py -q`;
-- platform: Windows / Python `3.14.6`;
-- result: `8 passed in 5.71s`;
-- failures: `0`.
-
-No governed predictive results or canonical Campaign #43 artifacts have been generated or inspected.
 
 ## Planned canonical outputs
 
@@ -144,15 +151,16 @@ Under `artifacts/core_v1_historical_alpha_discovery/`:
 
 1. Frozen specification predates predictive result inspection.
 2. Focused Campaign #43 tests pass.
-3. Full repository suite passes with no new failures.
-4. Two governed runs produce byte-identical outputs.
-5. Canonical text outputs are LF-only.
-6. Governed source identities and hashes remain unchanged.
-7. Episode, event-family, mixed-family, unavailable-outcome, and fold counts reconcile.
-8. Chronological folds contain no look-ahead.
-9. Null, insufficient-support, contradictory, unstable, and unavailable evidence remain visible and fail closed.
-10. Scope review finds no runtime, strategy, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, or cross-asset changes.
-11. The report makes no deployable-alpha or production recommendation.
+3. A valid governed BTC close-price source passes explicit path/hash/schema/timestamp/count preflight.
+4. Full repository suite passes with no new failures.
+5. Two governed runs produce byte-identical outputs.
+6. Canonical text outputs are LF-only.
+7. Governed source identities and hashes remain unchanged.
+8. Episode, event-family, mixed-family, unavailable-outcome, and fold counts reconcile.
+9. Chronological folds contain no look-ahead.
+10. Null, insufficient-support, contradictory, unstable, and unavailable evidence remain visible and fail closed.
+11. Scope review finds no runtime, strategy, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, or cross-asset changes.
+12. The report makes no deployable-alpha or production recommendation.
 
 ## Campaign #42 awaiting merge
 
@@ -186,19 +194,19 @@ Accepted results include `122` governed episodes and `14` deterministic event fa
 
 ## Next executable step
 
-Pull the latest Campaign #43 branch and run only:
+Inspect only the frozen CSV schema and a single non-result sample row. Do not calculate returns, inspect candidate associations, or substitute another field.
 
-`python scripts/run_core_v1_historical_alpha_discovery.py --preflight-only`
+Run:
 
-This command validates source existence, exact SHA-256 identities, declared row/family counts, membership uniqueness, the frozen candidate inventory, and the exact hourly `close` source. It does not generate predictive results or canonical artifacts.
+`python -c "import pandas as pd; p=r'artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv'; d=pd.read_csv(p, nrows=1); print('COLUMNS:', list(d.columns)); print('SAMPLE:', d.iloc[0].to_dict())"`
 
-Report the complete output, including any fail-closed error. Do not substitute another market-data path or field if the governed BTC artifact is missing or lacks exact `close`.
+Report the complete output. This observation-only inspection determines whether the artifact contains a clearly named price field or only model predictions. A new governed price source still requires an explicit board transition.
 
 Do not stage unrelated local runtime/data files.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #43 is active on `agent/campaign-43-historical-alpha-discovery`. The frozen specification predates all predictive result inspection. Focused tests passed locally: `8 passed in 5.71s` on Windows/Python `3.14.6`. The next step is source preflight only using `python scripts/run_core_v1_historical_alpha_discovery.py --preflight-only`. No governed predictive results have been generated or inspected. Fail closed if any frozen source path/hash/count differs or if the exact hourly BTC source lacks exact `close`. Do not alter runtime, training, thresholds, signals, orders, portfolio, NAV, exposure, dashboards, cross-asset scope, or the frozen research design.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #43 is blocked after a correct fail-closed preflight: the frozen 52,453-row BTC artifact does not contain exact `close`. Focused tests passed `8 passed in 5.71s` on Windows/Python `3.14.6`. No predictive results were generated or inspected. The next step is observation-only schema inspection of the frozen CSV, followed by an explicit board transition if a different governed close-price source is required. Preserve deterministic, replay-safe, research-only, observation-only, and fail-closed behavior. Do not change runtime, training, thresholds, signals, orders, portfolio, NAV, exposure, dashboards, cross-asset scope, or the frozen research design.
 
 ## Board maintenance rule
 
