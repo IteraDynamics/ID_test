@@ -1,0 +1,58 @@
+{
+  "canonical_bar_cadence": "PT1H",
+  "event_family_count": 14,
+  "experiment": "core_v1_historical_event_families",
+  "exposure_mutation_allowed": false,
+  "manifest_filename": "btc_extended_up_event_family_manifest.json",
+  "observation_only": true,
+  "outputs": {
+    "btc_extended_up_event_families.json": {
+      "sha256": "be4fc3e45f8728313a714cd5f4ea932e6822dcea138f145126f9b0392756e584"
+    },
+    "btc_extended_up_event_family_membership.csv": {
+      "sha256": "6bba0128dac682194da20126e1c36c81a38e809c8f8867e1a5946747e692f744"
+    },
+    "btc_extended_up_event_family_report.md": {
+      "sha256": "f63dbb3fa66c0fb66dbcd244f0e83a890ecc011d8ac8e5c55a043e9b2638bab5"
+    },
+    "btc_extended_up_event_family_summary.json": {
+      "sha256": "cd8235ec0572060bc36872e2d6771b298d41102f91d383d5cfc4df0e0e85b922"
+    }
+  },
+  "replay_verification_status": "pending_second_run",
+  "research_only": true,
+  "runtime_integration_allowed": false,
+  "source_episode_count": 122,
+  "source_timestamp_evidence": {
+    "duplicate_timestamps": 0,
+    "first": "2020-01-01 01:00:00",
+    "larger_gaps_preserved": true,
+    "last": "2025-12-26 00:00:00",
+    "row_count": 52453,
+    "strictly_increasing": true,
+    "timezone_convention": "timezone-naive"
+  },
+  "sources": {
+    "episode_signatures": {
+      "artifact": "artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv",
+      "row_count": 122,
+      "sha256": "ccb0b748b82f7a6449b9caf945b904bfaa4871cdf2a35413c9157c41890e2327"
+    },
+    "historical_episodes": {
+      "artifact": "artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv",
+      "row_count": 122,
+      "sha256": "6eaadd0fd6d2231d517e5062f15bf5ea92f6bd40e3a1b1aded415e891596c143"
+    },
+    "historical_json": {
+      "artifact": "artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json",
+      "row_count": 1,
+      "sha256": "0c1ebc70007570cb7172f2a46283ab25128e1911ac34f447cc5f306c211d3a17"
+    },
+    "predictions": {
+      "artifact": "artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv",
+      "row_count": 52453,
+      "sha256": "36b6ffcc9e993f4869dd8f75cde13e7058e101949a577bd24c84e79e58f1dca7"
+    }
+  },
+  "specification_version": "1"
+}

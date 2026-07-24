@@ -1,0 +1,523 @@
+[
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 720,
+    "episode_count": 1,
+    "episode_ids": [
+      93
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "abee6f0406c1b127067d5c898235534385d81bab51a7a2244b713943989f1d66",
+    "family_ordinal": 0,
+    "intrinsic_subtype_counts": {
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 1
+    },
+    "intrinsic_subtype_mixed": false,
+    "latest_episode_id": 93,
+    "latest_episode_similarity_to_current": -0.2939198810014934,
+    "maximum_similarity_to_current": -0.2939198810014934,
+    "median_similarity_to_current": -0.2939198810014934,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "RAPID_RECOVERY": 1
+    },
+    "recovery_outcome_mixed": false,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2020-08-26T01:00:00",
+    "window_start": "2020-07-27T02:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 7440,
+    "episode_count": 41,
+    "episode_ids": [
+      19,
+      2,
+      7,
+      11,
+      27,
+      26,
+      5,
+      6,
+      15,
+      22,
+      9,
+      8,
+      18,
+      14,
+      28,
+      59,
+      75,
+      86,
+      99,
+      107,
+      109,
+      108,
+      102,
+      88,
+      74,
+      66,
+      63,
+      54,
+      61,
+      83,
+      89,
+      95,
+      103,
+      110,
+      115,
+      111,
+      94,
+      90,
+      105,
+      106,
+      101
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "4167c70f7d666a897c31f9c7f1c7d3d5d487c4bb71b8d418118fb96ab8dd802b",
+    "family_ordinal": 1,
+    "intrinsic_subtype_counts": {
+      "MAJOR_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 1,
+      "MODERATE_COLLAPSE__BROAD_SHIFT__VOLATILITY_EXPANSION": 2,
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_EXPANSION": 1,
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 1,
+      "SEVERE_COLLAPSE__BROAD_SHIFT__VOLATILITY_EXPANSION": 4,
+      "SEVERE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL": 1,
+      "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 31
+    },
+    "intrinsic_subtype_mixed": true,
+    "latest_episode_id": 101,
+    "latest_episode_similarity_to_current": -0.4583910197716219,
+    "maximum_similarity_to_current": 0.7229249642977098,
+    "median_similarity_to_current": 0.1767765227045649,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "DELAYED_RECOVERY": 11,
+      "PERSISTENT_COLLAPSE": 26,
+      "RAPID_RECOVERY": 4
+    },
+    "recovery_outcome_mixed": true,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2021-09-15T03:00:00",
+    "window_start": "2020-11-09T04:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 3744,
+    "episode_count": 19,
+    "episode_ids": [
+      116,
+      120,
+      119,
+      117,
+      98,
+      92,
+      87,
+      97,
+      112,
+      113,
+      100,
+      80,
+      45,
+      20,
+      13,
+      23,
+      38,
+      53,
+      12
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "2ba2925f8edcbfb018ebcae0f6fd98354817b266db6ca943d5f9dd5e163dad6b",
+    "family_ordinal": 2,
+    "intrinsic_subtype_counts": {
+      "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 19
+    },
+    "intrinsic_subtype_mixed": false,
+    "latest_episode_id": 12,
+    "latest_episode_similarity_to_current": 0.6819597357562173,
+    "maximum_similarity_to_current": 0.6819597357562173,
+    "median_similarity_to_current": -0.2708308592071604,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "DELAYED_RECOVERY": 15,
+      "RAPID_RECOVERY": 4
+    },
+    "recovery_outcome_mixed": true,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2022-03-23T03:00:00",
+    "window_start": "2021-10-18T04:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 3576,
+    "episode_count": 18,
+    "episode_ids": [
+      121,
+      118,
+      114,
+      78,
+      55,
+      24,
+      1,
+      35,
+      69,
+      49,
+      51,
+      48,
+      17,
+      65,
+      76,
+      79,
+      81,
+      91
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "b0ed2216529f93b7eedbbd4172b91c0ad236983f76f7cc1e1fbc402c6c5daae1",
+    "family_ordinal": 3,
+    "intrinsic_subtype_counts": {
+      "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 18
+    },
+    "intrinsic_subtype_mixed": false,
+    "latest_episode_id": 91,
+    "latest_episode_similarity_to_current": -0.2662294812444127,
+    "maximum_similarity_to_current": 0.7805321380851532,
+    "median_similarity_to_current": 0.24881330097414095,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "DELAYED_RECOVERY": 13,
+      "RAPID_RECOVERY": 5
+    },
+    "recovery_outcome_mixed": true,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2022-08-24T03:00:00",
+    "window_start": "2022-03-28T04:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 1056,
+    "episode_count": 3,
+    "episode_ids": [
+      96,
+      82,
+      85
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "cf6553d0d512513259c51459c4820740bbb933ac34c4872db41973fdf911801d",
+    "family_ordinal": 4,
+    "intrinsic_subtype_counts": {
+      "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 3
+    },
+    "intrinsic_subtype_mixed": false,
+    "latest_episode_id": 85,
+    "latest_episode_similarity_to_current": -0.1222150873412681,
+    "maximum_similarity_to_current": -0.0482267099938517,
+    "median_similarity_to_current": -0.1222150873412681,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "RAPID_RECOVERY": 3
+    },
+    "recovery_outcome_mixed": false,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2022-10-12T03:00:00",
+    "window_start": "2022-08-29T04:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 888,
+    "episode_count": 2,
+    "episode_ids": [
+      4,
+      25
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "5aaaddca9b3b88694f190ee78f0c80e14cdf19a35ece3706d17ee0001f0764af",
+    "family_ordinal": 5,
+    "intrinsic_subtype_counts": {
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 1,
+      "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 1
+    },
+    "intrinsic_subtype_mixed": true,
+    "latest_episode_id": 25,
+    "latest_episode_similarity_to_current": 0.6135244703983724,
+    "maximum_similarity_to_current": 0.7147873171466561,
+    "median_similarity_to_current": 0.6641558937725143,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "RAPID_RECOVERY": 2
+    },
+    "recovery_outcome_mixed": false,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2023-04-12T06:00:00",
+    "window_start": "2023-03-06T07:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 720,
+    "episode_count": 1,
+    "episode_ids": [
+      84
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "75c95036f671b15af44e575e6d7ac36c90741af02b1e66bdeb13d4227a2ce42e",
+    "family_ordinal": 6,
+    "intrinsic_subtype_counts": {
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 1
+    },
+    "intrinsic_subtype_mixed": false,
+    "latest_episode_id": 84,
+    "latest_episode_similarity_to_current": -0.1186266353887857,
+    "maximum_similarity_to_current": -0.1186266353887857,
+    "median_similarity_to_current": -0.1186266353887857,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "RAPID_RECOVERY": 1
+    },
+    "recovery_outcome_mixed": false,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2023-05-17T06:00:00",
+    "window_start": "2023-04-17T07:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 1056,
+    "episode_count": 3,
+    "episode_ids": [
+      41,
+      43,
+      58
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "9479980948f9732c5b3082c62295487233d325cb6a53836de7b3ad8563d10920",
+    "family_ordinal": 7,
+    "intrinsic_subtype_counts": {
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 2,
+      "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 1
+    },
+    "intrinsic_subtype_mixed": true,
+    "latest_episode_id": 58,
+    "latest_episode_similarity_to_current": 0.3341203616061911,
+    "maximum_similarity_to_current": 0.4802078480959503,
+    "median_similarity_to_current": 0.4682259210106942,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "PERSISTENT_COLLAPSE": 3
+    },
+    "recovery_outcome_mixed": false,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2023-12-06T06:00:00",
+    "window_start": "2023-10-23T07:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 3744,
+    "episode_count": 19,
+    "episode_ids": [
+      34,
+      21,
+      36,
+      30,
+      31,
+      50,
+      60,
+      67,
+      56,
+      37,
+      10,
+      3,
+      0,
+      16,
+      42,
+      33,
+      70,
+      64,
+      62
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "01744f106c18b38e59b36c3b10cbfa1d10cd82a591a4fed97acfdeceaa0b4764",
+    "family_ordinal": 8,
+    "intrinsic_subtype_counts": {
+      "MAJOR_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL": 1,
+      "MAJOR_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 6,
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 3,
+      "SEVERE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_EXPANSION": 1,
+      "SEVERE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL": 1,
+      "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 7
+    },
+    "intrinsic_subtype_mixed": true,
+    "latest_episode_id": 62,
+    "latest_episode_similarity_to_current": 0.3093805906598809,
+    "maximum_similarity_to_current": 0.810920955229877,
+    "median_similarity_to_current": 0.5254571949058402,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "DELAYED_RECOVERY": 3,
+      "PERSISTENT_COLLAPSE": 16
+    },
+    "recovery_outcome_mixed": true,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2024-05-15T06:00:00",
+    "window_start": "2023-12-11T07:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 1392,
+    "episode_count": 5,
+    "episode_ids": [
+      44,
+      32,
+      29,
+      77,
+      104
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "eac420466c1bcf4aa554aaacd5143de3d39c129e94db8c61e7dea25eaee2992a",
+    "family_ordinal": 9,
+    "intrinsic_subtype_counts": {
+      "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 5
+    },
+    "intrinsic_subtype_mixed": false,
+    "latest_episode_id": 104,
+    "latest_episode_similarity_to_current": -0.5174988089302208,
+    "maximum_similarity_to_current": 0.5836145974198352,
+    "median_similarity_to_current": 0.4616935206423296,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "DELAYED_RECOVERY": 1,
+      "RAPID_RECOVERY": 4
+    },
+    "recovery_outcome_mixed": true,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2024-09-18T06:00:00",
+    "window_start": "2024-07-22T07:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 1224,
+    "episode_count": 4,
+    "episode_ids": [
+      47,
+      52,
+      73,
+      71
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "b87bfe84527d4aba1605e9f6272cff77330e0cf5877ced63a7231223a35a2035",
+    "family_ordinal": 10,
+    "intrinsic_subtype_counts": {
+      "MAJOR_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 2,
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 2
+    },
+    "intrinsic_subtype_mixed": true,
+    "latest_episode_id": 71,
+    "latest_episode_similarity_to_current": 0.204253411360142,
+    "maximum_similarity_to_current": 0.4536620459723572,
+    "median_similarity_to_current": 0.3059657459140212,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "RAPID_RECOVERY": 4
+    },
+    "recovery_outcome_mixed": false,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2025-01-01T06:00:00",
+    "window_start": "2024-11-11T07:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 888,
+    "episode_count": 2,
+    "episode_ids": [
+      40,
+      68
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "5db50564c6f164dfe1a1eeaa5639ab7b168fc1f382375fe48311c39c6e3ad1e3",
+    "family_ordinal": 11,
+    "intrinsic_subtype_counts": {
+      "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 2
+    },
+    "intrinsic_subtype_mixed": false,
+    "latest_episode_id": 68,
+    "latest_episode_similarity_to_current": 0.2267388836051374,
+    "maximum_similarity_to_current": 0.4914805222583164,
+    "median_similarity_to_current": 0.3591097029317269,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "DELAYED_RECOVERY": 2
+    },
+    "recovery_outcome_mixed": false,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2025-02-19T06:00:00",
+    "window_start": "2025-01-13T07:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 720,
+    "episode_count": 1,
+    "episode_ids": [
+      39
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "49b116cbf344f862200e58d4298e4fec7f007d9e6d9a016572865fd3cb3d2413",
+    "family_ordinal": 12,
+    "intrinsic_subtype_counts": {
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 1
+    },
+    "intrinsic_subtype_mixed": false,
+    "latest_episode_id": 39,
+    "latest_episode_similarity_to_current": 0.5080457492122016,
+    "maximum_similarity_to_current": 0.5080457492122016,
+    "median_similarity_to_current": 0.5080457492122016,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "RAPID_RECOVERY": 1
+    },
+    "recovery_outcome_mixed": false,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2025-03-26T06:00:00",
+    "window_start": "2025-02-24T07:00:00"
+  },
+  {
+    "bar_cadence": "PT1H",
+    "duration_bars": 1061,
+    "episode_count": 3,
+    "episode_ids": [
+      72,
+      57,
+      46
+    ],
+    "exposure_mutation_allowed": false,
+    "family_id": "173c533b54cbe8a69a2afc8b0c361d2f81772037ac166b66f66d0ed8cf8d973f",
+    "family_ordinal": 13,
+    "intrinsic_subtype_counts": {
+      "MODERATE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL": 1,
+      "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 2
+    },
+    "intrinsic_subtype_mixed": true,
+    "latest_episode_id": 46,
+    "latest_episode_similarity_to_current": 0.4583645330063189,
+    "maximum_similarity_to_current": 0.4583645330063189,
+    "median_similarity_to_current": 0.3426373152420854,
+    "observation_only": true,
+    "recovery_outcome_counts": {
+      "PERSISTENT_COLLAPSE": 3
+    },
+    "recovery_outcome_mixed": false,
+    "research_only": true,
+    "runtime_integration_allowed": false,
+    "window_end": "2025-11-19T11:00:00",
+    "window_start": "2025-10-06T07:00:00"
+  }
+]
