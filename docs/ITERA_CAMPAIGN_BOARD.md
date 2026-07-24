@@ -2,238 +2,156 @@
 
 ## Purpose
 
-This file is the authoritative, version-controlled handoff for active Itera work. Future ChatGPT conversations should read this file before proposing or implementing the next step.
+This file is the authoritative, version-controlled handoff for active Itera work. Read it before proposing or implementing the next step.
 
-The board is descriptive project state. It does not authorize production, threshold, order, NAV, exposure, or runtime changes.
+The board is descriptive project state and authorization record. It does not authorize production, runtime, threshold, order, NAV, exposure, model-training, or dashboard changes.
 
 ## Active campaign
 
-**Campaign:** Core v1 Historical Regime Taxonomy
+**Campaign:** Campaign #41 — Deterministic overlap-aware historical event families
 
-**Status:** Complete, portability-verified, and ready for user-managed merge
+**Classification:** Research primary; engineering secondary
 
-**Working branch:** `feature/core-v1-historical-regime-taxonomy`
+**Status:** Closure authorized — implementation, validation, canonical artifact publication, documentation, scope review, and draft-PR review complete; PR #41 is authorized for squash merge
 
-**Pull request:** `#40 — Complete Core v1 historical regime taxonomy`
+**Working branch:** `feature/core-v1-historical-event-families-implementation`
+
+**Pull request:** PR #41 — `Campaign 41: deterministic historical event families`
+
+**Pull request URL:** `https://github.com/IteraDynamics/ID_test/pull/41`
 
 **Repository:** `IteraDynamics/ID_test`
 
-**Production:** `dashboard.iteradynamics.com` / `/opt/itera/app`
-
 ## Governing constraints
 
-All work in this campaign remains:
+All work remains deterministic, replay-safe, observation-only, fail-closed, additive to Campaign #40 artifacts, separate from production runtime, independent of model retraining, and independent of threshold, order, NAV, and exposure mutation.
 
-- deterministic;
-- replay-safe;
-- observation-only;
-- fail-closed;
-- separate from production runtime;
-- independent of model retraining;
-- independent of threshold, order, NAV, and exposure mutation.
+Campaign closure and merge do not authorize runtime integration or any prohibited behavior change.
 
-## Completed deliverables
+## Governing documents
 
-### Historical regime taxonomy specification
+- `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES.md`;
+- `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES_CADENCE_EVIDENCE.md`;
+- `docs/research/CORE_V1_HISTORICAL_EVENT_FAMILIES_IMPLEMENTATION_HANDOFF.md`.
 
-Created and completed:
+These govern source identities, zero-based episode identity, closed timestamp intervals, canonical `PT1H` cadence, missing-bar handling, deterministic grouping, family identity, composition, similarity, serialization, replay, publication, and fail-closed behavior.
 
-- `docs/research/CORE_V1_HISTORICAL_REGIME_TAXONOMY.md`
+## Governed inputs
 
-The specification defines deterministic labels for:
+Immutable Campaign #40 sources:
 
-- collapse severity;
-- feature displacement;
-- volatility-state subtype;
-- recovery outcome;
-- similarity-to-current band;
-- composite regime label.
+- `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json`;
+- `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv`;
+- `artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv`.
 
-It also documents source artifacts, reproduction commands, output paths, report-model requirements, feature-ranking rules, strict JSON behavior, digest and byte-replay verification, portability requirements, statistical caveats, and explicitly deferred scope.
+Cadence-validation source:
 
-### Taxonomy implementation
+- `artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv`.
 
-Created:
+Governed cadence evidence:
 
-- `research/ml/validation/historical_regime_taxonomy.py`
-- `scripts/run_core_v1_historical_regime_taxonomy.py`
-- `tests/test_historical_regime_taxonomy.py`
+- SHA-256: `36b6ffcc9e993f4869dd8f75cde13e7058e101949a577bd24c84e79e58f1dca7`;
+- rows: `52453`;
+- first timestamp: `2020-01-01 01:00:00`;
+- last timestamp: `2025-12-26 00:00:00`;
+- timezone-naive;
+- strictly increasing;
+- no duplicates;
+- canonical cadence: `PT1H`;
+- larger deltas remain preserved missing-bar gaps.
 
-The implementation is deterministic, preserves source rows, fails closed on invalid or mismatched inputs, emits strict JSON, and remains separate from runtime behavior.
+Immediate adjacency is exactly:
 
-### Human-readable taxonomy reporting
+`next_start <= current_family_end + PT1H`
 
-Created:
+No inferred cadence, interpolation, expanded tolerance, or learned gap rule is permitted.
 
-- `research/ml/validation/historical_regime_taxonomy_report.py`
-- `scripts/run_core_v1_historical_regime_taxonomy_report.py`
-- `tests/test_historical_regime_taxonomy_report.py`
+## Published implementation evidence
 
-The reporting layer:
+- `405a86b` — initial deterministic event-family core;
+- `1ae3298` — hardened validation and canonical construction core;
+- `62d0b05` — original focused core tests;
+- `124961b` — deterministic artifact runner;
+- `d0ced4e` — runner-contract tests;
+- `b5fd593` — exported governed `CANONICAL_BAR_CADENCE = "PT1H"`;
+- `6afed4f` — tracked the authorized Campaign #41 artifact root with `.gitkeep`;
+- `d850307d53236b369af87ef5d10908d7ce0108f1` — published the five canonical Campaign #41 artifacts;
+- `d9126ab4c34e6a7b89d7bf6d18c95527ce6b5f8b` — finalized the Campaign #41 implementation handoff;
+- `e02950aa2e39026dcc2208a19f100dc3c2b10b5d` — recorded Campaign #41 knowledge gain and the proposed Campaign #42 frontier.
 
-- validates exact classified/signature episode identity;
-- reconciles taxonomy summary counts against classified rows;
-- validates subtype recovery summaries;
-- computes activation, similarity, recovery, and feature metrics deterministically;
-- ranks shifted features from the numeric episode-signature artifact;
-- emits compact strict JSON and human-readable Markdown;
-- preserves research-only, observation-only, and no-runtime-mutation flags;
-- includes overlapping-window and bounded-censoring caveats.
+The pure module remains side-effect free. The CLI requires explicit governed paths, verifies prediction identity and source hashes, recomputes and reconciles Campaign #40 classification, stages a complete deterministic output set, refuses unauthorized or non-empty output directories, and emits LF-only text artifacts.
 
-### Portable artifact I/O hardening
+## Canonical artifacts
 
-Created:
+Accepted canonical files under `artifacts/core_v1_historical_event_families/`:
 
-- `research/ml/validation/historical_regime_artifact_io.py`
-- `tests/test_historical_regime_artifact_io.py`
+- `btc_extended_up_event_families.json`;
+- `btc_extended_up_event_family_manifest.json`;
+- `btc_extended_up_event_family_membership.csv`;
+- `btc_extended_up_event_family_report.md`;
+- `btc_extended_up_event_family_summary.json`.
 
-The hardening:
+Exact canonical SHA-256 values:
 
-- normalizes repository source identifiers to forward-slash, repo-relative form;
-- writes generated JSON, Markdown, and classifier CSV with explicit LF line endings;
-- directly tests separator normalization, repo-relative identifiers, and LF bytes;
-- does not change taxonomy thresholds, labels, episode ordering, subtype calculations, feature ranking, runtime state, NAV, orders, or exposure.
+- `btc_extended_up_event_families.json` — `be4fc3e45f8728313a714cd5f4ea932e6822dcea138f145126f9b0392756e584`;
+- `btc_extended_up_event_family_manifest.json` — `e59c27fd40b4a5994cbe2b46e9585a75f8470bdcb5a9bf9998cfb32a3873da9a`;
+- `btc_extended_up_event_family_membership.csv` — `6bba0128dac682194da20126e1c36c81a38e809c8f8867e1a5946747e692f744`;
+- `btc_extended_up_event_family_report.md` — `f63dbb3fa66c0fb66dbcd244f0e83a890ecc011d8ac8e5c55a043e9b2638bab5`;
+- `btc_extended_up_event_family_summary.json` — `cd8235ec0572060bc36872e2d6771b298d41102f91d383d5cfc4df0e0e85b922`.
 
-## Final portability-hardened verification
+The canonical set was copied from `replay_a` after exact hash and LF-only verification. `replay_a` and `replay_b` remain local validation outputs and are not committed.
 
-Verified on 2026-07-23 from the real data-bearing Windows checkout using Python 3.14.6.
+## Validation evidence
 
-### Focused tests
+- focused suite: `12 passed in 1.07s` on Windows / Python `3.14.6`;
+- full repository suite: `413 passed`, `0 failed`, `75 warnings`, `241.42s`;
+- two governed runs completed successfully;
+- each run reconciled `122` governed episodes into `14` event families;
+- each run emitted exactly five outputs;
+- all replay filenames, byte lengths, and SHA-256 values matched;
+- all generated text artifacts were LF-only;
+- governed source identities and hashes remained unchanged;
+- publication staged and committed exactly five authorized canonical artifacts;
+- local unrelated runtime, server-data, export, and manifest files remained untracked and untouched;
+- remote scope review found no production runtime, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard file changes.
 
-Command covered:
+The branch also contains six foundational Itera governance documents created earlier on the same branch. They are documentation-only and were explicitly disclosed in PR #41.
 
-- `tests/test_historical_regime_artifact_io.py`
-- `tests/test_historical_regime_taxonomy.py`
-- `tests/test_historical_regime_taxonomy_report.py`
+Three accidental temporary documentation files were created and deleted during connector operation. Their net branch diff is zero; none exists in the pull-request file set. Squash merge is selected so those transient commits do not enter `main` history.
 
-Result:
+## Acceptance gates
 
-- **13 passed in 1.52 seconds**
+- approved Campaign #41 implementation surfaces respected — complete;
+- focused tests pass — complete;
+- full repository suite passes — complete;
+- real-artifact execution succeeds twice — complete;
+- governed source hashes remain unchanged — complete;
+- all records and counts reconcile — complete;
+- all five outputs are byte-identical across replay — complete;
+- all generated text artifacts are LF-only — complete;
+- canonical artifacts accepted and committed — complete;
+- exact hashes and final evidence recorded — complete;
+- final implementation handoff updated — complete;
+- branch scope reviewed — complete;
+- draft pull request opened and reviewed — complete;
+- Campaign #41 closure and squash merge — authorized.
 
-### Real classifier result
+## Prohibited surfaces
 
-- Episode count: **122**
-- Final taxonomy digest: `2114b2353322b3404db4000b36e425716c1a6d01027934ac0b0f595c9f45484f`
+Do not modify production runtime code, live state, strategy logic, training code, thresholds, order generation or execution, portfolio construction, NAV, exposure controls, dashboard behavior, Campaign #40 sources, the governed prediction CSV, or runtime state files.
 
-Generated classifier outputs:
+No existing governed artifact may be rewritten in place.
 
-- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_classified_episodes.csv`
-- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_classified_episodes.json`
-- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_taxonomy_summary.json`
+## Next executable step
 
-### Real report result
+Squash-merge PR #41 into `main`, verify the merged state, record the final merge SHA here, and transition the board to Campaign #41 complete / Campaign #42 planning.
 
-- Episode count: **122**
-- Source taxonomy digest: `2114b2353322b3404db4000b36e425716c1a6d01027934ac0b0f595c9f45484f`
-- Final report digest: `e1b29df5853e86c8da627730f2a4af374c0e64c58889f0f0dfdb601385581618`
-
-Generated report outputs:
-
-- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_taxonomy_report.json`
-- `artifacts/core_v1_jump_risk_historical_regime_taxonomy/btc_extended_up_taxonomy_report.md`
-
-### Replay and source-integrity evidence
-
-- Classifier CSV, classifier JSON, and taxonomy summary were byte-identical across replay.
-- Report JSON and Markdown were byte-identical across replay.
-- All five generated artifacts were explicitly confirmed LF-only with no CRLF bytes.
-- All three real source artifacts retained identical SHA-256 hashes before and after replay.
-- Generated `artifacts/*` remain intentionally ignored and uncommitted.
-- No Core state, NAV, orders, thresholds, exposure, or runtime behavior changed.
-
-### Full repository suite
-
-- **401 passed, 75 warnings**
-- Exit code: **0**
-- Runtime: **247.88 seconds**
-- Captured local log: `%TEMP%/itera_historical_regime_taxonomy_portable_full_suite.txt`
-
-The warnings are existing deprecations involving `datetime.utcnow()` and pytest class-scoped fixture behavior. No warning was suppressed or converted into a weaker gate.
-
-## Observed historical taxonomy
-
-Observed from the 122 real classified episodes:
-
-- Collapse severity: 94 severe, 10 major, 18 moderate.
-- Feature displacement: 111 low displacement, 6 broad shift, 5 concentrated shift.
-- Volatility state: 114 neutral, 8 expansion.
-- Recovery outcome: 29 rapid recovery, 45 delayed recovery, 48 persistent collapse.
-- Similarity band: 68 low, 52 medium, 2 high.
-- Ten intrinsic subtypes were observed.
-- Dominant subtype: `SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL`, 87 episodes, descriptive recovered fraction 0.758621, median recovery 1392 rows, median activation ratio 0.0, median similarity-to-current 0.144540.
-- Subtype feature reporting uses the numeric episode-signature artifact rather than the inherited string representation of `top_shifted_features`.
-- Feature ordering is median absolute standardized signature descending, then feature name ascending; median signed signature preserves direction.
-
-Historical interpretation remains descriptive. Overlapping rolling windows are dependent observations, and persistent collapse means no recovery within the bounded horizon rather than permanent non-recovery.
-
-## Merge state
-
-All documented acceptance gates for PR #40 are complete.
-
-The branch is ready for the user to review and merge. The assistant must not merge PR #40 without explicit user instruction.
-
-After merge:
-
-1. update the local checkout from `main`;
-2. confirm the merge commit and clean tracked state;
-3. decide whether to authorize the recommended next campaign;
-4. do not begin the next implementation solely because it is documented below.
-
-## Recommended next campaign after merge
-
-### Deterministic overlap-aware historical event families
-
-The strongest next research task is an observation-only event-family rollup addressing the principal methodological limitation of the current analysis: many episode rows come from overlapping rolling windows and are dependent observations.
-
-Start with a specification-only milestone. Define a deterministic, replay-safe method to group overlapping or immediately adjacent collapse windows into auditable event families and report both episode-level and event-family-level summaries.
-
-Required design constraints:
-
-- deterministic interval-based grouping only;
-- no learned clustering;
-- explicit source episode membership for every event family;
-- stable ordering and digest;
-- no deletion or mutation of existing episode artifacts;
-- descriptive event-level counts, durations, recovery outcomes, subtype composition, and latest-window similarity;
-- explicit handling of mixed subtype or recovery labels within a family;
-- research-only and observation-only;
-- no runtime integration, threshold change, model retraining, order, NAV, or exposure mutation.
-
-This recommendation is not active implementation authorization. Begin only after PR #40 merges and the user explicitly selects the campaign.
-
-## Explicitly deferred
-
-- runtime integration;
-- threshold changes;
-- Core exposure changes;
-- learned clustering;
-- predictive recovery modeling;
-- calibrated recovery probabilities;
-- automated production actions from taxonomy labels.
-
-## Calendar operating cadence
-
-- **Daily Mission Check:** confirm PR #40 merge state and identify one concrete next executable step.
-- **Weekly Campaign Review:** record shipped evidence, blockers, roadmap decisions, and update this board.
-- **Current milestone status:** Final verification complete; awaiting user-managed PR #40 merge.
+Campaign #42 is not yet authorized for implementation. The provisional research frontier is comparison of the Core v1 taxonomy at episode resolution versus independent event-family resolution, as recorded in `docs/ITERA_RESEARCH_ROADMAP.md`.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`, verify PR #40 and the current branch state, and continue from the documented post-verification merge handoff. Preserve deterministic, replay-safe, observation-only, and fail-closed constraints. Do not introduce runtime integration, threshold changes, orders, NAV, or exposure mutation.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #41 implementation, validation, canonical artifact publication, documentation, and scope review are complete, and PR #41 is authorized for squash merge. After merge, record the merge SHA and transition to Campaign #42 planning only. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime integration, threshold changes, retraining, orders, NAV, exposure, or dashboard changes.
 
 ## Board maintenance rule
 
-Update this file whenever one of the following changes:
-
-- active campaign;
-- working branch;
-- pull request state;
-- completed milestone;
-- test status;
-- material research finding;
-- blocker or open decision;
-- next executable step;
-- acceptance criteria;
-- deferred scope.
-
-A campaign is not considered cleanly paused until this board identifies a verified state and one concrete next executable step.
+Update this file whenever campaign state, branch, PR state, milestone, acceptance evidence, blocker, decision, next executable step, or deferred scope changes.

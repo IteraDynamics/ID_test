@@ -1,0 +1,55 @@
+{
+  "configuration": {
+    "bar_cadence": "PT1H"
+  },
+  "deterministic_digest_sha256": "d221077c7277601a350a7d7bee8d935e1ebb7fcf74dca0f5244a181a2a511a39",
+  "event_family_count": 14,
+  "experiment": "core_v1_historical_event_families",
+  "exposure_mutation_allowed": false,
+  "family_size_distribution": {
+    "1": 3,
+    "18": 1,
+    "19": 2,
+    "2": 2,
+    "3": 3,
+    "4": 1,
+    "41": 1,
+    "5": 1
+  },
+  "intrinsic_subtype_episode_totals": {
+    "MAJOR_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL": 1,
+    "MAJOR_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 9,
+    "MODERATE_COLLAPSE__BROAD_SHIFT__VOLATILITY_EXPANSION": 2,
+    "MODERATE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL": 1,
+    "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_EXPANSION": 1,
+    "MODERATE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 14,
+    "SEVERE_COLLAPSE__BROAD_SHIFT__VOLATILITY_EXPANSION": 4,
+    "SEVERE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_EXPANSION": 1,
+    "SEVERE_COLLAPSE__CONCENTRATED_SHIFT__VOLATILITY_NEUTRAL": 2,
+    "SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL": 87
+  },
+  "intrinsic_subtype_family_composition": {
+    "homogeneous": 8,
+    "mixed": 6
+  },
+  "observation_only": true,
+  "recovery_outcome_episode_totals": {
+    "DELAYED_RECOVERY": 45,
+    "PERSISTENT_COLLAPSE": 48,
+    "RAPID_RECOVERY": 29
+  },
+  "recovery_outcome_family_composition": {
+    "homogeneous": 9,
+    "mixed": 5
+  },
+  "research_only": true,
+  "runtime_integration_allowed": false,
+  "source_artifacts": {
+    "episode_signatures": "artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv",
+    "historical_episodes": "artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv",
+    "historical_json": "artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json",
+    "predictions": "artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv"
+  },
+  "source_episode_count": 122,
+  "specification_version": "1"
+}
