@@ -151,6 +151,14 @@ def test_r1_exact_coverage_allows_unrelated_gap_but_rejects_affected_window() ->
     full_close = pd.Series(range(100, 600), index=full_index, dtype=float, name="close")
     episodes, membership = _coverage_frames("2024-01-02 00:00:00")
 
+    # Equivalent timestamps may use different deterministic serializations.
+    episodes["window_start"] = pd.to_datetime(
+        episodes["window_start"]
+    ).dt.strftime("%Y-%m-%dT%H:%M:%S")
+    episodes["window_end"] = pd.to_datetime(
+        episodes["window_end"]
+    ).dt.strftime("%Y-%m-%dT%H:%M:%S")
+
     unrelated_gap = full_close.drop(pd.Timestamp("2024-01-01 05:00:00"))
     coverage = _validate_exact_coverage(unrelated_gap, episodes, membership)
     assert coverage["episode"]["unavailable_by_horizon"] == {

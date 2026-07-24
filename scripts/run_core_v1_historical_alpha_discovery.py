@@ -252,14 +252,21 @@ def _validate_exact_coverage(
             f"membership missing coverage columns: {membership_missing}"
         )
 
-    episode_windows = {
-        (str(start), str(end))
-        for start, end in episodes[["window_start", "window_end"]].itertuples(index=False)
-    }
-    membership_windows = {
-        (str(start), str(end))
-        for start, end in membership[["window_start", "window_end"]].itertuples(index=False)
-    }
+    episode_starts = _parse_naive_timestamps(
+        episodes["window_start"], "historical episode window_start"
+    )
+    episode_ends = _parse_naive_timestamps(
+        episodes["window_end"], "historical episode window_end"
+    )
+    membership_starts = _parse_naive_timestamps(
+        membership["window_start"], "membership window_start"
+    )
+    membership_ends = _parse_naive_timestamps(
+        membership["window_end"], "membership window_end"
+    )
+
+    episode_windows = set(zip(episode_starts, episode_ends, strict=True))
+    membership_windows = set(zip(membership_starts, membership_ends, strict=True))
     if episode_windows != membership_windows:
         raise HistoricalAlphaDiscoveryValidationError(
             "historical episode windows do not reconcile to membership"
