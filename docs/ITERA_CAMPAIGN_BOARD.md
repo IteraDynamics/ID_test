@@ -12,11 +12,13 @@ The board is descriptive project state and authorization record. It does not aut
 
 **Classification:** Research primary; deterministic descriptive engineering authorized
 
-**Status:** Implementation in progress — narrow BTC-only scope approved; governing specification committed; branch and authorized file surfaces active
+**Status:** Implementation committed — draft PR open; governed validation and artifact publication pending
 
 **Working branch:** `agent/campaign-42-event-robustness`
 
-**Pull request:** Pending
+**Pull request:** PR #42 — `Campaign 42: deterministic event robustness analysis` (draft)
+
+**Pull request URL:** `https://github.com/IteraDynamics/ID_test/pull/42`
 
 **Repository:** `IteraDynamics/ID_test`
 
@@ -169,17 +171,18 @@ Committed on `agent/campaign-42-event-robustness`:
 - governing specification;
 - deterministic validation and aggregation engine;
 - canonical artifact runner;
-- focused synthetic tests.
+- focused synthetic tests;
+- draft PR #42.
 
-Governed artifact generation, replay validation, full-suite validation, final documentation, and pull-request publication remain pending.
+Governed artifact generation, replay validation, full-suite validation, final documentation, and ready-for-review transition remain pending.
 
 ## Next executable step
 
-Run focused tests, generate the four governed Campaign #42 artifacts twice, verify byte-identical replay, run the full repository suite, perform scope review, update this board with accepted evidence, and open a draft pull request.
+Run focused tests, generate the four governed Campaign #42 artifacts twice, verify byte-identical replay, run the full repository suite, perform scope review, update this board with accepted evidence, and mark PR #42 ready for review.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #41 is complete and merged at `af248fff93792100d57709df9ae1b1bc0c6a27e3`. Campaign #42 is authorized and active on `agent/campaign-42-event-robustness` as a narrow BTC-only deterministic comparison of episode-resolution and event-family-resolution Core v1 taxonomy. Continue only within the listed authorized file surfaces. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, cross-asset, predictive, or strategy changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #41 is complete and merged at `af248fff93792100d57709df9ae1b1bc0c6a27e3`. Campaign #42 is authorized and active on `agent/campaign-42-event-robustness`; draft PR #42 is open. Continue with governed validation and artifact publication only within the listed authorized file surfaces. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, cross-asset, predictive, or strategy changes.
 
 ## Board maintenance rule
 
