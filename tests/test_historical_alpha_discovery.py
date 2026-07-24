@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -15,11 +17,41 @@ from research.ml.validation.historical_alpha_discovery import (
     validate_candidate_inventory,
     validate_price_series,
 )
+from scripts.run_core_v1_historical_alpha_discovery import (
+    PRICE_COLUMNS,
+    _validate_exact_coverage,
+    _validate_price_frame,
+)
 
 
 def _prices(periods: int = 200) -> pd.DataFrame:
     index = pd.date_range("2024-01-01 00:00:00", periods=periods, freq="1h")
     return pd.DataFrame({"close": [100.0 + index for index in range(periods)]}, index=index)
+
+
+def _ohlcv(periods: int = 200) -> pd.DataFrame:
+    timestamps = pd.date_range("2024-01-01 00:00:00", periods=periods, freq="1h")
+    base = pd.Series([100.0 + index for index in range(periods)])
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps.strftime("%Y-%m-%d %H:%M:%S"),
+            "open": base,
+            "high": base + 2.0,
+            "low": base - 2.0,
+            "close": base + 1.0,
+            "volume": 10.0,
+        }
+    )
+
+
+def _price_spec(path: Path, frame: pd.DataFrame) -> dict[str, object]:
+    return {
+        "bytes": path.stat().st_size,
+        "rows": len(frame),
+        "columns": PRICE_COLUMNS,
+        "first": str(frame.iloc[0]["timestamp"]),
+        "last": str(frame.iloc[-1]["timestamp"]),
+    }
 
 
 def _families() -> list[dict[str, object]]:
@@ -31,6 +63,23 @@ def _families() -> list[dict[str, object]]:
         }
         for position in range(14)
     ]
+
+
+def _coverage_frames(start: str = "2024-01-02 00:00:00") -> tuple[pd.DataFrame, pd.DataFrame]:
+    anchors = pd.date_range(start, periods=14, freq="12h")
+    membership = pd.DataFrame(
+        {
+            "family_id": [f"f{index:02d}" for index in range(14)],
+            "episode_id": [f"e{index:03d}" for index in range(14)],
+            "window_start": [
+                (anchor - pd.Timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+                for anchor in anchors
+            ],
+            "window_end": [anchor.strftime("%Y-%m-%d %H:%M:%S") for anchor in anchors],
+        }
+    )
+    episodes = membership[["window_start", "window_end"]].copy()
+    return episodes, membership
 
 
 def test_frozen_candidate_inventory_accepts_only_exact_rankable_fields() -> None:
@@ -56,6 +105,72 @@ def test_price_series_requires_exact_close_and_strict_positive_finite_values() -
     invalid.iloc[0, 0] = 0.0
     with pytest.raises(HistoricalAlphaDiscoveryValidationError, match="strictly positive"):
         validate_price_series(invalid)
+
+
+def test_r1_price_frame_requires_exact_ordered_schema_and_ohlcv_integrity(tmp_path: Path) -> None:
+    frame = _ohlcv()
+    path = tmp_path / "btc.csv"
+    frame.to_csv(path, index=False, lineterminator="\n")
+    close, evidence = _validate_price_frame(path, _price_spec(path, frame))
+    assert len(close) == len(frame)
+    assert evidence["ordered_schema"] == list(PRICE_COLUMNS)
+    assert evidence["timestamp_discontinuity_count"] == 0
+
+    reordered = frame[["timestamp", "close", "open", "high", "low", "volume"]]
+    reordered_path = tmp_path / "reordered.csv"
+    reordered.to_csv(reordered_path, index=False, lineterminator="\n")
+    with pytest.raises(HistoricalAlphaDiscoveryValidationError, match="ordered schema"):
+        _validate_price_frame(reordered_path, _price_spec(reordered_path, reordered))
+
+    invalid_high = frame.copy()
+    invalid_high.loc[0, "high"] = invalid_high.loc[0, "low"]
+    invalid_path = tmp_path / "invalid_high.csv"
+    invalid_high.to_csv(invalid_path, index=False, lineterminator="\n")
+    with pytest.raises(HistoricalAlphaDiscoveryValidationError, match="high is inconsistent"):
+        _validate_price_frame(invalid_path, _price_spec(invalid_path, invalid_high))
+
+
+def test_r1_price_frame_fails_on_duplicate_or_non_hour_aligned_timestamp(tmp_path: Path) -> None:
+    duplicate = _ohlcv()
+    duplicate.loc[1, "timestamp"] = duplicate.loc[0, "timestamp"]
+    duplicate_path = tmp_path / "duplicate.csv"
+    duplicate.to_csv(duplicate_path, index=False, lineterminator="\n")
+    with pytest.raises(HistoricalAlphaDiscoveryValidationError, match="duplicate timestamps"):
+        _validate_price_frame(duplicate_path, _price_spec(duplicate_path, duplicate))
+
+    misaligned = _ohlcv()
+    misaligned.loc[1, "timestamp"] = "2024-01-01 01:30:00"
+    misaligned_path = tmp_path / "misaligned.csv"
+    misaligned.to_csv(misaligned_path, index=False, lineterminator="\n")
+    with pytest.raises(HistoricalAlphaDiscoveryValidationError, match="hour-aligned"):
+        _validate_price_frame(misaligned_path, _price_spec(misaligned_path, misaligned))
+
+
+def test_r1_exact_coverage_allows_unrelated_gap_but_rejects_affected_window() -> None:
+    full_index = pd.date_range("2024-01-01 00:00:00", periods=500, freq="1h")
+    full_close = pd.Series(range(100, 600), index=full_index, dtype=float, name="close")
+    episodes, membership = _coverage_frames("2024-01-02 00:00:00")
+
+    unrelated_gap = full_close.drop(pd.Timestamp("2024-01-01 05:00:00"))
+    coverage = _validate_exact_coverage(unrelated_gap, episodes, membership)
+    assert coverage["episode"]["unavailable_by_horizon"] == {
+        "2": 0,
+        "6": 0,
+        "24": 0,
+        "72": 0,
+        "168": 0,
+    }
+    assert coverage["family"]["unavailable_by_horizon"] == {
+        "2": 0,
+        "6": 0,
+        "24": 0,
+        "72": 0,
+        "168": 0,
+    }
+
+    affected = full_close.drop(pd.Timestamp("2024-01-02 01:00:00"))
+    with pytest.raises(HistoricalAlphaDiscoveryValidationError, match="horizon coverage"):
+        _validate_exact_coverage(affected, episodes, membership)
 
 
 def test_forward_outcome_uses_exact_hourly_path_without_lookahead_fill() -> None:
