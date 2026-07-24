@@ -12,11 +12,11 @@ The board is descriptive project state and authorization record. It does not aut
 
 **Classification:** Research primary; deterministic descriptive engineering authorized
 
-**Status:** Implementation committed — draft PR open; governed validation and artifact publication pending
+**Status:** Validation complete — canonical artifacts published; PR ready for review
 
 **Working branch:** `agent/campaign-42-event-robustness`
 
-**Pull request:** PR #42 — `Campaign 42: deterministic event robustness analysis` (draft)
+**Pull request:** PR #42 — `Campaign 42: deterministic event robustness analysis` (ready for review)
 
 **Pull request URL:** `https://github.com/IteraDynamics/ID_test/pull/42`
 
@@ -43,7 +43,7 @@ Authorized scope is a narrow BTC-only descriptive comparison using existing Camp
 - `artifacts/core_v1_historical_event_families/btc_extended_up_event_families.json` — `be4fc3e45f8728313a714cd5f4ea932e6822dcea138f145126f9b0392756e584`;
 - `artifacts/core_v1_historical_event_families/btc_extended_up_event_family_membership.csv` — `6bba0128dac682194da20126e1c36c81a38e809c8f8867e1a5946747e692f744`.
 
-The implementation must record exact source hashes in its manifest, verify them before and after generation, and fail closed on disagreement.
+The implementation records exact source hashes in its manifest, verifies them before and after generation, and fails closed on disagreement.
 
 ## Campaign #42 counting rules
 
@@ -83,10 +83,12 @@ No materiality threshold, confidence category, significance test, predictive cla
 
 Under `artifacts/core_v1_event_robustness/`:
 
-- `btc_extended_up_event_robustness.json`;
-- `btc_extended_up_event_robustness_labels.csv`;
-- `btc_extended_up_event_robustness_report.md`;
-- `btc_extended_up_event_robustness_manifest.json`.
+- `btc_extended_up_event_robustness.json` — `578d8e7c0176489ff5b67761b48ece8bac3285ba06b70ae6ee5d8fe93abb0dc7`;
+- `btc_extended_up_event_robustness_labels.csv` — `106a792f6dd822a4d2419c53f6296d1c9c80e7504ec4199d74b3afde5bbcb4cd`;
+- `btc_extended_up_event_robustness_report.md` — `26c556b70b4d4f1d52903ff93cf5fc6e4a1f2ab27358670fca15ccb085080ec3`;
+- `btc_extended_up_event_robustness_manifest.json` — `956b5f74a3182389849263f3043790398b3ed06e733893e87cbe8fc586f0ada5`.
+
+Canonical artifact publication commit: `7be21bbdd5ee58b6044fe8ef67d1e594d6919da4`.
 
 ## Campaign #42 serialization and replay requirements
 
@@ -101,15 +103,39 @@ Under `artifacts/core_v1_event_robustness/`:
 - source hashes unchanged before and after generation;
 - two governed runs must be byte-identical.
 
+## Campaign #42 accepted results
+
+- governed episode rows: `122`;
+- deterministic event families: `14`;
+- canonical outputs: `4`;
+- deterministic payload digest: `0c837e746832c64b4a163ab1e968fccccf8ac338c11ce546fd08fa12278dd3b4`;
+- research-only: true;
+- observation-only: true;
+- runtime integration allowed: false;
+- exposure mutation allowed: false.
+
+Validation:
+
+- focused suite: `7 passed in 5.82s` on Windows / Python `3.14.6`;
+- full repository suite: `420 passed`, `0 failed`, `75 warnings`, `245.89s`;
+- both governed source hashes verified before generation;
+- two governed real-artifact runs completed successfully;
+- all four replay outputs were byte-identical;
+- all four canonical text artifacts were LF-only;
+- output schemas and counts reconciled at `122` episodes and `14` event families;
+- governed source identities and hashes remained unchanged after generation;
+- staged Git blobs were LF-only and matched accepted canonical hashes;
+- remote comparison against `main` found only authorized Campaign #42 file surfaces and no runtime, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard file changes.
+
 ## Campaign #42 acceptance gates
 
-1. Focused Campaign #42 tests pass.
-2. Full repository suite passes with no new failures.
-3. Two governed runs produce byte-identical outputs.
-4. Canonical text outputs are LF-only.
-5. Governed source identities and hashes remain unchanged.
-6. Output schemas and counts reconcile.
-7. Scope review finds no runtime, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard changes.
+1. Focused Campaign #42 tests pass. — **Passed**
+2. Full repository suite passes with no new failures. — **Passed**
+3. Two governed runs produce byte-identical outputs. — **Passed**
+4. Canonical text outputs are LF-only. — **Passed**
+5. Governed source identities and hashes remain unchanged. — **Passed**
+6. Output schemas and counts reconcile. — **Passed**
+7. Scope review finds no runtime, strategy, training, threshold, order, portfolio, NAV, exposure, or dashboard changes. — **Passed**
 
 ## Campaign #42 authorized file surfaces
 
@@ -172,17 +198,19 @@ Committed on `agent/campaign-42-event-robustness`:
 - deterministic validation and aggregation engine;
 - canonical artifact runner;
 - focused synthetic tests;
-- draft PR #42.
+- four governed canonical artifacts;
+- accepted validation and scope-review evidence;
+- PR #42 ready for review.
 
-Governed artifact generation, replay validation, full-suite validation, final documentation, and ready-for-review transition remain pending.
+No merge has been authorized or performed.
 
 ## Next executable step
 
-Run focused tests, generate the four governed Campaign #42 artifacts twice, verify byte-identical replay, run the full repository suite, perform scope review, update this board with accepted evidence, and mark PR #42 ready for review.
+Review PR #42. Merge only after explicit user authorization and any required review or CI checks pass. Do not begin Campaign #43 or change runtime, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, cross-asset, predictive, or strategy behavior without a later explicit board transition.
 
 ## New-chat handoff prompt
 
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #41 is complete and merged at `af248fff93792100d57709df9ae1b1bc0c6a27e3`. Campaign #42 is authorized and active on `agent/campaign-42-event-robustness`; draft PR #42 is open. Continue with governed validation and artifact publication only within the listed authorized file surfaces. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, cross-asset, predictive, or strategy changes.
+> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #41 is complete and merged at `af248fff93792100d57709df9ae1b1bc0c6a27e3`. Campaign #42 validation is complete on `agent/campaign-42-event-robustness`; PR #42 is ready for review. All seven acceptance gates passed, four governed canonical artifacts were published, and the branch-scope review found only authorized file surfaces. Review PR #42 and merge only after explicit authorization. Preserve deterministic, replay-safe, observation-only, and fail-closed behavior. Do not introduce runtime, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, cross-asset, predictive, or strategy changes.
 
 ## Board maintenance rule
 
