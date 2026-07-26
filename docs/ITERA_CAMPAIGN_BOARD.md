@@ -6,6 +6,12 @@ This file is the authoritative, version-controlled handoff for active Itera work
 
 The board is project state and authorization record. It does not authorize production, runtime, threshold, signal, order, portfolio, NAV, exposure, model-training, dashboard, cross-asset, or strategy changes.
 
+The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`: Itera Dynamics is building an institutional-grade quantitative investment firm. That thesis is directional context only and does not modify any active campaign authorization.
+
+Beginning with Campaign #44, every campaign proposal must state its immediate objective, acceptance evidence, strategic contribution to the quantitative investment firm, and the production/runtime/threshold/signal/order/portfolio/NAV/exposure changes that remain unauthorized.
+
+Campaign #43-R1 remains governed exactly by its frozen specification, R1 amendment, and acceptance gates. The firm-thesis clarification does not change its candidates, sources, anchors, outcomes, horizons, folds, support rules, ranking, outputs, or authorization boundary.
+
 ## Active campaign
 
 **Campaign:** Campaign #43-R1 — Core v1 Historical Alpha Discovery
@@ -258,53 +264,3 @@ Under `artifacts/core_v1_historical_alpha_discovery/`:
 **Branch:** `agent/campaign-42-event-robustness`
 
 **PR:** `https://github.com/IteraDynamics/ID_test/pull/42`
-
-Accepted evidence includes `122` episodes, `14` families, `4` canonical outputs, focused suite `7 passed`, full suite `420 passed`, byte-identical replay, LF-only outputs, and unchanged governed source hashes.
-
-Campaign #42 publication commit: `7be21bbdd5ee58b6044fe8ef67d1e594d6919da4`.
-
-Campaign #42 board finalization commit: `62d51b82f30075b13e620573039e5dcc51f78065`.
-
-No merge was performed by the assistant.
-
-## Completed campaign
-
-### Campaign #41 — Deterministic overlap-aware historical event families
-
-**Final status:** Complete
-
-**PR:** `https://github.com/IteraDynamics/ID_test/pull/41`
-
-**Merge method:** Squash
-
-**Final merge SHA:** `af248fff93792100d57709df9ae1b1bc0c6a27e3`
-
-Accepted results include `122` governed episodes and `14` deterministic event families.
-
-## Next executable step
-
-Implement only the frozen Campaign #43-R1 deterministic result-generation and publication path.
-
-Required behavior:
-
-- consume only the seven governed sources and exact R1 BTC source identity;
-- implement the frozen episode and homogeneous event-family observations;
-- calculate only the frozen forward outcomes at `2`, `6`, `24`, `72`, and `168` hours;
-- implement the fixed chronological folds, support gates, evidence states, and ranking tuple exactly as frozen;
-- retain null, contradictory, insufficient, unstable, and unavailable rows;
-- serialize only the five planned canonical outputs with strict finite JSON, sorted keys, stable ordering, LF-only text, no generated timestamps, and deterministic payload digest;
-- publish through a staging directory into a newly created or explicitly empty output directory;
-- verify all governed hashes before and after generation;
-- add focused tests for calculations, folds, support, states, ranking, serialization, fail-closed publication, source immutability, and replay identity;
-- do not alter or stage the local governed BTC file;
-- do not inspect or interpret generated predictive results until two-run byte identity and all required tests pass.
-
-After implementation, run the focused Campaign #43-R1 suite and full repository suite before the first governed generation. Then execute two governed runs into separate empty directories and compare every canonical byte.
-
-## New-chat handoff prompt
-
-> Open `docs/ITERA_CAMPAIGN_BOARD.md` in `IteraDynamics/ID_test`. Campaign #43-R1 has passed its updated source-governance gates on Windows/Python 3.14.6: focused suite `11 passed`, governed preflight passed with `7` sources, `122` episode observations and `14` family observations covered, and the full repository suite passed `431 passed` with no failures. The timestamp reconciliation fix is commit `a77a2e11fea3851581b1a077d1c639f94a2e9694`. No predictive results were generated or inspected. The next authorized step is implementation of the exact frozen calculations, canonical outputs, focused tests, and two-run replay validation. Preserve deterministic, replay-safe, research-only, observation-only, and fail-closed behavior. Do not change runtime, training, thresholds, signals, orders, portfolio, NAV, exposure, dashboards, cross-asset scope, or the frozen research design. Do not add, stage, or modify the local market-data file.
-
-## Board maintenance rule
-
-Update this file whenever campaign state, branch, PR state, milestone, acceptance evidence, blocker, decision, next executable step, or deferred scope changes.
