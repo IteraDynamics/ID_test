@@ -551,7 +551,7 @@ def _build_results(root: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any
         raise HistoricalAlphaDiscoveryValidationError(
             "candidate observations do not reconcile to 122 episodes"
         )
-    episode_frame["_anchor"] = _parse_naive_timestamps(
+    episode_frame["anchor_timestamp"] = _parse_naive_timestamps(
         episode_frame["window_end"], "episode anchor"
     )
     ordered_families = order_event_families(inputs["families"])
@@ -570,7 +570,7 @@ def _build_results(root: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any
     for row in episode_frame.itertuples(index=False):
         for horizon in HORIZON_HOURS:
             episode_outcomes[(int(row.episode_id), horizon)] = build_forward_outcome(
-                close, anchor=row._anchor, horizon_hours=horizon
+                close, anchor=row.anchor_timestamp, horizon_hours=horizon
             )
 
     family_outcomes: dict[tuple[str, int], Any] = {}
