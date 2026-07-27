@@ -544,7 +544,7 @@ def _build_results(root: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any
     membership = inputs["membership"].copy()
     membership["episode_id"] = pd.to_numeric(membership["episode_id"], errors="raise").astype("int64")
     episode_frame = classified.merge(
-        membership[["episode_id", "family_id", "window_start", "window_end"]],
+        membership[["episode_id", "family_id"]],
         on="episode_id", how="inner", validate="one_to_one",
     )
     if len(episode_frame) != 122:
