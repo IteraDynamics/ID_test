@@ -1,0 +1,30 @@
+{
+  "canonical_file_hashes": {
+    "btc_core_v1_alpha_candidates.csv": "9ee9503d6001c5eb5d16fc2e9ca9164d18f1ca2c3b367c12a9a3b7d89d12874b",
+    "btc_core_v1_alpha_candidates.json": "76d83e6cc9811b3465b6b5c1bdd8383d8d97036e728fdee01fcebe59c1832fd2",
+    "btc_core_v1_alpha_discovery_folds.csv": "fd6b383659b924e25de991eee38ee280abf40b9059c4074d752787be7ad16214",
+    "btc_core_v1_alpha_discovery_report.md": "a963c57dc260ae082ca445924bf3cfa75107b9b49ca861157a7c3eda48aea130"
+  },
+  "canonical_files": [
+    "btc_core_v1_alpha_candidates.json",
+    "btc_core_v1_alpha_candidates.csv",
+    "btc_core_v1_alpha_discovery_folds.csv",
+    "btc_core_v1_alpha_discovery_report.md",
+    "btc_core_v1_alpha_discovery_manifest.json"
+  ],
+  "experiment": "core_v1_historical_alpha_discovery_r1",
+  "generated_timestamp": null,
+  "observation_only": true,
+  "payload_digest_sha256": "babea2abadf6617b0fd94337c9be07cfb6d5cb3911fbcc2f6fa3c5bc690716ac",
+  "research_only": true,
+  "runtime_threshold_order_nav_exposure_changes": false,
+  "source_hashes": {
+    "btc_hourly": "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079",
+    "episode_signatures": "ccb0b748b82f7a6449b9caf945b904bfaa4871cdf2a35413c9157c41890e2327",
+    "event_families": "be4fc3e45f8728313a714cd5f4ea932e6822dcea138f145126f9b0392756e584",
+    "event_family_membership": "6bba0128dac682194da20126e1c36c81a38e809c8f8867e1a5946747e692f744",
+    "event_robustness": "578d8e7c0176489ff5b67761b48ece8bac3285ba06b70ae6ee5d8fe93abb0dc7",
+    "historical_configuration": "0c1ebc70007570cb7172f2a46283ab25128e1911ac34f447cc5f306c211d3a17",
+    "historical_episodes": "6eaadd0fd6d2231d517e5062f15bf5ea92f6bd40e3a1b1aded415e891596c143"
+  }
+}
