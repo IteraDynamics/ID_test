@@ -2,57 +2,70 @@
 
 ## Status
 
-Specification frozen for implementation review on `agent/campaign-46-full-regime-state-source`.
+Specification frozen for source-only implementation on `agent/campaign-46-full-regime-state-source`.
 
-Campaign #46 is source-foundation work only. It is deterministic, replay-safe, research-only, observation-only, anchor-local, and fail-closed. It does not authorize predictive-return generation, model training, threshold changes, signals, strategy changes, orders, execution, portfolio construction, NAV changes, exposure mutation, dashboard changes, or runtime integration.
+Campaign #46 is deterministic, replay-safe, research-only, observation-only, anchor-local, and fail-closed. It does not authorize predictive-return generation, model training, threshold changes, signals, strategy changes, orders, execution, portfolio construction, NAV changes, exposure mutation, dashboard changes, or runtime integration.
 
 ## Immediate objective
 
-Generate and govern a complete BTC hourly historical regime-state ledger and derived transition inventory from the already-governed BTC hourly OHLCV source using the existing immutable `BaselineRegimeEngine` classification logic.
+Generate and govern a complete BTC hourly historical regime-state ledger and transition inventory from the governed BTC hourly OHLCV source using the existing immutable `BaselineRegimeEngine`, then determine only whether the resulting source population can satisfy Campaign #45's frozen independent-support gates.
 
-The campaign exists solely to determine whether Campaign #45 can be supplied with a sufficiently supported, anchor-local population of historical regime states and transitions.
-
-## Exact research question
-
-Can Itera deterministically reconstruct a complete, leakage-safe BTC hourly regime-state sequence and transition inventory that contains enough chronologically independent observations to satisfy Campaign #45's frozen support gates, without inspecting forward returns or changing regime logic?
-
-## Strategic contribution
-
-Campaign #46 creates a reusable governed market-state ledger for future research. It replaces ad hoc reconstruction and sparse decision-cycle logs with a canonical, timestamped source artifact that can support transition, duration, spacing, persistence, and clustering studies.
-
-A successful Campaign #46 result establishes source feasibility only. It does not establish alpha or authorize Campaign #45 predictive testing by itself.
+A successful Campaign #46 result establishes source feasibility only. It does not establish alpha or authorize Campaign #45 predictive testing.
 
 ## Frozen source inputs
 
 ### Governed BTC hourly OHLCV source
 
-Repository-relative local path:
-
-`data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`
-
-Required immutable identity:
-
+- path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`
 - SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`
 - byte count: `4,792,028`
 - row count: `70,069`
-- exact ordered schema: `timestamp`, `open`, `high`, `low`, `close`, `volume`
+- ordered schema: `timestamp`, `open`, `high`, `low`, `close`, `volume`
 - first timestamp: `2018-01-01 00:00:00`
 - last timestamp: `2025-12-31 00:00:00`
 - timestamp convention: timezone-naive exact hourly labels
 
-No alternate price source, interpolation, filling, resampling, nearest-row matching, as-of matching, or field substitution is authorized.
+No alternate source, interpolation, filling, resampling, nearest-row matching, as-of matching, or field substitution is authorized.
 
-### Existing regime classifier
+### Corrected governed gap evidence
 
-- `research/regimes/baseline_engine.py`
+The governed source identity above was unchanged during preflight. A deterministic full-row diagnostic established:
+
+- discontinuities: `14`
+- missing hourly timestamps: `36`
+- largest elapsed interval: `16` hours
+- largest missing block: `15` timestamps
+
+The earlier specification value of `30` missing timestamps was incorrect and is superseded by this pre-result correction. The correction changes source metadata only. It does not change the source file, classifier, state construction, purge method, support gate, or predictive authorization.
+
+Exact discontinuity inventory:
+
+| Prior timestamp | Next timestamp | Elapsed hours | Missing timestamps |
+|---|---:|---:|---:|
+| `2018-02-01 04:00:00` | `2018-02-01 08:00:00` | 4 | 3 |
+| `2018-05-10 03:00:00` | `2018-05-10 05:00:00` | 2 | 1 |
+| `2018-05-30 02:00:00` | `2018-05-30 04:00:00` | 2 | 1 |
+| `2018-06-04 02:00:00` | `2018-06-04 04:00:00` | 2 | 1 |
+| `2018-08-10 00:00:00` | `2018-08-10 16:00:00` | 16 | 15 |
+| `2018-12-26 01:00:00` | `2018-12-26 03:00:00` | 2 | 1 |
+| `2019-04-11 12:00:00` | `2019-04-11 14:00:00` | 2 | 1 |
+| `2019-06-20 14:00:00` | `2019-06-20 16:00:00` | 2 | 1 |
+| `2019-10-31 19:00:00` | `2019-10-31 21:00:00` | 2 | 1 |
+| `2020-01-30 16:00:00` | `2020-01-30 18:00:00` | 2 | 1 |
+| `2020-09-04 22:00:00` | `2020-09-05 00:00:00` | 2 | 1 |
+| `2020-10-20 19:00:00` | `2020-10-20 21:00:00` | 2 | 1 |
+| `2023-03-04 17:00:00` | `2023-03-04 21:00:00` | 4 | 3 |
+| `2025-10-25 15:00:00` | `2025-10-25 21:00:00` | 6 | 5 |
+
+## Frozen classifier
+
+Campaign #46 must consume unchanged:
+
+- file: `research/regimes/baseline_engine.py`
 - class: `BaselineRegimeEngine`
 - historical API: `classify_dataframe()`
 
-Campaign #46 must call the existing classifier. It must not copy, fork, modify, reinterpret, or tune the classifier rules.
-
-## Frozen classifier configuration
-
-Campaign #46 must use the constructor defaults exactly:
+Instantiate exactly with `BaselineRegimeEngine()` and use constructor defaults:
 
 - `fast_ema = 21`
 - `slow_ema = 55`
@@ -68,7 +81,7 @@ Any source-code or default-value disagreement fails closed.
 
 ## Frozen state labels
 
-Only the existing `RegimeLabel` values emitted by `BaselineRegimeEngine` are eligible:
+Only existing `RegimeLabel` values are eligible:
 
 - `UNKNOWN`
 - `HIGH_VOL`
@@ -78,19 +91,15 @@ Only the existing `RegimeLabel` values emitted by `BaselineRegimeEngine` are eli
 - `VOL_COMPRESSION`
 - `RANGE`
 
-No new state, merged state, learned state, relabeling, hierarchy, or post-hoc category is authorized.
+No new, merged, learned, or relabeled state is authorized.
 
-## Anchor locality and timing
+## Anchor locality
 
-Each state row is anchored to the exact timestamp of the closed source bar classified by the engine.
+For source row `i`, all classification inputs must be bounded by rows `0..i`. Output timestamp and `bar_index` must reconcile exactly to the source row. `UNKNOWN` warmup rows remain visible and must not be reclassified.
 
-For row position `i`, all classification inputs must be bounded by source rows `0..i`. The implementation must verify that the output timestamp and `bar_index` reconcile exactly to the source row.
+## Frozen state sequence
 
-`UNKNOWN` warmup rows remain visible and must not be reclassified.
-
-## Frozen state-sequence schema
-
-Each state row must contain at least:
+Each state row must include:
 
 - `bar_index`
 - `timestamp`
@@ -104,80 +113,38 @@ Each state row must contain at least:
 - `is_warmup`
 - `source_row_digest`
 
-Rows must preserve exact ascending source order and reconcile one-to-one with every governed OHLCV row.
+Rows preserve exact ascending source order and reconcile one-to-one with all `70,069` source rows.
 
-## Frozen transition definition
+## Frozen state runs and transitions
 
-A transition occurs at state row `i` only when:
+A new state run begins at row zero or when the label changes from the immediately preceding observed row. Timestamp gaps do not independently start runs. `duration_bars` counts observed source rows.
 
-1. `i > 0`;
-2. current and prior labels are both non-null;
-3. `current_label != prior_label`.
+A transition occurs when adjacent observed rows have different labels. Its anchor is the current row timestamp. Complete transitions involving `UNKNOWN` remain visible but are excluded from Campaign #45 source-feasibility counts.
 
-Each transition anchor is the exact current-row timestamp.
-
-Transition rows must contain at least:
-
-- deterministic `transition_id`;
-- `transition_ordinal`;
-- `anchor_bar_index`;
-- `anchor_timestamp`;
-- `prior_regime_label`;
-- `current_regime_label`;
-- `ordered_transition` as `<prior> -> <current>`;
-- `prior_state_start_timestamp`;
-- `prior_state_duration_bars`;
-- `prior_transition_timestamp` or strict JSON `null`;
-- `spacing_since_prior_transition_bars` or strict JSON `null`;
-- `current_state_age_bars`, fixed as `1` at the transition anchor;
-- `anchor_source_row_digest`.
-
-`UNKNOWN` transitions must remain visible in the complete transition ledger but are ineligible for Campaign #45 support feasibility unless a later Campaign #45 transition explicitly authorizes them.
-
-## State runs
-
-The implementation must derive deterministic contiguous state runs. Each run must contain:
-
-- `state_run_id`;
-- `state_run_ordinal`;
-- `regime_label`;
-- `start_bar_index`;
-- `end_bar_index`;
-- `start_timestamp`;
-- `end_timestamp`;
-- `duration_bars`;
-- `entered_from_regime_label` or strict JSON `null`;
-- `exited_to_regime_label` or strict JSON `null`.
+Transition IDs, run IDs, ordinals, ordering, durations, and spacing are deterministic as frozen in the implementation handoff.
 
 ## Independent-support feasibility
 
-Campaign #46 must not construct forward returns.
+Campaign #46 must not construct forward returns. It reports only:
 
-It must report source-only feasibility counts for Campaign #45 under the already-frozen maximum-horizon purge of `168` hours:
+1. total transitions;
+2. eligible non-`UNKNOWN` transitions;
+3. duplicate-anchor validation;
+4. deterministic greedy transition set separated by at least `168` exact clock hours;
+5. eligible counts by ordered transition;
+6. three chronological folds with remainder allocated to earlier folds;
+7. whether at least `20` purged observations exist overall;
+8. whether each fold contains at least `5` observations.
 
-1. total non-`UNKNOWN` transitions;
-2. transitions after removing exact duplicate timestamps;
-3. maximum deterministic chronologically purged transition set using greedy ascending timestamp selection with minimum separation of `168` exact hours;
-4. eligible counts by ordered transition category;
-5. chronological thirds of the purged transition set, with deterministic remainder allocation to earlier folds;
-6. whether at least `20` purged observations exist overall;
-7. whether at least `5` purged observations exist in each of three chronological folds.
+No returns, coefficients, p-values, effect directions, rankings, or deployability claims are permitted.
 
-These are feasibility counts only. They must not include returns, outcome availability, coefficients, p-values, effect directions, or candidate ranking.
+## Deterministic purge
 
-## Deterministic purge algorithm
-
-Order eligible non-`UNKNOWN` transitions by:
-
-`(anchor_timestamp, anchor_bar_index, transition_id)` ascending.
-
-Select the first transition. Thereafter select a transition only when its anchor timestamp is at least `168` exact hours after the most recently selected anchor timestamp.
-
-No optimization for maximizing category support, balancing folds, or preserving specific transitions is permitted.
+Order eligible transitions by `(anchor_timestamp, anchor_bar_index, transition_id)` ascending. Select the first, then select a later transition only when it is at least `168` exact hours after the most recently selected transition. No category optimization or fold balancing is permitted.
 
 ## Canonical outputs
 
-Planned outputs under `artifacts/full_historical_regime_state_sequence/`:
+Under `artifacts/full_historical_regime_state_sequence/`:
 
 - `btc_hourly_regime_state_sequence.csv`
 - `btc_hourly_regime_state_sequence.json`
@@ -188,79 +155,52 @@ Planned outputs under `artifacts/full_historical_regime_state_sequence/`:
 - `btc_hourly_regime_state_report.md`
 - `btc_hourly_regime_state_manifest.json`
 
-All text outputs must be LF-only, deterministically ordered, strict JSON with sorted keys and `allow_nan=false`, finite numeric values only, and repo-relative source identifiers.
+All text outputs must be LF-only, deterministically ordered, strict JSON with sorted keys and `allow_nan=false`, finite numeric values only, and repository-relative source identifiers.
 
 ## Required preflight
 
-Before generation, implementation must verify:
+Before generation, verify:
 
-1. exact BTC source path and existence;
-2. SHA-256, byte count, row count, ordered schema, first timestamp, and last timestamp;
-3. timestamp parsing, strict ordering, uniqueness, and exact hour alignment;
-4. numeric finiteness, signs, and OHLC consistency;
-5. exactly `30` missing hourly timestamps across `14` discontinuities, with largest elapsed interval `16` hours and `15` missing timestamps;
-6. exact classifier file identity captured in the manifest;
-7. classifier default parameters equal the frozen configuration;
-8. state-label enum equals the frozen label set;
-9. output directory is newly created or explicitly empty;
-10. source identities remain unchanged before and after generation.
+1. exact source path and existence;
+2. SHA-256, bytes, rows, schema, first timestamp, and last timestamp;
+3. strict timestamp ordering, uniqueness, and exact-hour alignment;
+4. finite numeric values and OHLC consistency;
+5. exactly `36` missing hourly timestamps across `14` discontinuities, with largest elapsed interval `16` hours and largest missing block `15` timestamps;
+6. classifier file identity in the manifest;
+7. frozen classifier defaults;
+8. frozen label set;
+9. output directory absent or empty;
+10. source identity unchanged before and after generation.
 
-Any disagreement fails closed before canonical publication.
-
-## Required focused tests
-
-Focused tests must cover at least:
-
-- exact source identity and structural validation;
-- missing or changed source failure;
-- classifier-default mismatch failure;
-- one-to-one state-row reconciliation;
-- no-look-ahead classification behavior;
-- preservation of `UNKNOWN` warmup rows;
-- exact state-change detection;
-- state-run duration and boundary reconciliation;
-- duplicate-anchor rejection;
-- deterministic transition identifiers and ordering;
-- exact 168-hour greedy purge behavior;
-- chronological fold allocation;
-- support-feasibility pass and fail states;
-- strict finite serialization;
-- LF-only outputs;
-- two-run byte identity;
-- governed-source immutability;
-- output-directory fail-closed behavior.
+Any disagreement fails closed before publication.
 
 ## Acceptance gates
 
 Campaign #46 is complete only when:
 
-1. this specification predates implementation and result inspection;
+1. specification and handoff predate result inspection;
 2. focused tests pass;
-3. governed preflight passes;
-4. state rows reconcile one-to-one to all `70,069` source rows;
-5. transition and state-run counts reconcile exactly;
-6. all classifications are anchor-local;
-7. no classifier or threshold logic changes occur;
-8. two governed runs produce byte-identical canonical outputs;
-9. canonical text outputs are LF-only;
-10. the full repository suite passes with no new failures;
-11. scope review confirms no predictive outcomes, runtime, model-training, threshold, signal, strategy, intent, order, execution, portfolio, NAV, exposure, or dashboard changes;
-12. Campaign #45 support feasibility is reported without forward-return inspection.
+3. corrected governed preflight passes;
+4. all `70,069` source rows reconcile one-to-one;
+5. state-run and transition counts reconcile;
+6. classifications are anchor-local;
+7. classifier and thresholds remain unchanged;
+8. two governed runs produce byte-identical outputs;
+9. canonical text is LF-only and JSON is strict;
+10. full repository tests pass with no new failures;
+11. scope review confirms no predictive outcomes or production/runtime/model/threshold/signal/strategy/order/portfolio/NAV/exposure/dashboard changes;
+12. Campaign #45 source feasibility is reported without forward-return inspection.
 
-## Authorized implementation file surfaces
+## Authorized file surfaces
 
-After a separate implementation GO recorded on the campaign board, Campaign #46 may modify only:
+Campaign #46 may modify only:
 
-- `docs/ITERA_CAMPAIGN_BOARD.md`;
-- this specification;
-- one implementation handoff under `docs/research/`;
-- one new observation-only module under `research/ml/validation/`;
-- one new runner under `scripts/`;
-- focused Campaign #46 tests under `tests/`;
-- `artifacts/full_historical_regime_state_sequence/**`.
+- `docs/ITERA_CAMPAIGN_BOARD.md`
+- this specification
+- `docs/research/FULL_HISTORICAL_REGIME_STATE_SEQUENCE_IMPLEMENTATION_HANDOFF.md`
+- `research/ml/validation/full_historical_regime_state_sequence.py`
+- `scripts/run_full_historical_regime_state_sequence.py`
+- `tests/test_full_historical_regime_state_sequence.py`
+- `artifacts/full_historical_regime_state_sequence/**`
 
-No modification to `research/regimes/baseline_engine.py`, regime contracts, runtime code, strategies, thresholds, allocation, execution, portfolio, NAV, exposure, or dashboards is authorized.
-
-## Current authorization state
-
-Specification creation and board transition are authorized. Implementation, canonical generation, and artifact publication remain unauthorized until the implementation handoff freezes exact code interfaces, source hashes, output schemas, preflight behavior, and publication protocol and the board records a separate implementation GO.
+No modification to the regime engine, regime contracts, runtime, strategies, allocation, execution, portfolio, NAV, exposure, or dashboards is authorized.
