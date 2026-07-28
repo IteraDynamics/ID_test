@@ -12,56 +12,105 @@ Beginning with Campaign #44, every campaign proposal must state its immediate ob
 
 ## Active campaign
 
-**Campaign:** Campaign #44 — Alpha Surface Discovery and Research Prioritization
+**Campaign:** Campaign #45 — Historical Regime State and Transition Discovery
 
-**Classification:** Research primary; deterministic alpha-surface inventory and research-capital allocation
+**Classification:** Research primary; deterministic historical alpha discovery and falsification
 
-**Status:** PREFLIGHT ACCEPTED — focused tests and governed source validation passed; deterministic canonical generation and two-run replay verification are authorized; new predictive-return discovery remains unauthorized
+**Status:** SPECIFICATION FROZEN — specification-only transition complete; implementation, predictive-result generation, and artifact publication remain unauthorized pending estimator and preflight handoff review
 
-**Working branch:** `agent/campaign-44-alpha-surface-discovery`
+**Working branch:** `agent/campaign-45-historical-regime-transitions`
 
 **Repository:** `IteraDynamics/ID_test`
 
-**Governing specification:** `docs/research/ALPHA_SURFACE_DISCOVERY_AND_PRIORITIZATION.md`
+**Governing specification:** `docs/research/HISTORICAL_REGIME_STATE_AND_TRANSITION_DISCOVERY.md`
 
-**Specification freeze commit:** `7ebf68f81c731a9486e161ecb99571cb17027ee9`
+**Specification freeze commit:** `7d9cf4bb1abb556e99ffce21127cf98379dc968e`
 
 ## Immediate objective
 
-Construct Itera Dynamics' first governed Alpha Surface Map: a deterministic inventory and prioritization of existing research surfaces that identifies where the firm should allocate its next finite research campaigns to maximize the probability of discovering economically meaningful, independently testable alpha.
+Freeze and test a finite inventory of anchor-local historical regime states and transitions for incremental association with forward BTC outcomes, using deterministic event-family or chronologically separated independence controls and simple BTC price-state baselines.
 
-Campaign #44 ranks research opportunities, not trading signals. It must not generate or inspect new predictive returns.
+Campaign #45 tests historical information contained in regime states and transitions. It does not redesign, replace, or alter the existing regime detector.
 
 ## Exact research question
 
-Across Itera's currently governed, anchor-available, leakage-safe data and research artifacts, which alpha surfaces offer the highest expected value for the next finite research campaign when judged by independent support, economic plausibility, uniqueness, falsifiability, data readiness, implementation cost, and potential portfolio usefulness?
+Across the governed historical BTC regime artifacts, do pre-registered anchor-local regime states or transitions show directionally stable, independently supported, out-of-sample association with forward BTC outcomes after comparison with simple BTC price-state baselines?
 
 ## Strategic contribution
 
-Campaign #44 creates a repeatable process for allocating research effort across the firm's available alpha surfaces instead of allowing the most recent result to monopolize subsequent campaigns.
+Campaign #45 investigates the highest-priority research surface selected by Campaign #44. It tests whether the evolution of governed market-state labels contains incremental information beyond simple price state, while preserving a finite falsification path and strict independence controls.
 
-The required strategic outputs are:
-
-1. an explicit alpha-surface inventory;
-2. a deterministic Research Expected Value framework;
-3. a ranked research roadmap;
-4. finite candidate briefs suitable for later discovery or falsification campaigns.
+A successful research result would remain a preliminary historical association. It would not authorize deployment, runtime integration, portfolio construction, or strategy changes.
 
 ## Authorization
 
-**Decision:** GO for deterministic implementation of the frozen Campaign #44 inventory and Research Expected Value scoring framework, canonical serialization, focused tests, governed preflight, and two-run replay validation.
+**Decision:** GO for the specification-only Campaign #45 transition.
 
-The user explicitly authorized Campaign #44 on July 28, 2026 after directing that Itera move fund-directionally toward broad alpha discovery and research prioritization rather than automatically extending the narrow Campaign #43 subset.
+The user explicitly authorized proceeding on July 28, 2026 after reviewing the distinction between existing regime detection and historical state-transition research.
 
-The campaign may inspect repository-tracked documentation, schemas, research code, tests, manifests, and canonical artifacts to identify existing research surfaces and their pre-existing metadata.
+Authorized now:
 
-It may not inspect or generate new predictive-return results, tune scores after ranking inspection, train or replace a model, or alter production behavior.
+- create and freeze the Campaign #45 governing specification;
+- update this campaign board;
+- inspect existing governed documentation, schemas, code, manifests, and canonical artifacts to prepare an exact implementation handoff;
+- resolve source identity, field timing, estimator, multiplicity control, representative-anchor rule, and preflight requirements without inspecting new predictive results.
+
+Not yet authorized:
+
+- implementation code;
+- predictive-return generation or inspection;
+- canonical result generation;
+- artifact publication;
+- tuning after result inspection;
+- model training or replacement;
+- any production or runtime behavior change.
+
+## Relationship to existing regime detection
+
+The existing regime workflow identifies and labels governed historical market conditions and episodes.
+
+Campaign #45 treats eligible anchor-local labels as immutable research inputs and asks whether the current state, prior state, ordered transition, state age, or transition spacing contains stable historical association with later BTC outcomes.
+
+Campaign #45 must not:
+
+- alter regime classification logic;
+- create a new live regime;
+- alter any threshold;
+- change strategy selection;
+- use recovery outcome or other post-anchor information as a predictor;
+- represent a historical association as a trading signal.
+
+## Frozen Campaign #45 framework
+
+The governing specification freezes:
+
+- predictor classes P-001 through P-005;
+- prohibited leakage-prone predictors;
+- simple BTC price-state controls;
+- primary 24-hour, 72-hour, and 168-hour horizons;
+- event-family or chronologically purged independence controls;
+- expanding chronological evaluation;
+- minimum independent-support gates;
+- null and insufficient-support visibility;
+- finite falsification rules;
+- deterministic canonical outputs;
+- replay and LF-only requirements.
+
+The exact statistical estimator, multiplicity-control method, categorical control representation, representative-family anchor rule, source manifest, and preflight contract must be frozen in a separate implementation handoff before predictive-result generation can be authorized.
 
 ## Governing constraints
 
-All work must remain deterministic, replay-safe, research-only, observation-only, and fail-closed.
+All work must remain:
 
-Campaign #44 does not authorize:
+- deterministic;
+- replay-safe;
+- research-only;
+- observation-only;
+- fail-closed;
+- leakage-safe;
+- independent of production runtime state mutation.
+
+Campaign #45 does not authorize:
 
 - production runtime integration;
 - model training, replacement, or recalibration;
@@ -72,167 +121,96 @@ Campaign #44 does not authorize:
 - dashboard changes;
 - transaction-cost, capacity, or deployable-alpha claims;
 - arbitrary feature combinations or post-result transformations;
-- new predictive-outcome discovery during inventory construction.
+- learned transition classes or clustering;
+- promotion of any historical association into a live rule.
 
-## Campaign #43-R1 closure and registration
+## Authorized file surfaces
 
-Campaign #43-R1 — Core v1 Historical Alpha Discovery is complete on branch `agent/campaign-43-historical-alpha-discovery-r1`.
+During the current specification and handoff phase, Campaign #45 may modify only:
+
+- `docs/ITERA_CAMPAIGN_BOARD.md`;
+- `docs/research/HISTORICAL_REGIME_STATE_AND_TRANSITION_DISCOVERY.md`;
+- one new implementation handoff under `docs/research/`.
+
+After a separate implementation GO, the board may authorize:
+
+- a new observation-only implementation module under `research/ml/validation/`;
+- a new Campaign #45 runner under `scripts/`;
+- focused Campaign #45 tests under `tests/`;
+- `artifacts/historical_regime_transitions/**`.
+
+Any additional file surface requires an explicit board transition.
+
+## Acceptance gates
+
+1. The governing specification predates predictive-result inspection. **Passed: frozen in commit `7d9cf4bb1abb556e99ffce21127cf98379dc968e`.**
+2. Existing regime detection remains unchanged. **Passed for the specification transition; no runtime or classifier files changed.**
+3. Exact source identities, hashes, schemas, and timestamp semantics are frozen before implementation. **Pending implementation handoff.**
+4. Predictor fields are proven anchor-local or excluded. **Pending preflight contract and implementation.**
+5. Recovery-dependent and post-anchor fields are prohibited as predictors. **Passed in specification.**
+6. Exact estimator, multiplicity control, representative-anchor rule, and categorical control representation predate result inspection. **Pending implementation handoff.**
+7. Candidate inventory, chronological folds, and purge rules are deterministic. **Specified; pending implementation.**
+8. Overlapping episodes cannot inflate independent support. **Specified; pending focused tests.**
+9. Simple BTC price-state controls are implemented exactly as frozen. **Pending implementation.**
+10. Focused tests cover leakage, duplicate anchors, support gates, fold purging, null visibility, deterministic ordering, and replay. **Pending.**
+11. Governed preflight passes before predictive generation. **Pending.**
+12. Two governed runs produce byte-identical canonical outputs. **Pending.**
+13. Canonical text outputs are LF-only. **Pending.**
+14. Full repository suite passes with no new failures. **Pending.**
+15. Scope review finds no production, runtime, model-training, threshold, signal, strategy, intent, order, execution, portfolio, NAV, exposure, or dashboard changes. **Passed for specification transition; must remain true.**
+
+## Immediate sequence
+
+1. Freeze the Campaign #45 governing specification. **Completed.**
+2. Record the specification-only transition on the authoritative board. **Completed.**
+3. Prepare an exact implementation handoff covering source hashes and schemas, timestamp semantics, estimator, multiplicity control, categorical controls, representative anchors, canonical schemas, and preflight behavior. **Authorized next.**
+4. Review the handoff and record a separate implementation GO. **Pending.**
+5. Implement observation-only research code and focused tests. **Unauthorized until step 4.**
+6. Run governed preflight. **Unauthorized until step 4.**
+7. Generate and inspect predictive results only after all frozen pre-result gates pass. **Unauthorized until step 4.**
+
+## Campaign #44 closure
+
+Campaign #44 — Alpha Surface Discovery and Research Prioritization is complete on branch `agent/campaign-44-alpha-surface-discovery`.
 
 Completion evidence:
 
-- focused Campaign #43 tests passed;
-- full repository suite passed with `439 passed`, `0 failed`;
+- specification frozen before ranking inspection: `7ebf68f81c731a9486e161ecb99571cb17027ee9`;
+- focused suite: `10 passed`, `0 failed`;
 - governed preflight passed;
-- canonical outputs generated;
-- two governed runs produced byte-identical artifacts;
-- replay digest: `babea2abadf6617b0fd94337c9be07cf...`;
-- canonical text outputs verified LF-only;
-- publication commit: `8bc238b`;
-- branch pushed to origin on July 28, 2026.
+- 24 cited repository sources validated;
+- 8 inventory surfaces validated;
+- canonical generation passed;
+- replay verification passed with digest `612a340340d60223579306d7a87fc8715c03f46c1ffa36219e882fa21cbbd011`;
+- canonical staged repository blobs verified LF-only;
+- full repository suite: `449 passed`, `0 failed`;
+- canonical artifact publication commit: `a9bf487`;
+- branch pushed to origin on July 28, 2026;
+- no new predictive returns were generated or inspected;
+- no production, runtime, model-training, threshold, signal, strategy, order, portfolio, NAV, exposure, execution, or dashboard changes were made.
 
-Campaign #43's result is registered as a preliminary candidate, not promoted to production and not automatically selected as the next dedicated campaign.
+Campaign #44 ranked four research surfaces:
 
-### Registered Candidate A-001
+1. S-002 — Historical regime state and transition structure: 29;
+2. S-003 — Historical event persistence, clustering, duration, and spacing: 27;
+3. S-008 — Simple BTC price-state baselines: 26;
+4. S-001 — Registered Core v1 collapse structure candidate A-001: 26.
+
+The canonical roadmap selected S-002 as the finite next campaign.
+
+## Registered Candidate A-001
+
+Campaign #43 Candidate A-001 remains a preliminary collapse-structure association requiring independent falsification.
 
 - Surface: Core v1 collapse structure.
 - Primary descriptor pattern: `VOLATILITY_NEUTRAL` and `LOW_DISPLACEMENT_COLLAPSE`.
 - Primary horizon: 24 hours.
 - Secondary nested pattern: `SEVERE_COLLAPSE` and `SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL`.
 - Secondary horizon: 72 hours.
-- Status: preliminary supported association requiring independent falsification.
 - Constraint: the severe subset contains only five independent event families and must not be represented as an independent deployable signal.
 
-Campaign #43-R1 remains governed exactly by:
-
-- `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY.md`;
-- `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY_R1.md`;
-- its frozen sources, candidates, anchors, outcomes, horizons, folds, support rules, ranking, outputs, and authorization boundary.
-
-No Campaign #43 result may be revised in place after inspection.
-
-## Frozen Campaign #44 framework
-
-### Eligible surface classes
-
-When concrete repository evidence exists and predictor information is anchor-available, the inventory may include:
-
-- market and price-derived features;
-- regime classifications and transitions;
-- jump-risk and collapse descriptors;
-- model confidence, calibration, disagreement, and consensus outputs;
-- cross-origin signal agreement and divergence;
-- event structure, persistence, clustering, duration, and spacing;
-- historical robustness and stability evidence;
-- candidate findings already registered by completed campaigns.
-
-### Research Expected Value dimensions
-
-Each rankable surface receives a frozen integer score from `0` through `4` for:
-
-1. independent support potential;
-2. data readiness;
-3. economic plausibility;
-4. uniqueness;
-5. falsifiability;
-6. portfolio relevance;
-7. implementation efficiency;
-8. governance readiness.
-
-The exact scoring rules and deterministic ranking tuple are governed by `docs/research/ALPHA_SURFACE_DISCOVERY_AND_PRIORITIZATION.md`.
-
-Scores rank research programs only. They are not probabilities of alpha, expected returns, or deployment recommendations.
-
-### Fail-closed non-rankable states
-
-A surface remains visible but non-rankable when:
-
-- anchor availability cannot be established;
-- predictor leakage is known or unresolved;
-- source identity or schema cannot be governed;
-- no finite falsification test can be stated;
-- research would require unauthorized production behavior changes;
-- repository evidence is insufficient without speculation.
-
-Unknown values must remain explicitly unknown. Counts, dates, governance status, or schema must not be inferred from filenames alone.
-
-## Authorized file surfaces
-
-The initial Campaign #44 implementation may modify only:
-
-- `docs/ITERA_CAMPAIGN_BOARD.md`;
-- `docs/research/ALPHA_SURFACE_DISCOVERY_AND_PRIORITIZATION.md`;
-- a new observation-only inventory module under `research/ml/validation/`;
-- a new Campaign #44 runner under `scripts/`;
-- focused Campaign #44 tests under `tests/`;
-- `artifacts/alpha_surface_discovery/**`.
-
-Any additional file surface requires an explicit board transition.
-
-## Planned canonical outputs
-
-Under `artifacts/alpha_surface_discovery/`:
-
-- `alpha_surface_inventory.json`;
-- `alpha_surface_inventory.csv`;
-- `alpha_research_priorities.json`;
-- `alpha_research_priorities.csv`;
-- `alpha_research_roadmap.md`;
-- `alpha_surface_discovery_manifest.json`.
-
-## Accepted implementation and preflight evidence
-
-Environment:
-
-- Windows;
-- Python `3.14.6`;
-- pytest `9.1.1`.
-
-Focused suite:
-
-- command: `python -m pytest -q tests/test_alpha_surface_discovery.py`;
-- result: `10 passed in 6.11s`;
-- failures: `0`.
-
-Governed preflight:
-
-- command: `python scripts/run_alpha_surface_discovery.py --preflight-only`;
-- result: passed;
-- cited repository sources validated: `24`;
-- inventory surfaces validated: `8`;
-- new predictive returns generated: `false`.
-
-Implementation commits:
-
-- inventory and frozen scoring: `c39a4e281c9736af0b85f168c5231f6f2efdc0af`;
-- governed runner and canonical serialization: `a2cf6ed32e251b55d4fb391f7ec59cc1f3f4686a`;
-- focused deterministic tests: `8a5719e1ff69683899b32ccf050c577e1dcd1025`.
-
-## Acceptance gates
-
-1. Campaign #44 specification and scoring rules predate final ranking inspection. **Passed: specification frozen in commit `7ebf68f81c731a9486e161ecb99571cb17027ee9`.**
-2. Every inventory row cites concrete repository evidence. **Passed through governed preflight: 24 cited sources validated across 8 surfaces.**
-3. Anchor availability, leakage state, governance state, and missing evidence remain explicit. **Passed in focused tests and preflight.**
-4. Non-rankable surfaces remain visible with fail-closed reasons. **Passed in focused tests.**
-5. Campaign #43 A-001 is registered without promotion or score inflation from duplicated descriptor rows. **Passed in board, specification, and focused tests.**
-6. Scoring and ranking are deterministic and covered by focused tests. **Passed: 10 focused tests.**
-7. Governed preflight validates all cited repository inputs before canonical generation. **Passed: 24 cited sources.**
-8. Two governed runs produce byte-identical canonical outputs. **Pending.**
-9. Canonical text outputs are LF-only. **Pending.**
-10. Full repository suite passes with no new failures. **Pending.**
-11. The roadmap recommends a finite next campaign with an exact objective, falsification path, data requirements, and authorization boundary. **Pending canonical generation and inspection.**
-12. Scope review finds no production, runtime, threshold, signal, strategy, order, execution, portfolio, NAV, exposure, model-training, or dashboard changes. **Passed through preflight; must remain true.**
-13. No new predictive returns are generated or inspected during Campaign #44. **Passed through preflight; must remain true.**
-
-## Immediate implementation sequence
-
-1. inventory concrete governed research surfaces from repository evidence. **Completed.**
-2. encode frozen schemas and fail-closed validation. **Completed.**
-3. implement deterministic Research Expected Value scoring and ranking. **Completed.**
-4. add focused tests, including duplicated-evidence and non-rankable cases. **Completed: 10 passed.**
-5. run governed preflight. **Completed: passed.**
-6. generate canonical outputs twice and verify replay identity. **Authorized next.**
-7. inspect the resulting roadmap only after deterministic generation is complete. **Pending.**
+Campaign #45 does not revise, promote, or retest Candidate A-001 unless an explicitly frozen candidate in the Campaign #45 inventory independently includes the same anchor-local information under the new specification.
 
 ## Historical carryover
 
-Campaign #42 validation was previously completed on branch `agent/campaign-42-event-robustness`, PR #42. Its merge state does not expand Campaign #44 authorization.
+Campaign #42 validation was previously completed on branch `agent/campaign-42-event-robustness`, PR #42. Its merge state does not expand Campaign #45 authorization.
