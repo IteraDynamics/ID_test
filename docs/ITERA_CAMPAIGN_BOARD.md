@@ -10,257 +10,201 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`:
 
 Beginning with Campaign #44, every campaign proposal must state its immediate objective, acceptance evidence, strategic contribution to the quantitative investment firm, and the production/runtime/threshold/signal/order/portfolio/NAV/exposure changes that remain unauthorized.
 
-Campaign #43-R1 remains governed exactly by its frozen specification, R1 amendment, and acceptance gates. The firm-thesis clarification does not change its candidates, sources, anchors, outcomes, horizons, folds, support rules, ranking, outputs, or authorization boundary.
-
 ## Active campaign
 
-**Campaign:** Campaign #43-R1 — Core v1 Historical Alpha Discovery
+**Campaign:** Campaign #44 — Alpha Surface Discovery and Research Prioritization
 
-**Classification:** Research primary; deterministic historical predictive-signal discovery
+**Classification:** Research primary; deterministic alpha-surface inventory and research-capital allocation
 
-**Status:** PREFLIGHT ACCEPTED — governed source validation and repository tests passed; deterministic result-generation implementation is authorized; canonical results have not been generated or inspected
+**Status:** SPECIFICATION FROZEN — observation-only inventory, scoring implementation, tests, governed preflight, canonical serialization, and two-run replay validation authorized; new predictive-return discovery is not authorized
 
-**Working branch:** `agent/campaign-43-historical-alpha-discovery-r1`
+**Working branch:** `agent/campaign-44-alpha-surface-discovery`
 
 **Repository:** `IteraDynamics/ID_test`
 
+**Governing specification:** `docs/research/ALPHA_SURFACE_DISCOVERY_AND_PRIORITIZATION.md`
+
+**Specification freeze commit:** `7ebf68f81c731a9486e161ecb99571cb17027ee9`
+
+## Immediate objective
+
+Construct Itera Dynamics' first governed Alpha Surface Map: a deterministic inventory and prioritization of existing research surfaces that identifies where the firm should allocate its next finite research campaigns to maximize the probability of discovering economically meaningful, independently testable alpha.
+
+Campaign #44 ranks research opportunities, not trading signals. It must not generate or inspect new predictive returns.
+
 ## Exact research question
 
-Which governed, anchor-available Core v1 historical descriptors exhibit repeatable out-of-sample association with deterministic forward BTC outcomes after correcting overlapping-window duplication through deterministic event families?
+Across Itera's currently governed, anchor-available, leakage-safe data and research artifacts, which alpha surfaces offer the highest expected value for the next finite research campaign when judged by independent support, economic plausibility, uniqueness, falsifiability, data readiness, implementation cost, and potential portfolio usefulness?
+
+## Strategic contribution
+
+Campaign #44 creates a repeatable process for allocating research effort across the firm's available alpha surfaces instead of allowing the most recent result to monopolize subsequent campaigns.
+
+The required strategic outputs are:
+
+1. an explicit alpha-surface inventory;
+2. a deterministic Research Expected Value framework;
+3. a ranked research roadmap;
+4. finite candidate briefs suitable for later discovery or falsification campaigns.
 
 ## Authorization
 
-**Decision:** GO for implementation of the frozen Campaign #43-R1 calculations, deterministic canonical serialization, focused tests, and two-run replay validation.
+**Decision:** GO for deterministic implementation of the frozen Campaign #44 inventory and Research Expected Value scoring framework, canonical serialization, focused tests, governed preflight, and two-run replay validation.
 
-The user explicitly authorized Campaign #43 on July 24, 2026 and explicitly authorized the R1 source-governance transition after the original source failed closed. Updated focused tests, governed preflight, and the full repository suite now pass. Predictive result generation may proceed only according to the original frozen specification and R1 source amendment.
+The user explicitly authorized Campaign #44 on July 28, 2026 after directing that Itera move fund-directionally toward broad alpha discovery and research prioritization rather than automatically extending the narrow Campaign #43 subset.
 
-The campaign may evaluate and rank historical predictive relationships for later falsification. It may not alter production behavior, train or replace a model, or claim deployable alpha.
+The campaign may inspect repository-tracked documentation, schemas, research code, tests, manifests, and canonical artifacts to identify existing research surfaces and their pre-existing metadata.
+
+It may not inspect or generate new predictive-return results, tune scores after ranking inspection, train or replace a model, or alter production behavior.
 
 ## Governing constraints
 
 All work must remain deterministic, replay-safe, research-only, observation-only, and fail-closed.
 
-Campaign #43-R1 does not authorize production runtime integration, model training or replacement, threshold/signal/intent changes, orders or execution, portfolio construction, NAV or exposure changes, dashboards, cross-asset work, transaction-cost claims, deployable-alpha claims, or strategy recommendations.
+Campaign #44 does not authorize:
 
-## Frozen specification and R1 amendment
+- production runtime integration;
+- model training, replacement, or recalibration;
+- threshold, signal, intent, or strategy changes;
+- orders or execution;
+- portfolio construction;
+- NAV or exposure changes;
+- dashboard changes;
+- transaction-cost, capacity, or deployable-alpha claims;
+- arbitrary feature combinations or post-result transformations;
+- new predictive-outcome discovery during inventory construction.
 
-- Original governing document: `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY.md`
-- Original specification freeze commit: `57472a2fc4594e9d4e9ea1681cecef8d0c15dc25`
-- R1 source-governance amendment: `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY_R1.md`
-- R1 amendment commit: `28a820eb167dde58615dc79bbf2f80c1ba792414`
+## Campaign #43-R1 closure and registration
 
-The original specification froze, before predictive result inspection:
+Campaign #43-R1 — Core v1 Historical Alpha Discovery is complete on branch `agent/campaign-43-historical-alpha-discovery-r1`.
 
-- governed source paths, hashes, counts, and timestamp evidence;
-- candidate inventory and leakage exclusions;
-- episode and event-family anchors;
-- homogeneous-only family aggregation;
-- exact forward outcomes and exact `close` requirement;
-- horizons `2`, `6`, `24`, `72`, and `168` hours;
-- three deterministic expanding chronological folds;
-- support gates, evidence states, ranking tuple, canonical outputs, and replay rules.
+Completion evidence:
 
-The R1 amendment changes only the governed BTC hourly price source. All candidate, anchor, outcome, horizon, fold, support, evidence-state, ranking, output, and replay decisions remain unchanged.
+- focused Campaign #43 tests passed;
+- full repository suite passed with `439 passed`, `0 failed`;
+- governed preflight passed;
+- canonical outputs generated;
+- two governed runs produced byte-identical artifacts;
+- replay digest: `babea2abadf6617b0fd94337c9be07cf...`;
+- canonical text outputs verified LF-only;
+- publication commit: `8bc238b`;
+- branch pushed to origin on July 28, 2026.
 
-No frozen research decision may change after result inspection without another explicit board transition and separately designated rerun.
+Campaign #43's result is registered as a preliminary candidate, not promoted to production and not automatically selected as the next dedicated campaign.
 
-## Leakage controls
+### Registered Candidate A-001
 
-Rankable descriptors are limited to:
+- Surface: Core v1 collapse structure.
+- Primary descriptor pattern: `VOLATILITY_NEUTRAL` and `LOW_DISPLACEMENT_COLLAPSE`.
+- Primary horizon: 24 hours.
+- Secondary nested pattern: `SEVERE_COLLAPSE` and `SEVERE_COLLAPSE__LOW_DISPLACEMENT_COLLAPSE__VOLATILITY_NEUTRAL`.
+- Secondary horizon: 72 hours.
+- Status: preliminary supported association requiring independent falsification.
+- Constraint: the severe subset contains only five independent event families and must not be represented as an independent deployable signal.
 
-1. `collapse_severity`;
-2. `feature_displacement`;
-3. `volatility_state`;
-4. `intrinsic_subtype`.
+Campaign #43-R1 remains governed exactly by:
 
-Excluded as predictors:
+- `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY.md`;
+- `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY_R1.md`;
+- its frozen sources, candidates, anchors, outcomes, horizons, folds, support rules, ranking, outputs, and authorization boundary.
 
-- `recovery_outcome`, `recovered_without_retraining`, and `recovery_rows`, because they use information observed after the episode anchor;
-- `feature_cosine_similarity_to_latest` and `similarity_band`, because the reference is not anchor-local;
-- IDs, ordinals, timestamps, source positions, arbitrary interactions, and post-result transformations.
+No Campaign #43 result may be revised in place after inspection.
 
-## Frozen governed inputs
+## Frozen Campaign #44 framework
 
-Unchanged governed repository artifacts:
+### Eligible surface classes
 
-- `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_regimes.json`
-  - SHA-256 `0c1ebc70007570cb7172f2a46283ab25128e1911ac34f447cc5f306c211d3a17`
-- `artifacts/core_v1_jump_risk_historical_regimes/btc_extended_up_historical_episodes.csv`
-  - SHA-256 `6eaadd0fd6d2231d517e5062f15bf5ea92f6bd40e3a1b1aded415e891596c143`; `122` rows
-- `artifacts/core_v1_jump_risk_recovery_subtypes/btc_extended_up_episode_signatures.csv`
-  - SHA-256 `ccb0b748b82f7a6449b9caf945b904bfaa4871cdf2a35413c9157c41890e2327`; `122` rows
-- `artifacts/core_v1_historical_event_families/btc_extended_up_event_families.json`
-  - SHA-256 `be4fc3e45f8728313a714cd5f4ea932e6822dcea138f145126f9b0392756e584`; `14` families
-- `artifacts/core_v1_historical_event_families/btc_extended_up_event_family_membership.csv`
-  - SHA-256 `6bba0128dac682194da20126e1c36c81a38e809c8f8867e1a5946747e692f744`; `122` memberships
-- `artifacts/core_v1_event_robustness/btc_extended_up_event_robustness.json`
-  - SHA-256 `578d8e7c0176489ff5b67761b48ece8bac3285ba06b70ae6ee5d8fe93abb0dc7`
+When concrete repository evidence exists and predictor information is anchor-available, the inventory may include:
 
-### Superseded BTC source selection
+- market and price-derived features;
+- regime classifications and transitions;
+- jump-risk and collapse descriptors;
+- model confidence, calibration, disagreement, and consensus outputs;
+- cross-origin signal agreement and divergence;
+- event structure, persistence, clustering, duration, and spacing;
+- historical robustness and stability evidence;
+- candidate findings already registered by completed campaigns.
 
-The original source selection remains in the audit record:
+### Research Expected Value dimensions
 
-- `artifacts/jump_risk_portfolio_v0/20260716T125121Z_jump-risk-portfolio-integration-v0/predictions/btc_extended_up.csv`
-  - SHA-256 `36b6ffcc9e993f4869dd8f75cde13e7058e101949a577bd24c84e79e58f1dca7`; `52,453` rows; `2020-01-01 01:00:00` through `2025-12-26 00:00:00`
+Each rankable surface receives a frozen integer score from `0` through `4` for:
 
-Observation-only inspection established that this is a prediction artifact and has no exact `close` column. It is not a valid Campaign #43-R1 price source. The original preflight failed closed before predictive outputs were generated or inspected.
+1. independent support potential;
+2. data readiness;
+3. economic plausibility;
+4. uniqueness;
+5. falsifiability;
+6. portfolio relevance;
+7. implementation efficiency;
+8. governance readiness.
 
-### Governed local BTC hourly source
+The exact scoring rules and deterministic ranking tuple are governed by `docs/research/ALPHA_SURFACE_DISCOVERY_AND_PRIORITIZATION.md`.
 
-- repository-relative local path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`
-- provisioning class: externally provisioned local research input; bytes intentionally excluded from Git
-- SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`
-- bytes: `4,792,028`
-- rows: `70,069`
-- exact ordered schema: `timestamp`, `open`, `high`, `low`, `close`, `volume`
-- first timestamp: `2018-01-01 00:00:00`
-- last timestamp: `2025-12-31 00:00:00`
-- timestamp convention: timezone-naive exact hourly labels
-- required price field: exact finite, strictly positive `close`
+Scores rank research programs only. They are not probabilities of alpha, expected returns, or deployment recommendations.
 
-The local file is governed by exact path and exact identity even though it is not Git-tracked. The implementation must not search for alternates, infer a fallback, substitute another field, interpolate, fill, resample, use nearest-row or as-of matching, or infer cadence.
+### Fail-closed non-rankable states
 
-## Accepted Campaign #43-R1 preflight evidence
+A surface remains visible but non-rankable when:
 
-Environment:
+- anchor availability cannot be established;
+- predictor leakage is known or unresolved;
+- source identity or schema cannot be governed;
+- no finite falsification test can be stated;
+- research would require unauthorized production behavior changes;
+- repository evidence is insufficient without speculation.
 
-- Windows;
-- Python `3.14.6`;
-- pytest `9.1.1`.
-
-Focused suite:
-
-- command: `python -m pytest -q tests/test_historical_alpha_discovery.py`;
-- result: `11 passed in 1.58s`;
-- failures: `0`.
-
-Governed preflight:
-
-- command: `python scripts/run_core_v1_historical_alpha_discovery.py --preflight-only`;
-- result: passed;
-- governed sources validated: `7`;
-- episode observations covered: `122`;
-- family observations covered: `14`;
-- predictive results generated: `false`;
-- runtime, threshold, order, NAV, and exposure changes: none.
-
-Full repository suite:
-
-- command: `python -m pytest -q`;
-- result: `431 passed, 75 warnings in 221.45s`;
-- failures: `0`;
-- warnings were deprecation warnings outside Campaign #43-R1 and were not new test failures.
-
-Working-tree checks before the reconciliation commit:
-
-- `git diff --cached --check`: clean;
-- unrelated local runtime and data files remained untracked and unstaged;
-- no local governed market-data file was staged or modified.
-
-## Exact coverage and integrity evidence
-
-Observation-only validation established:
-
-- exact schema and row evidence passed;
-- timestamp parsing failures: `0`;
-- duplicate timestamps: `0`;
-- non-hour-aligned timestamps: `0`;
-- nonfinite numeric values: `0`;
-- nonpositive OHLC values: `0`;
-- negative volume values: `0`;
-- OHLC consistency checks passed;
-- `14` timestamp discontinuities containing `30` missing hourly timestamps;
-- largest discontinuity: `16` elapsed hours containing `15` missing timestamps.
-
-Exact governed-window reconciliation established:
-
-- episode rows: `122`;
-- membership rows: `122`;
-- unique episode IDs: `122`;
-- unique family IDs: `14`;
-- episode windows not in membership: `0`;
-- membership windows not in episodes: `0`;
-- missing episode anchors: `0`;
-- missing family anchors: `0`;
-- unavailable episode observations at `2`, `6`, `24`, `72`, and `168` hours: `0`;
-- unavailable family observations at `2`, `6`, `24`, `72`, and `168` hours: `0`.
-
-The unrelated source gaps do not affect any currently governed observation. Exact timestamp matching remains mandatory, and any future affected observation must remain unavailable rather than repaired.
-
-## Current implementation and validation state
-
-Completed:
-
-- Campaign #43 authorization boundary;
-- original frozen governing specification;
-- leakage-prone candidates excluded;
-- pure validation/calculation primitives;
-- focused unit tests;
-- governed source preflight runner;
-- source mutation detection;
-- explicit preflight-only safety flag;
-- fail-closed discovery that the original prediction artifact is not a governed close-price source;
-- observation-only integrity validation of the local OHLCV source;
-- episode and event-family exact-coverage reconciliation;
-- Campaign #43-R1 source-governance amendment;
-- exact ordered OHLCV preflight implementation;
-- timestamp-serialization reconciliation fix and regression test;
-- updated focused suite, governed preflight, and full repository suite acceptance.
-
-Key commits:
-
-- specification freeze: `57472a2fc4594e9d4e9ea1681cecef8d0c15dc25`;
-- pure primitives: `e462c91628136d7429c58e4706da7a3a7d484b30`;
-- focused tests: `e41320c192f6223f5e707aed82ed80a1b59647ac`;
-- original source preflight runner: `9810a88360dbda6bb3901f0052e3caa2f3e0a41e`;
-- R1 source-governance amendment: `28a820eb167dde58615dc79bbf2f80c1ba792414`;
-- R1 preflight implementation: `d4a296ab9ee501d681c87e1399244820f597c17e`;
-- R1 focused tests: `0986ed6aa327b089398b3a53ae901214cf87e0cd`;
-- timestamp reconciliation fix: `a77a2e11fea3851581b1a077d1c639f94a2e9694`.
+Unknown values must remain explicitly unknown. Counts, dates, governance status, or schema must not be inferred from filenames alone.
 
 ## Authorized file surfaces
 
+The initial Campaign #44 implementation may modify only:
+
 - `docs/ITERA_CAMPAIGN_BOARD.md`;
-- `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY.md`;
-- `docs/research/CORE_V1_HISTORICAL_ALPHA_DISCOVERY_R1.md`;
-- `research/ml/validation/historical_alpha_discovery.py`;
-- `scripts/run_core_v1_historical_alpha_discovery.py`;
-- `tests/test_historical_alpha_discovery.py`;
-- `artifacts/core_v1_historical_alpha_discovery/**`.
+- `docs/research/ALPHA_SURFACE_DISCOVERY_AND_PRIORITIZATION.md`;
+- a new observation-only inventory module under `research/ml/validation/`;
+- a new Campaign #44 runner under `scripts/`;
+- focused Campaign #44 tests under `tests/`;
+- `artifacts/alpha_surface_discovery/**`.
 
-The local governed data file may be read and validated but must not be staged or modified.
-
-No other file surface is authorized without a board transition.
+Any additional file surface requires an explicit board transition.
 
 ## Planned canonical outputs
 
-Under `artifacts/core_v1_historical_alpha_discovery/`:
+Under `artifacts/alpha_surface_discovery/`:
 
-- `btc_core_v1_alpha_candidates.json`;
-- `btc_core_v1_alpha_candidates.csv`;
-- `btc_core_v1_alpha_discovery_folds.csv`;
-- `btc_core_v1_alpha_discovery_report.md`;
-- `btc_core_v1_alpha_discovery_manifest.json`.
+- `alpha_surface_inventory.json`;
+- `alpha_surface_inventory.csv`;
+- `alpha_research_priorities.json`;
+- `alpha_research_priorities.csv`;
+- `alpha_research_roadmap.md`;
+- `alpha_surface_discovery_manifest.json`.
 
 ## Acceptance gates
 
-1. Original frozen specification and R1 source amendment predate predictive result inspection. **Passed.**
-2. Focused Campaign #43-R1 tests pass. **Passed: 11 tests.**
-3. The governed local BTC source passes explicit path/hash/bytes/schema/timestamp/count/numeric/OHLC/coverage preflight. **Passed.**
-4. Full repository suite passes with no new failures. **Passed: 431 tests.**
-5. Two governed runs produce byte-identical outputs. **Pending.**
-6. Canonical text outputs are LF-only. **Pending.**
-7. Governed source identities and hashes remain unchanged. **Passed through preflight; must be reverified around generation.**
-8. Episode, event-family, mixed-family, unavailable-outcome, and fold counts reconcile. **Preflight coverage passed; result reconciliation pending.**
-9. Chronological folds contain no look-ahead. **Implementation tests pending.**
-10. Null, insufficient-support, contradictory, unstable, and unavailable evidence remain visible and fail closed. **Implementation tests pending.**
-11. Scope review finds no runtime, strategy, training, threshold, signal, order, portfolio, NAV, exposure, dashboard, or cross-asset changes. **Passed through preflight; must remain true.**
-12. The report makes no deployable-alpha or production recommendation. **Pending report generation.**
+1. Campaign #44 specification and scoring rules predate final ranking inspection. **Passed: specification frozen in commit `7ebf68f81c731a9486e161ecb99571cb17027ee9`.**
+2. Every inventory row cites concrete repository evidence. **Pending implementation.**
+3. Anchor availability, leakage state, governance state, and missing evidence remain explicit. **Pending implementation.**
+4. Non-rankable surfaces remain visible with fail-closed reasons. **Pending implementation.**
+5. Campaign #43 A-001 is registered without promotion or score inflation from duplicated descriptor rows. **Passed in board and specification; implementation test pending.**
+6. Scoring and ranking are deterministic and covered by focused tests. **Pending implementation.**
+7. Governed preflight validates all cited repository inputs before canonical generation. **Pending implementation.**
+8. Two governed runs produce byte-identical canonical outputs. **Pending.**
+9. Canonical text outputs are LF-only. **Pending.**
+10. Full repository suite passes with no new failures. **Pending.**
+11. The roadmap recommends a finite next campaign with an exact objective, falsification path, data requirements, and authorization boundary. **Pending.**
+12. Scope review finds no production, runtime, threshold, signal, strategy, order, execution, portfolio, NAV, exposure, model-training, or dashboard changes. **Must remain true.**
+13. No new predictive returns are generated or inspected during Campaign #44. **Must remain true.**
 
-## Campaign #42 awaiting merge
+## Immediate implementation sequence
 
-**Status:** Validation complete; canonical artifacts published; PR #42 ready for user merge after CI.
+1. inventory concrete governed research surfaces from repository evidence;
+2. encode frozen schemas and fail-closed validation;
+3. implement deterministic Research Expected Value scoring and ranking;
+4. add focused tests, including duplicated-evidence and non-rankable cases;
+5. run governed preflight;
+6. generate canonical outputs twice and verify replay identity;
+7. inspect the resulting roadmap only after deterministic generation is complete.
 
-**Branch:** `agent/campaign-42-event-robustness`
+## Historical carryover
 
-**PR:** `https://github.com/IteraDynamics/ID_test/pull/42`
+Campaign #42 validation was previously completed on branch `agent/campaign-42-event-robustness`, PR #42. Its merge state does not expand Campaign #44 authorization.
