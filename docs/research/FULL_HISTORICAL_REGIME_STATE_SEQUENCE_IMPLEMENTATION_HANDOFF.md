@@ -4,7 +4,7 @@
 
 Pre-implementation handoff for `agent/campaign-46-full-regime-state-source`.
 
-This handoff freezes exact implementation boundaries before any canonical source artifact is generated. Campaign #46 remains source-only and may not construct or inspect forward returns.
+This handoff freezes exact implementation boundaries before canonical source-artifact generation. Campaign #46 remains source-only and may not construct or inspect forward returns.
 
 ## Existing interfaces to consume unchanged
 
@@ -34,7 +34,7 @@ Classify exactly:
 signals = engine.classify_dataframe(ohlcv_dataframe)
 ```
 
-Do not pass alternate constructor values. Do not call private classification methods directly. Do not edit or duplicate regime logic.
+Do not pass alternate constructor values, call private classification methods, edit regime logic, or duplicate classifier rules.
 
 ## New implementation surfaces
 
@@ -43,14 +43,27 @@ Do not pass alternate constructor values. Do not call private classification met
 - focused tests: `tests/test_full_historical_regime_state_sequence.py`
 - canonical directory: `artifacts/full_historical_regime_state_sequence/`
 
+## Corrected source-gap evidence
+
+The source SHA-256, byte count, row count, schema, first timestamp, and last timestamp were unchanged when governed preflight exposed a disagreement in the previously frozen missing-hour total.
+
+A deterministic full-source diagnostic established:
+
+- discontinuities: `14`
+- missing hourly timestamps: `36`
+- largest elapsed interval: `16` hours
+- largest missing block: `15` timestamps
+
+The earlier handoff reference to `30` missing timestamps is superseded. The correction was made before canonical generation and before any predictive outcome construction or inspection. It changes source metadata only and does not alter classifier logic, state definitions, transition construction, purge behavior, folds, or support gates.
+
 ## Module responsibilities
 
-The observation-only module must expose side-effect-free functions for:
+The observation-only module must provide side-effect-free functions for:
 
 1. validating source metadata and OHLCV structure;
-2. converting the exact CSV rows into the DataFrame expected by `BaselineRegimeEngine`;
-3. validating classifier defaults and frozen enum labels;
-4. reconciling every returned `RegimeSignal` to its exact source row;
+2. converting exact CSV rows into the classifier DataFrame;
+3. validating classifier defaults and enum labels;
+4. reconciling every `RegimeSignal` to its exact source row;
 5. constructing state rows;
 6. constructing contiguous state runs;
 7. constructing ordered transition rows;
@@ -60,56 +73,55 @@ The observation-only module must expose side-effect-free functions for:
 11. rendering canonical CSV, JSON, Markdown, and manifest payloads;
 12. calculating deterministic SHA-256 payload and file digests.
 
-The module must not read or write files directly except through narrowly scoped serialization helpers used by the runner. Core transformations must accept in-memory values and return in-memory values.
+Core transformations accept and return in-memory values. File I/O is limited to narrowly scoped runner serialization.
 
 ## Runner responsibilities
 
-The runner must:
+The governed runner must:
 
-1. accept no alternate source path during governed execution;
+1. accept no alternate source path;
 2. support `--preflight-only`;
 3. reject non-empty output directories;
-4. capture source hashes before work;
-5. run full source and classifier validation;
-6. run classification and reconciliation;
-7. construct all canonical payloads in a staging directory;
-8. validate cross-artifact reconciliation;
-9. verify source hashes remain unchanged;
-10. publish by atomic staging-directory replacement;
-11. emit no generated timestamp inside canonical payloads;
-12. return non-zero on any mismatch.
+4. capture source identity before work;
+5. validate exact source structure, including the corrected `36` missing timestamps across `14` discontinuities;
+6. validate classifier defaults and labels;
+7. run classification and reconciliation;
+8. construct canonical payloads in a new staging directory;
+9. validate cross-artifact reconciliation;
+10. verify source identity remains unchanged;
+11. publish by staging-directory replacement only after all checks pass;
+12. emit no generated timestamp inside canonical payloads;
+13. return non-zero on any mismatch.
 
-A non-governed test-only source path may be injectable only through in-memory functions or explicit test fixtures, not through the governed CLI contract.
+A non-governed test source may be injected only through in-memory functions or fixtures, not through the governed CLI.
 
 ## Exact timestamp and gap behavior
 
 - parse `timestamp` as timezone-naive pandas timestamps;
 - preserve exact source timestamps;
 - do not reindex to a complete hourly calendar;
-- do not insert rows for the `30` missing timestamps;
+- do not insert rows for the `36` missing timestamps;
 - do not compress gaps when calculating elapsed hours;
-- `duration_bars` counts observed source rows in a state run;
+- `duration_bars` counts observed rows;
 - elapsed timestamp fields use exact timestamp subtraction;
-- transition purge requires at least `168` elapsed clock hours, not merely `168` observed rows.
+- the purge requires at least `168` elapsed clock hours, not merely 168 observed rows.
 
 ## Exact state-row derivation
 
 For each source row and corresponding `RegimeSignal`:
 
-- `bar_index` must equal the zero-based source row position;
-- `timestamp` must equal the exact source timestamp string normalized to `YYYY-MM-DDTHH:MM:SS`;
+- `bar_index` equals the zero-based source position;
+- `timestamp` equals the exact normalized source timestamp `YYYY-MM-DDTHH:MM:SS`;
 - `regime_label` is the enum value string;
-- `confidence` must be finite;
-- `reason` is `sub_signals["reason"]` and must be present;
-- optional sub-signal numeric fields absent during warmup serialize as strict JSON `null`;
-- `is_warmup` is true exactly when `regime_label == "UNKNOWN"` and `reason == "warmup"`;
-- `source_row_digest` is SHA-256 over the deterministic UTF-8 encoding of the exact normalized source-row field tuple in ordered schema order.
+- `confidence` is finite;
+- `reason` is present in `sub_signals`;
+- absent warmup numeric sub-signals serialize as strict JSON `null`;
+- `is_warmup` is true exactly for `UNKNOWN` with reason `warmup`;
+- `source_row_digest` is SHA-256 over the deterministic normalized source-row tuple.
 
 ## Exact state-run derivation
 
-State rows are scanned in ascending `bar_index` order.
-
-A new run begins at row zero or when `regime_label` changes from the immediately preceding observed source row. Source timestamp gaps do not by themselves start a new state run.
+State rows are scanned in ascending `bar_index`. A new run begins at row zero or when `regime_label` differs from the immediately preceding observed row. Timestamp gaps do not independently create runs.
 
 `state_run_id` is SHA-256 over:
 
@@ -119,107 +131,84 @@ Run ordinals are zero-based ascending integers.
 
 ## Exact transition derivation
 
-One transition is emitted for every adjacent observed source-row pair whose labels differ.
+Emit one transition for each adjacent observed-row pair whose labels differ.
 
 `transition_id` is SHA-256 over:
 
 `prior_regime_label|current_regime_label|anchor_bar_index|anchor_timestamp`
 
-Transitions are sorted by `(anchor_timestamp, anchor_bar_index, transition_id)` ascending and assigned zero-based ordinals after sorting.
-
-`prior_state_duration_bars` must equal the completed prior run's duration.
-
-`prior_transition_timestamp` references the immediately preceding transition in the complete sorted transition inventory, including transitions involving `UNKNOWN`.
-
-`spacing_since_prior_transition_bars` is the difference between transition anchor bar indices. A separate `spacing_since_prior_transition_hours` must record exact clock-hour difference and is required for auditability.
+Transitions are sorted by `(anchor_timestamp, anchor_bar_index, transition_id)` ascending and assigned zero-based ordinals. Prior-state duration must reconcile to the completed prior run. Prior-transition spacing records both observed-bar difference and exact clock-hour difference.
 
 ## Exact feasibility population
 
-The Campaign #45 feasibility population excludes any transition where either endpoint is `UNKNOWN`.
+Campaign #45 feasibility excludes transitions where either endpoint is `UNKNOWN`. No other category is excluded. Duplicate anchor timestamps fail closed.
 
-No other category is excluded.
-
-Exact duplicate anchor timestamps are prohibited and fail closed.
-
-The deterministic 168-hour purge operates on the complete eligible non-`UNKNOWN` transition inventory, not separately within categories.
+The deterministic 168-hour purge operates on the complete eligible transition inventory, not within categories.
 
 ## Exact fold allocation
 
-Let `n` be the purged transition count.
-
-Define:
+For purged count `n`:
 
 - `base = n // 3`
 - `remainder = n % 3`
+- fold 0 size: `base + (1 if remainder >= 1 else 0)`
+- fold 1 size: `base + (1 if remainder >= 2 else 0)`
+- fold 2 size: `base`
 
-Fold sizes are:
-
-- fold 0: `base + (1 if remainder >= 1 else 0)`
-- fold 1: `base + (1 if remainder >= 2 else 0)`
-- fold 2: `base`
-
-Assign ascending purged transitions contiguously to folds 0, 1, and 2.
-
-This is a feasibility partition only, not Campaign #45's final expanding evaluation plan.
+Assign ascending purged transitions contiguously. This is a feasibility partition only.
 
 ## Exact feasibility states
 
-The summary status is assigned in this order:
+Assign status in this order:
 
-1. `SOURCE_INVALID` — any governed source, classifier, schema, reconciliation, serialization, or immutability failure; publication prohibited.
-2. `INSUFFICIENT_OVERALL_SUPPORT` — purged eligible transition count below 20.
-3. `INSUFFICIENT_FOLD_SUPPORT` — any of the three folds contains fewer than 5 transitions.
-4. `CAMPAIGN_45_SOURCE_FEASIBLE` — at least 20 overall and at least 5 in each fold.
+1. `SOURCE_INVALID`
+2. `INSUFFICIENT_OVERALL_SUPPORT`
+3. `INSUFFICIENT_FOLD_SUPPORT`
+4. `CAMPAIGN_45_SOURCE_FEASIBLE`
 
-This status says only whether a source population exists. It says nothing about predictive value.
+The status concerns source support only and has no predictive meaning.
 
-## Canonical reconciliation requirements
+## Canonical reconciliation
 
 The runner must verify:
 
-- state rows equal source rows exactly;
-- state-run durations sum to total state rows;
-- every state row belongs to exactly one run;
-- transition count equals state-run count minus one when at least one run exists;
-- transition endpoints match adjacent run labels;
-- transition anchors equal current-run start rows;
-- purged transitions are a strict ordered subset of eligible transitions;
-- every pair of consecutive purged anchors is separated by at least 168 exact hours;
+- state rows equal source rows;
+- state-run durations sum to all state rows;
+- each state row belongs to one run;
+- transition count equals run count minus one when runs exist;
+- transition endpoints and anchors match adjacent runs;
+- purged transitions are an ordered subset of eligible transitions;
+- consecutive purged anchors are separated by at least 168 exact hours;
 - fold counts sum to purged count;
-- feasibility status agrees with overall and fold counts;
-- JSON and CSV representations contain identical identities and counts;
-- report values reconcile to machine-readable summaries.
+- feasibility status matches counts;
+- CSV, JSON, report, and manifest identities and counts reconcile.
 
 ## Manifest requirements
 
 The manifest must include:
 
-- experiment name and source-only safety flags;
-- exact source identity evidence;
-- exact classifier file SHA-256;
-- frozen classifier parameter values;
-- frozen label set;
-- source, state, run, transition, eligible-transition, purged-transition, and fold counts;
-- gap evidence;
+- source-only safety flags;
+- exact source identity and corrected gap evidence;
+- classifier file SHA-256;
+- frozen classifier parameters and labels;
+- source, state, run, transition, eligible, purged, and fold counts;
 - canonical file names and SHA-256 values;
 - deterministic aggregate payload digest;
-- explicit `predictive_outcomes_generated: false`;
-- explicit runtime, threshold, signal, strategy, order, portfolio, NAV, exposure, and dashboard mutation flags set to false.
+- `predictive_outcomes_generated: false`;
+- runtime, threshold, signal, strategy, order, portfolio, NAV, exposure, and dashboard mutation flags set to false.
 
 ## Publication protocol
 
-- Canonical generation must use a newly created staging directory.
-- Existing canonical output directories must cause failure unless explicitly empty.
-- All text is written with UTF-8 and LF line endings.
-- CSV uses a frozen explicit column order.
-- JSON uses sorted keys, indentation of two spaces, strict nulls, and a trailing LF.
-- Publication occurs only after all reconciliation and post-generation source-hash checks pass.
-- A second governed run must reproduce byte-identical files.
+- generate in a newly created staging directory;
+- fail if the canonical output directory is non-empty;
+- write UTF-8, LF-only text;
+- use frozen CSV column order;
+- use sorted strict JSON with indentation two and trailing LF;
+- publish only after reconciliation and post-generation source checks pass;
+- require a second governed run to reproduce byte-identical files.
 
-## Preflight GO boundary
+## Authorization boundary
 
-Implementation may be authorized only after this handoff and the governing specification are committed and the campaign board records a separate GO.
+Campaign #46 authorizes source-only implementation, focused tests, preflight, canonical generation, replay validation, and artifact publication.
 
-That GO may authorize source-only implementation, focused tests, preflight, canonical generation, replay validation, and artifact publication.
-
-It must not authorize Campaign #45 predictive returns, estimator fitting, multiplicity testing, candidate ranking, or runtime changes.
+It does not authorize Campaign #45 predictive returns, estimator fitting, multiplicity testing, candidate ranking, model changes, or runtime changes.
