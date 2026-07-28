@@ -16,7 +16,7 @@ Beginning with Campaign #44, every campaign proposal must state its immediate ob
 
 **Classification:** Research primary; deterministic alpha-surface inventory and research-capital allocation
 
-**Status:** SPECIFICATION FROZEN — observation-only inventory, scoring implementation, tests, governed preflight, canonical serialization, and two-run replay validation authorized; new predictive-return discovery is not authorized
+**Status:** PREFLIGHT ACCEPTED — focused tests and governed source validation passed; deterministic canonical generation and two-run replay verification are authorized; new predictive-return discovery remains unauthorized
 
 **Working branch:** `agent/campaign-44-alpha-surface-discovery`
 
@@ -179,31 +179,59 @@ Under `artifacts/alpha_surface_discovery/`:
 - `alpha_research_roadmap.md`;
 - `alpha_surface_discovery_manifest.json`.
 
+## Accepted implementation and preflight evidence
+
+Environment:
+
+- Windows;
+- Python `3.14.6`;
+- pytest `9.1.1`.
+
+Focused suite:
+
+- command: `python -m pytest -q tests/test_alpha_surface_discovery.py`;
+- result: `10 passed in 6.11s`;
+- failures: `0`.
+
+Governed preflight:
+
+- command: `python scripts/run_alpha_surface_discovery.py --preflight-only`;
+- result: passed;
+- cited repository sources validated: `24`;
+- inventory surfaces validated: `8`;
+- new predictive returns generated: `false`.
+
+Implementation commits:
+
+- inventory and frozen scoring: `c39a4e281c9736af0b85f168c5231f6f2efdc0af`;
+- governed runner and canonical serialization: `a2cf6ed32e251b55d4fb391f7ec59cc1f3f4686a`;
+- focused deterministic tests: `8a5719e1ff69683899b32ccf050c577e1dcd1025`.
+
 ## Acceptance gates
 
 1. Campaign #44 specification and scoring rules predate final ranking inspection. **Passed: specification frozen in commit `7ebf68f81c731a9486e161ecb99571cb17027ee9`.**
-2. Every inventory row cites concrete repository evidence. **Pending implementation.**
-3. Anchor availability, leakage state, governance state, and missing evidence remain explicit. **Pending implementation.**
-4. Non-rankable surfaces remain visible with fail-closed reasons. **Pending implementation.**
-5. Campaign #43 A-001 is registered without promotion or score inflation from duplicated descriptor rows. **Passed in board and specification; implementation test pending.**
-6. Scoring and ranking are deterministic and covered by focused tests. **Pending implementation.**
-7. Governed preflight validates all cited repository inputs before canonical generation. **Pending implementation.**
+2. Every inventory row cites concrete repository evidence. **Passed through governed preflight: 24 cited sources validated across 8 surfaces.**
+3. Anchor availability, leakage state, governance state, and missing evidence remain explicit. **Passed in focused tests and preflight.**
+4. Non-rankable surfaces remain visible with fail-closed reasons. **Passed in focused tests.**
+5. Campaign #43 A-001 is registered without promotion or score inflation from duplicated descriptor rows. **Passed in board, specification, and focused tests.**
+6. Scoring and ranking are deterministic and covered by focused tests. **Passed: 10 focused tests.**
+7. Governed preflight validates all cited repository inputs before canonical generation. **Passed: 24 cited sources.**
 8. Two governed runs produce byte-identical canonical outputs. **Pending.**
 9. Canonical text outputs are LF-only. **Pending.**
 10. Full repository suite passes with no new failures. **Pending.**
-11. The roadmap recommends a finite next campaign with an exact objective, falsification path, data requirements, and authorization boundary. **Pending.**
-12. Scope review finds no production, runtime, threshold, signal, strategy, order, execution, portfolio, NAV, exposure, model-training, or dashboard changes. **Must remain true.**
-13. No new predictive returns are generated or inspected during Campaign #44. **Must remain true.**
+11. The roadmap recommends a finite next campaign with an exact objective, falsification path, data requirements, and authorization boundary. **Pending canonical generation and inspection.**
+12. Scope review finds no production, runtime, threshold, signal, strategy, order, execution, portfolio, NAV, exposure, model-training, or dashboard changes. **Passed through preflight; must remain true.**
+13. No new predictive returns are generated or inspected during Campaign #44. **Passed through preflight; must remain true.**
 
 ## Immediate implementation sequence
 
-1. inventory concrete governed research surfaces from repository evidence;
-2. encode frozen schemas and fail-closed validation;
-3. implement deterministic Research Expected Value scoring and ranking;
-4. add focused tests, including duplicated-evidence and non-rankable cases;
-5. run governed preflight;
-6. generate canonical outputs twice and verify replay identity;
-7. inspect the resulting roadmap only after deterministic generation is complete.
+1. inventory concrete governed research surfaces from repository evidence. **Completed.**
+2. encode frozen schemas and fail-closed validation. **Completed.**
+3. implement deterministic Research Expected Value scoring and ranking. **Completed.**
+4. add focused tests, including duplicated-evidence and non-rankable cases. **Completed: 10 passed.**
+5. run governed preflight. **Completed: passed.**
+6. generate canonical outputs twice and verify replay identity. **Authorized next.**
+7. inspect the resulting roadmap only after deterministic generation is complete. **Pending.**
 
 ## Historical carryover
 
