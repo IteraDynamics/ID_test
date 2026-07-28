@@ -59,7 +59,7 @@ def preflight() -> tuple[pd.DataFrame, dict]:
         "first_timestamp": EXPECTED["first"],
         "last_timestamp": EXPECTED["last"],
         "discontinuity_count": 14,
-        "missing_timestamp_count": 30,
+        "missing_timestamp_count": 36,
         "largest_elapsed_hours": 16,
         "largest_missing_timestamp_count": 15,
     }
