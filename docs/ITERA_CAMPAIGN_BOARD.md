@@ -6,9 +6,7 @@ This file is the authoritative, version-controlled handoff for active Itera work
 
 The board is project state and authorization record. It does not authorize production, runtime, threshold, signal, order, portfolio, NAV, exposure, model-training, dashboard, cross-asset, or strategy changes.
 
-The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`: Itera Dynamics is building an institutional-grade quantitative investment firm. That thesis is directional context only and does not modify any active campaign authorization.
-
-Beginning with Campaign #44, every campaign proposal must state its immediate objective, acceptance evidence, strategic contribution to the quantitative investment firm, and the production/runtime/threshold/signal/order/portfolio/NAV/exposure changes that remain unauthorized.
+The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`. That thesis is directional context only and does not modify active campaign authorization.
 
 ## Active campaign
 
@@ -16,7 +14,7 @@ Beginning with Campaign #44, every campaign proposal must state its immediate ob
 
 **Classification:** Research infrastructure; deterministic source-foundation and support-feasibility construction
 
-**Status:** IMPLEMENTATION GO — source-only implementation, focused tests, governed preflight, canonical generation, two-run replay validation, and publication are authorized; predictive-return generation and Campaign #45 result testing remain unauthorized
+**Status:** GOVERNED PREFLIGHT PASSED — focused Campaign #46 tests pass and corrected source preflight passes; canonical generation, two-run replay validation, full-suite validation, scope review, and publication remain authorized; predictive-return generation and Campaign #45 result testing remain unauthorized
 
 **Working branch:** `agent/campaign-46-full-regime-state-source`
 
@@ -30,9 +28,15 @@ Beginning with Campaign #44, every campaign proposal must state its immediate ob
 
 **Handoff commit:** `d5d240e4cf1400c1dec1071bf9644d6aedb3611d`
 
+**Source-gap correction commits:**
+
+- runner correction: `c606e2f19dab954a06bcee288971dfa181881e52`
+- specification correction: `9be6f532920ff66693b652a5cec38ff26ce4425b`
+- handoff correction: `98179f002c84ea334256e735e68d409a09b96dba`
+
 ## Immediate objective
 
-Generate and govern a complete BTC hourly historical regime-state ledger and transition inventory from the existing `BaselineRegimeEngine` and governed BTC hourly OHLCV source, then determine whether that source population can satisfy Campaign #45's frozen independent-support gates.
+Generate and govern a complete BTC hourly historical regime-state ledger and transition inventory from the existing immutable `BaselineRegimeEngine` and governed BTC hourly OHLCV source, then determine whether that source population can satisfy Campaign #45's frozen independent-support gates.
 
 Campaign #46 generates no forward returns and makes no alpha claim.
 
@@ -46,18 +50,14 @@ Campaign #46 creates a canonical historical market-state ledger reusable across 
 
 ## Authorization
 
-**Decision:** GO for Campaign #46 source-only implementation.
-
-The user explicitly authorized proceeding after synchronizing the Campaign #45 source-feasibility decision on July 28, 2026.
+**Decision:** GO for Campaign #46 source-only implementation and canonical validation.
 
 Authorized now:
 
-- implement the frozen source-only module and runner;
-- add focused Campaign #46 tests;
-- validate the exact governed BTC source and immutable classifier defaults;
+- maintain the frozen source-only module, runner, and focused tests;
+- validate the governed BTC source and immutable classifier defaults;
 - generate the complete state sequence, state runs, and transition inventory;
 - calculate only source-support feasibility counts under the frozen 168-hour purge;
-- run governed preflight;
 - generate canonical source artifacts twice and verify byte identity;
 - verify LF-only text, strict JSON, source immutability, and full-suite compatibility;
 - publish canonical Campaign #46 artifacts after all gates pass.
@@ -72,7 +72,7 @@ Not authorized:
 - signals, strategy changes, orders, execution, portfolio construction, NAV, exposure, or dashboard changes;
 - production or paper-runtime integration.
 
-## Frozen sources and classifier
+## Frozen source and classifier
 
 ### BTC hourly source
 
@@ -84,6 +84,17 @@ Not authorized:
 - timestamps: `2018-01-01 00:00:00` through `2025-12-31 00:00:00`
 - exact matching only; no interpolation, filling, resampling, nearest-row, as-of matching, or source substitution.
 
+### Corrected governed gap evidence
+
+The exact source identity above did not change. Governed preflight initially failed closed because the earlier documentation claimed 30 missing hourly timestamps. A deterministic full-source diagnostic established:
+
+- discontinuities: `14`
+- missing hourly timestamps: `36`
+- largest elapsed interval: `16` hours
+- largest missing block: `15` timestamps
+
+The old value of `30` is superseded. This pre-result correction changes source metadata only. It does not change the source, classifier, state logic, transition logic, purge rule, folds, support gates, or predictive authorization.
+
 ### Regime classifier
 
 - file: `research/regimes/baseline_engine.py`
@@ -91,7 +102,28 @@ Not authorized:
 - method: `classify_dataframe()`
 - instantiate with constructor defaults only.
 
-The classifier file and defaults are immutable inputs for Campaign #46. Any disagreement fails closed.
+The classifier file and defaults are immutable Campaign #46 inputs. Any disagreement fails closed.
+
+## Preflight evidence
+
+Focused suite executed locally on July 28, 2026:
+
+- command: `python -m pytest -q tests/test_full_historical_regime_state_sequence.py`
+- result: `10 passed`
+
+Governed preflight executed locally after the source-gap correction:
+
+- command: `python scripts/run_full_historical_regime_state_sequence.py --preflight-only`
+- status: `PASS`
+- source rows: `70,069`
+- first timestamp: `2018-01-01 00:00:00`
+- last timestamp: `2025-12-31 00:00:00`
+- discontinuities: `14`
+- missing hourly timestamps: `36`
+- largest elapsed interval: `16`
+- largest missing block: `15`
+
+No canonical Campaign #46 artifacts or predictive outcomes had been generated when this evidence was recorded.
 
 ## Frozen outputs
 
@@ -108,7 +140,7 @@ Under `artifacts/full_historical_regime_state_sequence/`:
 
 ## Campaign #45 feasibility gate
 
-Campaign #46 must report, without outcomes:
+Campaign #46 reports, without outcomes:
 
 - total non-`UNKNOWN` transitions;
 - exact duplicate-anchor validation;
@@ -119,52 +151,42 @@ Campaign #46 must report, without outcomes:
 
 Feasibility status is one of:
 
-1. `SOURCE_INVALID`;
-2. `INSUFFICIENT_OVERALL_SUPPORT`;
-3. `INSUFFICIENT_FOLD_SUPPORT`;
-4. `CAMPAIGN_45_SOURCE_FEASIBLE`.
+1. `SOURCE_INVALID`
+2. `INSUFFICIENT_OVERALL_SUPPORT`
+3. `INSUFFICIENT_FOLD_SUPPORT`
+4. `CAMPAIGN_45_SOURCE_FEASIBLE`
 
 No predictive meaning may be attached to this status.
 
 ## Governing constraints
 
-All work must remain:
+All work must remain deterministic, replay-safe, research-only, observation-only, anchor-local, fail-closed, and independent of production runtime state mutation.
 
-- deterministic;
-- replay-safe;
-- research-only;
-- observation-only;
-- anchor-local;
-- fail-closed;
-- independent of production runtime state mutation.
-
-No threshold, order, NAV, or exposure change is authorized.
+No threshold, signal, order, execution, portfolio, NAV, exposure, model, strategy, or dashboard change is authorized.
 
 ## Authorized file surfaces
 
 Campaign #46 may modify only:
 
-- `docs/ITERA_CAMPAIGN_BOARD.md`;
-- `docs/research/FULL_HISTORICAL_REGIME_STATE_SEQUENCE.md`;
-- `docs/research/FULL_HISTORICAL_REGIME_STATE_SEQUENCE_IMPLEMENTATION_HANDOFF.md`;
-- `research/ml/validation/full_historical_regime_state_sequence.py`;
-- `scripts/run_full_historical_regime_state_sequence.py`;
-- `tests/test_full_historical_regime_state_sequence.py`;
-- `artifacts/full_historical_regime_state_sequence/**`.
+- `docs/ITERA_CAMPAIGN_BOARD.md`
+- `docs/research/FULL_HISTORICAL_REGIME_STATE_SEQUENCE.md`
+- `docs/research/FULL_HISTORICAL_REGIME_STATE_SEQUENCE_IMPLEMENTATION_HANDOFF.md`
+- `research/ml/validation/full_historical_regime_state_sequence.py`
+- `scripts/run_full_historical_regime_state_sequence.py`
+- `tests/test_full_historical_regime_state_sequence.py`
+- `artifacts/full_historical_regime_state_sequence/**`
 
-No modification to `research/regimes/baseline_engine.py`, regime contracts, runtime, strategies, allocation, execution, portfolio, NAV, exposure, or dashboards is authorized.
-
-Any additional file surface requires an explicit board transition.
+No modification to the regime engine, regime contracts, runtime, strategies, allocation, execution, portfolio, NAV, exposure, or dashboards is authorized.
 
 ## Acceptance gates
 
-1. Specification and implementation handoff predate implementation result inspection. **Passed.**
-2. Exact source identity, schema, timestamps, gap evidence, classifier interface, defaults, and state-label set pass preflight. **Pending.**
-3. Focused tests cover source failure, default mismatch, anchor locality, warmup preservation, transitions, runs, purge, folds, serialization, replay, and immutability. **Pending.**
-4. State rows reconcile one-to-one to all 70,069 source rows. **Pending.**
-5. State runs and transitions reconcile exactly. **Pending.**
-6. `UNKNOWN` rows and transitions remain visible and are excluded only from Campaign #45 support feasibility. **Pending.**
-7. Deterministic 168-hour purge and three-fold allocation reconcile. **Pending.**
+1. Specification and handoff predate implementation-result inspection. **Passed.**
+2. Corrected source identity, schema, timestamps, gap evidence, classifier interface, defaults, and labels pass preflight. **Passed.**
+3. Focused Campaign #46 tests pass. **Passed: 10 passed.**
+4. State rows reconcile one-to-one to all 70,069 source rows. **Pending canonical generation.**
+5. State runs and transitions reconcile exactly. **Pending canonical generation.**
+6. `UNKNOWN` rows and transitions remain visible and are excluded only from Campaign #45 feasibility. **Pending canonical generation.**
+7. Deterministic 168-hour purge and three-fold allocation reconcile. **Pending canonical generation.**
 8. No forward outcomes or predictive metrics are generated or inspected. **Must remain true.**
 9. Two governed runs produce byte-identical canonical outputs. **Pending.**
 10. Canonical text outputs are LF-only and JSON is strict. **Pending.**
@@ -177,29 +199,30 @@ Any additional file surface requires an explicit board transition.
 1. Freeze Campaign #46 specification. **Completed.**
 2. Freeze implementation handoff. **Completed.**
 3. Record source-only implementation GO. **Completed.**
-4. Implement side-effect-free source builder and focused tests. **Authorized next.**
-5. Run governed preflight. **Pending.**
-6. Generate canonical artifacts twice and verify replay identity. **Pending.**
-7. Run full repository suite and scope review. **Pending.**
-8. Inspect only source-support feasibility status. **Pending.**
-9. If feasible, return to Campaign #45 for a separate predictive implementation GO. If infeasible, close Campaign #45 or govern a longer source. **Pending.**
+4. Implement source builder and focused tests. **Completed.**
+5. Run governed preflight. **Completed: PASS after pre-result gap-evidence correction.**
+6. Generate canonical artifacts. **Authorized next.**
+7. Reproduce canonical artifacts in a second clean run and verify byte identity. **Pending.**
+8. Run full repository suite and scope review. **Pending.**
+9. Inspect only source-support feasibility status. **Pending.**
+10. If feasible, return to Campaign #45 for a separate predictive implementation GO. If infeasible, close Campaign #45 or govern a longer source. **Pending.**
 
 ## Suspended Campaign #45
 
 Campaign #45 — Historical Regime State and Transition Discovery remains suspended.
 
-Its collapse-only source population contains 14 independent event families against a frozen minimum of 20. No predictive returns, candidate coefficients, p-values, rankings, or canonical Campaign #45 results have been generated or inspected.
+Its collapse-only population contains 14 independent event families against a frozen minimum of 20. No predictive returns, coefficients, p-values, rankings, or canonical Campaign #45 results have been generated or inspected.
 
-Campaign #45's specification and support gates remain unchanged. Campaign #46 does not authorize or perform Campaign #45 predictive testing.
+Campaign #45's specification and support gates remain unchanged. Campaign #46 does not authorize Campaign #45 predictive testing.
 
 ## Campaign #44 priority context
 
 Campaign #44 ranked:
 
-1. S-002 — Historical regime state and transition structure: 29;
-2. S-003 — Historical event persistence, clustering, duration, and spacing: 27;
-3. S-008 — Simple BTC price-state baselines: 26;
-4. S-001 — Registered Core v1 collapse structure candidate A-001: 26.
+1. S-002 — Historical regime state and transition structure: 29
+2. S-003 — Historical event persistence, clustering, duration, and spacing: 27
+3. S-008 — Simple BTC price-state baselines: 26
+4. S-001 — Registered Core v1 collapse structure candidate A-001: 26
 
 Campaign #46 is source infrastructure required to test S-002 responsibly.
 
