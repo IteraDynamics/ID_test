@@ -1,0 +1,461 @@
+[
+  {
+    "candidate_id": "731d73946722a97435eda812f988da502b7a50123949e6cc2085b4f3588c4e32",
+    "candidate_ordinal": 0,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 24,
+    "ordered_transition": "HIGH_VOL -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "HIGH_VOL"
+  },
+  {
+    "candidate_id": "52dac4942c4af095defbf9cfbc454d8652d045fe7809c4c4d1aa7aa016b24c3c",
+    "candidate_ordinal": 1,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 72,
+    "ordered_transition": "HIGH_VOL -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "HIGH_VOL"
+  },
+  {
+    "candidate_id": "7271e9ec109e84a57c1b16fecde1f62afb682bc26ade4cfd7fb5da72897a767b",
+    "candidate_ordinal": 2,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 168,
+    "ordered_transition": "HIGH_VOL -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "HIGH_VOL"
+  },
+  {
+    "candidate_id": "919cfd41235bee64f9f6a7c697451e60a0751c13de09ab539d3428b9d3f76e80",
+    "candidate_ordinal": 3,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 24,
+    "ordered_transition": "RANGE -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "RANGE"
+  },
+  {
+    "candidate_id": "ba6ab0c4b5192bb31d2e7237f7fc55d5425faa938cc07022adc9b8f176cf598f",
+    "candidate_ordinal": 4,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 72,
+    "ordered_transition": "RANGE -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "RANGE"
+  },
+  {
+    "candidate_id": "84bb0d31514619c6c5ef69f9c36036a688fe1d05b8aa2922d13b344b55f20c01",
+    "candidate_ordinal": 5,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 168,
+    "ordered_transition": "RANGE -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "RANGE"
+  },
+  {
+    "candidate_id": "807b79376a577d2b46997799e66c87402704295bd502455671bd85b4f48a7ca7",
+    "candidate_ordinal": 6,
+    "current_regime_label": "VOL_COMPRESSION",
+    "horizon_hours": 24,
+    "ordered_transition": "RANGE -> VOL_COMPRESSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "RANGE"
+  },
+  {
+    "candidate_id": "034d7f1e5860a1a824f80d429514882c6fcc4bc06ef6319f20dbb020af9d6437",
+    "candidate_ordinal": 7,
+    "current_regime_label": "VOL_COMPRESSION",
+    "horizon_hours": 72,
+    "ordered_transition": "RANGE -> VOL_COMPRESSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "RANGE"
+  },
+  {
+    "candidate_id": "969d1090ef0dcc832ac53cf733055e4ca5d771e20883d3af48febd3710e4bfc8",
+    "candidate_ordinal": 8,
+    "current_regime_label": "VOL_COMPRESSION",
+    "horizon_hours": 168,
+    "ordered_transition": "RANGE -> VOL_COMPRESSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "RANGE"
+  },
+  {
+    "candidate_id": "d3337e7f29f35e8fb3335290f43adb0799067348680e04c072fff1312a7c468a",
+    "candidate_ordinal": 9,
+    "current_regime_label": "RANGE",
+    "horizon_hours": 24,
+    "ordered_transition": "TREND_DOWN -> RANGE",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "dbb69e33b1f632f8e9b17874a9161a9d05672ca3236469f5294040a4866acb3e",
+    "candidate_ordinal": 10,
+    "current_regime_label": "RANGE",
+    "horizon_hours": 72,
+    "ordered_transition": "TREND_DOWN -> RANGE",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "5787092c867b8d04cb08c38840469d6e69980414c72fe76ec87354171e94e542",
+    "candidate_ordinal": 11,
+    "current_regime_label": "RANGE",
+    "horizon_hours": 168,
+    "ordered_transition": "TREND_DOWN -> RANGE",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "8c8d10eb0fa3b0a7d9d51510601a93fcca9b00d5226b4de98f14941c8d7ca3b2",
+    "candidate_ordinal": 12,
+    "current_regime_label": "TREND_UP",
+    "horizon_hours": 24,
+    "ordered_transition": "TREND_DOWN -> TREND_UP",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "437173b5f76e73b7408068496a2b2a3a103f8870a3c0cc7f6ec4a168abfd407c",
+    "candidate_ordinal": 13,
+    "current_regime_label": "TREND_UP",
+    "horizon_hours": 72,
+    "ordered_transition": "TREND_DOWN -> TREND_UP",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "6f4b4c725c70d783206237027e8048970a9f1a0e26a52a8320d593b7f158b061",
+    "candidate_ordinal": 14,
+    "current_regime_label": "TREND_UP",
+    "horizon_hours": 168,
+    "ordered_transition": "TREND_DOWN -> TREND_UP",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "b5d6c1e1e7290996521ecbf50868c8347ffe9b2bc256cad312557003cde29246",
+    "candidate_ordinal": 15,
+    "current_regime_label": "VOL_COMPRESSION",
+    "horizon_hours": 24,
+    "ordered_transition": "TREND_DOWN -> VOL_COMPRESSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "732f3dd554070df836613313d386b8bfcc917c97023d24e09284d77eea65ca1a",
+    "candidate_ordinal": 16,
+    "current_regime_label": "VOL_COMPRESSION",
+    "horizon_hours": 72,
+    "ordered_transition": "TREND_DOWN -> VOL_COMPRESSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "5482e30379055182220fb0da6d2ae3d05a01ad112939798be3798d336950a47c",
+    "candidate_ordinal": 17,
+    "current_regime_label": "VOL_COMPRESSION",
+    "horizon_hours": 168,
+    "ordered_transition": "TREND_DOWN -> VOL_COMPRESSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "d15c9e71f57e7a82051d61af8965aae30f937acb138b86a90ce926b9da31803b",
+    "candidate_ordinal": 18,
+    "current_regime_label": "VOL_EXPANSION",
+    "horizon_hours": 24,
+    "ordered_transition": "TREND_DOWN -> VOL_EXPANSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "dac1f4fd1786193fe85e0345762f81255427daf4e1d2c645b5b79e5d9562d881",
+    "candidate_ordinal": 19,
+    "current_regime_label": "VOL_EXPANSION",
+    "horizon_hours": 72,
+    "ordered_transition": "TREND_DOWN -> VOL_EXPANSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "0e7212e93e1c81354b0e9ea8aa4a196ae6155bb3ef939aaa43d7d0004133c0c5",
+    "candidate_ordinal": 20,
+    "current_regime_label": "VOL_EXPANSION",
+    "horizon_hours": 168,
+    "ordered_transition": "TREND_DOWN -> VOL_EXPANSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_DOWN"
+  },
+  {
+    "candidate_id": "07b0483f7fb66869b0d99dd82dc233f9be08781347516a5168d9733ad64b1ffb",
+    "candidate_ordinal": 21,
+    "current_regime_label": "HIGH_VOL",
+    "horizon_hours": 24,
+    "ordered_transition": "TREND_UP -> HIGH_VOL",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "50d3b70184c98a5f7a590e4f90a3cb66f26a4c6bded6aa23c1dab563acbae185",
+    "candidate_ordinal": 22,
+    "current_regime_label": "HIGH_VOL",
+    "horizon_hours": 72,
+    "ordered_transition": "TREND_UP -> HIGH_VOL",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "903b13c7930c2060b44b08f1895fde588b26122603b0360dfeae7a0677869a40",
+    "candidate_ordinal": 23,
+    "current_regime_label": "HIGH_VOL",
+    "horizon_hours": 168,
+    "ordered_transition": "TREND_UP -> HIGH_VOL",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "6c799f83049550bf14816dd98604cc8a710e10e19f09269aebf60f899c8bd24f",
+    "candidate_ordinal": 24,
+    "current_regime_label": "RANGE",
+    "horizon_hours": 24,
+    "ordered_transition": "TREND_UP -> RANGE",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "58c00be69c7020cd15efb63525e79f318408862667a09d978a74fe5d3d75073c",
+    "candidate_ordinal": 25,
+    "current_regime_label": "RANGE",
+    "horizon_hours": 72,
+    "ordered_transition": "TREND_UP -> RANGE",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "2c2733b755fed37e98df2899202c1b7235bb5d6653e252f02df4e776f364f4a4",
+    "candidate_ordinal": 26,
+    "current_regime_label": "RANGE",
+    "horizon_hours": 168,
+    "ordered_transition": "TREND_UP -> RANGE",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "fe2a3adf977fb584d768b7283af8883bae672677b35c6d7eb3138213ec22cad0",
+    "candidate_ordinal": 27,
+    "current_regime_label": "VOL_COMPRESSION",
+    "horizon_hours": 24,
+    "ordered_transition": "TREND_UP -> VOL_COMPRESSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "11b62ac72e5702f26944bd2772d98a6892b4679e2b7af8f1472c86cde67f2505",
+    "candidate_ordinal": 28,
+    "current_regime_label": "VOL_COMPRESSION",
+    "horizon_hours": 72,
+    "ordered_transition": "TREND_UP -> VOL_COMPRESSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "a2ad88e0b078a4953bd244846cfd8437760af8e0423a72065dc1f5672432cf5a",
+    "candidate_ordinal": 29,
+    "current_regime_label": "VOL_COMPRESSION",
+    "horizon_hours": 168,
+    "ordered_transition": "TREND_UP -> VOL_COMPRESSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "d6c3bd8a57b58873ea428aea35cd9d45258853ccf34473c304a9867f221220a5",
+    "candidate_ordinal": 30,
+    "current_regime_label": "VOL_EXPANSION",
+    "horizon_hours": 24,
+    "ordered_transition": "TREND_UP -> VOL_EXPANSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "2d63c18938cd258f4e22a001b06ffb40601440c06e146600cd9ae2abfe3668a8",
+    "candidate_ordinal": 31,
+    "current_regime_label": "VOL_EXPANSION",
+    "horizon_hours": 72,
+    "ordered_transition": "TREND_UP -> VOL_EXPANSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "08ef553c12d504722ba1bf07550e27f8d3e697477e6b6b8e8f5eb78bc0747589",
+    "candidate_ordinal": 32,
+    "current_regime_label": "VOL_EXPANSION",
+    "horizon_hours": 168,
+    "ordered_transition": "TREND_UP -> VOL_EXPANSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "TREND_UP"
+  },
+  {
+    "candidate_id": "8fdf8012b290527ecad1aca2e57c6952cc07dc23fcd0c593d5e47566a233c768",
+    "candidate_ordinal": 33,
+    "current_regime_label": "RANGE",
+    "horizon_hours": 24,
+    "ordered_transition": "VOL_COMPRESSION -> RANGE",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "7493fde9e467f0e46f3cc4a9228ca54a1cec0f8115d27abe153c2b3abffeef83",
+    "candidate_ordinal": 34,
+    "current_regime_label": "RANGE",
+    "horizon_hours": 72,
+    "ordered_transition": "VOL_COMPRESSION -> RANGE",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "cff7551dd5602539fcd402b63ba03d1406e881043fc6d5127ad1d37331308383",
+    "candidate_ordinal": 35,
+    "current_regime_label": "RANGE",
+    "horizon_hours": 168,
+    "ordered_transition": "VOL_COMPRESSION -> RANGE",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "19dcb1618bb114caa8588a2d37e383b3a6c97fb84cda6c1e6bbf07addce09ae8",
+    "candidate_ordinal": 36,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 24,
+    "ordered_transition": "VOL_COMPRESSION -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "eae72a6d8a37f125b53aa67ea9921243fdf16bbc43f3ec60e1e4e09ea249e752",
+    "candidate_ordinal": 37,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 72,
+    "ordered_transition": "VOL_COMPRESSION -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "3ed47ba27dbb264fcb274b91874dc312b2a7abeefb5b680307747922853f8a35",
+    "candidate_ordinal": 38,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 168,
+    "ordered_transition": "VOL_COMPRESSION -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "6b4979888091bdbba3122825c7bc82a7427b0e44fed8c1aaa60762a6f6c4f835",
+    "candidate_ordinal": 39,
+    "current_regime_label": "TREND_UP",
+    "horizon_hours": 24,
+    "ordered_transition": "VOL_COMPRESSION -> TREND_UP",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "7c623fd8e64c731bdc0ef6f5d2079d8a7d752ec222405db29b8de4ec1ae3f506",
+    "candidate_ordinal": 40,
+    "current_regime_label": "TREND_UP",
+    "horizon_hours": 72,
+    "ordered_transition": "VOL_COMPRESSION -> TREND_UP",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "ec700dc814933e2762cb33dcd8eae23a34082c19e3b277ed4aee1dc12e21897e",
+    "candidate_ordinal": 41,
+    "current_regime_label": "TREND_UP",
+    "horizon_hours": 168,
+    "ordered_transition": "VOL_COMPRESSION -> TREND_UP",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "16b93d7a9dfdd2598da8997fa437bf0b4e0f596646944771cf507dab9700c0db",
+    "candidate_ordinal": 42,
+    "current_regime_label": "VOL_EXPANSION",
+    "horizon_hours": 24,
+    "ordered_transition": "VOL_COMPRESSION -> VOL_EXPANSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "b3497c8b3045404cbe20774027563b767ba88fd8fad8547ee407b77ad1bcbe9e",
+    "candidate_ordinal": 43,
+    "current_regime_label": "VOL_EXPANSION",
+    "horizon_hours": 72,
+    "ordered_transition": "VOL_COMPRESSION -> VOL_EXPANSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "b87cdd32403824bd73ef9e269ebafae7b6065469ab800899d5f0f0331a2f7a46",
+    "candidate_ordinal": 44,
+    "current_regime_label": "VOL_EXPANSION",
+    "horizon_hours": 168,
+    "ordered_transition": "VOL_COMPRESSION -> VOL_EXPANSION",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_COMPRESSION"
+  },
+  {
+    "candidate_id": "183206d1f930de92fa9e626588a64176a5ed30a3e4e195de17d9845c63c98a4e",
+    "candidate_ordinal": 45,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 24,
+    "ordered_transition": "VOL_EXPANSION -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_EXPANSION"
+  },
+  {
+    "candidate_id": "c5a47c41cf54786660b34bd46ebb5623e627232d3cd6be455c98faf7289302e2",
+    "candidate_ordinal": 46,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 72,
+    "ordered_transition": "VOL_EXPANSION -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_EXPANSION"
+  },
+  {
+    "candidate_id": "c3f9f8ad112f3da2d47515c5e263a3bf1ac55a2542359d8aee0a150a244eb6ff",
+    "candidate_ordinal": 47,
+    "current_regime_label": "TREND_DOWN",
+    "horizon_hours": 168,
+    "ordered_transition": "VOL_EXPANSION -> TREND_DOWN",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_EXPANSION"
+  },
+  {
+    "candidate_id": "a705b3441f968ae5cdf40b720a45a9aca80e2446f3dde990b5c9844e8306e6dd",
+    "candidate_ordinal": 48,
+    "current_regime_label": "TREND_UP",
+    "horizon_hours": 24,
+    "ordered_transition": "VOL_EXPANSION -> TREND_UP",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_EXPANSION"
+  },
+  {
+    "candidate_id": "a42d9111b6e37c2d1f1b427e84a31cfe07f9f5eefb43668c02b8e3edaf92d5fe",
+    "candidate_ordinal": 49,
+    "current_regime_label": "TREND_UP",
+    "horizon_hours": 72,
+    "ordered_transition": "VOL_EXPANSION -> TREND_UP",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_EXPANSION"
+  },
+  {
+    "candidate_id": "e21e5d20e1443b1bea4369e60b1a5dba18bd8bb879339866656a57b304159cd4",
+    "candidate_ordinal": 50,
+    "current_regime_label": "TREND_UP",
+    "horizon_hours": 168,
+    "ordered_transition": "VOL_EXPANSION -> TREND_UP",
+    "predictor_class": "P-003",
+    "prior_regime_label": "VOL_EXPANSION"
+  }
+]

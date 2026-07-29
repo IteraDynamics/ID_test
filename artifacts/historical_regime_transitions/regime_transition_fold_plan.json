@@ -1,0 +1,1246 @@
+{
+  "evaluations": [
+    {
+      "development_partitions": [
+        1
+      ],
+      "evaluation": "partition_2",
+      "evaluation_partition": 2,
+      "scaling_scope": "development_rows_only"
+    },
+    {
+      "development_partitions": [
+        1,
+        2
+      ],
+      "evaluation": "partition_3",
+      "evaluation_partition": 3,
+      "scaling_scope": "development_rows_only"
+    }
+  ],
+  "partition_counts": [
+    81,
+    81,
+    80
+  ],
+  "partition_recalculation_allowed": false,
+  "partitions": {
+    "1": [
+      {
+        "anchor_ordinal": 0,
+        "anchor_timestamp": "2018-01-04T11:00:00",
+        "transition_id": "822be86ed16abdedb7152bbb59573bc49bbccc9b7f4416773337248cfbe55313"
+      },
+      {
+        "anchor_ordinal": 1,
+        "anchor_timestamp": "2018-01-11T22:00:00",
+        "transition_id": "c112c407e23d1ad76adcc011c51543281c69f254738d4c9884dcda8e0d7f3ab2"
+      },
+      {
+        "anchor_ordinal": 2,
+        "anchor_timestamp": "2018-01-19T00:00:00",
+        "transition_id": "f34158da67063fbead30b49cb7eca4ecf33b44407d1c8a1482bc6d5afca1c840"
+      },
+      {
+        "anchor_ordinal": 3,
+        "anchor_timestamp": "2018-01-26T08:00:00",
+        "transition_id": "5dcda536e1d607e07d9ff52d1877dd7107f0ab8b3ab504e3751510bb1ba440e7"
+      },
+      {
+        "anchor_ordinal": 4,
+        "anchor_timestamp": "2018-02-02T12:00:00",
+        "transition_id": "f914d618409c40b98625a54a6fd7358f2290f4f7bc1c80d3e4deab117830baf2"
+      },
+      {
+        "anchor_ordinal": 5,
+        "anchor_timestamp": "2018-02-10T18:00:00",
+        "transition_id": "8c142d51201ed1a1d27c16734439b5badbf1baf890702414779ff2c11d954143"
+      },
+      {
+        "anchor_ordinal": 6,
+        "anchor_timestamp": "2018-02-17T18:00:00",
+        "transition_id": "946f8e8e3c56c414d85431860911aaa112f83f98844382dc26b7f77475fa34f2"
+      },
+      {
+        "anchor_ordinal": 7,
+        "anchor_timestamp": "2018-02-26T13:00:00",
+        "transition_id": "c1e314a8f0db0cbf3ace6c93747cc08cebf284b48b063f8c93643570cd40c77c"
+      },
+      {
+        "anchor_ordinal": 8,
+        "anchor_timestamp": "2018-03-06T23:00:00",
+        "transition_id": "cf53dab49e5ea4e3e7c9d88fb495bd1b09a8f84c7a0a092fb595858bc74d9d5f"
+      },
+      {
+        "anchor_ordinal": 9,
+        "anchor_timestamp": "2018-03-14T02:00:00",
+        "transition_id": "f7a985897be71c55e93cb152efe3a2cf836fd5edcaac069cda0020c982a79b43"
+      },
+      {
+        "anchor_ordinal": 10,
+        "anchor_timestamp": "2018-03-21T02:00:00",
+        "transition_id": "25cdc9ff9abaca683ce7cfdbf1cb1ab5873c16764e66b1953956693a05bd282d"
+      },
+      {
+        "anchor_ordinal": 11,
+        "anchor_timestamp": "2018-03-28T04:00:00",
+        "transition_id": "e994c2d90ff44393b9c75757015b65062833620745b87e8c40de2123d844906b"
+      },
+      {
+        "anchor_ordinal": 12,
+        "anchor_timestamp": "2018-04-04T09:00:00",
+        "transition_id": "3eff8c6bdc339cc24061e9f78e9caeb22e0666e4579ad62ad16d1ac514be9c54"
+      },
+      {
+        "anchor_ordinal": 13,
+        "anchor_timestamp": "2018-04-12T11:00:00",
+        "transition_id": "488524b705f5919a28a6fc49c682e941768db4ea43abd7a2658bb30a223ec9c0"
+      },
+      {
+        "anchor_ordinal": 14,
+        "anchor_timestamp": "2018-04-25T02:00:00",
+        "transition_id": "2c2c4678dc6ce393a8d41fd000c30eebe5eca360cf09e10a73feed7b1c104f46"
+      },
+      {
+        "anchor_ordinal": 15,
+        "anchor_timestamp": "2018-05-04T00:00:00",
+        "transition_id": "e50a59d4a5bc466adb285acc6256c4b3abbcb74c3ad74d262e568078b95cf43c"
+      },
+      {
+        "anchor_ordinal": 16,
+        "anchor_timestamp": "2018-05-11T20:00:00",
+        "transition_id": "954512c6872367b5e874f7c4e354c7601b55b43c52d19a6d836f5afdefcf3b10"
+      },
+      {
+        "anchor_ordinal": 17,
+        "anchor_timestamp": "2018-05-23T16:00:00",
+        "transition_id": "146bb00fe65bf31ae0b2103e530c0660f6af5a9317382a475273de2da1d729d1"
+      },
+      {
+        "anchor_ordinal": 18,
+        "anchor_timestamp": "2018-06-10T17:00:00",
+        "transition_id": "4ec4bb2795f78005bfcf2676517e1f3858ebf8758a76456c90cdd876fc6b337a"
+      },
+      {
+        "anchor_ordinal": 19,
+        "anchor_timestamp": "2018-06-22T13:00:00",
+        "transition_id": "ff78890a60cd938c8184593e5139d514bcef41c98b1a7d49e2c1612ae8e58958"
+      },
+      {
+        "anchor_ordinal": 20,
+        "anchor_timestamp": "2018-06-29T22:00:00",
+        "transition_id": "c76a517452031eaeac8d4d16f0f481b52ec23f105aae9684599a6b5494fcc4d9"
+      },
+      {
+        "anchor_ordinal": 21,
+        "anchor_timestamp": "2018-07-17T17:00:00",
+        "transition_id": "4884df1d9a9fedd96e46489c905d4bebdbdecf6c903cca0a867a44fffd02e45e"
+      },
+      {
+        "anchor_ordinal": 22,
+        "anchor_timestamp": "2018-07-27T15:00:00",
+        "transition_id": "89c0e233214c1221a0a49e541e671a7d64df1ff1de821d66be5799653f53a495"
+      },
+      {
+        "anchor_ordinal": 23,
+        "anchor_timestamp": "2018-08-04T15:00:00",
+        "transition_id": "4ba8b2abff1816a34ebdb86d900b31b2f3acd5974d50f5d26a701f94a6aee967"
+      },
+      {
+        "anchor_ordinal": 24,
+        "anchor_timestamp": "2018-08-11T17:00:00",
+        "transition_id": "a4a98b5af1c3c662acdde4d877faa83a6c91421645eef8459c9453f320eea0ea"
+      },
+      {
+        "anchor_ordinal": 25,
+        "anchor_timestamp": "2018-08-22T01:00:00",
+        "transition_id": "b1c5e4f18e0db63a32607bd0309b850737d7a5fe7d6ddc365d85ca8f3c646a7d"
+      },
+      {
+        "anchor_ordinal": 26,
+        "anchor_timestamp": "2018-09-05T16:00:00",
+        "transition_id": "400a16ad55d828cebd44264966b263c712c5818fe3dace80196308696313ae56"
+      },
+      {
+        "anchor_ordinal": 27,
+        "anchor_timestamp": "2018-09-19T19:00:00",
+        "transition_id": "4dd7e9f7cdbdb7a917d2901242fd3cf4e42b575a9de0839432890319ca68fc11"
+      },
+      {
+        "anchor_ordinal": 28,
+        "anchor_timestamp": "2018-10-11T01:00:00",
+        "transition_id": "00ba29b55563e771d8155b730b350ca7243f13ccab9ed61e5a1d8c21b06ed411"
+      },
+      {
+        "anchor_ordinal": 29,
+        "anchor_timestamp": "2018-11-14T16:00:00",
+        "transition_id": "e49d55ff2ec4d13c84a7281228827696c24e01320cb129526dc52c73c4082bac"
+      },
+      {
+        "anchor_ordinal": 30,
+        "anchor_timestamp": "2018-11-22T18:00:00",
+        "transition_id": "753174f14ba8836dde183e106dbf790bc39c3db9d412522dc21f2ed8f25bf44c"
+      },
+      {
+        "anchor_ordinal": 31,
+        "anchor_timestamp": "2018-11-30T11:00:00",
+        "transition_id": "f2b7143e1ed442b6baecbf7183c808064ebd059bb1a667ec685c86c57372a7e4"
+      },
+      {
+        "anchor_ordinal": 32,
+        "anchor_timestamp": "2018-12-07T19:00:00",
+        "transition_id": "8dce31aee41ccb380e3141124a804ce4f7c8d6b34cf64e594efc5d459fdfbf97"
+      },
+      {
+        "anchor_ordinal": 33,
+        "anchor_timestamp": "2018-12-17T13:00:00",
+        "transition_id": "a0e0e84f58a5f9ee2a651ad31c73be3658f544cef72a18d36e3b3ea5c458d234"
+      },
+      {
+        "anchor_ordinal": 34,
+        "anchor_timestamp": "2018-12-24T14:00:00",
+        "transition_id": "d847ca56f58b7d0616759e412b28c6474f04e4177e42aa4fee078bb5162d3be5"
+      },
+      {
+        "anchor_ordinal": 35,
+        "anchor_timestamp": "2019-01-10T06:00:00",
+        "transition_id": "ff9bd6c072adcad2140b765e648bdfe0bdf341cb172d41ea23028f9f2f78355e"
+      },
+      {
+        "anchor_ordinal": 36,
+        "anchor_timestamp": "2019-02-08T16:00:00",
+        "transition_id": "03b66c4708fda06922847fa9e09c2628aabb1ae72e32f4b103379baad7e7ae93"
+      },
+      {
+        "anchor_ordinal": 37,
+        "anchor_timestamp": "2019-02-18T16:00:00",
+        "transition_id": "872891c130a56e34af195ba7cecf3b5f3fffea1aa123f6f9f7bc85388e2211cb"
+      },
+      {
+        "anchor_ordinal": 38,
+        "anchor_timestamp": "2019-04-02T04:00:00",
+        "transition_id": "b1946a600046801ba2f5c567a5022b56d2abdf1076fe80eb452832eebc5a74b6"
+      },
+      {
+        "anchor_ordinal": 39,
+        "anchor_timestamp": "2019-04-10T20:00:00",
+        "transition_id": "bfff2a522554b952243a5172654bd3e8d4e99c3dcb764c9722558e0391b254f8"
+      },
+      {
+        "anchor_ordinal": 40,
+        "anchor_timestamp": "2019-04-25T22:00:00",
+        "transition_id": "77aa2c85b6af2ad6d9d307b03041d2a27e5a7da2eda49ce0a114bfc7b23d4983"
+      },
+      {
+        "anchor_ordinal": 41,
+        "anchor_timestamp": "2019-05-03T09:00:00",
+        "transition_id": "36448d214b4c8fe6852c998b5331735a4cb76a0b7c89f644db1f607cced8698b"
+      },
+      {
+        "anchor_ordinal": 42,
+        "anchor_timestamp": "2019-05-11T04:00:00",
+        "transition_id": "200c612a48b3889babaa00792d18bf2f6329999a98222b3372f68c6f3cf90dd6"
+      },
+      {
+        "anchor_ordinal": 43,
+        "anchor_timestamp": "2019-05-18T14:00:00",
+        "transition_id": "bdf4f3c4442c8c9520498d533e066683d5df46a9bad33e242a9aa0a4f3a767ca"
+      },
+      {
+        "anchor_ordinal": 44,
+        "anchor_timestamp": "2019-05-26T19:00:00",
+        "transition_id": "5e4512113d2e3016262666b2796a5bd3c7def6f60074bd47a59d0039bf59c82d"
+      },
+      {
+        "anchor_ordinal": 45,
+        "anchor_timestamp": "2019-06-03T15:00:00",
+        "transition_id": "5851662698b2d6e4f398d0ed5a64b2f4d0d0176643ad0420745c86b0389723cc"
+      },
+      {
+        "anchor_ordinal": 46,
+        "anchor_timestamp": "2019-06-10T17:00:00",
+        "transition_id": "26f57095fe58d5357cd7f7c643f956c8197a8c0b2e8dbac837ade3c2657dbe4a"
+      },
+      {
+        "anchor_ordinal": 47,
+        "anchor_timestamp": "2019-06-18T03:00:00",
+        "transition_id": "d255d566a0540edf779dbe59574a7677edc7edee62d502bfe79f51416e93a2b0"
+      },
+      {
+        "anchor_ordinal": 48,
+        "anchor_timestamp": "2019-06-25T12:00:00",
+        "transition_id": "3fa6891e9165829e659c6bd2d8e02dd3eca47a24521a4200cae10a6d59faa810"
+      },
+      {
+        "anchor_ordinal": 49,
+        "anchor_timestamp": "2019-07-02T13:00:00",
+        "transition_id": "cd1e48af05518ec8984ce434436220bd2728d8a5dd9bbab35ecb3c1485423b8a"
+      },
+      {
+        "anchor_ordinal": 50,
+        "anchor_timestamp": "2019-07-10T18:00:00",
+        "transition_id": "38a3c65a4e178f41fa4f684485600f784677586644d4a91f9c1058c8f9825d05"
+      },
+      {
+        "anchor_ordinal": 51,
+        "anchor_timestamp": "2019-07-18T14:00:00",
+        "transition_id": "b372bb328ac8be5360547fd569af73faeb8a59c59f9b11a262de487b6333f15c"
+      },
+      {
+        "anchor_ordinal": 52,
+        "anchor_timestamp": "2019-07-27T00:00:00",
+        "transition_id": "fdc63f963f18127bfb2b190a5e713b310f5125dbc2ed2a0d43534166abc7fee8"
+      },
+      {
+        "anchor_ordinal": 53,
+        "anchor_timestamp": "2019-08-05T01:00:00",
+        "transition_id": "378f63389f002dfd63a694a71d5a7ba03fa3a39a57d0de83d4d0fe835f786492"
+      },
+      {
+        "anchor_ordinal": 54,
+        "anchor_timestamp": "2019-08-14T16:00:00",
+        "transition_id": "c9d12803421bba2c900ff6524b3f58fd01002ce4b95a90969adc0aa92ccd27c8"
+      },
+      {
+        "anchor_ordinal": 55,
+        "anchor_timestamp": "2019-08-21T20:00:00",
+        "transition_id": "f59f1652fef0663b7a65cf4ea3ba9f099f3ef5ed9962568fafe1f3bf83d118c7"
+      },
+      {
+        "anchor_ordinal": 56,
+        "anchor_timestamp": "2019-08-28T23:00:00",
+        "transition_id": "626448dc2e3a7a5b23996de215f28a0fcb1bb328220ee95f807609541afee5c6"
+      },
+      {
+        "anchor_ordinal": 57,
+        "anchor_timestamp": "2019-09-06T17:00:00",
+        "transition_id": "9363f333dea39c7cfa0d1d4e89d4252e17e29ab1b9e9d06e735f902b85063829"
+      },
+      {
+        "anchor_ordinal": 58,
+        "anchor_timestamp": "2019-09-24T18:00:00",
+        "transition_id": "87777a3b9d38190dc6abca9eb6e19ff7c5bd089fc9693357ae28d8dddd0b88c6"
+      },
+      {
+        "anchor_ordinal": 59,
+        "anchor_timestamp": "2019-10-02T00:00:00",
+        "transition_id": "e7c0d5d47729d099ce45ce532b328757e0d061878a69c8a07ec2bda53d3c934f"
+      },
+      {
+        "anchor_ordinal": 60,
+        "anchor_timestamp": "2019-10-11T05:00:00",
+        "transition_id": "02cbaba9e07db8feae191e31626c04282cd5e49018c6017891b5f56c3dd1cf30"
+      },
+      {
+        "anchor_ordinal": 61,
+        "anchor_timestamp": "2019-10-23T12:00:00",
+        "transition_id": "8043afeb109aec47f75513115cc91f0f5a827414ab04450f065971b18ff52e0f"
+      },
+      {
+        "anchor_ordinal": 62,
+        "anchor_timestamp": "2019-10-30T15:00:00",
+        "transition_id": "f13eb33c2b9bb8d87b852edd11154282495f0e90d95443e37cb1c10dd2117538"
+      },
+      {
+        "anchor_ordinal": 63,
+        "anchor_timestamp": "2019-11-21T15:00:00",
+        "transition_id": "6497ea5bfbb8c67b2da41d76e01516585c76f1d6576daa3734b5d8838cd4488f"
+      },
+      {
+        "anchor_ordinal": 64,
+        "anchor_timestamp": "2019-11-29T13:00:00",
+        "transition_id": "44ee06d15ae6b2e768b7bda7a9b13b34cb23bdb661dff07363db1390a004637a"
+      },
+      {
+        "anchor_ordinal": 65,
+        "anchor_timestamp": "2019-12-18T13:00:00",
+        "transition_id": "0aa64e3cbe65e8dbd521c7a41347cc0ca7bcf6b2086a6fb54f0562878171ebcc"
+      },
+      {
+        "anchor_ordinal": 66,
+        "anchor_timestamp": "2020-01-07T18:00:00",
+        "transition_id": "fd163cf5064aace7e9dfe4b550d3d9fb077e9e33715b2d6fb59250109706a7fb"
+      },
+      {
+        "anchor_ordinal": 67,
+        "anchor_timestamp": "2020-01-14T22:00:00",
+        "transition_id": "7dfd5e213e03743e51cfa2aad1c6b08d182f3ad3b9d1af036160ee6e1094fb5c"
+      },
+      {
+        "anchor_ordinal": 68,
+        "anchor_timestamp": "2020-01-28T23:00:00",
+        "transition_id": "0b0a10629376ddf16478644b546378a450230da393c1ceec309f4b02aa4616e1"
+      },
+      {
+        "anchor_ordinal": 69,
+        "anchor_timestamp": "2020-02-13T13:00:00",
+        "transition_id": "d1badbe6acd9228ecadb36297fefbd171ddacb7e05d752b6bfeaf534a534de12"
+      },
+      {
+        "anchor_ordinal": 70,
+        "anchor_timestamp": "2020-02-20T17:00:00",
+        "transition_id": "e67220d765cdba88f4fec58dc7c730364fc9ed2147368ac57f5a5c0a834a3865"
+      },
+      {
+        "anchor_ordinal": 71,
+        "anchor_timestamp": "2020-02-28T13:00:00",
+        "transition_id": "f52c1dd435422644beaa3593ca8cf6cb58dfe85bd4067e21a8676b5e6ee206a5"
+      },
+      {
+        "anchor_ordinal": 72,
+        "anchor_timestamp": "2020-03-08T16:00:00",
+        "transition_id": "5584c760cdb6ebcf27ec5a151db9f06393a4bb376140f54f61567fc5a4c95b4c"
+      },
+      {
+        "anchor_ordinal": 73,
+        "anchor_timestamp": "2020-03-15T21:00:00",
+        "transition_id": "963fac049d899981dc896bfbd5d66515b05278f1e6372de24b86b6acf04f468f"
+      },
+      {
+        "anchor_ordinal": 74,
+        "anchor_timestamp": "2020-03-22T22:00:00",
+        "transition_id": "648fc6e4a031820509cb1eda92935f3d4aef939ecfe11f079a6667f944a3446a"
+      },
+      {
+        "anchor_ordinal": 75,
+        "anchor_timestamp": "2020-03-30T03:00:00",
+        "transition_id": "1de5f92eff8e9e4ed4cb0f4846e26d2e3f6e066e65b3ebff5ce90feff9f59a60"
+      },
+      {
+        "anchor_ordinal": 76,
+        "anchor_timestamp": "2020-04-06T07:00:00",
+        "transition_id": "18829adc6a5da51c06a3e4d105ebe3f8f3cfced5705e5198672091f50376692d"
+      },
+      {
+        "anchor_ordinal": 77,
+        "anchor_timestamp": "2020-04-13T08:00:00",
+        "transition_id": "c57cdb9abf39f8147fa862a1d0cc8e580e6ac5e9ded33b42582959c679da6f7a"
+      },
+      {
+        "anchor_ordinal": 78,
+        "anchor_timestamp": "2020-04-20T17:00:00",
+        "transition_id": "8ab59086999dacbfe45610cf544e46893da65455aae7b20357e55b1356a0c16a"
+      },
+      {
+        "anchor_ordinal": 79,
+        "anchor_timestamp": "2020-04-29T16:00:00",
+        "transition_id": "74a1e66ea85a7e5f369a965536da0e79637fc358ff81765a3519684ab232cbfd"
+      },
+      {
+        "anchor_ordinal": 80,
+        "anchor_timestamp": "2020-05-06T23:00:00",
+        "transition_id": "763509a304207c7c14561547175fd7dcc43a3043d8c8217d275cf31777330d42"
+      }
+    ],
+    "2": [
+      {
+        "anchor_ordinal": 81,
+        "anchor_timestamp": "2020-05-14T09:00:00",
+        "transition_id": "08226f619ece2b3d76e505d88686a1180a71819e7ad1c96b7d7cc8a78b44ffe8"
+      },
+      {
+        "anchor_ordinal": 82,
+        "anchor_timestamp": "2020-05-21T14:00:00",
+        "transition_id": "901df67cdac98d985e8882a49f30ec63ba1860df04917944e90b13a59d06808b"
+      },
+      {
+        "anchor_ordinal": 83,
+        "anchor_timestamp": "2020-06-01T23:00:00",
+        "transition_id": "de5154ab564c9b27bfd7053c7cd8698546177994c56008939f6f807bcfb769a3"
+      },
+      {
+        "anchor_ordinal": 84,
+        "anchor_timestamp": "2020-06-11T16:00:00",
+        "transition_id": "799918603043d3cf781506ad7401a60cd7191714b21bcb25f7ac7ee4157da343"
+      },
+      {
+        "anchor_ordinal": 85,
+        "anchor_timestamp": "2020-07-27T16:00:00",
+        "transition_id": "ba687130c11b5d73191b9accfc5972bc18dc451d8ab6838139d291608334e5d7"
+      },
+      {
+        "anchor_ordinal": 86,
+        "anchor_timestamp": "2020-08-11T20:00:00",
+        "transition_id": "3c8b53de243fe9b9551e9d07243e58e0e4a386c482c23c38b22901cd0c6f4ba9"
+      },
+      {
+        "anchor_ordinal": 87,
+        "anchor_timestamp": "2020-09-02T14:00:00",
+        "transition_id": "ff7a934ba4a960948a6edaba908dfeeb2fdcf889ce4e8d89e15dabdbf9951bd4"
+      },
+      {
+        "anchor_ordinal": 88,
+        "anchor_timestamp": "2020-09-21T16:00:00",
+        "transition_id": "1de77238a164d148609b64676ededfd294b5579f3d3ff4aea3bf0f89034df487"
+      },
+      {
+        "anchor_ordinal": 89,
+        "anchor_timestamp": "2020-10-21T14:00:00",
+        "transition_id": "724e4464a17d18096e84588d05fdf665466ce542431542f7d3cb97d7844ff0de"
+      },
+      {
+        "anchor_ordinal": 90,
+        "anchor_timestamp": "2020-10-28T20:00:00",
+        "transition_id": "61dbede4c36e618a47691a17b8913cbb70d590c26407e4ebbe396cca7b4ee0d0"
+      },
+      {
+        "anchor_ordinal": 91,
+        "anchor_timestamp": "2020-11-05T13:00:00",
+        "transition_id": "b6115066191904480b554f7dbadfa375be08490bdc0f470cb1d8dc944716e7d1"
+      },
+      {
+        "anchor_ordinal": 92,
+        "anchor_timestamp": "2020-11-12T20:00:00",
+        "transition_id": "c13587b72adb8829567fd37cea8570e28d0cc99f53c451b0eaa39d2a76f2a990"
+      },
+      {
+        "anchor_ordinal": 93,
+        "anchor_timestamp": "2020-11-22T10:00:00",
+        "transition_id": "599b25df2c1c4dad32c1695f3d6e4926caa71b2da446e45f82621ee12b883f90"
+      },
+      {
+        "anchor_ordinal": 94,
+        "anchor_timestamp": "2020-11-30T14:00:00",
+        "transition_id": "4f69ad04450bfd0f09e95c7cd5d6055ea72616a8eddc3cde46593c086c3369a6"
+      },
+      {
+        "anchor_ordinal": 95,
+        "anchor_timestamp": "2020-12-09T08:00:00",
+        "transition_id": "8190d065758f29911256f9b01f7dee4e8cb52c57ea9bbf3c3c08a89b04f82db3"
+      },
+      {
+        "anchor_ordinal": 96,
+        "anchor_timestamp": "2020-12-16T14:00:00",
+        "transition_id": "e75278aad2f7c5f5b39cf333155aeb9f7068d9f6079fba1383f2502a4f700bc8"
+      },
+      {
+        "anchor_ordinal": 97,
+        "anchor_timestamp": "2020-12-23T23:00:00",
+        "transition_id": "f09301f83ea9a5da282ecef0da88a913788e659916337274fd42fd91425b47e7"
+      },
+      {
+        "anchor_ordinal": 98,
+        "anchor_timestamp": "2021-01-01T05:00:00",
+        "transition_id": "92ff33d90927b42268d427b10a76100c61aa7f05ca7ee8f1d71623009789add2"
+      },
+      {
+        "anchor_ordinal": 99,
+        "anchor_timestamp": "2021-01-08T05:00:00",
+        "transition_id": "fd4b65cb92b55ece5ae880189bd5b57e83bd0c94d1f4c4eda61c2977382252ff"
+      },
+      {
+        "anchor_ordinal": 100,
+        "anchor_timestamp": "2021-01-15T15:00:00",
+        "transition_id": "7b3450ae2ef34872705dd1ffac367133af24e7cfcfab9d814298c3ed950b60a7"
+      },
+      {
+        "anchor_ordinal": 101,
+        "anchor_timestamp": "2021-01-22T19:00:00",
+        "transition_id": "cdc718a35bf6391c710af07eebac60010cfd00ca48289d51d4beed3f3856f9b0"
+      },
+      {
+        "anchor_ordinal": 102,
+        "anchor_timestamp": "2021-01-29T19:00:00",
+        "transition_id": "63410e9ef266bb30889d6827cb2352c22e48ed5fc5d33fc22de0263384688c63"
+      },
+      {
+        "anchor_ordinal": 103,
+        "anchor_timestamp": "2021-02-06T01:00:00",
+        "transition_id": "1e6280c78d6626bc42ccf34a3e21479e0b895ecd061e575c18e63f619bb5b487"
+      },
+      {
+        "anchor_ordinal": 104,
+        "anchor_timestamp": "2021-02-13T01:00:00",
+        "transition_id": "582e230b3932a6864f51e203028acfea783e2afc25f3fa8aa66af7d23f47313f"
+      },
+      {
+        "anchor_ordinal": 105,
+        "anchor_timestamp": "2021-02-20T05:00:00",
+        "transition_id": "bb4c4c28c2b61c3db7ec28aefe2204bcfd60a6c194dda8145a31c1886df5ae1f"
+      },
+      {
+        "anchor_ordinal": 106,
+        "anchor_timestamp": "2021-03-01T02:00:00",
+        "transition_id": "20bffc2fbe50f7df9e09ff3f265086dbda2ca069d61a75d6801ed497ffb6e5f6"
+      },
+      {
+        "anchor_ordinal": 107,
+        "anchor_timestamp": "2021-03-08T18:00:00",
+        "transition_id": "bee6d2e7deb591ced5406b38e0ffd0274191dd3a1a5eeff8a7716deff457570b"
+      },
+      {
+        "anchor_ordinal": 108,
+        "anchor_timestamp": "2021-03-17T06:00:00",
+        "transition_id": "60b64691c7b18c68f09ce872831b98f534c68b2302515f365311590a7d784141"
+      },
+      {
+        "anchor_ordinal": 109,
+        "anchor_timestamp": "2021-03-24T06:00:00",
+        "transition_id": "fa10729629978aef7cebefa7821c60f7378eb308d0b77f1a12b4cc73cb9acabc"
+      },
+      {
+        "anchor_ordinal": 110,
+        "anchor_timestamp": "2021-03-31T08:00:00",
+        "transition_id": "2f9e4f6a0e5e16aafb63c9d2d6211722f2b5cdc793d69ccb1d4f7c9817dd0105"
+      },
+      {
+        "anchor_ordinal": 111,
+        "anchor_timestamp": "2021-04-07T11:00:00",
+        "transition_id": "90ed930e3a211933e8beb2ace130930d85ae4f782f08a1f79ed463e89f108e61"
+      },
+      {
+        "anchor_ordinal": 112,
+        "anchor_timestamp": "2021-04-14T13:00:00",
+        "transition_id": "84e306f014b440c7ef19b05d65b734c17c23fd5efaa4089ead14a229fa545eef"
+      },
+      {
+        "anchor_ordinal": 113,
+        "anchor_timestamp": "2021-04-21T19:00:00",
+        "transition_id": "c8eaedb1aa9d677f7781fecc6d070b2fe24f1e478ac2f9abd79458150be4a417"
+      },
+      {
+        "anchor_ordinal": 114,
+        "anchor_timestamp": "2021-04-28T20:00:00",
+        "transition_id": "61e34a1649dda47bf281bf5df726a48ab39c710941c481d46c936df5aabb78f2"
+      },
+      {
+        "anchor_ordinal": 115,
+        "anchor_timestamp": "2021-05-05T21:00:00",
+        "transition_id": "b92660d4c5ca52c6ffe86cff7a7fac859db70a61b9e714ce7a37dd1f9769e8d9"
+      },
+      {
+        "anchor_ordinal": 116,
+        "anchor_timestamp": "2021-05-12T23:00:00",
+        "transition_id": "cd4cfdf2c9b99f6c4d8e4e4cdc09895ef8721147a5daa19162fbf62fddd1b4ec"
+      },
+      {
+        "anchor_ordinal": 117,
+        "anchor_timestamp": "2021-05-20T10:00:00",
+        "transition_id": "9b260cce2d94a9f79b81ae54f2058d91717072640f9956af02d0c05245836c69"
+      },
+      {
+        "anchor_ordinal": 118,
+        "anchor_timestamp": "2021-05-27T23:00:00",
+        "transition_id": "69e498fc2d7d39c8ce5541a449be13489daedb7011fc2a6354e127f3de3f7d4b"
+      },
+      {
+        "anchor_ordinal": 119,
+        "anchor_timestamp": "2021-06-04T01:00:00",
+        "transition_id": "a3390b66cb38c66266c43709ba1fb884ec717c61802f800fb6f23d2bb8fa1206"
+      },
+      {
+        "anchor_ordinal": 120,
+        "anchor_timestamp": "2021-06-11T20:00:00",
+        "transition_id": "d46e10167def7b8bc2d842d1e58e160e25f99d9e37ed626ecab26bab199fb03f"
+      },
+      {
+        "anchor_ordinal": 121,
+        "anchor_timestamp": "2021-06-19T11:00:00",
+        "transition_id": "94c76da400b4102824357dc74542ecb444d6e34542282a84c16372ae8a2b0641"
+      },
+      {
+        "anchor_ordinal": 122,
+        "anchor_timestamp": "2021-06-27T02:00:00",
+        "transition_id": "d6c16032332817bed93e6c631ec756cbc9fbbae9b92a354bee58ee737dc60b3b"
+      },
+      {
+        "anchor_ordinal": 123,
+        "anchor_timestamp": "2021-07-06T09:00:00",
+        "transition_id": "08431e780724f9219467d99645f8ba64983624c02058d379bdfe17b09b92289b"
+      },
+      {
+        "anchor_ordinal": 124,
+        "anchor_timestamp": "2021-07-20T04:00:00",
+        "transition_id": "8197adff830fa8c70c7374d90678cb79ae84be234a6fffa20a4d90cfa178fd90"
+      },
+      {
+        "anchor_ordinal": 125,
+        "anchor_timestamp": "2021-07-29T15:00:00",
+        "transition_id": "1f50672f19730e67ae6847c64a860fe4adacc795cbc29703aacd68420158c135"
+      },
+      {
+        "anchor_ordinal": 126,
+        "anchor_timestamp": "2021-08-05T17:00:00",
+        "transition_id": "c40911434d612c7a1e0b6b28aa9d59b561edd6f6284f09217b721cd3f1e65a58"
+      },
+      {
+        "anchor_ordinal": 127,
+        "anchor_timestamp": "2021-08-17T20:00:00",
+        "transition_id": "b00162a934bb2f59890740c0a6b17fffe057f4b23e20220e5caf5fd21363b02a"
+      },
+      {
+        "anchor_ordinal": 128,
+        "anchor_timestamp": "2021-08-26T05:00:00",
+        "transition_id": "6a2d068f516da74901b96d87dfb3dead06c7608732ef3928388fcd75244fd2a6"
+      },
+      {
+        "anchor_ordinal": 129,
+        "anchor_timestamp": "2021-09-03T14:00:00",
+        "transition_id": "c0ac9fdfe21fb66ce1b9fbeaca3a93a4f9999aa72ada2f0b1294462f9e148f5e"
+      },
+      {
+        "anchor_ordinal": 130,
+        "anchor_timestamp": "2021-09-10T14:00:00",
+        "transition_id": "e4220eff128aced2a7a4919f260b0d1da84e7bfdf8e701cc4871e6da7c6492c3"
+      },
+      {
+        "anchor_ordinal": 131,
+        "anchor_timestamp": "2021-09-20T02:00:00",
+        "transition_id": "adccbadc733ab09623aedb0482e9cea73dedfb3a07308d068d21eedc70f77f82"
+      },
+      {
+        "anchor_ordinal": 132,
+        "anchor_timestamp": "2021-09-27T04:00:00",
+        "transition_id": "1ae7c364344fc320cb0aa2f0a055e9f5325e199aba7cf74d72bb0200da614745"
+      },
+      {
+        "anchor_ordinal": 133,
+        "anchor_timestamp": "2021-10-04T16:00:00",
+        "transition_id": "fd75f8d0f3fc6034f9063cd32ed6678be106acd52148743f40dc738bcf9ea1cb"
+      },
+      {
+        "anchor_ordinal": 134,
+        "anchor_timestamp": "2021-10-12T20:00:00",
+        "transition_id": "505f127d05003fa41b11736977a44b13d9f2d5be941b769d82b5bdd045434efa"
+      },
+      {
+        "anchor_ordinal": 135,
+        "anchor_timestamp": "2021-10-21T11:00:00",
+        "transition_id": "6928cf9fe07e45dd81a01bdfb5a7f0465df8a4e25b458a2954cf8b32770b3c7d"
+      },
+      {
+        "anchor_ordinal": 136,
+        "anchor_timestamp": "2021-10-28T18:00:00",
+        "transition_id": "b468aae5eabe6c761a43c034b10db5fbf6fd56f6ed17ab4ffd3aebc70bd19d92"
+      },
+      {
+        "anchor_ordinal": 137,
+        "anchor_timestamp": "2021-11-10T20:00:00",
+        "transition_id": "c0681e4bed0eef5cb9da1d5f63914090f659edf1360216d01444815cbb122003"
+      },
+      {
+        "anchor_ordinal": 138,
+        "anchor_timestamp": "2021-11-18T15:00:00",
+        "transition_id": "edde8392728fe22b2bd451fdabc537c47c8fdf82740cda4c4c57c3a794c593d7"
+      },
+      {
+        "anchor_ordinal": 139,
+        "anchor_timestamp": "2021-11-26T08:00:00",
+        "transition_id": "15197f40cf0c1a6ec35a92fd6ebb9e28fe807eb11fc07c457fe0aef5300c9d89"
+      },
+      {
+        "anchor_ordinal": 140,
+        "anchor_timestamp": "2021-12-03T19:00:00",
+        "transition_id": "4b6f8b76b4e2a06f1f466eb2a98501fa50c8b3206947f7c3f79f5872b7fe301a"
+      },
+      {
+        "anchor_ordinal": 141,
+        "anchor_timestamp": "2021-12-11T11:00:00",
+        "transition_id": "b9a92c8800e7c691c1f89461c8bcaa71be546b7120024b2c6626de11572993f9"
+      },
+      {
+        "anchor_ordinal": 142,
+        "anchor_timestamp": "2021-12-20T01:00:00",
+        "transition_id": "c33b6efe6eba116f3997b73b41a19b72f629c51cf9289660289fc91c50b4159f"
+      },
+      {
+        "anchor_ordinal": 143,
+        "anchor_timestamp": "2021-12-29T23:00:00",
+        "transition_id": "7a4ca104388cfdec940f53f7088f4647727402f19284fc44efe982493cdae3ba"
+      },
+      {
+        "anchor_ordinal": 144,
+        "anchor_timestamp": "2022-01-06T08:00:00",
+        "transition_id": "e223e6a29a619c5b7cfc07802a24de845cf407067b03dbbae50f13f5ef95b5fb"
+      },
+      {
+        "anchor_ordinal": 145,
+        "anchor_timestamp": "2022-01-20T21:00:00",
+        "transition_id": "8dc24a242e78f6382a0b031a3dcb1e8932752130565ca383ad80f0bb9ee3b817"
+      },
+      {
+        "anchor_ordinal": 146,
+        "anchor_timestamp": "2022-01-28T01:00:00",
+        "transition_id": "a86770a1f850c5758b117f8485f37029c4cf2036cd3b040573e6a0beab18ae75"
+      },
+      {
+        "anchor_ordinal": 147,
+        "anchor_timestamp": "2022-02-04T15:00:00",
+        "transition_id": "8b14fe48f430259091cf03a5ecac842bde628d70fd7268d7f787d3b1c9f20b7f"
+      },
+      {
+        "anchor_ordinal": 148,
+        "anchor_timestamp": "2022-02-11T19:00:00",
+        "transition_id": "2b7cb959df2e5e24dfc7a112d7d7b06eeee3c5edf55014b60d92a0ccb2ef3188"
+      },
+      {
+        "anchor_ordinal": 149,
+        "anchor_timestamp": "2022-02-18T22:00:00",
+        "transition_id": "180edb97d3a0ac70edd3c6e3a6cf9f35a6fd530c2bfeb28b2cca013a439fca38"
+      },
+      {
+        "anchor_ordinal": 150,
+        "anchor_timestamp": "2022-02-26T05:00:00",
+        "transition_id": "2d3dd4eba245a4025e0ec0d585b00cbada5a64b9e152788b8bb1ea7c125e983f"
+      },
+      {
+        "anchor_ordinal": 151,
+        "anchor_timestamp": "2022-03-05T05:00:00",
+        "transition_id": "cd8a392d9ee054e10eefea1ce23bf3b818ca88c7febd68650a155601b3419a52"
+      },
+      {
+        "anchor_ordinal": 152,
+        "anchor_timestamp": "2022-03-15T01:00:00",
+        "transition_id": "82999a21ccc58cc876cbfaebdf8241d0a1bb93195d7924225a8dd84ddbbd0c7f"
+      },
+      {
+        "anchor_ordinal": 153,
+        "anchor_timestamp": "2022-03-22T06:00:00",
+        "transition_id": "86da8ef2e440f17b4937de1f23e7203ca4a66813df16dea61fe1b93bea508528"
+      },
+      {
+        "anchor_ordinal": 154,
+        "anchor_timestamp": "2022-04-06T18:00:00",
+        "transition_id": "396382a5d5dba552bf50a48028822b2ae3eacc2ff7739ed0fbb9a7851475ddf4"
+      },
+      {
+        "anchor_ordinal": 155,
+        "anchor_timestamp": "2022-04-21T22:00:00",
+        "transition_id": "0f77123185dd23da358a6444bb428f962e175efca4c2c19f33965fd74116a093"
+      },
+      {
+        "anchor_ordinal": 156,
+        "anchor_timestamp": "2022-05-05T15:00:00",
+        "transition_id": "849a151332cec4c431d8801ebec871f0766ca439cac063fa87cbb96ded2c81b8"
+      },
+      {
+        "anchor_ordinal": 157,
+        "anchor_timestamp": "2022-05-13T03:00:00",
+        "transition_id": "867652f79aa203e4b7552b402b292c2f4a8b2b46a521e4c40d89b9a831d9acce"
+      },
+      {
+        "anchor_ordinal": 158,
+        "anchor_timestamp": "2022-05-20T14:00:00",
+        "transition_id": "c2a29ca2f67604f519b4658bb1eea39bdbe27eb5f029c4d8e5a5f715f987f853"
+      },
+      {
+        "anchor_ordinal": 159,
+        "anchor_timestamp": "2022-05-27T14:00:00",
+        "transition_id": "bf0ecf2b9bac73b106124ad5fe7cb3f19f8511dc3564d6fb7c42f785ec6986ab"
+      },
+      {
+        "anchor_ordinal": 160,
+        "anchor_timestamp": "2022-06-07T00:00:00",
+        "transition_id": "576bf8924ceabb351fe128f780da0e55bdba2547b04ef79c2291cfb346929a23"
+      },
+      {
+        "anchor_ordinal": 161,
+        "anchor_timestamp": "2022-06-14T01:00:00",
+        "transition_id": "a129f1077a92deec9f1df1eb391b916de674dd98902bc66ecd2d0d7347a5d81b"
+      }
+    ],
+    "3": [
+      {
+        "anchor_ordinal": 162,
+        "anchor_timestamp": "2022-06-22T02:00:00",
+        "transition_id": "3978666353271d7ad623218a1e8ec816cd786bfcc348f23e7a7812aa471f25f7"
+      },
+      {
+        "anchor_ordinal": 163,
+        "anchor_timestamp": "2022-06-30T09:00:00",
+        "transition_id": "8a5c996caa082e69c9ed5e0896815b192d780f7826088ac0fe2c0305c41227d5"
+      },
+      {
+        "anchor_ordinal": 164,
+        "anchor_timestamp": "2022-07-07T18:00:00",
+        "transition_id": "32e2c972d4b6d2cdbbb5f781adb9497a5f88f9329fc1c07149b808c79b02740c"
+      },
+      {
+        "anchor_ordinal": 165,
+        "anchor_timestamp": "2022-07-15T05:00:00",
+        "transition_id": "1d51030e4c8655690581509de3dfbc80fb475fa34ff835299f16d9ed152c223b"
+      },
+      {
+        "anchor_ordinal": 166,
+        "anchor_timestamp": "2022-07-22T16:00:00",
+        "transition_id": "fea2f34e6274c5ff56f553642b075781695ecf636aa21a1d274d0b6e4349e1ae"
+      },
+      {
+        "anchor_ordinal": 167,
+        "anchor_timestamp": "2022-07-29T20:00:00",
+        "transition_id": "38e182c27011395c2e133c3c09d5386f0f6c2dd34d7ed22c7f6c21505ec63898"
+      },
+      {
+        "anchor_ordinal": 168,
+        "anchor_timestamp": "2022-08-15T06:00:00",
+        "transition_id": "f1be94c8933ded58f282ba494ca9ee89c49a04390e6cacd5ef892a263f1f0a92"
+      },
+      {
+        "anchor_ordinal": 169,
+        "anchor_timestamp": "2022-08-26T14:00:00",
+        "transition_id": "44b26d9bc665aede811f5cbec06168dbea710dcfb60a40560fde319d0a3585af"
+      },
+      {
+        "anchor_ordinal": 170,
+        "anchor_timestamp": "2022-09-06T17:00:00",
+        "transition_id": "86bad2d3d2d0939ed50ddb1d15c582ebf72caa6af3e5515676db1ed653fee664"
+      },
+      {
+        "anchor_ordinal": 171,
+        "anchor_timestamp": "2022-09-14T04:00:00",
+        "transition_id": "1cc1491bd06424384c9552141aa92d72e6ecf29df96789a26d0e568f0adef3e0"
+      },
+      {
+        "anchor_ordinal": 172,
+        "anchor_timestamp": "2022-09-21T17:00:00",
+        "transition_id": "5acdee2c2338575c6fca64d7c8132930f80902481a3eb7978293074e43cdcdfb"
+      },
+      {
+        "anchor_ordinal": 173,
+        "anchor_timestamp": "2022-09-28T17:00:00",
+        "transition_id": "8350b04d3aedc49af6a69bea6aff27fed56f0088e301d0644b41b8bb5d392078"
+      },
+      {
+        "anchor_ordinal": 174,
+        "anchor_timestamp": "2022-10-13T12:00:00",
+        "transition_id": "4f31818c8ac2fa69910cb380f8bf90c6737403ffc2e81a0a63b747539d2d5f36"
+      },
+      {
+        "anchor_ordinal": 175,
+        "anchor_timestamp": "2022-11-08T04:00:00",
+        "transition_id": "586efdd23a12b9ddcb1c798b7f9099ffa6b4f920820797344477e6fcc6a81992"
+      },
+      {
+        "anchor_ordinal": 176,
+        "anchor_timestamp": "2022-11-15T06:00:00",
+        "transition_id": "d3b613f028e6beefbf15b6b631cc17e57df8e917daa41884a9966a0a4b803eb3"
+      },
+      {
+        "anchor_ordinal": 177,
+        "anchor_timestamp": "2022-12-14T20:00:00",
+        "transition_id": "b3ae3abfe467ce45b6ff212cfff58e1f25d6aaeb6a225dfa077c55245f094bac"
+      },
+      {
+        "anchor_ordinal": 178,
+        "anchor_timestamp": "2023-01-12T17:00:00",
+        "transition_id": "d12123acf17fa0a2f00db474f367f262837412394f7963d5a9a7e54f5b5e7d24"
+      },
+      {
+        "anchor_ordinal": 179,
+        "anchor_timestamp": "2023-01-22T00:00:00",
+        "transition_id": "ad759380420c1223eade3ecbdcae1ba9e51f5f5e440abfdc24a6337bf80259ca"
+      },
+      {
+        "anchor_ordinal": 180,
+        "anchor_timestamp": "2023-02-15T20:00:00",
+        "transition_id": "6bd1821a523c00e23cab5c8881ecc3e106197dff0ce308a7e4b502f280e180db"
+      },
+      {
+        "anchor_ordinal": 181,
+        "anchor_timestamp": "2023-03-03T01:00:00",
+        "transition_id": "8bbbee3e1cfd194f3b34a2c33ca9c18cbb0a45516fb4fd877e853974035a593c"
+      },
+      {
+        "anchor_ordinal": 182,
+        "anchor_timestamp": "2023-03-10T05:00:00",
+        "transition_id": "0b7530b669c05d961464b4aa86aa236b148d9639d89147638d648c67f38d03cd"
+      },
+      {
+        "anchor_ordinal": 183,
+        "anchor_timestamp": "2023-03-17T10:00:00",
+        "transition_id": "e2b01fbcb6662d4ca225eb1dc3d3dc04ddcf671c5fd11d2a3dd086e86fadbc76"
+      },
+      {
+        "anchor_ordinal": 184,
+        "anchor_timestamp": "2023-03-24T14:00:00",
+        "transition_id": "92feb3d2a3750c12cb97bd66b19ea0f93c7eeada0a8f953ba48d6978d1a8210c"
+      },
+      {
+        "anchor_ordinal": 185,
+        "anchor_timestamp": "2023-04-26T19:00:00",
+        "transition_id": "77564f665c6432fcbe7610e666565507ff1240827225f03d8da1b25bf84e5478"
+      },
+      {
+        "anchor_ordinal": 186,
+        "anchor_timestamp": "2023-05-10T17:00:00",
+        "transition_id": "4f679985481c716ee66448d0bd230ea73615dc819d16f298983e0a3d7a6d0a87"
+      },
+      {
+        "anchor_ordinal": 187,
+        "anchor_timestamp": "2023-06-21T16:00:00",
+        "transition_id": "35518fe45ace771010c9d42d92f6b0ba0bff6deb4ef894bd9e3e2e1aa55e8559"
+      },
+      {
+        "anchor_ordinal": 188,
+        "anchor_timestamp": "2023-06-30T13:00:00",
+        "transition_id": "f8e2da177a9b1304db67819879c470f072d19ed740f156389a9ff1fdcd8a1567"
+      },
+      {
+        "anchor_ordinal": 189,
+        "anchor_timestamp": "2023-08-17T21:00:00",
+        "transition_id": "9c8978367888ff5f3beb9b6296dbeb4d210bfb1db0f9f95e6e16075cbc789f97"
+      },
+      {
+        "anchor_ordinal": 190,
+        "anchor_timestamp": "2023-08-29T16:00:00",
+        "transition_id": "d27ba203863bd902889677083afa7e6daa13a81876b3c6ffe27e63786afe7f96"
+      },
+      {
+        "anchor_ordinal": 191,
+        "anchor_timestamp": "2023-10-16T13:00:00",
+        "transition_id": "161944fd7015972b43697082182660b5062c2595328b70b15858f8a3c06c3ffc"
+      },
+      {
+        "anchor_ordinal": 192,
+        "anchor_timestamp": "2023-10-23T22:00:00",
+        "transition_id": "da6c09acb7df2f13a03abe773ba830feb4719f49657569ad777fa56ba6b37ce4"
+      },
+      {
+        "anchor_ordinal": 193,
+        "anchor_timestamp": "2023-11-09T16:00:00",
+        "transition_id": "28d81150e07f2534ba2cf546477f9e2c9ea958d2dda10826edcd979233c13f5a"
+      },
+      {
+        "anchor_ordinal": 194,
+        "anchor_timestamp": "2023-11-21T17:00:00",
+        "transition_id": "c3b9d123b078343e3a0e81c6cda82a30c94d0482dc3bf4ca1e3be6051d00d7e3"
+      },
+      {
+        "anchor_ordinal": 195,
+        "anchor_timestamp": "2023-12-05T22:00:00",
+        "transition_id": "b980b5a941283e4ea71924bbed6a7eee69a64ffb52d7b1b8c95ba9ef118a9bba"
+      },
+      {
+        "anchor_ordinal": 196,
+        "anchor_timestamp": "2024-01-03T12:00:00",
+        "transition_id": "e39ec130e428fe7fec7183defe2ee68ccc40d09c4adc3e98d1600c61d733c046"
+      },
+      {
+        "anchor_ordinal": 197,
+        "anchor_timestamp": "2024-01-10T12:00:00",
+        "transition_id": "a5df25ca631e5facb5ecf78888481e244f7bcf4dabddbcfd2072495dbb8581e6"
+      },
+      {
+        "anchor_ordinal": 198,
+        "anchor_timestamp": "2024-01-19T18:00:00",
+        "transition_id": "75c33f9d26d1f787cccd3279463dea1761fb30d4f07b2597dc8cf74254ed5245"
+      },
+      {
+        "anchor_ordinal": 199,
+        "anchor_timestamp": "2024-02-27T02:00:00",
+        "transition_id": "5a13f694e7b80eb038880094758b594773697bdc00cf7719f6e377b3c12fbf64"
+      },
+      {
+        "anchor_ordinal": 200,
+        "anchor_timestamp": "2024-03-05T19:00:00",
+        "transition_id": "dac37281ac78cc18022cda56873fe3b85cb2f61c7f2c7e6f937f15b8828e97cd"
+      },
+      {
+        "anchor_ordinal": 201,
+        "anchor_timestamp": "2024-03-12T23:00:00",
+        "transition_id": "9ec31e5dc6148096391c6528ed1aa80d148a5b4d1ba613fcb6dde1a34e5224ff"
+      },
+      {
+        "anchor_ordinal": 202,
+        "anchor_timestamp": "2024-03-20T20:00:00",
+        "transition_id": "66873cf9f575a8a796e9b40eeccdd14a3f5eb918d2f25d6d85145ec2c5018804"
+      },
+      {
+        "anchor_ordinal": 203,
+        "anchor_timestamp": "2024-04-02T02:00:00",
+        "transition_id": "b3b772aa40001c215578722affafc0eff73b27cae22569eb2a36d599776051c9"
+      },
+      {
+        "anchor_ordinal": 204,
+        "anchor_timestamp": "2024-04-12T18:00:00",
+        "transition_id": "830fc124564b9c2293c72b936347f5d91cff50a5fd59f36d5b1168351b33ef8a"
+      },
+      {
+        "anchor_ordinal": 205,
+        "anchor_timestamp": "2024-04-19T21:00:00",
+        "transition_id": "c56d938c28df4b4f796af8eb170c66f55f7c78825de94e6859f7a31c870ae67f"
+      },
+      {
+        "anchor_ordinal": 206,
+        "anchor_timestamp": "2024-04-30T19:00:00",
+        "transition_id": "88810b3c17f770d89bbb7135bcebffa8c928680380b0a3ac305d60ab888068f4"
+      },
+      {
+        "anchor_ordinal": 207,
+        "anchor_timestamp": "2024-05-10T17:00:00",
+        "transition_id": "9b8ca689f5ca5f0b1c7d0f7d898fc40db4ef49443ebdbd4725abc261fece64f2"
+      },
+      {
+        "anchor_ordinal": 208,
+        "anchor_timestamp": "2024-05-20T23:00:00",
+        "transition_id": "6f348d35079a605ae87f155895061a635da4001046b8175c578797fe72ab6aa8"
+      },
+      {
+        "anchor_ordinal": 209,
+        "anchor_timestamp": "2024-06-24T19:00:00",
+        "transition_id": "029e14f86205a65293f12106497c0e8cc84a06d041b927cea2fdbfadcdafc854"
+      },
+      {
+        "anchor_ordinal": 210,
+        "anchor_timestamp": "2024-07-04T02:00:00",
+        "transition_id": "51e091094c5410f3119b97cdd6d2ecd8831e438e96888b8b5bda1b775d86e526"
+      },
+      {
+        "anchor_ordinal": 211,
+        "anchor_timestamp": "2024-07-16T16:00:00",
+        "transition_id": "077fc86e947bf5ac64651cfb00e129e9e2da0bec8e2f8f8e9f3ff883393c8730"
+      },
+      {
+        "anchor_ordinal": 212,
+        "anchor_timestamp": "2024-08-02T14:00:00",
+        "transition_id": "22c9271cc86f78ca2b6c492ea89f1e9c524f3023c5c9f1328306b00ab0521f13"
+      },
+      {
+        "anchor_ordinal": 213,
+        "anchor_timestamp": "2024-08-09T14:00:00",
+        "transition_id": "f7a4c79f5d5f48a865751e5c25a9171f9f338a8a66dd4ded8e624df4640b481d"
+      },
+      {
+        "anchor_ordinal": 214,
+        "anchor_timestamp": "2024-08-27T22:00:00",
+        "transition_id": "eb47f4e16fb45bcb7c2e31f616c84943c27922866221040714faead4df548815"
+      },
+      {
+        "anchor_ordinal": 215,
+        "anchor_timestamp": "2024-09-06T14:00:00",
+        "transition_id": "a59fb829882cad6c25b879236f7505c9fb1926ba0c5e7167fe9a9a36b1f6ba03"
+      },
+      {
+        "anchor_ordinal": 216,
+        "anchor_timestamp": "2024-10-01T20:00:00",
+        "transition_id": "356942b63d0ca02d899ef5483390625964846411263f50e64d56c197ee373801"
+      },
+      {
+        "anchor_ordinal": 217,
+        "anchor_timestamp": "2024-10-15T14:00:00",
+        "transition_id": "09535c2e03821300137ca1bce5e13ace4c521f72fc5761d9c9499fc0407fda61"
+      },
+      {
+        "anchor_ordinal": 218,
+        "anchor_timestamp": "2024-11-01T16:00:00",
+        "transition_id": "f38902b88139a0854d303c9c2934c443958c52dd8a4460f6175b1ce539efd27b"
+      },
+      {
+        "anchor_ordinal": 219,
+        "anchor_timestamp": "2024-11-10T22:00:00",
+        "transition_id": "b4430d168990a81dd96242335ae0aedaf33d6cb9c0324a8dbddbbfc4ac68093d"
+      },
+      {
+        "anchor_ordinal": 220,
+        "anchor_timestamp": "2024-11-18T15:00:00",
+        "transition_id": "be526b68566863142459e99923025933b31a5e19203972da3d279e7d35725a19"
+      },
+      {
+        "anchor_ordinal": 221,
+        "anchor_timestamp": "2024-11-25T22:00:00",
+        "transition_id": "1d9995a8dd2ef1d2f598d018259a3ad4507a5bdb44b1f024a61b29c201a092e3"
+      },
+      {
+        "anchor_ordinal": 222,
+        "anchor_timestamp": "2024-12-05T02:00:00",
+        "transition_id": "e13ca2b35f83bb3f0e8d1fb9419bff899c918384079aa7d3a38e2f9772adaaa0"
+      },
+      {
+        "anchor_ordinal": 223,
+        "anchor_timestamp": "2024-12-18T20:00:00",
+        "transition_id": "16ab7917b696c033877a4a76e803231c1a1c6b295ac9c1085ddc4c30e4732b60"
+      },
+      {
+        "anchor_ordinal": 224,
+        "anchor_timestamp": "2024-12-30T21:00:00",
+        "transition_id": "20a37f7d5335466d8cf35ab2c5c5bd33b0978db85f0e5cea4696fd7ef18a4e81"
+      },
+      {
+        "anchor_ordinal": 225,
+        "anchor_timestamp": "2025-01-09T17:00:00",
+        "transition_id": "52b47eeafc81ebf326505a57f27a18c8be16ec4b147148afe303672cf5a2ed8e"
+      },
+      {
+        "anchor_ordinal": 226,
+        "anchor_timestamp": "2025-01-19T22:00:00",
+        "transition_id": "8e34708631d85ed52f81cbf4a2c51acf27e87a513e8ce8d39fdd48937867d7cd"
+      },
+      {
+        "anchor_ordinal": 227,
+        "anchor_timestamp": "2025-01-27T13:00:00",
+        "transition_id": "61df15c80fcf9eb295465b247ad6ebbeebef4b53c7e615955c4eafd6555e5215"
+      },
+      {
+        "anchor_ordinal": 228,
+        "anchor_timestamp": "2025-02-03T18:00:00",
+        "transition_id": "97ed0234fff1e0a2103eb39bb70ce26495b1b4d905b7a8be3a6311a08066df89"
+      },
+      {
+        "anchor_ordinal": 229,
+        "anchor_timestamp": "2025-02-25T07:00:00",
+        "transition_id": "98c7d7a7ca8e2e5c39590605f633bb8462f978b624eab789a2aeb4e89cb0c692"
+      },
+      {
+        "anchor_ordinal": 230,
+        "anchor_timestamp": "2025-03-04T12:00:00",
+        "transition_id": "8ace4c1407b7ed33914030fbaa583e18e4108db55eb0ced17c0d0c3c06c80bf7"
+      },
+      {
+        "anchor_ordinal": 231,
+        "anchor_timestamp": "2025-03-11T13:00:00",
+        "transition_id": "856aa9f9a9bc035b33d1b110568ef3f2893b2bc6291f54571f846ddba3be73a1"
+      },
+      {
+        "anchor_ordinal": 232,
+        "anchor_timestamp": "2025-04-02T20:00:00",
+        "transition_id": "8429d627bd6f7089e3ac7c4fbd9ba280f7be9cfd35c7e83c6b274ae867a110b4"
+      },
+      {
+        "anchor_ordinal": 233,
+        "anchor_timestamp": "2025-04-10T02:00:00",
+        "transition_id": "324f1e3a4f68b5ebcf36aa0710e4ed3e82015a686e71ae246ff9b570e03f570d"
+      },
+      {
+        "anchor_ordinal": 234,
+        "anchor_timestamp": "2025-05-21T19:00:00",
+        "transition_id": "41ef80f92485beaa4017d34f35994f252dccd37d0cd3d267d88a7b394d6ee741"
+      },
+      {
+        "anchor_ordinal": 235,
+        "anchor_timestamp": "2025-10-10T20:00:00",
+        "transition_id": "86fa8700efe95f183093f5bb7684ea4603180902d53815291360fe3c68ddfccd"
+      },
+      {
+        "anchor_ordinal": 236,
+        "anchor_timestamp": "2025-10-21T22:00:00",
+        "transition_id": "4a190b2767335c706d1a8c662b71dedc8f626a9301923f4aab506ac0d53153bd"
+      },
+      {
+        "anchor_ordinal": 237,
+        "anchor_timestamp": "2025-11-04T18:00:00",
+        "transition_id": "e5999457723858d54a28c2bcb3d3eb80133b9ad8e2adccf29ade1a31cfd97efe"
+      },
+      {
+        "anchor_ordinal": 238,
+        "anchor_timestamp": "2025-11-14T04:00:00",
+        "transition_id": "ab81bbcc8d00481b728149d338cfc555b6ec45879878ff9f0615a15a82da9a80"
+      },
+      {
+        "anchor_ordinal": 239,
+        "anchor_timestamp": "2025-11-21T05:00:00",
+        "transition_id": "e5783a2ea31a3d942d352f98f803c9b8b5c2ce7fd0c2b363c9c7ccfe555594b8"
+      },
+      {
+        "anchor_ordinal": 240,
+        "anchor_timestamp": "2025-12-05T16:00:00",
+        "transition_id": "15767bd321cdba2244d898df28efa1a699221d9e325dc6622d6cdf28f920fe79"
+      },
+      {
+        "anchor_ordinal": 241,
+        "anchor_timestamp": "2025-12-17T15:00:00",
+        "transition_id": "11c000ac44648b7d449c79c6be658dbc33398f85d2b70e5e619e1b636baff8b7"
+      }
+    ]
+  },
+  "pooled_scaling_scope": "complete_pooled_eligible_sample"
+}

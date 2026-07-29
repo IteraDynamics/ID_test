@@ -1,0 +1,58 @@
+{
+  "campaign_46": {
+    "feasibility_path": "artifacts/full_historical_regime_state_sequence/btc_hourly_regime_support_feasibility.json",
+    "feasibility_sha256": "a16416a1ee79ec6846e7383577560d714d89698b9536bd600c1853118d28ff72",
+    "feasibility_status": "CAMPAIGN_45_SOURCE_FEASIBLE",
+    "manifest_path": "artifacts/full_historical_regime_state_sequence/btc_hourly_regime_state_manifest.json",
+    "manifest_sha256": "dbd4d44f3ec0054a6c422e3d406c2d57bc802e525db1718973295aa36ef5a522",
+    "transitions_path": "artifacts/full_historical_regime_state_sequence/btc_hourly_regime_transitions.csv",
+    "transitions_sha256": "2257e176296511a171129594744705c3e2698a083cee505151cc517267740c7a"
+  },
+  "control_columns": [
+    "trailing_log_return_24h",
+    "trailing_log_return_72h",
+    "trailing_log_return_168h",
+    "realized_volatility_24h",
+    "realized_volatility_168h",
+    "distance_from_close_mean_168h"
+  ],
+  "counts": {
+    "eligible_non_unknown_transitions": 2788,
+    "partitions": [
+      81,
+      81,
+      80
+    ],
+    "purged_transitions": 242,
+    "total_transitions": 2789
+  },
+  "horizons_hours": [
+    24,
+    72,
+    168
+  ],
+  "observation_only": true,
+  "outcome_definition": "log(exact_horizon_close / exact_anchor_close)",
+  "outcomes_generated": true,
+  "pooled_scaling_distinction": "complete pooled eligible sample; descriptive pooled confirmatory fit",
+  "predictive_outcomes_generated": false,
+  "realized_volatility_definition": "square_root_of_sum_of_squared_hourly_log_returns",
+  "research_only": true,
+  "source": {
+    "byte_count": 4792028,
+    "first_timestamp": "2018-01-01 00:00:00",
+    "last_timestamp": "2025-12-31 00:00:00",
+    "path": "data/btcusd_3600s_2018-01-01_to_2025-12-31.csv",
+    "row_count": 70069,
+    "schema": [
+      "timestamp",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume"
+    ],
+    "sha256": "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079"
+  },
+  "status": "PASS"
+}
