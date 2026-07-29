@@ -12,13 +12,15 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`.
 
 **Campaign:** Campaign #47 — Historical Regime Persistence, Duration, Clustering, and Spacing Discovery
 
-**Classification:** Research-only predictive-structure governance over the frozen canonical Campaign #46 regime-state ledger
+**Classification:** Research-only predictive-structure discovery over the frozen canonical Campaign #46 regime-state ledger
 
-**Status:** SPECIFICATION AND IMPLEMENTATION HANDOFF FROZEN — governance design is complete before predictive outcome generation; implementation, estimator execution, result inspection, candidate ranking, artifact generation, strategy testing, and runtime integration remain unauthorized until a separate implementation GO is recorded
+**Status:** PREDICTIVE IMPLEMENTATION GO — the frozen specification and implementation handoff predate predictive-outcome generation; deterministic observation-only implementation, focused tests, governed preflight, canonical generation, two-run replay, result inspection, full-suite validation, scope review, and publication are authorized only within the frozen file surfaces and contracts
 
-**Working branch:** `agent/campaign-47-regime-persistence-structure`
+**Working branch:** `agent/campaign-47-regime-structure-implementation`
 
 **Repository:** `IteraDynamics/ID_test`
+
+**Governed lineage base:** Campaign #47 governance merge `3e2b7447d997f1bf0881340683d2a28e8d310e4f`
 
 **Governing specification:** `docs/research/HISTORICAL_REGIME_PERSISTENCE_DURATION_CLUSTERING_AND_SPACING_DISCOVERY.md`
 
@@ -28,11 +30,27 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`.
 
 **Implementation handoff freeze commit:** `fd41466aa19e32dcec40581975c87130053162c1`
 
+## Final governance review
+
+The frozen specification and handoff were reviewed after merge and accepted without amendment. They reconcile on:
+
+- governed Campaign #46 and BTC source identities;
+- exact common-grid anchor construction;
+- predictor definitions and interval conventions;
+- exact outcome definitions and missing-timestamp failures;
+- development-only scaling and current-regime fixed effects;
+- OLS-HC3 estimation;
+- support and rankability gates;
+- chronological directional consistency;
+- four independent Benjamini-Hochberg families;
+- deterministic serialization, staged publication, replay, and source immutability;
+- explicit stop conditions and the research-only interpretation boundary.
+
+No predictive outcome was generated or inspected before this implementation GO.
+
 ## Immediate objective
 
-Review the frozen Campaign #47 research contract and implementation handoff, verify that they preserve deterministic, replay-safe, observation-only, leakage-safe, fail-closed behavior, and decide whether to record a separate implementation GO.
-
-Campaign #47 asks whether broadly supported temporal properties of BTC regimes contain incremental information beyond exact transition identity and recent BTC price state:
+Implement the frozen Campaign #47 pipeline and determine whether broadly supported temporal properties of BTC regimes contain reproducible incremental information beyond exact transition identity and recent BTC price state:
 
 - current regime age;
 - previous completed regime duration;
@@ -43,25 +61,33 @@ The frozen outcomes are directional forward return, absolute forward return, for
 
 ## Current authorization
 
-**Decision:** GO for Campaign #47 governance review only.
+**Decision:** GO for Campaign #47 predictive implementation under the frozen specification and handoff.
 
 Authorized now:
 
-- inspect and review the frozen specification and implementation handoff;
-- verify source, anchor, predictor, outcome, control, estimator, support, multiplicity, serialization, and acceptance-gate definitions;
-- correct only pre-result governance ambiguity through an explicitly superseding specification or handoff commit;
-- record a separate implementation GO only after the frozen documents are accepted.
+- add `research/ml/validation/historical_regime_structure_discovery.py`;
+- add `scripts/run_historical_regime_structure_discovery.py`;
+- add `tests/test_historical_regime_structure_discovery.py`;
+- use only the frozen canonical Campaign #46 state, run, transition, and manifest sources plus the governed BTC hourly source;
+- construct the frozen common 168-hour anchor grid and chronological partitions;
+- construct exactly the six frozen structural predictors;
+- construct exactly the four frozen outcome families at 24, 72, and 168 hours;
+- construct the six frozen BTC controls and current-regime fixed effects;
+- implement development-only scaling, OLS-HC3, support gates, directional consistency, and four family-specific BH corrections;
+- run focused tests and governed preflight before canonical outcome generation;
+- generate exactly the ten frozen canonical outputs;
+- run two-run byte replay, post-generation preflight, result inspection, full-suite validation, scope review, and publication;
+- update this board in a separate closure transition only after all acceptance gates pass.
 
 Not authorized:
 
-- implementation of the Campaign #47 module, runner, or tests;
-- predictive outcome generation or inspection;
-- estimator execution, p-values, q-values, effect sizes, direction tests, or candidate ranking;
-- changes to `BaselineRegimeEngine`, canonical Campaign #46 labels, thresholds, or classifier defaults;
+- changing `BaselineRegimeEngine`, canonical Campaign #46 labels, thresholds, or classifier defaults;
+- predictors, transformations, thresholds, bins, interactions, controls, outcomes, horizons, estimators, support rules, or multiplicity methods outside the frozen documents;
 - model training, replacement, or recalibration;
 - Core v1 overlay or economic-value testing;
 - Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, or optimization research under Campaign #47;
-- signals, strategy changes, orders, execution, portfolio construction, NAV, exposure, dashboard changes, or runtime integration;
+- interpreting a supported association as deployable alpha or strategy usefulness;
+- signals, strategy changes, orders, execution, portfolio construction, NAV, exposure, dashboards, or runtime integration;
 - interpolation, filling, resampling, nearest-row matching, as-of matching, synthetic bars, or source substitution.
 
 ## Frozen Campaign #47 research contract
@@ -174,7 +200,7 @@ Unrankable, null, missing, failed, and insufficient-support candidates must rema
 
 A supported association does not establish deployable alpha, economic usefulness, or strategy value.
 
-## Campaign #47 authorized file surfaces after separate implementation GO
+## Authorized file surfaces
 
 Campaign #47 may modify only:
 
@@ -192,7 +218,7 @@ Any additional surface requires an explicit board transition.
 
 1. The frozen specification predates predictive outcome generation. **Passed: `bc71511`.**
 2. The frozen implementation handoff predates predictive outcome generation. **Passed: `fd41466`.**
-3. A separate implementation GO is recorded. **Pending.**
+3. A separate implementation GO is recorded. **Passed by this board transition.**
 4. Governed source identities, hashes, schemas, ordering, state/run/transition relationships, and timestamps pass preflight. **Pending.**
 5. Exact anchor, predictor, candidate, outcome, and partition inventories serialize deterministically before ranking. **Pending.**
 6. Focused Campaign #47 tests pass. **Pending.**
@@ -210,10 +236,10 @@ Any additional surface requires an explicit board transition.
 1. Complete and merge Campaign #45 on its governed research lineage. **Completed: PR #43, merge `42e5d7c`.**
 2. Freeze the Campaign #47 specification before predictive outcome generation. **Completed: `bc71511`.**
 3. Freeze the Campaign #47 implementation handoff before predictive outcome generation. **Completed: `fd41466`.**
-4. Review the frozen Campaign #47 design. **Authorized next.**
-5. Record a separate Campaign #47 implementation GO if the design is accepted. **Pending.**
-6. Implement the observation-only module, runner, and focused tests. **Not yet authorized.**
-7. Run governed preflight before outcome construction. **Pending.**
+4. Review and accept the frozen Campaign #47 design. **Completed.**
+5. Record a separate Campaign #47 implementation GO. **Completed by this board transition.**
+6. Implement the observation-only module, runner, and focused tests. **Authorized next.**
+7. Run focused tests and governed preflight before outcome construction. **Pending.**
 8. Generate canonical outputs twice and verify byte identity. **Pending.**
 9. Inspect results, run the full suite, and perform scope review. **Pending.**
 10. Publish and close Campaign #47 only if every acceptance gate passes. **Pending.**
