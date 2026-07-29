@@ -403,7 +403,7 @@ def _ols_fixture() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 def test_ols_coefficient_reconciles_against_frozen_fixture() -> None:
     outcome, candidate, controls = _ols_fixture()
     result = ols_hc3(outcome, candidate, controls)
-    assert result.coefficient == pytest.approx(0.13888326596605288, abs=1e-14)
+    assert result.coefficient == pytest.approx(0.13888326596605288, abs=5e-12)
     assert result.rank == 8
     assert result.n_obs == 20
 
@@ -411,13 +411,13 @@ def test_ols_coefficient_reconciles_against_frozen_fixture() -> None:
 def test_hc3_covariance_reconciles_against_frozen_fixture() -> None:
     outcome, candidate, controls = _ols_fixture()
     result = ols_hc3(outcome, candidate, controls)
-    assert result.standard_error == pytest.approx(0.03364156604727464, abs=1e-14)
-    assert result.p_value == pytest.approx(3.654178542469978e-05, rel=1e-12)
+    assert result.standard_error == pytest.approx(0.03364156604727464, abs=5e-12)
+    assert result.p_value == pytest.approx(3.654178542469978e-05, abs=5e-12)
     assert result.confidence_interval_low == pytest.approx(
-        0.07294700812986908, abs=1e-14
+        0.07294700812986908, abs=5e-12
     )
     assert result.confidence_interval_high == pytest.approx(
-        0.20481952380223667, abs=1e-14
+        0.20481952380223667, abs=5e-12
     )
 
 

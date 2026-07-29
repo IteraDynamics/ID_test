@@ -1,0 +1,40 @@
+{
+  "aggregate_payload_digest": "91c6251b18b3a341e608180c9d7aa4574d6ebbe7ae4464a935ced2a9645bddaf",
+  "counts": {
+    "anchors": 242,
+    "candidates": 51,
+    "partitions": [
+      81,
+      81,
+      80
+    ],
+    "rankable_candidates": 9,
+    "supported_associations": 0
+  },
+  "dashboard_mutation_allowed": false,
+  "execution_mutation_allowed": false,
+  "experiment": "campaign_45_historical_regime_state_and_transition_discovery",
+  "exposure_mutation_allowed": false,
+  "files": {
+    "regime_transition_anchor_inventory.csv": "b8cab137ce085c85a1a0f6c1397d009d3aafea0b2b15559c1b1e81757316bb45",
+    "regime_transition_anchor_inventory.json": "15bd58e7e1d4066e275523a96284f2d37c6efca4f92ade5bbd8b714bf927e605",
+    "regime_transition_candidate_inventory.csv": "b29f2f478da3fda639403b61a3a1d3a9a4ed9c27cc7e6cad798eebc02e9d55c5",
+    "regime_transition_candidate_inventory.json": "e75328e6ae4ef7bb46fc80bbd3bf52b8d63f128e3772269ab021d9069e8fd93c",
+    "regime_transition_fold_plan.json": "f50a77719a95f77c7fd18b8efdf9bad46add0f57fd7cc369d96d999a50389c33",
+    "regime_transition_report.md": "6a2f3779db4a43dac2e5c32f6bc3a0219c13dbb7e0df8122887f826e8587b49b",
+    "regime_transition_results.csv": "6b73c581697e07b4f7d87db54602dada2c08edf3e53a779755d171ebf0979896",
+    "regime_transition_results.json": "725d155294b541b4a0fbdf5dca9654f4e84cbd3c8bc138a9c1d8c496265719b6",
+    "regime_transition_source_manifest.json": "92c10d0cf46f5beddca1f14ffd77b0f2627f4264f9e8041dd840e91b4adbfa4d"
+  },
+  "model_training_allowed": false,
+  "nav_mutation_allowed": false,
+  "observation_only": true,
+  "order_mutation_allowed": false,
+  "portfolio_mutation_allowed": false,
+  "regime_mutation_allowed": false,
+  "research_only": true,
+  "runtime_mutation_allowed": false,
+  "signal_mutation_allowed": false,
+  "strategy_mutation_allowed": false,
+  "threshold_mutation_allowed": false
+}
