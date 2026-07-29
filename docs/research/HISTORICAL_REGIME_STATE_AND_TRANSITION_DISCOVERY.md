@@ -2,236 +2,218 @@
 
 ## Status
 
-Specification frozen for implementation review on `agent/campaign-45-historical-regime-transitions`.
+Specification superseded and frozen for implementation on `agent/campaign-45-historical-regime-transitions` after Campaign #46 established a governed full-history transition source.
 
-Campaign #45 is research-only, observation-only, deterministic, replay-safe, and fail-closed. It does not authorize production, runtime, model-training, threshold, signal, strategy, intent, order, execution, portfolio, NAV, exposure, or dashboard changes.
+Campaign #45 is research-only, observation-only, deterministic, replay-safe, leakage-safe, anchor-local, and fail-closed. It does not authorize production, runtime, model-training, threshold, signal, strategy, intent, order, execution, portfolio, NAV, exposure, or dashboard changes.
 
 ## Immediate objective
 
-Freeze and test a finite inventory of anchor-local historical regime states and state transitions for incremental association with forward BTC outcomes, using deterministic event-family or chronologically separated independence controls and simple BTC price-state baselines.
+Test whether pre-registered BTC ordered regime transitions contain reproducible incremental forward-return information beyond simple anchor-local BTC price-state controls.
 
-The campaign asks whether historical regime state or transition information adds stable out-of-sample information beyond simple BTC price-state controls. It does not redesign or replace the existing regime detector.
+Source feasibility is established. Predictive value is not.
 
 ## Exact research question
 
-Across the governed historical BTC regime artifacts, do pre-registered anchor-local regime states or transitions show directionally stable, independently supported, out-of-sample association with forward BTC outcomes after comparison with simple BTC price-state baselines?
+Across the canonical Campaign #46 BTC hourly regime-transition ledger, do pre-registered ordered non-`UNKNOWN` transitions show directionally stable out-of-sample association with forward BTC log returns after adjustment for frozen simple BTC price-state controls and multiplicity?
 
-## Relationship to existing regime detection
+## Governing source contract
 
-The existing regime workflow labels historical market conditions and episodes. Campaign #45 treats those governed, time-local labels as immutable research inputs.
+Campaign #45 must use the canonical Campaign #46 publication at:
 
-Campaign #45 does not:
+`artifacts/full_historical_regime_state_sequence/`
 
-- change how a regime is detected;
-- add a new live regime;
-- alter any regime threshold;
-- change runtime strategy selection;
-- use forward information to assign a predictor label;
-- promote a historical association into a trading rule.
+Required files:
 
-The new research object is the historical sequence around each anchor:
+- `btc_hourly_regime_transitions.csv`;
+- `btc_hourly_regime_support_feasibility.json`;
+- `btc_hourly_regime_state_manifest.json`.
 
-- current state;
-- immediately prior state;
-- ordered transition from prior state to current state;
-- current-state age when safely derivable from information available at the anchor;
-- transition occurrence and spacing when safely derivable from information available at the anchor.
+Publication commit: `34a6999`.
 
-## Governing source boundary
+Underlying BTC source:
 
-Eligible inputs must be repository-tracked specifications, code, schemas, manifests, or governed generated artifacts already identified by Campaign #44.
+- path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`;
+- SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`;
+- rows: `70,069`;
+- exact timestamps only;
+- no interpolation, filling, resampling, nearest-row matching, or as-of matching.
 
-The initial governed source set is limited to:
-
-- `docs/research/CORE_V1_HISTORICAL_REGIME_TAXONOMY.md`;
-- `research/ml/validation/historical_regime_taxonomy.py`;
-- `research/ml/validation/historical_regime_taxonomy_report.py`;
-- `scripts/run_core_v1_historical_regime_taxonomy.py`;
-- `scripts/run_core_v1_historical_regime_taxonomy_report.py`;
-- governed historical event-family artifacts and schemas required to prevent overlapping episodes from being treated as independent observations;
-- the governed BTC hourly close source used by prior historical research;
-- Campaign #44 canonical inventory and roadmap artifacts.
-
-Before implementation, preflight must resolve exact artifact paths, schema versions, required hashes, and timestamp semantics. If any required source identity, field meaning, or anchor timing cannot be established, the affected field or candidate must remain unavailable and the run must fail closed where necessary.
+Any identity, hash, schema, count, ordering, timestamp, or manifest disagreement fails closed before outcome generation.
 
 ## Unit of observation and independence
 
-The primary unit of evidence is an independent historical event family when an anchor falls inside an existing governed event family.
+The primary observation unit is one Campaign #46 transition anchor retained by the frozen 168-hour chronological purge.
 
-Rules:
+Frozen source evidence:
 
-1. Multiple overlapping episode rows from the same governed event family must not count as independent support.
-2. When no governed event-family identity applies, observations must be chronologically separated by a pre-registered purge interval at least as long as the maximum tested outcome horizon.
-3. An event family may contribute at most one observation to a given candidate, anchor definition, and horizon.
-4. The deterministic representative anchor for a family must be frozen before outcome inspection.
-5. Candidate support must be reported both as raw eligible anchors and independent families or purged observations.
+- total transitions: `2,789`;
+- eligible non-`UNKNOWN` transitions: `2,788`;
+- independent purged transitions: `242`;
+- chronological evidence partitions: `81`, `81`, `80`.
+
+Only the 242 purged observations may enter modeling, descriptive candidate statistics, support counts, fold evidence, significance calculations, or rankings. Purged-out transitions remain visible in source reconciliation but may not be treated as independent evidence.
 
 ## Frozen predictor inventory
 
-Only the following predictor classes may be implemented. Exact field availability must be established during preflight from governed source schemas.
+### Confirmatory predictor class
 
-### P-001 Current intrinsic regime state
+`P-003` ordered state transition:
 
-The anchor-local intrinsic regime label available at the observation timestamp, excluding any recovery-outcome component that depends on post-anchor information.
+`<prior_regime> -> <current_regime>`
 
-Eligible components may include, only when anchor-local:
+Rules:
 
-- collapse severity;
-- feature displacement;
-- volatility-state subtype;
-- composite combinations of eligible anchor-local components.
+- both labels must be non-`UNKNOWN`;
+- self-transitions are excluded;
+- labels are taken exactly from the canonical Campaign #46 transition ledger;
+- no merged, learned, clustered, embedded, thresholded, or post-result transition classes are allowed;
+- deterministic candidate IDs are assigned before outcomes are inspected.
 
-### P-002 Prior intrinsic regime state
+### Descriptive-only fields
 
-The immediately preceding non-identical intrinsic state under a deterministic, pre-registered state-change definition.
+Current state, prior state, state age, run duration, and transition spacing may be serialized when already present and anchor-local, but they are not confirmatory candidate classes in Campaign #45.
 
-### P-003 Ordered state transition
+## Frozen BTC price-state controls
 
-`<prior_intrinsic_state> -> <current_intrinsic_state>`.
-
-Self-transitions are excluded from the primary transition inventory and may be retained only as a named baseline category.
-
-### P-004 Current-state age
-
-Elapsed governed rows or hours since entry into the current intrinsic state, calculated using only information available through the anchor.
-
-State age is rankable only if state continuity and timestamp cadence can be established exactly.
-
-### P-005 Transition spacing
-
-Elapsed governed rows or hours since the prior eligible state transition, calculated using only information available through the anchor.
-
-Transition spacing is rankable only if prior-transition identity is unambiguous.
-
-### Explicitly prohibited predictors
-
-- recovery outcome or recovery duration attached to the same episode;
-- similarity to a later or latest window when that window postdates the anchor;
-- any field computed with future prices or future activation behavior;
-- post-anchor recovery labels;
-- arbitrary combinations created after result inspection;
-- learned embeddings, clustering, or model-generated transition classes;
-- runtime-only fields whose historical timestamp semantics are not governed.
-
-## Frozen simple BTC price-state controls
-
-Each rankable regime candidate must be compared with simple anchor-local BTC controls. The implementation may use only a finite pre-registered set derived from the governed hourly close series:
+The exact control vector is:
 
 1. trailing 24-hour log return;
 2. trailing 72-hour log return;
 3. trailing 168-hour log return;
-4. trailing 24-hour realized volatility using hourly log returns;
-5. trailing 168-hour realized volatility using hourly log returns;
-6. distance from the trailing 168-hour close mean, normalized by trailing 168-hour close standard deviation when the denominator is finite and positive.
+4. trailing 24-hour realized volatility from hourly log returns;
+5. trailing 168-hour realized volatility from hourly log returns;
+6. distance from the trailing 168-hour close mean divided by trailing 168-hour close standard deviation when finite and positive.
 
-All trailing windows must end at or before the anchor. Missing history remains null and makes the affected row ineligible for tests requiring that control.
+All windows end at the anchor timestamp. Exact required timestamps must exist. Missing or non-finite controls make the affected observation ineligible for the controlled estimator and remain visible with an exclusion reason.
 
-No control thresholds or bins may be tuned after outcome inspection. Any categorical control representation must be frozen before generation.
+Controls are standardized using development-partition means and population standard deviations only. Those statistics are applied unchanged to the subsequent evaluation partition. A zero or non-finite development standard deviation fails the affected fit closed.
 
-## Frozen outcomes and horizons
+No control bins, thresholds, transformations, substitutions, or selections may be tuned after outcome inspection.
+
+## Frozen outcome and horizons
 
 Primary outcome:
 
-- forward BTC log return from anchor close to horizon close.
+- forward BTC log return from exact anchor close to exact horizon close.
 
-Secondary descriptive outcome:
-
-- maximum adverse excursion over the same forward horizon, only if its exact formula is frozen before result inspection.
-
-Frozen forward horizons:
+Frozen horizons:
 
 - 24 hours;
 - 72 hours;
 - 168 hours.
 
-An anchor is eligible for a horizon only when the exact anchor close and horizon close are present in the governed BTC hourly source without interpolation.
+Maximum adverse excursion, strategy returns, Sharpe ratios, transaction costs, turnover, drawdown, positions, orders, NAV, and exposure are outside Campaign #45.
 
-## Chronological evaluation
+## Candidate inventory
 
-The study must use expanding chronological folds. Exact fold boundaries must be derived deterministically from eligible anchor timestamps before predictive outcomes are inspected.
+The complete confirmatory family is the Cartesian product of:
 
-Minimum rules:
+- every distinct eligible ordered transition category present in the 242-observation purged source;
+- horizons `24`, `72`, and `168` hours.
 
-1. At least three non-empty evaluation folds are required for a rankable candidate.
-2. Training or descriptive-development periods must precede evaluation periods.
-3. Purging between development and evaluation must be at least the maximum tested horizon.
-4. No random split is permitted.
-5. Fold boundaries and eligible counts must be serialized before candidate result summaries.
-6. A candidate with insufficient independent support in any required fold remains visible but non-rankable.
-
-## Candidate inventory and multiplicity
-
-The candidate inventory is the Cartesian set of available frozen predictor categories and frozen horizons after fail-closed availability checks.
-
-The implementation must:
-
-- serialize the complete candidate inventory before result ranking;
-- assign deterministic candidate IDs;
-- prevent duplicated semantic candidates;
-- report null and insufficient-support candidates;
-- use a pre-registered multiplicity-control method for confirmatory claims;
-- distinguish exploratory descriptive summaries from confirmatory supported associations.
-
-No candidate may be added, merged, transformed, or dropped after outcome inspection except through a separately authorized campaign.
+The inventory must be serialized before result ranking. Every candidate remains visible, including null, missing, failed, and insufficient-support candidates. No candidate may be added, merged, transformed, or dropped after outcomes are inspected.
 
 ## Minimum support gates
 
 A candidate is rankable only when all are true:
 
-- at least 20 independent event families or purged observations overall;
-- at least 5 independent observations in each required chronological evaluation fold;
-- at least 5 independent observations for each side of any binary comparison;
-- exact anchor-local predictor availability is established;
-- no known or unresolved predictor leakage exists;
-- the simple BTC control set required by the comparison is available;
-- the finite falsification test can be executed without unauthorized behavior changes.
+- at least 20 independent observations overall;
+- at least 5 independent observations in each of the three chronological evidence partitions;
+- at least 5 candidate-present and at least 5 candidate-absent observations in each required estimator sample;
+- exact anchor, controls, and horizon closes are available;
+- no duplicate anchor exists;
+- no leakage or timestamp ambiguity exists.
 
-These gates control research interpretability only. They do not imply deployability or economic significance.
+These gates control interpretability only and do not imply deployability or economic significance.
 
-## Primary comparisons
+## Chronological evaluation
 
-For each rankable candidate and horizon, the implementation must report:
+The three Campaign #46 partitions remain frozen as chronological evidence partitions with counts `81`, `81`, and `80`.
 
-1. unconditional forward-return summary;
-2. candidate-conditional forward-return summary;
-3. independent-support counts;
-4. fold-by-fold direction and magnitude;
-5. comparison against the frozen simple BTC price-state controls;
-6. incremental association after the frozen controls using a deterministic pre-registered method;
-7. null, missing, and excluded counts with reasons.
+Expanding evaluation is defined as:
 
-The exact statistical estimator and multiplicity-control procedure must be frozen in the implementation handoff before result generation. No estimator may be selected based on observed candidate performance.
+- partition 1: initial development block;
+- partition 2: evaluated using scaling and encoding fit only on partition 1;
+- partition 3: evaluated using scaling and encoding fit only on partitions 1 and 2.
+
+This pre-result amendment supersedes the prior requirement for three separate evaluation folds. Campaign #45 therefore requires two genuine expanding out-of-sample evaluations while preserving minimum candidate support in all three evidence partitions.
+
+No random split is permitted. No future partition may affect earlier scaling, encoding, candidate definition, support decisions, or estimator construction.
+
+## Frozen estimator
+
+For each eligible candidate and horizon, fit ordinary least squares with an intercept:
+
+`forward_log_return ~ candidate_indicator + six frozen standardized controls`
+
+Estimator contract:
+
+- candidate encoding: binary indicator, `1` for the exact ordered transition and `0` otherwise;
+- reference level: candidate absent;
+- coefficient of interest: candidate-indicator coefficient;
+- standard errors: HC3 heteroskedasticity-consistent;
+- two-sided coefficient test against null `beta_candidate = 0`;
+- confidence interval: two-sided 95%;
+- no regularization, feature selection, interaction terms, nonlinear terms, winsorization, clipping, or hyperparameter tuning.
+
+Report the coefficient in log-return units and `expm1(coefficient)` as an unannualized approximate percentage-return difference. This is descriptive research evidence, not a trading return.
+
+## Multiplicity control
+
+The single confirmatory multiplicity family contains every rankable ordered-transition-by-horizon candidate.
+
+Apply Benjamini-Hochberg false-discovery-rate control at `q = 0.05` to the pooled controlled-estimator p-values.
+
+Canonical results must include raw p-value, BH-adjusted q-value, coefficient, HC3 standard error, confidence interval, support counts, exclusions, and fold results.
+
+A candidate cannot be called supported unless `q <= 0.05` and the directional-consistency rule passes.
+
+## Directional-consistency rule
+
+A candidate is directionally stable only when:
+
+- both out-of-sample evaluation coefficients are finite and nonzero;
+- both have the same sign;
+- the pooled coefficient has that same sign.
+
+Magnitude need not be monotonic. Statistical significance in each individual fold is not required; fold direction is a falsification gate, while pooled multiplicity-adjusted evidence is the confirmatory significance gate.
 
 ## Falsification rule
 
-A candidate is rejected as a supported association when any of the following holds:
+A candidate is not supported when any of the following holds:
 
-- direction is not stable across the required chronological evaluation folds;
-- incremental association relative to frozen BTC price-state controls is absent or unstable out of sample;
-- minimum independent-support gates are not met;
-- the result depends on overlapping episode rows rather than independent families or purged observations;
-- the result disappears under the pre-registered robustness checks;
-- predictor leakage or timestamp ambiguity is identified;
-- multiplicity-adjusted evidence does not meet the pre-registered confirmatory standard.
+- minimum support fails;
+- either out-of-sample direction disagrees with the other or with the pooled estimate;
+- incremental association relative to frozen controls is absent;
+- BH-adjusted evidence exceeds `0.05`;
+- the result depends on purged-out or duplicate observations;
+- required exact timestamps are missing;
+- leakage, source mismatch, ordering ambiguity, or non-determinism is identified;
+- replay or full-suite validation fails.
 
-A failed candidate remains visible in canonical outputs. Failure must not be converted into a new post hoc candidate.
+Failed candidates remain visible and may not be converted into post hoc candidates.
 
-## Required robustness checks
+## Required robustness and reconciliation
 
-The finite implementation must include:
+The implementation must verify:
 
-- event-family-level versus chronologically purged observation reconciliation where both are valid;
-- exclusion of recovery-dependent predictor fields;
-- exact duplicate-anchor detection;
-- fold-boundary and horizon-purge verification;
-- simple BTC price-state control comparison;
-- sensitivity to deterministic representative-anchor choice only when multiple choices were pre-registered before outcome inspection;
+- exact source and manifest identity;
+- exact 242-observation purge membership;
+- exact partition counts `81`, `81`, `80`;
+- duplicate-anchor absence;
+- strict non-`UNKNOWN` and non-self-transition eligibility;
+- exact anchor and horizon matching;
+- development-only scaling;
+- deterministic candidate ordering and IDs;
 - null and insufficient-support visibility;
-- two-run byte-identical replay.
+- Benjamini-Hochberg implementation against a fixed test vector;
+- HC3 estimator behavior against a fixed test fixture;
+- two-run byte-identical replay;
+- LF-only canonical text and strict JSON.
 
 ## Canonical outputs
 
-Planned outputs under `artifacts/historical_regime_transitions/`:
+Under `artifacts/historical_regime_transitions/`:
 
 - `regime_transition_source_manifest.json`;
 - `regime_transition_anchor_inventory.json`;
@@ -244,39 +226,37 @@ Planned outputs under `artifacts/historical_regime_transitions/`:
 - `regime_transition_report.md`;
 - `regime_transition_manifest.json`.
 
-All canonical text outputs must use LF line endings, deterministic ordering, strict JSON nulls, and repo-relative source identifiers.
+All outputs must use deterministic ordering, LF line endings, strict JSON nulls, and repo-relative source identifiers.
 
 ## Acceptance evidence
 
-Campaign #45 may be considered complete only when:
+Campaign #45 may be complete only when:
 
-1. this specification and the exact estimator handoff predate predictive-result inspection;
-2. all governed source identities, hashes, schemas, and timestamp semantics pass preflight;
-3. all predictor fields are proven anchor-local or excluded;
-4. the finite candidate inventory is serialized deterministically;
-5. overlapping episodes do not inflate independent support;
-6. chronological folds and purge intervals are deterministic and validated;
-7. simple BTC controls are implemented exactly as frozen;
-8. focused tests cover leakage, duplicate anchors, insufficient support, fold purging, deterministic ordering, null visibility, and replay;
-9. two governed runs produce byte-identical canonical outputs;
-10. canonical text outputs are LF-only;
-11. the full repository suite passes with no new failures;
-12. scope review confirms no production, runtime, model-training, threshold, signal, strategy, intent, order, execution, portfolio, NAV, exposure, or dashboard changes.
+1. this specification and the superseding implementation handoff predate outcome generation;
+2. governed identities, hashes, schemas, counts, and timestamps pass preflight;
+3. the exact anchor and candidate inventories are serialized before ranking;
+4. support, partition, purge, scaling, estimator, multiplicity, and direction rules reconcile exactly;
+5. focused tests pass;
+6. two governed runs are byte-identical;
+7. canonical text is LF-only and JSON is strict;
+8. governed sources remain byte-identical;
+9. the full repository suite passes without new failures;
+10. scope review finds no production, runtime, model-training, threshold, signal, strategy, intent, order, execution, portfolio, NAV, exposure, or dashboard changes.
 
-## Authorized implementation file surfaces
+## Authorized implementation surfaces
 
-After a separate implementation GO recorded on the campaign board, Campaign #45 may modify only:
+After the separate implementation GO on the campaign board, Campaign #45 may modify only:
 
 - `docs/ITERA_CAMPAIGN_BOARD.md`;
 - this specification;
-- one implementation handoff under `docs/research/`;
-- a new observation-only module under `research/ml/validation/`;
-- a new runner under `scripts/`;
+- `docs/research/HISTORICAL_REGIME_STATE_AND_TRANSITION_DISCOVERY_IMPLEMENTATION_HANDOFF.md`;
+- one new observation-only module under `research/ml/validation/`;
+- one new runner under `scripts/`;
 - focused Campaign #45 tests under `tests/`;
 - `artifacts/historical_regime_transitions/**`.
 
 Any additional file surface requires an explicit board transition.
 
-## Current authorization state
+## Authorization boundary
 
-The specification-only transition is authorized. Predictive-result generation, implementation, and artifact publication remain unauthorized until the exact estimator, multiplicity control, representative-anchor rule, source manifest, and preflight contract are reviewed and recorded as an implementation GO.
+This specification freezes the predictive design. It does not itself authorize runtime, strategy, signal, threshold, order, portfolio, NAV, exposure, dashboard, model-training, or production changes.
