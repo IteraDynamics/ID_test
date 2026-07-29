@@ -77,13 +77,11 @@ def _runs() -> pd.DataFrame:
 
 
 def _transitions() -> pd.DataFrame:
-    return pd.DataFrame([
-        {
-            "transition_id": "transition_0",
-            "transition_ordinal": 0,
-            "anchor_timestamp": pd.Timestamp("2020-01-11 10:00:00"),
-        }
-    ])
+    return pd.DataFrame([{
+        "transition_id": "transition_0",
+        "transition_ordinal": 0,
+        "anchor_timestamp": pd.Timestamp("2020-01-11 10:00:00"),
+    }])
 
 
 def test_candidate_inventory_is_frozen_and_deterministic() -> None:
@@ -117,7 +115,7 @@ def test_controls_fail_when_exact_hour_is_missing() -> None:
     assert controls_at(btc, pd.Timestamp("2020-01-09 08:00:00")) is None
 
 
-def test_structural_predictor_age_and_previous_duration_conventions() -> None:
+def test_structural_predictor_conventions() -> None:
     result = structural_predictors(
         pd.Timestamp("2020-01-11 10:00:00"), 250, _runs(), _transitions()
     )
@@ -154,23 +152,19 @@ def test_directional_and_magnitude_outcomes() -> None:
 
 def test_realized_volatility_requires_every_exact_hour() -> None:
     btc = _btc(300).drop(index=110).reset_index(drop=True)
-    states = _states(300)
-    assert outcome_at(btc, states, pd.Timestamp("2020-01-05 00:00:00"), "V", 24) is None
+    assert outcome_at(btc, _states(300), pd.Timestamp("2020-01-05"), "V", 24) is None
 
 
 def test_survival_requires_uninterrupted_same_label() -> None:
-    btc = _btc(300)
-    states = _states(300, switch=110)
-    timestamp = pd.Timestamp("2020-01-05 00:00:00")
-    assert outcome_at(btc, states, timestamp, "S", 12) == 0.0
+    assert outcome_at(
+        _btc(300), _states(300, switch=105), pd.Timestamp("2020-01-05"), "S", 12
+    ) == 0.0
 
 
 def test_return_to_original_label_is_not_survival() -> None:
-    btc = _btc(300)
     states = _states(300)
     states.loc[101, "regime_label"] = "RANGE"
-    timestamp = pd.Timestamp("2020-01-05 00:00:00")
-    assert outcome_at(btc, states, timestamp, "S", 12) == 0.0
+    assert outcome_at(_btc(300), states, pd.Timestamp("2020-01-05"), "S", 12) == 0.0
 
 
 def test_ols_hc3_reconciles_synthetic_coefficient() -> None:
@@ -201,9 +195,8 @@ def test_bh_is_deterministic_and_monotone() -> None:
 def _anchor_rows(count: int = 90) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for index in range(count):
-        partition = 1 + index // 30
         row: dict[str, object] = {
-            "partition": partition,
+            "partition": 1 + index // 30,
             "current_regime": "RANGE" if index % 2 else "TREND_UP",
         }
         for offset, column in enumerate(CONTROL_COLUMNS):
@@ -212,19 +205,18 @@ def _anchor_rows(count: int = 90) -> list[dict[str, object]]:
             row[predictor] = math.cos(index / (5.0 + offset)) + index * 0.002 * (offset + 1)
         for family in ("R", "M", "V", "S"):
             for horizon in (24, 72, 168):
-                base = float(row[PREDICTORS[0]])
-                row[f"outcome_{family}_{horizon}h"] = base * 0.1 + math.sin(index / 7.0) * 0.01
+                row[f"outcome_{family}_{horizon}h"] = (
+                    float(row[PREDICTORS[0]]) * 0.1 + math.sin(index / 7.0) * 0.01
+                )
         rows.append(row)
     return rows
 
 
 def test_insufficient_support_candidate_remains_visible() -> None:
-    candidate = candidate_inventory()[0]
-    results = evaluate_candidates(_anchor_rows(30), [candidate])
-    assert len(results) == 1
-    assert results[0]["rankable"] is False
-    assert results[0]["status"] == STATUS_SUPPORT
-    assert results[0]["bh_adjusted_q_value"] is None
+    result = evaluate_candidates(_anchor_rows(30), [candidate_inventory()[0]])[0]
+    assert result["rankable"] is False
+    assert result["status"] == STATUS_SUPPORT
+    assert result["bh_adjusted_q_value"] is None
 
 
 def test_unseen_evaluation_regime_fails_closed() -> None:
@@ -237,10 +229,9 @@ def test_unseen_evaluation_regime_fails_closed() -> None:
     assert result["status"] == STATUS_UNSEEN
 
 
-def test_family_specific_bh_does_not_cross_families(monkeypatch: pytest.MonkeyPatch) -> None:
-    anchors = _anchor_rows()
+def test_family_specific_bh_does_not_cross_families() -> None:
     candidates = [candidate_inventory()[0], candidate_inventory()[3]]
-    results = evaluate_candidates(anchors, candidates)
+    results = evaluate_candidates(_anchor_rows(), candidates)
     assert {row["outcome_family"] for row in results} == {"R", "M"}
     assert all(row["bh_adjusted_q_value"] is not None for row in results if row["rankable"])
 
