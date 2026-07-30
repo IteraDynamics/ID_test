@@ -17,6 +17,7 @@ from scipy.special import ndtr
 CAMPAIGN_ID = 48
 SPECIFICATION_FREEZE = "e8777df3442d093fd84fb92c25d13aadc2bfe1ed"
 HANDOFF_FREEZE = "a16c152608df481a66a2e29f7a1d7795b5490459"
+SOURCE_CADENCE_AMENDMENT = "d9fc7e7103a5033a9dbbe06b7abf93aea27d863b"
 SERIALIZATION_CONTRACT_VERSION = "campaign-48-v1"
 SOURCE_COLUMNS = ("timestamp", "open", "high", "low", "close", "volume")
 PREDICTORS = (
@@ -31,6 +32,44 @@ PREDICTORS = (
 )
 OUTCOME_FAMILIES = ("R", "M", "V")
 HORIZONS = (24, 72, 168)
+GOVERNED_MISSING_TIMESTAMPS = (
+    "2018-02-01 05:00:00",
+    "2018-02-01 06:00:00",
+    "2018-02-01 07:00:00",
+    "2018-05-10 04:00:00",
+    "2018-05-30 03:00:00",
+    "2018-06-04 03:00:00",
+    "2018-08-10 01:00:00",
+    "2018-08-10 02:00:00",
+    "2018-08-10 03:00:00",
+    "2018-08-10 04:00:00",
+    "2018-08-10 05:00:00",
+    "2018-08-10 06:00:00",
+    "2018-08-10 07:00:00",
+    "2018-08-10 08:00:00",
+    "2018-08-10 09:00:00",
+    "2018-08-10 10:00:00",
+    "2018-08-10 11:00:00",
+    "2018-08-10 12:00:00",
+    "2018-08-10 13:00:00",
+    "2018-08-10 14:00:00",
+    "2018-08-10 15:00:00",
+    "2018-12-26 02:00:00",
+    "2019-04-11 13:00:00",
+    "2019-06-20 15:00:00",
+    "2019-10-31 20:00:00",
+    "2020-01-30 17:00:00",
+    "2020-09-04 23:00:00",
+    "2020-10-20 20:00:00",
+    "2023-03-04 18:00:00",
+    "2023-03-04 19:00:00",
+    "2023-03-04 20:00:00",
+    "2025-10-25 16:00:00",
+    "2025-10-25 17:00:00",
+    "2025-10-25 18:00:00",
+    "2025-10-25 19:00:00",
+    "2025-10-25 20:00:00",
+)
 OUTPUT_FILENAMES = (
     "price_state_anchor_inventory.csv",
     "price_state_anchor_inventory.json",
@@ -43,9 +82,7 @@ OUTPUT_FILENAMES = (
     "price_state_source_manifest.json",
     "price_state_manifest.json",
 )
-ANCHOR_COLUMNS = (
-    "anchor_ordinal", "anchor_timestamp", "partition", *PREDICTORS,
-)
+ANCHOR_COLUMNS = ("anchor_ordinal", "anchor_timestamp", "partition", *PREDICTORS)
 CANDIDATE_COLUMNS = (
     "candidate_ordinal", "candidate_id", "predictor", "outcome_family",
     "horizon_hours", "outcome_column",
@@ -89,6 +126,7 @@ class FrozenContract:
     last_timestamp: str = "2025-12-31 00:00:00"
     candidate_count: int = 72
     anchor_spacing_hours: int = 168
+    expected_missing_timestamps: tuple[str, ...] = GOVERNED_MISSING_TIMESTAMPS
 
 
 DEFAULT_CONTRACT = FrozenContract()
@@ -177,6 +215,16 @@ def write_lf(path: Path, text: str) -> None:
     path.write_bytes(text.encode("utf-8"))
 
 
+def _timestamp_strings(index: pd.DatetimeIndex) -> tuple[str, ...]:
+    return tuple(timestamp.strftime("%Y-%m-%d %H:%M:%S") for timestamp in index)
+
+
+def source_gap_inventory(timestamps: pd.Series | pd.DatetimeIndex) -> tuple[str, ...]:
+    index = pd.DatetimeIndex(timestamps)
+    expected = pd.date_range(index[0], index[-1], freq="h")
+    return _timestamp_strings(expected.difference(index))
+
+
 def load_source(path: Path, contract: FrozenContract = DEFAULT_CONTRACT) -> pd.DataFrame:
     data = path.read_bytes()
     if sha256_bytes(data) != contract.source_sha256:
@@ -189,17 +237,23 @@ def load_source(path: Path, contract: FrozenContract = DEFAULT_CONTRACT) -> pd.D
     if len(frame) != contract.source_row_count:
         raise ValueError("SOURCE_ROW_COUNT_MISMATCH")
     timestamps = pd.to_datetime(frame["timestamp"], errors="raise")
+    if getattr(timestamps.dt, "tz", None) is not None:
+        raise ValueError("SOURCE_TIMESTAMP_TIMEZONE_FAILURE")
     if timestamps.duplicated().any() or not timestamps.is_monotonic_increasing:
         raise ValueError("SOURCE_TIMESTAMP_ORDER_FAILURE")
-    expected = pd.date_range(timestamps.iloc[0], timestamps.iloc[-1], freq="h")
-    if len(expected) != len(timestamps) or not np.array_equal(
-        expected.to_numpy(), timestamps.to_numpy()
-    ):
-        raise ValueError("SOURCE_CADENCE_FAILURE")
+    if not (
+        (timestamps.dt.minute == 0)
+        & (timestamps.dt.second == 0)
+        & (timestamps.dt.microsecond == 0)
+    ).all():
+        raise ValueError("SOURCE_TIMESTAMP_ALIGNMENT_FAILURE")
     if timestamps.iloc[0].strftime("%Y-%m-%d %H:%M:%S") != contract.first_timestamp:
         raise ValueError("SOURCE_FIRST_TIMESTAMP_MISMATCH")
     if timestamps.iloc[-1].strftime("%Y-%m-%d %H:%M:%S") != contract.last_timestamp:
         raise ValueError("SOURCE_LAST_TIMESTAMP_MISMATCH")
+    gaps = source_gap_inventory(timestamps)
+    if gaps != tuple(contract.expected_missing_timestamps):
+        raise ValueError("SOURCE_GAP_INVENTORY_MISMATCH")
     close = pd.to_numeric(frame["close"], errors="raise").to_numpy(float)
     if not np.isfinite(close).all() or np.any(close <= 0):
         raise ValueError("SOURCE_CLOSE_FAILURE")
@@ -212,11 +266,11 @@ def partition_counts(total: int) -> tuple[int, int, int]:
 
 
 def _window(frame: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp) -> np.ndarray:
-    values = frame.loc[start:end, "close"].to_numpy(float)
-    expected = int((end - start) / pd.Timedelta(hours=1)) + 1
-    if len(values) != expected:
+    expected_index = pd.date_range(start, end, freq="h")
+    actual = frame.loc[start:end]
+    if len(actual) != len(expected_index) or not actual.index.equals(expected_index):
         raise ValueError("WINDOW_TIMESTAMP_FAILURE")
-    return values
+    return actual["close"].to_numpy(float)
 
 
 def predictor_values(frame: pd.DataFrame, timestamp: pd.Timestamp) -> dict[str, float | None]:
@@ -246,7 +300,13 @@ def build_anchors(frame: pd.DataFrame) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     timestamp = origin
     while timestamp <= frame.index[-1]:
-        values = predictor_values(frame, timestamp)
+        try:
+            values = predictor_values(frame, timestamp)
+        except ValueError as exc:
+            if str(exc) == "WINDOW_TIMESTAMP_FAILURE":
+                timestamp += pd.Timedelta(hours=168)
+                continue
+            raise
         if all(value is not None and math.isfinite(float(value)) for value in values.values()):
             rows.append({
                 "anchor_ordinal": len(rows),
@@ -291,10 +351,11 @@ def add_outcomes(frame: pd.DataFrame, anchors: Sequence[Mapping[str, Any]]) -> l
         current = float(frame.loc[timestamp, "close"])
         for horizon in HORIZONS:
             end = timestamp + pd.Timedelta(hours=horizon)
-            if end not in frame.index:
+            try:
+                closes = _window(frame, timestamp, end)
+            except (KeyError, ValueError):
                 values = {family: None for family in OUTCOME_FAMILIES}
             else:
-                closes = _window(frame, timestamp, end)
                 forward = float(np.log(float(closes[-1]) / current))
                 returns = np.diff(np.log(closes))
                 values = {
@@ -382,7 +443,10 @@ def _blank_result(candidate: Mapping[str, Any], counts: Mapping[int, int]) -> di
 
 def evaluate_candidate(anchors: Sequence[Mapping[str, Any]], candidate: Mapping[str, Any]) -> dict[str, Any]:
     frame = _complete_frame(anchors, candidate)
-    counts = {partition: int((frame["partition"] == partition).sum()) for partition in (1, 2, 3)} if len(frame) else {1: 0, 2: 0, 3: 0}
+    counts = (
+        {partition: int((frame["partition"] == partition).sum()) for partition in (1, 2, 3)}
+        if len(frame) else {1: 0, 2: 0, 3: 0}
+    )
     row = _blank_result(candidate, counts)
     predictor = str(candidate["predictor"])
     outcome = str(candidate["outcome_column"])
@@ -485,10 +549,14 @@ def source_manifest(path: Path, predictive_outcomes_generated: bool) -> dict[str
         "sha256": sha256_file(path),
         "byte_count": path.stat().st_size,
         "data_row_count": DEFAULT_CONTRACT.source_row_count,
+        "continuous_hour_count": DEFAULT_CONTRACT.source_row_count + len(GOVERNED_MISSING_TIMESTAMPS),
         "ordered_schema": list(SOURCE_COLUMNS),
         "first_timestamp": DEFAULT_CONTRACT.first_timestamp,
         "last_timestamp": DEFAULT_CONTRACT.last_timestamp,
-        "cadence_hours": 1,
+        "timestamp_alignment": "whole_hour",
+        "missing_hour_count": len(GOVERNED_MISSING_TIMESTAMPS),
+        "missing_timestamps": list(GOVERNED_MISSING_TIMESTAMPS),
+        "source_cadence_amendment_commit": SOURCE_CADENCE_AMENDMENT,
         "source_reconciliation_status": "PASS",
         "predictive_outcomes_generated": predictive_outcomes_generated,
     }
@@ -499,7 +567,8 @@ def report_text(source: Mapping[str, Any], anchors: Sequence[Mapping[str, Any]],
     supported = [row for row in results if row["status"] == "SUPPORTED_RESEARCH_ASSOCIATION"]
     lines = [
         "# Campaign #48 — Simple BTC Price-State Predictive Baselines", "",
-        "## Source", "", f"- Path: `{source['source_path']}`", f"- SHA-256: `{source['sha256']}`", "",
+        "## Source", "", f"- Path: `{source['source_path']}`", f"- SHA-256: `{source['sha256']}`",
+        f"- Governed missing hours: `{source.get('missing_hour_count', 0)}`", "",
         "## Inventory", "", f"- Anchors: `{len(anchors)}`", f"- Predictors: `{len(PREDICTORS)}`",
         f"- Outcome families: `{len(OUTCOME_FAMILIES)}`", f"- Horizons: `{len(HORIZONS)}`",
         f"- Candidates: `{len(results)}`", f"- Rankable: `{sum(bool(row['rankable']) for row in results)}`", "",
@@ -523,8 +592,20 @@ def report_text(source: Mapping[str, Any], anchors: Sequence[Mapping[str, Any]],
     return "\n".join(lines)
 
 
-def canonical_payload_digest(anchors: Sequence[Mapping[str, Any]], candidates: Sequence[Mapping[str, Any]], fold: Mapping[str, Any], results: Sequence[Mapping[str, Any]], source: Mapping[str, Any]) -> str:
-    payload = {"anchors": anchors, "candidates": candidates, "fold_plan": fold, "results": results, "source": source}
+def canonical_payload_digest(
+    anchors: Sequence[Mapping[str, Any]],
+    candidates: Sequence[Mapping[str, Any]],
+    fold: Mapping[str, Any],
+    results: Sequence[Mapping[str, Any]],
+    source: Mapping[str, Any],
+) -> str:
+    payload = {
+        "anchors": anchors,
+        "candidates": candidates,
+        "fold_plan": fold,
+        "results": results,
+        "source": source,
+    }
     return sha256_bytes(json_text(payload).encode("utf-8"))
 
 
@@ -554,6 +635,7 @@ def build_output_texts(source_path: Path, frame: pd.DataFrame) -> dict[str, str]
         "campaign_id": CAMPAIGN_ID,
         "specification_freeze_commit": SPECIFICATION_FREEZE,
         "implementation_handoff_freeze_commit": HANDOFF_FREEZE,
+        "source_cadence_amendment_commit": SOURCE_CADENCE_AMENDMENT,
         "source_manifest_digest": sha256_bytes(texts["price_state_source_manifest.json"].encode("utf-8")),
         "predictors": list(PREDICTORS),
         "outcome_families": list(OUTCOME_FAMILIES),
@@ -584,6 +666,8 @@ def preflight(path: Path) -> dict[str, Any]:
         "partition_counts": partition_counts(len(anchors)),
         "predictor_count": len(PREDICTORS),
         "candidate_count": len(candidates),
+        "missing_hour_count": len(GOVERNED_MISSING_TIMESTAMPS),
+        "missing_timestamps": list(GOVERNED_MISSING_TIMESTAMPS),
         "predictive_outcomes_generated": False,
     }
 
