@@ -14,9 +14,11 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`.
 
 **Classification:** Research-only predictive-baseline discovery over the frozen governed BTC hourly source
 
-**Status:** PREDICTIVE IMPLEMENTATION GO - the frozen specification and implementation handoff predate predictive-outcome generation; deterministic observation-only implementation, focused tests, governed preflight, canonical generation, two-run replay, result inspection, full-suite validation, scope review, and publication are authorized only within the frozen file surfaces and contracts
+**Status:** IMPLEMENTATION GO WITH PRE-OUTCOME SOURCE-CADENCE CORRECTION - focused synthetic tests passed; governed preflight correctly failed closed before outcome generation; the source-gap contract below supersedes only the contradictory gapless-cadence language in the original specification and handoff
 
-**Working branch:** `agent/campaign-48-simple-btc-price-state-baselines-implementation`
+**Governance branch:** `agent/campaign-48-simple-btc-price-state-baselines-governance`
+
+**Implementation branch:** `agent/campaign-48-simple-btc-price-state-baselines-implementation`
 
 **Repository:** `IteraDynamics/ID_test`
 
@@ -30,22 +32,7 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`.
 
 **Implementation handoff freeze commit:** `a16c152608df481a66a2e29f7a1d7795b5490459`
 
-## Final governance review
-
-The frozen specification and handoff were reviewed and accepted without amendment. They reconcile on:
-
-- governed BTC source identity and exact ordered schema;
-- deterministic 168-hour anchor construction and chronological partitions;
-- exact eight-predictor inventory and interval conventions;
-- exact three outcome families and three horizons;
-- development-only population standardization with `ddof=0`;
-- intercept-plus-one-predictor OLS with HC3 covariance;
-- support, rankability, and chronological directional-consistency gates;
-- three independent Benjamini-Hochberg families with deterministic tie handling;
-- exact canonical schemas, statuses, ordering, serialization, replay, and source immutability;
-- explicit stop conditions and the research-only interpretation boundary.
-
-No predictive outcome was generated or inspected before this implementation GO.
+**Initial implementation GO:** `99a7db937f68bb16662c4d28701f1cd52e661f36`
 
 ## Plain-English objective
 
@@ -53,23 +40,15 @@ Campaign #48 asks:
 
 > Does BTC's recent price behavior contain reliable information about what happens next?
 
-Before Itera attributes predictive value to regimes, transitions, machine learning, or more complicated signal logic, it needs a transparent baseline showing what ordinary BTC price history can already explain.
+The frozen study tests eight simple recent-return, realized-volatility, and price-location predictors against future directional return, absolute return, and realized volatility at exact 24-hour, 72-hour, and 168-hour horizons.
 
-The frozen study contains a small, prespecified set of recent-return, realized-volatility, and price-location predictors. It tests their statistical association with future directional return, absolute return, and realized volatility at exact 24-hour, 72-hour, and 168-hour horizons.
+It is a predictive-baseline discovery campaign, not a trading-strategy backtest. A supported association would remain research-only and would require a separately frozen confirmation campaign before any economic-value or Core v1 comparison.
 
-## Research role
+## Frozen research contract
 
-Campaign #48 is a predictive-baseline discovery campaign, not a trading-strategy backtest.
+### Governed source
 
-It may establish a reproducible statistical association under the frozen design. It may not claim deployable alpha, portfolio value, economic usefulness, superiority to Core v1, or production readiness.
-
-Any supported association must enter a separately frozen confirmation campaign. Only a confirmed candidate may later enter a separately authorized incremental economic-value comparison against untouched Core v1.
-
-## Frozen Campaign #48 research contract
-
-### Source
-
-Only the following source is authorized:
+Only this source is authorized:
 
 - path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`;
 - SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`;
@@ -77,18 +56,71 @@ Only the following source is authorized:
 - data rows: `70,069`;
 - timestamps: `2018-01-01 00:00:00` through `2025-12-31 00:00:00`;
 - exact ordered schema: `timestamp`, `open`, `high`, `low`, `close`, `volume`;
-- exact hourly cadence.
+- only `timestamp` and `close` may enter predictor or outcome calculations.
 
-Only `timestamp` and `close` may enter Campaign #48 predictor or outcome calculations.
+### Corrective source-cadence amendment
 
-### Anchors and partitions
+The first governed preflight after implementation returned `SOURCE_CADENCE_FAILURE` with `predictive_outcomes_generated:false`. Focused synthetic tests had already passed `22 passed in 6.59s`.
 
-- one deterministic 168-hour anchor grid;
-- origin at the earliest timestamp with every exact close in `[t-168h, t]`;
-- exact 168-hour increments only;
-- three contiguous near-equal chronological partitions;
-- remainder anchors assigned to earlier partitions;
-- no shifting, replacement, filling, interpolation, resampling, or timestamp repair.
+An observation-only timestamp inventory then established:
+
+- source rows: `70,069`;
+- continuous hourly rows implied by the endpoints: `70,105`;
+- governed missing hourly timestamps: exactly `36`.
+
+The exact missing timestamp inventory is:
+
+1. `2018-02-01 05:00:00`;
+2. `2018-02-01 06:00:00`;
+3. `2018-02-01 07:00:00`;
+4. `2018-05-10 04:00:00`;
+5. `2018-05-30 03:00:00`;
+6. `2018-06-04 03:00:00`;
+7. `2018-08-10 01:00:00`;
+8. `2018-08-10 02:00:00`;
+9. `2018-08-10 03:00:00`;
+10. `2018-08-10 04:00:00`;
+11. `2018-08-10 05:00:00`;
+12. `2018-08-10 06:00:00`;
+13. `2018-08-10 07:00:00`;
+14. `2018-08-10 08:00:00`;
+15. `2018-08-10 09:00:00`;
+16. `2018-08-10 10:00:00`;
+17. `2018-08-10 11:00:00`;
+18. `2018-08-10 12:00:00`;
+19. `2018-08-10 13:00:00`;
+20. `2018-08-10 14:00:00`;
+21. `2018-08-10 15:00:00`;
+22. `2018-12-26 02:00:00`;
+23. `2019-04-11 13:00:00`;
+24. `2019-06-20 15:00:00`;
+25. `2019-10-31 20:00:00`;
+26. `2020-01-30 17:00:00`;
+27. `2020-09-04 23:00:00`;
+28. `2020-10-20 20:00:00`;
+29. `2023-03-04 18:00:00`;
+30. `2023-03-04 19:00:00`;
+31. `2023-03-04 20:00:00`;
+32. `2025-10-25 16:00:00`;
+33. `2025-10-25 17:00:00`;
+34. `2025-10-25 18:00:00`;
+35. `2025-10-25 19:00:00`;
+36. `2025-10-25 20:00:00`.
+
+This amendment supersedes only statements in the frozen specification and handoff that require the entire source to be gapless or treat any cadence break as a global preflight failure.
+
+The corrected frozen rule is:
+
+- timestamps must parse, be timezone-naive, unique, strictly increasing, and aligned exactly to whole hours;
+- the full source gap inventory must equal the exact 36-timestamp inventory above;
+- no additional or missing governed gap is permitted;
+- no interpolation, filling, resampling, nearest-row matching, as-of matching, shifting, synthetic bars, or timestamp repair is permitted;
+- a predictor is unavailable at an anchor unless every exact timestamp required by its trailing window exists;
+- an anchor is retained only when all eight predictors are available;
+- an outcome is unavailable unless every exact timestamp required by that family and horizon exists;
+- unavailable predictors, anchors, and outcomes are handled visibly and deterministically under the frozen support and rankability rules.
+
+This correction changes no predictor, outcome, horizon, anchor spacing, chronological partition rule, estimator, standardization rule, support threshold, directional-consistency rule, multiplicity family, interpretation boundary, runtime behavior, or strategy behavior.
 
 ### Predictors
 
@@ -103,8 +135,6 @@ Exactly eight predictors:
 7. position within trailing 168-hour close range;
 8. drawdown from trailing 168-hour close high.
 
-No indicator sweep, thresholds, bins, labels, interactions, splines, polynomial terms, learned features, or data-dependent feature selection are authorized.
-
 ### Outcomes and candidate family
 
 At exact 24-hour, 72-hour, and 168-hour horizons:
@@ -113,134 +143,75 @@ At exact 24-hour, 72-hour, and 168-hour horizons:
 - Family M: absolute forward log return;
 - Family V: forward realized volatility.
 
-Candidate inventory:
-
-- 8 predictors;
-- 3 outcome families;
-- 3 horizons;
-- 72 total candidates.
+Candidate inventory remains exactly 8 predictors x 3 outcome families x 3 horizons = 72 candidates.
 
 ### Estimator and evaluation
 
-Each candidate uses:
+Each candidate uses OLS with intercept and exactly one standardized predictor, no regime labels or fixed effects, no additional controls, HC3 covariance, two-sided normal p-value, and a 95% normal confidence interval.
 
-- OLS with intercept;
-- exactly one standardized predictor;
-- no regime labels or fixed effects;
-- no additional price controls;
-- HC3 covariance;
-- two-sided normal p-value;
-- 95% normal confidence interval.
+Chronological evaluation uses development-only predictor standardization with population standard deviation (`ddof=0`). Required fits remain pooled, partition-2 evaluation using partition-1 development statistics, and partition-3 evaluation using partitions 1 and 2 development statistics.
 
-Chronological evaluation uses development-only predictor standardization with population standard deviation, equivalent to `numpy.std(values, ddof=0)`.
+A candidate requires at least 90 candidate-complete pooled anchors and 25 candidate-complete anchors in each chronological partition, finite values, finite development means, strictly positive development population standard deviations, full-rank designs, finite nonzero coefficients, finite strictly positive HC3 standard errors, and a finite pooled p-value.
 
-Required fits are pooled, partition-2 evaluation using partition 1 development statistics, and partition-3 evaluation using partitions 1 and 2 development statistics.
-
-### Support, consistency, and multiplicity
-
-A candidate requires at least:
-
-- 90 candidate-complete pooled anchors;
-- 25 candidate-complete anchors in each chronological partition;
-- finite predictor and outcome values;
-- finite development mean and strictly positive population standard deviation;
-- full-rank pooled, partition-2, and partition-3 designs;
-- finite nonzero coefficients;
-- finite strictly positive HC3 standard errors;
-- finite pooled p-value.
-
-Directional consistency requires the same nonzero coefficient sign in pooled, partition-2, and partition-3 fits.
-
-Benjamini-Hochberg FDR at `q = 0.05` is applied separately within three 24-test outcome families. Only rankable candidates enter BH; all failed and unrankable candidates remain visible.
-
-### Planned outputs
-
-The implementation handoff defines exact schemas and deterministic ordering for exactly ten outputs under:
-
-`artifacts/simple_btc_price_state_predictive_baselines/`
-
-No output may contain wall-clock timestamps, absolute machine paths, random identifiers, unordered mappings, or nonfinite JSON values. Canonical text must be UTF-8 and LF-only.
+Benjamini-Hochberg FDR at `q = 0.05` remains separate within three 24-test outcome families. Failed and unrankable candidates remain visible.
 
 ## Current authorization
 
-**Decision:** GO for Campaign #48 predictive implementation under the frozen specification and implementation handoff.
+**Decision:** GO to correct the preflight cadence implementation and focused tests to the exact governed 36-gap contract, rerun focused tests, and rerun preflight only.
 
 Authorized now:
 
-- add `research/ml/validation/simple_btc_price_state_predictive_baselines.py`;
-- add `scripts/run_simple_btc_price_state_predictive_baselines.py`;
-- add `tests/test_simple_btc_price_state_predictive_baselines.py`;
-- use only the frozen governed BTC hourly source;
-- implement exact source preflight before any outcome generation;
-- construct the frozen anchor, partition, predictor, candidate, and outcome inventories;
-- implement development-only `ddof=0` standardization, OLS-HC3, support gates, directional consistency, deterministic statuses, and three family-specific BH corrections;
-- run focused tests and governed preflight before canonical outcome generation;
-- generate exactly the ten frozen canonical outputs;
-- run two-run byte replay, post-generation preflight, result inspection, full-suite validation, scope review, and publication;
-- update this board in a separate closure transition only after all acceptance gates pass.
+- modify `research/ml/validation/simple_btc_price_state_predictive_baselines.py` only to implement the corrected source-gap contract and exact-window unavailability;
+- modify `tests/test_simple_btc_price_state_predictive_baselines.py` only to test the corrected source-gap contract and missing-window behavior;
+- preserve the runner unless a correction is strictly required by the amended source contract;
+- rerun the focused synthetic suite;
+- rerun governed preflight only;
+- verify preflight reports `status:PASS`, `predictive_outcomes_generated:false`, and the exact 36-gap inventory.
 
 Not authorized:
 
-- amending the frozen specification or implementation handoff;
-- predictors, windows, transformations, controls, outcomes, horizons, estimators, support rules, status rules, or multiplicity methods outside the frozen documents;
-- indicator sweeps, parameter searches, optimization, or data-dependent feature selection;
-- model training, replacement, or recalibration;
-- Core v1 overlay or incremental economic-value testing;
+- canonical outcome generation or result inspection before corrected preflight passes;
+- changing predictors, windows, outcomes, horizons, estimators, support rules, multiplicity, or ordering;
+- source substitution or source repair;
+- Core v1 overlay or economic-value testing;
 - Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, or portfolio optimization;
-- interpreting a supported association as deployable alpha or strategy usefulness;
-- changes to regimes, thresholds, classifiers, strategies, signals, orders, execution, NAV, exposure, dashboards, runtime, or model training;
-- source substitution, interpolation, filling, resampling, nearest-row matching, synthetic bars, or leakage from evaluation periods.
+- any regime, threshold, classifier, strategy, signal, order, execution, NAV, exposure, dashboard, runtime, or model-training change.
 
-## Authorized file surfaces
+## Authorized implementation surfaces
 
-Campaign #48 may modify only:
-
-- `docs/ITERA_CAMPAIGN_BOARD.md` for this GO and a later separate closure transition;
-- `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES.md` as a frozen read-only governing document;
-- `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES_IMPLEMENTATION_HANDOFF.md` as a frozen read-only governing document;
+- `docs/ITERA_CAMPAIGN_BOARD.md` for this corrective governance transition and later closure;
 - `research/ml/validation/simple_btc_price_state_predictive_baselines.py`;
-- `scripts/run_simple_btc_price_state_predictive_baselines.py`;
+- `scripts/run_simple_btc_price_state_predictive_baselines.py` only if strictly required;
 - `tests/test_simple_btc_price_state_predictive_baselines.py`;
-- `artifacts/simple_btc_price_state_predictive_baselines/**` only during governed publication.
+- `artifacts/simple_btc_price_state_predictive_baselines/**` only after corrected preflight passes and governed generation is separately continued under the existing implementation GO.
 
-Any additional surface requires an explicit board transition.
+## Acceptance gates
 
-## Campaign #48 acceptance gates
-
-1. Campaign #47 is closed before Campaign #48 begins. **Passed: `d8f8b23`.**
-2. S-008 is selected as the next governed research priority. **Passed: `58887e0`.**
-3. The campaign is described in simple, non-alpha-claiming language. **Passed.**
-4. The governed source identity, exact schema, and immutability contract are explicit. **Passed: `e8777df`.**
-5. The predictor inventory and all trailing windows are exact and finite. **Passed: `e8777df`.**
-6. Outcomes and horizons are exact and prespecified. **Passed: `e8777df`.**
-7. Chronological evaluation and leakage controls are exact. **Passed: `e8777df`.**
-8. Estimator, support, rankability, consistency, and multiplicity rules are exact. **Passed: `e8777df`.**
-9. Canonical output schemas, replay, serialization, status precedence, and failure visibility are exact. **Passed: `a16c152`.**
-10. The specification prohibits outcome generation before freeze and implementation GO. **Passed: `e8777df`.**
-11. A separate implementation handoff predates predictive outcome generation. **Passed: `a16c152`.**
-12. A separate implementation GO is recorded only after final governance review. **Passed by this board transition.**
-13. Governed source identity and all preflight invariants pass before outcome generation. **Pending.**
-14. Focused Campaign #48 tests pass. **Pending.**
-15. Two governed runs produce byte-identical canonical outputs. **Pending.**
-16. Governed source bytes remain identical before and after generation. **Pending.**
-17. Full repository suite passes with no new failures. **Pending.**
-18. Scope review finds no runtime, threshold, regime, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training changes. **Must remain true.**
-19. Any supported candidate remains research-only and enters a separate confirmation campaign before economic or Core v1 testing. **Must remain true.**
+1. Campaign #47 closed before Campaign #48. **Passed: `d8f8b23`.**
+2. Campaign #48 design transition recorded. **Passed: `58887e0`.**
+3. Specification frozen before outcomes. **Passed: `e8777df`.**
+4. Implementation handoff frozen before outcomes. **Passed: `a16c152`.**
+5. Initial implementation GO recorded. **Passed: `99a7db9`.**
+6. Exactly three initial implementation paths created. **Passed.**
+7. Focused synthetic suite passed before governed preflight. **Passed: `22 passed in 6.59s`.**
+8. Initial preflight generated no predictive outcomes and failed closed on the contradictory cadence rule. **Passed: `SOURCE_CADENCE_FAILURE`; outcomes `false`.**
+9. Exact governed gap inventory recorded before outcome generation. **Passed: 36 timestamps.**
+10. Corrected implementation and focused tests reconcile to this amendment. **Pending.**
+11. Corrected focused suite passes. **Pending.**
+12. Corrected preflight passes with no outcomes generated and exact gap reconciliation. **Pending.**
+13. Two governed canonical runs replay byte-identically. **Not started.**
+14. Governed source bytes remain unchanged. **Must remain true.**
+15. Full repository suite passes. **Not started.**
+16. No runtime or strategy surface changes. **Must remain true.**
 
 ## Immediate sequence
 
-1. Record the Campaign #48 design transition. **Completed: `58887e0`.**
-2. Draft and review the simple BTC price-state baseline specification. **Completed.**
-3. Review predictor scope and remove unnecessary features. **Completed: eight frozen predictors retained.**
-4. Freeze the specification before predictive outcome generation. **Completed: `e8777df`.**
-5. Draft and freeze a separate implementation handoff. **Completed: `a16c152`.**
-6. Conduct final governance review. **Completed.**
-7. Record a separate implementation GO only after review. **Completed by this board transition.**
-8. Implement the observation-only module, runner, and focused tests. **Authorized next.**
-9. Run focused tests and governed preflight before outcome construction. **Pending.**
-10. Generate canonical outputs twice and verify byte identity. **Pending.**
-11. Inspect results, run the full suite, and perform scope review. **Pending.**
-12. Publish and close Campaign #48 only if every acceptance gate passes. **Pending.**
+1. Record this corrective source-cadence amendment. **Completed by this board commit.**
+2. Correct the module and focused tests. **Authorized next.**
+3. Rerun focused tests. **Pending.**
+4. Rerun governed preflight only. **Pending.**
+5. Inspect corrected preflight evidence before canonical generation. **Pending.**
+6. Continue the frozen governed execution sequence only if every preceding gate passes. **Prohibited until then.**
 
 ## Campaign #47 completion record
 
@@ -268,27 +239,22 @@ Completed evidence:
 - rankable candidates: `0`;
 - candidates entering Benjamini-Hochberg correction: `0`;
 - supported research associations: `0`;
-- all failed and unrankable candidates remained visible in the canonical outputs;
+- all failed and unrankable candidates remained visible;
 - two governed canonical runs completed successfully;
-- all ten canonical outputs were byte-identical across replay;
-- all ten committed canonical outputs are UTF-8 and LF-only;
-- governed Campaign #46 and BTC source bytes were unchanged before and after generation;
+- all ten canonical outputs were byte-identical and LF-only;
+- governed source bytes remained unchanged;
 - full repository suite: `504 passed`, `75 warnings`;
-- implementation comparison from GO commit `0529611` contained exactly the three authorized implementation paths before artifact publication;
-- final publication added exactly the ten authorized Campaign #47 artifact paths;
 - no runtime, threshold, regime, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training surface changed.
 
 Campaign #47 conclusion:
 
-Under the frozen development-defined fixed-effect, full-rank, HC3, chronological-evaluation, and fail-closed requirements, none of the 72 prespecified temporal regime-structure candidates was rankable. The historical ledger did not provide sufficient chronological regime-level support for a governed multiplicity-adjusted association test.
-
-This is a negative and support-limited research result. It does not establish that regime duration, persistence, clustering, or spacing are intrinsically noninformative. It authorizes no Core v1 overlay test and no runtime, threshold, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
+Under the frozen development-defined fixed-effect, full-rank, HC3, chronological-evaluation, and fail-closed requirements, none of the 72 prespecified temporal regime-structure candidates was rankable. This was a negative and support-limited result and authorized no Core v1 or runtime change.
 
 ## Campaign #45 completion record
 
-**Campaign:** Campaign #45 — Historical Regime State and Transition Discovery
+**Campaign:** Campaign #45 - Historical Regime State and Transition Discovery
 
-**Final status:** COMPLETE — canonical artifacts published; no supported exact ordered-transition association
+**Final status:** COMPLETE - canonical artifacts published; no supported exact ordered-transition association
 
 **Working branch:** `agent/campaign-45-historical-regime-transitions`
 
@@ -311,24 +277,19 @@ Completed evidence:
 - insufficient binary-side support: `42`;
 - supported associations: `0`;
 - two governed runs completed successfully;
-- all ten canonical outputs byte-identical across replay;
-- canonical staged files LF-only and reconciled to their manifest;
-- governed source bytes unchanged before and after generation;
-- full repository suite: `483 passed`, `75 warnings`;
-- final Campaign #45 comparison: exactly `13` authorized paths;
-- branch diff check: clean.
+- all ten canonical outputs replayed byte-identically;
+- governed source bytes remained unchanged;
+- full repository suite: `483 passed`, `75 warnings`.
 
 Campaign #45 conclusion:
 
-No exact ordered BTC regime transition met the frozen multiplicity-adjusted and directional-consistency requirements for incremental 24-hour, 72-hour, or 168-hour forward-return association after controlling for the six frozen BTC price-state controls.
-
-This negative result weakens exact ordered-transition identity as a standalone predictive feature. It does not show that regimes, duration, persistence, clustering, volatility conditioning, risk estimation, or later confirmed overlays are useless. It authorizes no runtime, threshold, signal, strategy, order, portfolio, NAV, exposure, dashboard, or model-training change.
+No exact ordered BTC regime transition met the frozen multiplicity-adjusted and directional-consistency requirements for incremental 24-hour, 72-hour, or 168-hour forward-return association after controlling for the six frozen BTC price-state controls. No runtime or strategy change was authorized.
 
 ## Campaign #46 completion record
 
-**Campaign:** Campaign #46 — Full Historical Regime State Sequence
+**Campaign:** Campaign #46 - Full Historical Regime State Sequence
 
-**Final status:** COMPLETE — canonical artifacts published; `CAMPAIGN_45_SOURCE_FEASIBLE`
+**Final status:** COMPLETE - canonical artifacts published; `CAMPAIGN_45_SOURCE_FEASIBLE`
 
 **Working branch:** `agent/campaign-46-full-regime-state-source`
 
@@ -351,18 +312,11 @@ Campaign #46 made no predictive, economic, directional, or alpha claim.
 
 ## Research-priority context
 
-Campaign #44 ranked:
-
-1. S-002 — Historical regime state and transition structure: 29;
-2. S-003 — Historical event persistence, clustering, duration, and spacing: 27;
-3. S-008 — Simple BTC price-state baselines: 26;
-4. S-001 — Registered Core v1 collapse structure candidate A-001: 26.
-
-Campaign #45 completed S-002. Campaign #47 completed S-003. Campaign #48 advances S-008 as the transparent predictive hurdle for later candidates.
+Campaign #44 ranked S-002 first, S-003 second, and S-008 and S-001 tied next. Campaign #45 completed S-002. Campaign #47 completed S-003. Campaign #48 advances S-008 as the transparent predictive hurdle for later candidates.
 
 ## Research progression boundary
 
-Campaign #48 is a discovery campaign. Any supported association must enter a separately frozen confirmation campaign. Only candidates that survive confirmation may enter a later separately authorized incremental-value comparison against untouched Core v1 using Sharpe, CAGR, drawdown, turnover, exposure, and related economic metrics.
+Campaign #48 is a discovery campaign. Any supported association must enter a separately frozen confirmation campaign. Only candidates surviving confirmation may enter a later separately authorized incremental-value comparison against untouched Core v1.
 
 ## Registered Candidate A-001
 
