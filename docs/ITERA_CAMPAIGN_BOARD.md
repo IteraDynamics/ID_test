@@ -14,9 +14,9 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`.
 
 **Classification:** Research-only predictive-baseline discovery over the frozen governed BTC hourly source
 
-**Status:** SPECIFICATION FROZEN - implementation handoff drafting and freezing are authorized; implementation, predictive outcomes, result inspection, economic testing, and runtime changes remain prohibited
+**Status:** PREDICTIVE IMPLEMENTATION GO - the frozen specification and implementation handoff predate predictive-outcome generation; deterministic observation-only implementation, focused tests, governed preflight, canonical generation, two-run replay, result inspection, full-suite validation, scope review, and publication are authorized only within the frozen file surfaces and contracts
 
-**Working branch:** `agent/campaign-48-simple-btc-price-state-baselines-governance`
+**Working branch:** `agent/campaign-48-simple-btc-price-state-baselines-implementation`
 
 **Repository:** `IteraDynamics/ID_test`
 
@@ -26,7 +26,26 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`.
 
 **Specification freeze commit:** `e8777df3442d093fd84fb92c25d13aadc2bfe1ed`
 
-**Planned implementation handoff:** `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES_IMPLEMENTATION_HANDOFF.md`
+**Implementation handoff:** `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES_IMPLEMENTATION_HANDOFF.md`
+
+**Implementation handoff freeze commit:** `a16c152608df481a66a2e29f7a1d7795b5490459`
+
+## Final governance review
+
+The frozen specification and handoff were reviewed and accepted without amendment. They reconcile on:
+
+- governed BTC source identity and exact ordered schema;
+- deterministic 168-hour anchor construction and chronological partitions;
+- exact eight-predictor inventory and interval conventions;
+- exact three outcome families and three horizons;
+- development-only population standardization with `ddof=0`;
+- intercept-plus-one-predictor OLS with HC3 covariance;
+- support, rankability, and chronological directional-consistency gates;
+- three independent Benjamini-Hochberg families with deterministic tie handling;
+- exact canonical schemas, statuses, ordering, serialization, replay, and source immutability;
+- explicit stop conditions and the research-only interpretation boundary.
+
+No predictive outcome was generated or inspected before this implementation GO.
 
 ## Plain-English objective
 
@@ -136,7 +155,7 @@ Benjamini-Hochberg FDR at `q = 0.05` is applied separately within three 24-test 
 
 ### Planned outputs
 
-A future implementation handoff must define exact schemas and deterministic ordering for exactly ten outputs under:
+The implementation handoff defines exact schemas and deterministic ordering for exactly ten outputs under:
 
 `artifacts/simple_btc_price_state_predictive_baselines/`
 
@@ -144,43 +163,47 @@ No output may contain wall-clock timestamps, absolute machine paths, random iden
 
 ## Current authorization
 
-**Decision:** The Campaign #48 specification is frozen. GO for implementation-handoff drafting and freeze preparation only.
+**Decision:** GO for Campaign #48 predictive implementation under the frozen specification and implementation handoff.
 
 Authorized now:
 
-- update `docs/ITERA_CAMPAIGN_BOARD.md` for Campaign #48 governance;
-- preserve the frozen specification without amendment;
-- draft `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES_IMPLEMENTATION_HANDOFF.md`;
-- define exact implementation file surfaces without creating them;
-- define exact function, schema, status, ordering, serialization, preflight, replay, and test contracts;
-- reconcile the handoff exactly to specification freeze `e8777df3442d093fd84fb92c25d13aadc2bfe1ed`;
-- freeze the handoff before any implementation or predictive outcome generation;
-- conduct a final governance review before any implementation GO.
+- add `research/ml/validation/simple_btc_price_state_predictive_baselines.py`;
+- add `scripts/run_simple_btc_price_state_predictive_baselines.py`;
+- add `tests/test_simple_btc_price_state_predictive_baselines.py`;
+- use only the frozen governed BTC hourly source;
+- implement exact source preflight before any outcome generation;
+- construct the frozen anchor, partition, predictor, candidate, and outcome inventories;
+- implement development-only `ddof=0` standardization, OLS-HC3, support gates, directional consistency, deterministic statuses, and three family-specific BH corrections;
+- run focused tests and governed preflight before canonical outcome generation;
+- generate exactly the ten frozen canonical outputs;
+- run two-run byte replay, post-generation preflight, result inspection, full-suite validation, scope review, and publication;
+- update this board in a separate closure transition only after all acceptance gates pass.
 
 Not authorized:
 
-- amending the frozen specification;
-- implementation code;
-- runner code;
-- tests;
-- artifacts;
-- generating, calculating, viewing, or inspecting predictive outcomes;
-- candidate ranking or statistical results;
-- choosing features, windows, outcomes, or methods after seeing results;
+- amending the frozen specification or implementation handoff;
+- predictors, windows, transformations, controls, outcomes, horizons, estimators, support rules, status rules, or multiplicity methods outside the frozen documents;
+- indicator sweeps, parameter searches, optimization, or data-dependent feature selection;
+- model training, replacement, or recalibration;
 - Core v1 overlay or incremental economic-value testing;
 - Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, or portfolio optimization;
+- interpreting a supported association as deployable alpha or strategy usefulness;
 - changes to regimes, thresholds, classifiers, strategies, signals, orders, execution, NAV, exposure, dashboards, runtime, or model training;
 - source substitution, interpolation, filling, resampling, nearest-row matching, synthetic bars, or leakage from evaluation periods.
 
 ## Authorized file surfaces
 
-Campaign #48 governance may modify only:
+Campaign #48 may modify only:
 
-- `docs/ITERA_CAMPAIGN_BOARD.md`;
-- `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES.md` only as the already-frozen specification;
-- `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES_IMPLEMENTATION_HANDOFF.md`.
+- `docs/ITERA_CAMPAIGN_BOARD.md` for this GO and a later separate closure transition;
+- `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES.md` as a frozen read-only governing document;
+- `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES_IMPLEMENTATION_HANDOFF.md` as a frozen read-only governing document;
+- `research/ml/validation/simple_btc_price_state_predictive_baselines.py`;
+- `scripts/run_simple_btc_price_state_predictive_baselines.py`;
+- `tests/test_simple_btc_price_state_predictive_baselines.py`;
+- `artifacts/simple_btc_price_state_predictive_baselines/**` only during governed publication.
 
-Any implementation, runner, test, artifact, runtime, or additional documentation surface requires a later explicit board transition.
+Any additional surface requires an explicit board transition.
 
 ## Campaign #48 acceptance gates
 
@@ -192,11 +215,17 @@ Any implementation, runner, test, artifact, runtime, or additional documentation
 6. Outcomes and horizons are exact and prespecified. **Passed: `e8777df`.**
 7. Chronological evaluation and leakage controls are exact. **Passed: `e8777df`.**
 8. Estimator, support, rankability, consistency, and multiplicity rules are exact. **Passed: `e8777df`.**
-9. Canonical outputs, replay, serialization, and failure visibility are exact at specification level. **Passed: `e8777df`; exact schemas pending handoff.**
+9. Canonical output schemas, replay, serialization, status precedence, and failure visibility are exact. **Passed: `a16c152`.**
 10. The specification prohibits outcome generation before freeze and implementation GO. **Passed: `e8777df`.**
-11. A separate implementation handoff predates predictive outcome generation. **Pending.**
-12. A separate implementation GO is recorded only after final governance review. **Pending.**
-13. No runtime, regime, threshold, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change occurs. **Must remain true.**
+11. A separate implementation handoff predates predictive outcome generation. **Passed: `a16c152`.**
+12. A separate implementation GO is recorded only after final governance review. **Passed by this board transition.**
+13. Governed source identity and all preflight invariants pass before outcome generation. **Pending.**
+14. Focused Campaign #48 tests pass. **Pending.**
+15. Two governed runs produce byte-identical canonical outputs. **Pending.**
+16. Governed source bytes remain identical before and after generation. **Pending.**
+17. Full repository suite passes with no new failures. **Pending.**
+18. Scope review finds no runtime, threshold, regime, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training changes. **Must remain true.**
+19. Any supported candidate remains research-only and enters a separate confirmation campaign before economic or Core v1 testing. **Must remain true.**
 
 ## Immediate sequence
 
@@ -204,10 +233,14 @@ Any implementation, runner, test, artifact, runtime, or additional documentation
 2. Draft and review the simple BTC price-state baseline specification. **Completed.**
 3. Review predictor scope and remove unnecessary features. **Completed: eight frozen predictors retained.**
 4. Freeze the specification before predictive outcome generation. **Completed: `e8777df`.**
-5. Draft and freeze a separate implementation handoff. **Authorized next.**
-6. Conduct final governance review. **Pending.**
-7. Record a separate implementation GO only after review. **Pending.**
-8. Generate predictive outcomes only after all preceding gates pass. **Prohibited now.**
+5. Draft and freeze a separate implementation handoff. **Completed: `a16c152`.**
+6. Conduct final governance review. **Completed.**
+7. Record a separate implementation GO only after review. **Completed by this board transition.**
+8. Implement the observation-only module, runner, and focused tests. **Authorized next.**
+9. Run focused tests and governed preflight before outcome construction. **Pending.**
+10. Generate canonical outputs twice and verify byte identity. **Pending.**
+11. Inspect results, run the full suite, and perform scope review. **Pending.**
+12. Publish and close Campaign #48 only if every acceptance gate passes. **Pending.**
 
 ## Campaign #47 completion record
 
