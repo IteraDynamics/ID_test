@@ -37,7 +37,17 @@ def write_source(path: Path, hours: int = 200) -> subject.FrozenContract:
         last_timestamp=frame.iloc[-1]["timestamp"],
         candidate_count=72,
         anchor_spacing_hours=168,
+        expected_missing_timestamps=(),
     )
+
+
+def rewrite_contract(path: Path, contract: subject.FrozenContract, **changes: object) -> subject.FrozenContract:
+    return subject.FrozenContract(**{
+        **contract.__dict__,
+        "source_sha256": subject.sha256_file(path),
+        "source_byte_count": path.stat().st_size,
+        **changes,
+    })
 
 
 def test_candidate_inventory_exact_order() -> None:
@@ -61,9 +71,8 @@ def test_source_contract_and_order(tmp_path: Path) -> None:
     assert len(loaded) == contract.source_row_count
     bad = pd.read_csv(path)[["timestamp", "close", "open", "high", "low", "volume"]]
     path.write_text(bad.to_csv(index=False, lineterminator="\n"), encoding="utf-8", newline="")
-    altered = subject.FrozenContract(**{**contract.__dict__, "source_sha256": subject.sha256_file(path), "source_byte_count": path.stat().st_size})
     with pytest.raises(ValueError, match="SOURCE_SCHEMA_MISMATCH"):
-        subject.load_source(path, altered)
+        subject.load_source(path, rewrite_contract(path, contract))
 
 
 def test_source_rejects_duplicate_timestamp(tmp_path: Path) -> None:
@@ -72,8 +81,45 @@ def test_source_rejects_duplicate_timestamp(tmp_path: Path) -> None:
     frame = pd.read_csv(path)
     frame.loc[2, "timestamp"] = frame.loc[1, "timestamp"]
     path.write_text(frame.to_csv(index=False, lineterminator="\n"), encoding="utf-8", newline="")
-    altered = subject.FrozenContract(**{**contract.__dict__, "source_sha256": subject.sha256_file(path), "source_byte_count": path.stat().st_size})
     with pytest.raises(ValueError, match="SOURCE_TIMESTAMP_ORDER_FAILURE"):
+        subject.load_source(path, rewrite_contract(path, contract))
+
+
+def test_source_rejects_non_hour_alignment(tmp_path: Path) -> None:
+    path = tmp_path / "source.csv"
+    contract = write_source(path)
+    frame = pd.read_csv(path)
+    frame.loc[2, "timestamp"] = "2020-01-01 02:30:00"
+    path.write_text(frame.to_csv(index=False, lineterminator="\n"), encoding="utf-8", newline="")
+    with pytest.raises(ValueError, match="SOURCE_TIMESTAMP_ALIGNMENT_FAILURE"):
+        subject.load_source(path, rewrite_contract(path, contract))
+
+
+def test_source_accepts_exact_declared_gap(tmp_path: Path) -> None:
+    path = tmp_path / "source.csv"
+    contract = write_source(path)
+    frame = pd.read_csv(path)
+    missing = frame.loc[10, "timestamp"]
+    frame = frame.drop(index=10).reset_index(drop=True)
+    path.write_text(frame.to_csv(index=False, lineterminator="\n"), encoding="utf-8", newline="")
+    amended = rewrite_contract(
+        path,
+        contract,
+        source_row_count=len(frame),
+        expected_missing_timestamps=(missing,),
+    )
+    loaded = subject.load_source(path, amended)
+    assert len(loaded) == len(frame)
+    assert subject.source_gap_inventory(loaded.index) == (missing,)
+
+
+def test_source_rejects_unregistered_gap(tmp_path: Path) -> None:
+    path = tmp_path / "source.csv"
+    contract = write_source(path)
+    frame = pd.read_csv(path).drop(index=10).reset_index(drop=True)
+    path.write_text(frame.to_csv(index=False, lineterminator="\n"), encoding="utf-8", newline="")
+    altered = rewrite_contract(path, contract, source_row_count=len(frame))
+    with pytest.raises(ValueError, match="SOURCE_GAP_INVENTORY_MISMATCH"):
         subject.load_source(path, altered)
 
 
@@ -83,9 +129,8 @@ def test_source_rejects_nonpositive_close(tmp_path: Path) -> None:
     frame = pd.read_csv(path)
     frame.loc[5, "close"] = 0.0
     path.write_text(frame.to_csv(index=False, lineterminator="\n"), encoding="utf-8", newline="")
-    altered = subject.FrozenContract(**{**contract.__dict__, "source_sha256": subject.sha256_file(path), "source_byte_count": path.stat().st_size})
     with pytest.raises(ValueError, match="SOURCE_CLOSE_FAILURE"):
-        subject.load_source(path, altered)
+        subject.load_source(path, rewrite_contract(path, contract))
 
 
 def test_predictor_formulas() -> None:
@@ -115,6 +160,15 @@ def test_anchor_origin_spacing_and_partitions() -> None:
     assert tuple(sum(row["partition"] == p for row in rows) for p in (1, 2, 3)) == subject.partition_counts(len(rows))
 
 
+def test_anchor_with_incomplete_trailing_window_is_skipped() -> None:
+    frame = synthetic_frame(600).drop(pd.Timestamp("2020-01-03 00:00:00"))
+    rows = subject.build_anchors(frame)
+    scheduled_first = pd.Timestamp("2020-01-08 00:00:00")
+    assert scheduled_first.strftime("%Y-%m-%d %H:%M:%S") not in {
+        row["anchor_timestamp"] for row in rows
+    }
+
+
 def test_outcome_columns_and_unavailable_tail() -> None:
     frame = synthetic_frame(400)
     anchors = subject.build_anchors(frame)
@@ -125,6 +179,17 @@ def test_outcome_columns_and_unavailable_tail() -> None:
     assert first["outcome_R_24h"] == pytest.approx(expected)
     assert first["outcome_M_24h"] == pytest.approx(abs(expected))
     assert rows[-1]["outcome_R_168h"] is None
+
+
+def test_outcome_with_internal_missing_hour_is_unavailable() -> None:
+    frame = synthetic_frame(500)
+    anchors = subject.build_anchors(frame)
+    first_timestamp = pd.Timestamp(anchors[0]["anchor_timestamp"])
+    frame = frame.drop(first_timestamp + pd.Timedelta(hours=12))
+    row = subject.add_outcomes(frame, [anchors[0]])[0]
+    assert row["outcome_R_24h"] is None
+    assert row["outcome_M_24h"] is None
+    assert row["outcome_V_24h"] is None
 
 
 def test_population_standardization_and_ols() -> None:
@@ -148,8 +213,7 @@ def test_zero_variance_status() -> None:
     for partition in (1, 2, 3):
         for index in range(30):
             anchors.append({"partition": partition, "return_trailing_24h": 1.0, "outcome_R_24h": float(index)})
-    candidate = subject.candidate_inventory()[0]
-    result = subject.evaluate_candidate(anchors, candidate)
+    result = subject.evaluate_candidate(anchors, subject.candidate_inventory()[0])
     assert result["status"] == "ZERO_OR_NONFINITE_VARIANCE"
     assert not result["rankable"]
 
@@ -222,6 +286,7 @@ def test_preflight_generates_no_outcomes(monkeypatch: pytest.MonkeyPatch, tmp_pa
     payload = subject.preflight(tmp_path / "unused.csv")
     assert payload["predictive_outcomes_generated"] is False
     assert payload["source"]["predictive_outcomes_generated"] is False
+    assert payload["missing_hour_count"] == len(subject.GOVERNED_MISSING_TIMESTAMPS)
 
 
 def test_output_replay_and_manifest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
