@@ -14,7 +14,7 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`.
 
 **Classification:** Research-only predictive-structure discovery over the frozen canonical Campaign #46 regime-state ledger
 
-**Status:** PREDICTIVE IMPLEMENTATION GO — the frozen specification and implementation handoff predate predictive-outcome generation; deterministic observation-only implementation, focused tests, governed preflight, canonical generation, two-run replay, result inspection, full-suite validation, scope review, and publication are authorized only within the frozen file surfaces and contracts
+**Status:** COMPLETE - canonical artifacts published; all 72 frozen candidates remained unrankable under the frozen fail-closed estimator and chronological-support rules; no supported research association
 
 **Working branch:** `agent/campaign-47-regime-structure-implementation`
 
@@ -61,7 +61,7 @@ The frozen outcomes are directional forward return, absolute forward return, for
 
 ## Current authorization
 
-**Decision:** GO for Campaign #47 predictive implementation under the frozen specification and handoff.
+**Decision:** Campaign #47 is complete. The governed negative result authorizes no runtime, threshold, regime, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, model-training, or Core v1 overlay change.
 
 Authorized now:
 
@@ -219,17 +219,17 @@ Any additional surface requires an explicit board transition.
 1. The frozen specification predates predictive outcome generation. **Passed: `bc71511`.**
 2. The frozen implementation handoff predates predictive outcome generation. **Passed: `fd41466`.**
 3. A separate implementation GO is recorded. **Passed by this board transition.**
-4. Governed source identities, hashes, schemas, ordering, state/run/transition relationships, and timestamps pass preflight. **Pending.**
-5. Exact anchor, predictor, candidate, outcome, and partition inventories serialize deterministically before ranking. **Pending.**
-6. Focused Campaign #47 tests pass. **Pending.**
-7. Controls, transformations, development-only scaling, fixed effects, outcomes, OLS, HC3, support gates, direction rules, and family-specific BH correction reconcile exactly. **Pending.**
-8. Null, missing, failed, and insufficient-support candidates remain visible. **Pending.**
-9. Two governed runs produce byte-identical canonical outputs. **Pending.**
-10. Canonical text is LF-only and JSON is strict. **Pending.**
-11. Governed source bytes remain identical before and after generation. **Pending.**
-12. Full repository suite passes with no new failures. **Pending.**
-13. Scope review finds no runtime, threshold, regime, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training changes. **Must remain true.**
-14. Any supported candidate remains research-only and enters a separate confirmation campaign before any Core v1 overlay test. **Must remain true.**
+4. Governed source identities, hashes, schemas, ordering, state/run/transition relationships, and timestamps pass preflight. **Passed.**
+5. Exact anchor, predictor, candidate, outcome, and partition inventories serialize deterministically before ranking. **Passed.**
+6. Focused Campaign #47 tests pass. **Passed: `21 passed`.**
+7. Controls, transformations, development-only scaling, fixed effects, outcomes, OLS, HC3, support gates, direction rules, and family-specific BH correction reconcile exactly. **Passed.**
+8. Null, missing, failed, and insufficient-support candidates remain visible. **Passed: all `72` candidates serialized.**
+9. Two governed runs produce byte-identical canonical outputs. **Passed: all ten outputs matched.**
+10. Canonical text is LF-only and JSON is strict. **Passed.**
+11. Governed source bytes remain identical before and after generation. **Passed.**
+12. Full repository suite passes with no new failures. **Passed: `504 passed`, `75 warnings`.**
+13. Scope review finds no runtime, threshold, regime, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training changes. **Passed.**
+14. Any supported candidate remains research-only and enters a separate confirmation campaign before any Core v1 overlay test. **Not triggered: zero supported candidates.**
 
 ## Immediate sequence
 
@@ -238,11 +238,53 @@ Any additional surface requires an explicit board transition.
 3. Freeze the Campaign #47 implementation handoff before predictive outcome generation. **Completed: `fd41466`.**
 4. Review and accept the frozen Campaign #47 design. **Completed.**
 5. Record a separate Campaign #47 implementation GO. **Completed by this board transition.**
-6. Implement the observation-only module, runner, and focused tests. **Authorized next.**
-7. Run focused tests and governed preflight before outcome construction. **Pending.**
-8. Generate canonical outputs twice and verify byte identity. **Pending.**
-9. Inspect results, run the full suite, and perform scope review. **Pending.**
-10. Publish and close Campaign #47 only if every acceptance gate passes. **Pending.**
+6. Implement the observation-only module, runner, and focused tests. **Completed.**
+7. Run focused tests and governed preflight before outcome construction. **Completed.**
+8. Generate canonical outputs twice and verify byte identity. **Completed.**
+9. Inspect results, run the full suite, and perform scope review. **Completed.**
+10. Publish and close Campaign #47 only if every acceptance gate passes. **Completed: publication `16692c1`.**
+
+## Campaign #47 completion record
+
+**Campaign:** Campaign #47 - Historical Regime Persistence, Duration, Clustering, and Spacing Discovery
+
+**Final status:** COMPLETE - canonical artifacts published; zero rankable candidates and zero supported research associations
+
+**Working branch:** `agent/campaign-47-regime-structure-implementation`
+
+**Publication commit:** `16692c1`
+
+Completed evidence:
+
+- focused suite: `21 passed`;
+- governed preflight before generation: `PASS`;
+- predictive outcomes generated during preflight: `false`;
+- canonical Campaign #46 source ledger: `70,069` states, `2,790` runs, and `2,789` transitions;
+- common 168-hour anchor grid: `403` anchors;
+- chronological partitions: `135`, `134`, `134`;
+- frozen candidate inventory: `72`;
+- pooled OLS-HC3 fits passing estimator requirements: `48`;
+- pooled fits failing closed because a one-observation `HIGH_VOL` fixed-effect level produced unit leverage and undefined HC3: `24`;
+- partition-2 designs failing the frozen full-rank requirement: `72`;
+- partition-3 designs failing the frozen full-rank requirement: `72`;
+- rankable candidates: `0`;
+- candidates entering Benjamini-Hochberg correction: `0`;
+- supported research associations: `0`;
+- all failed and unrankable candidates remained visible in the canonical outputs;
+- two governed canonical runs completed successfully;
+- all ten canonical outputs were byte-identical across replay;
+- all ten committed canonical outputs are UTF-8 and LF-only;
+- governed Campaign #46 and BTC source bytes were unchanged before and after generation;
+- full repository suite: `504 passed`, `75 warnings`;
+- implementation comparison from GO commit `0529611` contained exactly the three authorized implementation paths before artifact publication;
+- final publication added exactly the ten authorized Campaign #47 artifact paths;
+- no runtime, threshold, regime, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training surface changed.
+
+Campaign #47 conclusion:
+
+Under the frozen development-defined fixed-effect, full-rank, HC3, chronological-evaluation, and fail-closed requirements, none of the 72 prespecified temporal regime-structure candidates was rankable. The historical ledger did not provide sufficient chronological regime-level support for a governed multiplicity-adjusted association test.
+
+This is a negative and support-limited research result. It does not establish that regime duration, persistence, clustering, or spacing are intrinsically noninformative. It authorizes no Core v1 overlay test and no runtime, threshold, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
 
 ## Campaign #45 completion record
 
