@@ -1,0 +1,44 @@
+{
+  "experiment": "campaign_47_historical_regime_structure_discovery",
+  "files": {
+    "btc_hourly_regime_state_manifest.json": {
+      "byte_count": 2092,
+      "sha256": "1c1988651549a4d5bf5b1c9351d377a80d67bf337001ac14eb14d0db4f4b578a"
+    },
+    "btc_hourly_regime_state_runs.csv": {
+      "byte_count": 443036,
+      "sha256": "d0cf6e80914813d5cedc029bc9516d7036104b181f70f96d0afa2fb767c7867e"
+    },
+    "btc_hourly_regime_state_sequence.csv": {
+      "byte_count": 13306685,
+      "sha256": "194ff434206599878bdc29c6c5605577f2f518d9cb992cd97eaa79fbe7e26575"
+    },
+    "btc_hourly_regime_transitions.csv": {
+      "byte_count": 723883,
+      "sha256": "2257e176296511a171129594744705c3e2698a083cee505151cc517267740c7a"
+    },
+    "btcusd_3600s_2018-01-01_to_2025-12-31.csv": {
+      "byte_count": 4792028,
+      "sha256": "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079"
+    }
+  },
+  "observation_only": true,
+  "predictive_outcomes_generated": true,
+  "preflight": {
+    "counts": {
+      "runs": 2790,
+      "states": 70069,
+      "transitions": 2789
+    },
+    "predictive_outcomes_generated": false,
+    "source": {
+      "byte_count": 4792028,
+      "first_timestamp": "2018-01-01 00:00:00",
+      "last_timestamp": "2025-12-31 00:00:00",
+      "path": "data/btcusd_3600s_2018-01-01_to_2025-12-31.csv",
+      "row_count": 70069,
+      "sha256": "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079"
+    },
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,506 @@
+[
+  {
+    "candidate_id": "log1p_current_state_age_hours__R__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__R__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__R__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__M__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__M__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__M__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__V__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__V__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__V__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__S__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_S_24h",
+    "outcome_family": "S",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__S__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_S_72h",
+    "outcome_family": "S",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_current_state_age_hours__S__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_S_168h",
+    "outcome_family": "S",
+    "predictor": "log1p_current_state_age_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__R__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__R__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__R__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__M__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__M__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__M__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__V__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__V__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__V__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__S__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_S_24h",
+    "outcome_family": "S",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__S__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_S_72h",
+    "outcome_family": "S",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_previous_state_duration_hours__S__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_S_168h",
+    "outcome_family": "S",
+    "predictor": "log1p_previous_state_duration_hours"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__R__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__R__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__R__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__M__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__M__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__M__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__V__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__V__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__V__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__S__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_S_24h",
+    "outcome_family": "S",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__S__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_S_72h",
+    "outcome_family": "S",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "log1p_hours_since_previous_transition__S__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_S_168h",
+    "outcome_family": "S",
+    "predictor": "log1p_hours_since_previous_transition"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__R__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__R__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__R__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__M__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__M__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__M__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__V__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__V__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__V__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__S__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_S_24h",
+    "outcome_family": "S",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__S__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_S_72h",
+    "outcome_family": "S",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_24h__S__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_S_168h",
+    "outcome_family": "S",
+    "predictor": "transition_count_trailing_24h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__R__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__R__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__R__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__M__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__M__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__M__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__V__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__V__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__V__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__S__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_S_24h",
+    "outcome_family": "S",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__S__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_S_72h",
+    "outcome_family": "S",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_72h__S__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_S_168h",
+    "outcome_family": "S",
+    "predictor": "transition_count_trailing_72h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__R__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__R__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__R__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__M__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__M__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__M__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__V__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__V__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__V__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__S__24h",
+    "horizon_hours": 24,
+    "outcome_column": "outcome_S_24h",
+    "outcome_family": "S",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__S__72h",
+    "horizon_hours": 72,
+    "outcome_column": "outcome_S_72h",
+    "outcome_family": "S",
+    "predictor": "transition_count_trailing_168h"
+  },
+  {
+    "candidate_id": "transition_count_trailing_168h__S__168h",
+    "horizon_hours": 168,
+    "outcome_column": "outcome_S_168h",
+    "outcome_family": "S",
+    "predictor": "transition_count_trailing_168h"
+  }
+]
