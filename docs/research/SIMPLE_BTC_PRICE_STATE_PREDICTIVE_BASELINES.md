@@ -2,11 +2,13 @@
 
 ## Status
 
-**DRAFT GOVERNING SPECIFICATION — no predictive outcomes may be generated, calculated, viewed, inspected, ranked, or interpreted until this document is separately reviewed and frozen by commit.**
+**FROZEN GOVERNING SPECIFICATION — frozen before predictive outcome generation or inspection.**
+
+No predictive outcomes may be generated, calculated, viewed, inspected, ranked, or interpreted until a separately frozen implementation handoff exists and the campaign board records a separate implementation GO.
 
 Campaign #48 is research-only, observation-only, deterministic, replay-safe, chronological, leakage-safe, and fail-closed.
 
-It does not authorize any runtime, regime, threshold, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
+It authorizes no runtime, regime, threshold, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
 
 ## Plain-English question
 
@@ -16,7 +18,7 @@ Campaign #48 asks:
 
 The purpose is to establish a transparent predictive baseline before Itera attributes value to regimes, transitions, machine learning, or more complicated signal logic.
 
-This campaign is not a trading-strategy backtest. It is a prespecified statistical discovery study over simple BTC price-state features.
+This is not a trading-strategy backtest. It is a prespecified statistical discovery study over simple BTC price-state features.
 
 ## Research objective
 
@@ -37,41 +39,39 @@ The only authorized market source is:
 - path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`;
 - SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`;
 - byte count: `4,792,028`;
-- rows: `70,069`;
+- data rows: `70,069` excluding the header;
 - first timestamp: `2018-01-01 00:00:00`;
 - last timestamp: `2025-12-31 00:00:00`;
 - cadence: exact hourly observations.
 
-The implementation must fail closed if the path, digest, byte count, row count, schema, ordering, timestamp uniqueness, or timestamp cadence does not reconcile exactly.
+The exact ordered source schema is:
+
+1. `timestamp`;
+2. `open`;
+3. `high`;
+4. `low`;
+5. `close`;
+6. `volume`.
+
+Only `timestamp` and `close` may enter Campaign #48 predictor or outcome calculations. The remaining fields are source-reconciliation fields only.
+
+The implementation must fail closed if the path, digest, byte count, data-row count, ordered schema, ordering, timestamp uniqueness, first timestamp, last timestamp, or exact hourly cadence does not reconcile.
 
 No source substitution, downloading, interpolation, filling, resampling, nearest-row matching, as-of matching, synthetic bars, or timestamp repair is permitted.
 
-## Required source fields
-
-The source must provide the exact fields needed to identify:
-
-- timestamp;
-- close price.
-
-Any additional source columns may be preserved for source reconciliation but may not enter Campaign #48 predictors or outcomes unless this specification is amended and refrozen before outcome generation.
-
-Close prices must be finite and strictly positive.
+All close prices used by the campaign must be finite and strictly positive.
 
 ## Anchor construction
 
-Campaign #48 uses one common deterministic 168-hour anchor grid so that all maximum-horizon outcomes are non-overlapping across adjacent anchors.
+Campaign #48 uses one common deterministic 168-hour anchor grid so maximum-horizon outcomes do not overlap across adjacent anchors.
 
-The anchor origin is the earliest source timestamp for which:
+The anchor origin is the earliest governed source timestamp `t` for which every exact hourly close in `[t-168h, t]` exists.
 
-- every exact hourly close required for the trailing 168-hour predictor window exists;
-- the current close exists;
-- the timestamp lies on the governed source sequence.
+Starting from that origin, scheduled anchors advance in exact 168-hour increments.
 
-Starting from that origin, anchors advance in exact 168-hour increments.
+An anchor is retained in the anchor inventory when all eight frozen predictors can be computed. Outcome availability is recorded separately by family and horizon.
 
-An anchor is retained in the anchor inventory when all eight predictors can be computed. Outcome availability is recorded separately by family and horizon.
-
-A scheduled anchor timestamp that is absent from the source is not shifted or replaced. The implementation must fail closed on a broken governed hourly sequence rather than silently alter the grid.
+A missing scheduled anchor timestamp is not shifted or replaced. Because the governed source is required to be an exact unique hourly sequence, any cadence break is a preflight failure.
 
 ## Chronological partitions
 
@@ -79,11 +79,11 @@ The common anchor inventory is divided into three contiguous, near-equal chronol
 
 If the anchor count is not divisible by three, remainder anchors are assigned to earlier partitions in chronological order.
 
-Required evaluations:
+Required evaluations are:
 
 1. partition 1 is the development sample for partition-2 evaluation;
 2. partitions 1 and 2 together are the development sample for partition-3 evaluation;
-3. all complete anchors form the pooled fit.
+3. all candidate-complete anchors form the pooled fit.
 
 No random split, shuffle, cross-sectional fold, bootstrap split, or future-informed preprocessing is permitted.
 
@@ -91,9 +91,9 @@ No random split, shuffle, cross-sectional fold, bootstrap split, or future-infor
 
 Campaign #48 contains exactly eight simple predictors.
 
-Let `C_t` denote the close at anchor timestamp `t`. Let hourly log return be:
+Let `C_t` denote the close at exact timestamp `t`. Let hourly log return be:
 
-`r_u = ln(C_u / C_{u-1})`.
+`r_u = ln(C_u / C_{u-1h})`.
 
 ### 1. Trailing 24-hour log return
 
@@ -111,7 +111,7 @@ Let `C_t` denote the close at anchor timestamp `t`. Let hourly log return be:
 
 `realized_volatility_trailing_24h = sqrt(sum(r_u^2))`
 
-using every exact hourly return with endpoint timestamps in `(t-24h, t]`.
+using all 24 exact hourly returns with endpoint timestamps in `(t-24h, t]`.
 
 No annualization is applied.
 
@@ -119,23 +119,23 @@ No annualization is applied.
 
 `realized_volatility_trailing_168h = sqrt(sum(r_u^2))`
 
-using every exact hourly return with endpoint timestamps in `(t-168h, t]`.
+using all 168 exact hourly returns with endpoint timestamps in `(t-168h, t]`.
 
 No annualization is applied.
 
 ### 6. Distance from trailing 168-hour close mean
 
-Let `mean_168h` be the arithmetic mean of closes at exact hourly timestamps in `[t-168h, t]`.
+Let `mean_168h` be the arithmetic mean of the 169 exact hourly closes in `[t-168h, t]`.
 
 `distance_from_mean_trailing_168h = (C_t / mean_168h) - 1`
 
 ### 7. Position within trailing 168-hour range
 
-Let `low_168h` and `high_168h` be the minimum and maximum closes at exact hourly timestamps in `[t-168h, t]`.
+Let `low_168h` and `high_168h` be the minimum and maximum of the 169 exact hourly closes in `[t-168h, t]`.
 
 `range_position_trailing_168h = (C_t - low_168h) / (high_168h - low_168h)`
 
-If `high_168h == low_168h`, the predictor is unavailable for that anchor. No substitute value is permitted.
+If `high_168h == low_168h`, this predictor is unavailable for the anchor. No substitute value is permitted.
 
 ### 8. Drawdown from trailing 168-hour high
 
@@ -145,21 +145,21 @@ If `high_168h == low_168h`, the predictor is unavailable for that anchor. No sub
 
 No additional indicators, thresholds, bins, labels, interactions, ratios, splines, polynomial terms, moving-average crossovers, oscillator names, technical-analysis pattern names, learned features, or data-dependent feature selection are authorized.
 
-The three return windows are separate prespecified candidates. The two volatility windows are separate prespecified candidates. The three 168-hour price-location predictors are also separate prespecified candidates despite expected correlation.
+The three return windows are separate prespecified candidates. The two volatility windows are separate prespecified candidates. The three 168-hour price-location predictors are separate prespecified candidates despite expected correlation.
 
-Correlation does not authorize dropping, combining, or replacing a candidate after outcomes are inspected.
+Expected correlation does not authorize dropping, combining, replacing, or reprioritizing a candidate after outcomes are generated or inspected.
 
 ## Frozen outcomes
 
 Let horizon `h` be one of `24`, `72`, or `168` hours.
 
-All outcomes require exact source timestamps. A missing required timestamp or hourly interval makes that outcome unavailable for the anchor.
+All outcomes require exact source timestamps. A missing endpoint or required hourly interval makes that outcome unavailable for the anchor.
 
 ### Family R — directional forward log return
 
 `forward_return_h = ln(C_{t+h} / C_t)`
 
-This is a continuous signed outcome. Campaign #48 does not create a separate binary up/down label.
+This is a continuous signed outcome. No separate binary up/down label is created.
 
 ### Family M — absolute forward return
 
@@ -169,7 +169,7 @@ This is a continuous signed outcome. Campaign #48 does not create a separate bin
 
 `forward_realized_volatility_h = sqrt(sum(r_u^2))`
 
-using every exact hourly return with endpoint timestamps in `(t, t+h]`.
+using all `h` exact hourly returns with endpoint timestamps in `(t, t+h]`.
 
 No annualization is applied.
 
@@ -189,7 +189,7 @@ Every candidate must remain visible in canonical results, including null, missin
 Each candidate is evaluated with ordinary least squares containing:
 
 - an intercept;
-- exactly one standardized structural predictor;
+- exactly one standardized predictor;
 - no regime labels;
 - no regime fixed effects;
 - no additional price controls;
@@ -202,21 +202,23 @@ Reported inferential quantities are:
 - coefficient on the standardized predictor;
 - HC3 standard error;
 - two-sided normal p-value;
-- 95% normal confidence interval.
+- 95% normal confidence interval using `1.959963984540054`.
 
-No alternate estimator may be substituted after outcomes are inspected.
+No alternate estimator may be substituted after outcomes are generated or inspected.
 
 ## Development-only standardization
 
-For partition-2 evaluation, the predictor mean and standard deviation are computed from complete partition-1 development rows only.
+For partition-2 evaluation, predictor mean and population standard deviation are computed from candidate-complete partition-1 development rows only.
 
-For partition-3 evaluation, the predictor mean and standard deviation are computed from complete development rows in partitions 1 and 2 only.
+For partition-3 evaluation, predictor mean and population standard deviation are computed from candidate-complete development rows in partitions 1 and 2 only.
 
-The corresponding evaluation predictor is transformed using those development statistics.
+Population standard deviation is defined with divisor `n`, equivalent to `numpy.std(values, ddof=0)`.
 
-For the pooled fit, pooled complete rows define the pooled mean and standard deviation.
+The evaluation predictor is transformed using only the corresponding prior-development mean and population standard deviation.
 
-The implementation must fail closed for a candidate fit if the applicable development predictor is nonfinite or has zero standard deviation.
+For the pooled fit, pooled candidate-complete rows define the pooled mean and population standard deviation.
+
+A candidate fit fails closed if its applicable development predictor mean or population standard deviation is nonfinite, or if the population standard deviation is not strictly positive.
 
 Outcomes are not standardized.
 
@@ -224,7 +226,7 @@ Outcomes are not standardized.
 
 Campaign #48 is an association-discovery design.
 
-For chronological evaluation fits, preprocessing parameters come only from prior development rows, while the coefficient and HC3 inference are estimated on the applicable evaluation partition.
+For chronological evaluation fits, preprocessing parameters come only from prior development rows, while coefficient and HC3 inference are estimated on the applicable evaluation partition.
 
 The campaign does not select hyperparameters, refit a production forecast, calculate trading positions, or convert coefficients into signals.
 
@@ -232,18 +234,18 @@ The campaign does not select hyperparameters, refit a production forecast, calcu
 
 A candidate is rankable only when all of the following hold:
 
-- at least 90 complete pooled anchors;
-- at least 25 complete anchors in each chronological partition;
-- finite predictor and outcome values;
-- nonconstant development predictor for each chronological evaluation;
+- at least 90 candidate-complete pooled anchors;
+- at least 25 candidate-complete anchors in each chronological partition;
+- finite predictor and outcome values in each required fit;
+- finite development mean and strictly positive population standard deviation for each required transformation;
 - full-column-rank design for pooled, partition-2, and partition-3 fits;
 - finite nonzero predictor coefficient in all three required fits;
 - finite strictly positive HC3 standard error in all three required fits;
-- finite two-sided p-value in the pooled fit.
+- finite two-sided pooled p-value.
 
 Any failed gate produces a deterministic failure status and makes the candidate unrankable.
 
-No support threshold may be weakened after outcomes are inspected.
+No support threshold may be weakened after outcomes are generated or inspected.
 
 ## Directional consistency
 
@@ -259,11 +261,11 @@ Zero, nonfinite, failed, or unavailable coefficients do not satisfy directional 
 
 Benjamini-Hochberg false-discovery-rate correction at `q = 0.05` is applied separately within each outcome family:
 
-- Family R: 24 tests;
-- Family M: 24 tests;
-- Family V: 24 tests.
+- Family R: 24 prespecified tests;
+- Family M: 24 prespecified tests;
+- Family V: 24 prespecified tests.
 
-Only rankable candidates enter the corresponding BH calculation.
+Only rankable candidates enter the corresponding BH calculation. Ties must be handled deterministically using candidate identifier as the secondary ordering key.
 
 Unrankable candidates retain null adjusted-q fields and remain visible.
 
@@ -274,7 +276,7 @@ A supported research association requires both:
 
 ## Required canonical outputs
 
-A future implementation handoff must define exact schemas and ordering for exactly ten canonical outputs under:
+A future implementation handoff must define exact schemas and deterministic ordering for exactly ten canonical outputs under:
 
 `artifacts/simple_btc_price_state_predictive_baselines/`
 
@@ -299,22 +301,21 @@ All canonical text must be UTF-8 and LF-only. JSON must be strict and determinis
 
 Before any predictive outcome is generated, the future runner must support a governed preflight-only mode that verifies:
 
-- source path and SHA-256;
-- source byte count and row count;
-- required schema;
-- timestamp parsing, uniqueness, ordering, and exact hourly cadence;
-- finite positive closes;
+- source path, SHA-256, byte count, and data-row count;
+- exact ordered six-column schema;
+- timestamp parsing, uniqueness, ordering, first timestamp, last timestamp, and exact hourly cadence;
+- finite strictly positive closes;
 - deterministic anchor count and partition plan;
 - exact predictor and candidate inventories;
 - absence of output generation during preflight.
 
-Preflight must report that predictive outcomes were not generated.
+Preflight must explicitly report that predictive outcomes were not generated.
 
 ## Replay and immutability
 
 A future governed implementation must:
 
-1. record source bytes before generation;
+1. record governed source bytes before generation;
 2. complete one canonical generation;
 3. copy or hash all canonical outputs;
 4. complete a second canonical generation from the same governed source;
@@ -328,20 +329,20 @@ Any mismatch is a hard failure and prohibits publication.
 
 A future implementation handoff must require focused tests covering at least:
 
-- source identity and schema reconciliation;
+- source identity and exact ordered schema reconciliation;
 - exact hourly timestamp enforcement;
 - anchor origin and 168-hour spacing;
 - partition assignment;
 - all eight predictor formulas and interval boundaries;
 - all three outcome formulas at all three horizons;
 - missing-timestamp failures;
-- development-only standardization;
+- development-only population standardization with `ddof=0`;
 - OLS coefficient construction;
 - HC3 covariance;
 - support gates;
 - rank detection;
 - directional consistency;
-- family-specific BH correction;
+- deterministic family-specific BH correction;
 - deterministic candidate ordering;
 - strict JSON and LF-only output;
 - two-run replay;
@@ -353,13 +354,13 @@ A future implementation handoff must require focused tests covering at least:
 
 Work must stop before outcome generation if any of the following occurs:
 
-- source identity does not reconcile;
+- source identity or exact schema does not reconcile;
 - the source is not an exact unique hourly sequence;
-- a predictor, outcome, horizon, interval convention, estimator, support rule, or multiplicity rule is ambiguous;
+- a predictor, outcome, horizon, interval convention, estimator, transformation, support rule, or multiplicity rule is ambiguous;
 - the candidate inventory is not exactly 72;
 - deterministic ordering or serialization is unresolved;
 - an implementation requires a file surface not separately authorized by the board;
-- the specification or implementation handoff has not been frozen by commit;
+- this specification or the implementation handoff has not been frozen by commit;
 - a separate implementation GO has not been recorded on the campaign board.
 
 ## Interpretation boundary
@@ -382,7 +383,7 @@ Any supported candidate must enter a separately frozen confirmation campaign bef
 
 ## Current authorization boundary
 
-At this draft stage, only specification review and amendment are authorized.
+This specification is frozen, but implementation remains prohibited.
 
 Not authorized yet:
 
@@ -393,24 +394,14 @@ Not authorized yet:
 - outcome generation;
 - result inspection;
 - candidate ranking;
-- implementation handoff;
+- implementation handoff unless separately authorized by the campaign board;
 - implementation GO;
 - confirmation;
 - economic testing;
 - runtime integration.
 
-## Freeze checklist
+## Freeze record
 
-Before this document may be frozen, governance review must confirm:
+This specification was frozen before any Campaign #48 predictive outcome was generated, calculated, viewed, inspected, ranked, or interpreted.
 
-- the source contract is exact;
-- the eight predictors are simple, finite, and nonduplicative enough to justify separate testing;
-- all interval endpoints are unambiguous;
-- the three outcomes and three horizons are appropriate;
-- the 168-hour anchor spacing is accepted;
-- estimator and HC3 requirements are accepted;
-- support and chronological-consistency gates are accepted;
-- three independent 24-test BH families are accepted;
-- the ten planned outputs are sufficient;
-- no predictive outcome has been generated or inspected;
-- no runtime or strategy surface has changed.
+The freeze commit is the commit that first records this document with status `FROZEN GOVERNING SPECIFICATION`.
