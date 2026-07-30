@@ -10,239 +10,153 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`.
 
 ## Active campaign
 
-**Campaign:** Campaign #47 — Historical Regime Persistence, Duration, Clustering, and Spacing Discovery
+**Campaign:** Campaign #48 - Simple BTC Price-State Predictive Baselines
 
-**Classification:** Research-only predictive-structure discovery over the frozen canonical Campaign #46 regime-state ledger
+**Classification:** Research-only predictive-baseline design over the frozen governed BTC hourly source
 
-**Status:** COMPLETE - canonical artifacts published; all 72 frozen candidates remained unrankable under the frozen fail-closed estimator and chronological-support rules; no supported research association
+**Status:** DESIGN GO - specification drafting and freezing are authorized; predictive outcomes, implementation, result inspection, economic testing, and runtime changes remain prohibited
 
-**Working branch:** `agent/campaign-47-regime-structure-implementation`
+**Working branch:** `agent/campaign-48-simple-btc-price-state-baselines-governance`
 
 **Repository:** `IteraDynamics/ID_test`
 
-**Governed lineage base:** Campaign #47 governance merge `3e2b7447d997f1bf0881340683d2a28e8d310e4f`
+**Governed lineage base:** Campaign #47 closure `d8f8b234ccd342369d3d134e1dd7d7b916557b0a`
 
-**Governing specification:** `docs/research/HISTORICAL_REGIME_PERSISTENCE_DURATION_CLUSTERING_AND_SPACING_DISCOVERY.md`
+**Planned governing specification:** `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES.md`
 
-**Specification freeze commit:** `bc715119d93d44b8991e02e4afb5a71d5e150c70`
+## Plain-English objective
 
-**Implementation handoff:** `docs/research/HISTORICAL_REGIME_PERSISTENCE_DURATION_CLUSTERING_AND_SPACING_DISCOVERY_IMPLEMENTATION_HANDOFF.md`
+Campaign #48 asks a deliberately simple question:
 
-**Implementation handoff freeze commit:** `fd41466aa19e32dcec40581975c87130053162c1`
+> Does BTC's recent price behavior contain reliable information about what happens next?
 
-## Final governance review
+Before Itera attributes predictive value to regimes, transitions, machine learning, or more complicated signal logic, it needs a transparent baseline showing what ordinary BTC price history can already explain.
 
-The frozen specification and handoff were reviewed after merge and accepted without amendment. They reconcile on:
+The campaign will study a small, prespecified group of simple price-state concepts, expected to include:
 
-- governed Campaign #46 and BTC source identities;
-- exact common-grid anchor construction;
-- predictor definitions and interval conventions;
-- exact outcome definitions and missing-timestamp failures;
-- development-only scaling and current-regime fixed effects;
-- OLS-HC3 estimation;
-- support and rankability gates;
-- chronological directional consistency;
-- four independent Benjamini-Hochberg families;
-- deterministic serialization, staged publication, replay, and source immutability;
-- explicit stop conditions and the research-only interpretation boundary.
+- recent upward or downward price movement;
+- the strength of recent movement;
+- recent realized volatility;
+- distance from a recent price average;
+- position within a recent trading range;
+- recent drawdown or related price-location measures.
 
-No predictive outcome was generated or inspected before this implementation GO.
+The specification must define the exact formulas, trailing windows, horizons, outcomes, controls, support rules, chronological evaluations, multiplicity treatment, and failure conditions before any predictive outcomes are generated or inspected.
 
-## Immediate objective
+## What Campaign #48 is trying to learn
 
-Implement the frozen Campaign #47 pipeline and determine whether broadly supported temporal properties of BTC regimes contain reproducible incremental information beyond exact transition identity and recent BTC price state:
+1. Whether transparent BTC price-state features contain reproducible information about future BTC behavior.
+2. Whether future regime-derived candidates add information beyond ordinary momentum, volatility, and price-location effects.
+3. What simple predictive hurdle later Itera candidates must exceed before economic or strategy-level testing is justified.
 
-- current regime age;
-- previous completed regime duration;
-- time since the previous transition;
-- transition density over trailing 24, 72, and 168 hours.
+## Research role
 
-The frozen outcomes are directional forward return, absolute forward return, forward realized volatility, and uninterrupted current-regime survival at exact 24-, 72-, and 168-hour horizons.
+Campaign #48 is a predictive-baseline discovery campaign.
+
+It may evaluate statistical and chronological predictive structure, but it may not claim deployable alpha, portfolio value, or strategy usefulness.
+
+Any supported association must enter a separately frozen confirmation campaign. Only a confirmed candidate may later enter a separately authorized incremental economic-value comparison against untouched Core v1.
 
 ## Current authorization
 
-**Decision:** Campaign #47 is complete. The governed negative result authorizes no runtime, threshold, regime, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, model-training, or Core v1 overlay change.
+**Decision:** GO for Campaign #48 specification design and freeze preparation only.
 
 Authorized now:
 
-- add `research/ml/validation/historical_regime_structure_discovery.py`;
-- add `scripts/run_historical_regime_structure_discovery.py`;
-- add `tests/test_historical_regime_structure_discovery.py`;
-- use only the frozen canonical Campaign #46 state, run, transition, and manifest sources plus the governed BTC hourly source;
-- construct the frozen common 168-hour anchor grid and chronological partitions;
-- construct exactly the six frozen structural predictors;
-- construct exactly the four frozen outcome families at 24, 72, and 168 hours;
-- construct the six frozen BTC controls and current-regime fixed effects;
-- implement development-only scaling, OLS-HC3, support gates, directional consistency, and four family-specific BH corrections;
-- run focused tests and governed preflight before canonical outcome generation;
-- generate exactly the ten frozen canonical outputs;
-- run two-run byte replay, post-generation preflight, result inspection, full-suite validation, scope review, and publication;
-- update this board in a separate closure transition only after all acceptance gates pass.
+- update `docs/ITERA_CAMPAIGN_BOARD.md` for the Campaign #48 design transition;
+- draft `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES.md`;
+- define a small and interpretable predictor inventory;
+- define exact source identities and source immutability checks;
+- define deterministic anchor construction and chronological partitions;
+- define exact forward outcomes and horizons;
+- define leakage-safe controls and development-only transformations;
+- define estimator, support, rankability, directional-consistency, and multiplicity rules;
+- define deterministic serialization, replay, preflight, and stop conditions;
+- preserve null, missing, failed, and insufficient-support candidates;
+- review and freeze the specification before any predictive outcome generation.
 
 Not authorized:
 
-- changing `BaselineRegimeEngine`, canonical Campaign #46 labels, thresholds, or classifier defaults;
-- predictors, transformations, thresholds, bins, interactions, controls, outcomes, horizons, estimators, support rules, or multiplicity methods outside the frozen documents;
-- model training, replacement, or recalibration;
-- Core v1 overlay or economic-value testing;
-- Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, or optimization research under Campaign #47;
-- interpreting a supported association as deployable alpha or strategy usefulness;
-- signals, strategy changes, orders, execution, portfolio construction, NAV, exposure, dashboards, or runtime integration;
-- interpolation, filling, resampling, nearest-row matching, as-of matching, synthetic bars, or source substitution.
+- generating, calculating, viewing, or inspecting predictive outcomes;
+- implementing the Campaign #48 analysis pipeline;
+- creating candidate rankings or statistical results;
+- choosing features, windows, outcomes, or methods after seeing results;
+- indicator sweeps, parameter searches, optimization, or data-dependent feature selection;
+- Core v1 overlay or incremental economic-value testing;
+- Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, or portfolio optimization;
+- changes to regimes, thresholds, classifiers, strategies, signals, orders, execution, NAV, exposure, dashboards, runtime, or model training;
+- source substitution, interpolation, filling, resampling, nearest-row matching, synthetic bars, or leakage from evaluation periods.
 
-## Frozen Campaign #47 research contract
+## Campaign #48 design principles
 
-### Source
+The specification must remain:
 
-Canonical Campaign #46 directory:
+- simple;
+- interpretable;
+- prespecified;
+- deterministic;
+- replay-safe;
+- chronological;
+- leakage-safe;
+- observation-only;
+- research-only;
+- fail-closed.
 
-`artifacts/full_historical_regime_state_sequence/`
+The campaign must avoid an indicator zoo. Every predictor and window must have a clear economic or statistical rationale and must be frozen before outcomes are generated.
 
-Campaign #46 publication commit: `34a6999`.
+## Initial design questions to freeze
 
-Required canonical files:
+The specification must resolve:
 
-- `btc_hourly_regime_state_manifest.json`;
-- `btc_hourly_regime_state_sequence.csv`;
-- `btc_hourly_regime_state_runs.csv`;
-- `btc_hourly_regime_transitions.csv`.
-
-Underlying BTC source:
-
-- path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`;
-- SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`;
-- byte count: `4,792,028`;
-- rows: `70,069`;
-- timestamps: `2018-01-01 00:00:00` through `2025-12-31 00:00:00`;
-- exact timestamp matching only.
-
-### Anchors
-
-- one common deterministic 168-hour anchor grid;
-- origin at the earliest eligible canonical non-`UNKNOWN` state row with all 168-hour trailing controls available;
-- exact 168-hour timestamp increments only;
-- no shifting or nearest-row replacement when a scheduled timestamp is absent;
-- three contiguous near-equal chronological partitions, with remainder rows assigned to earlier partitions;
-- anchor and partition inventories serialized before result ranking.
-
-### Structural predictors
-
-1. `log1p_current_state_age_hours`;
-2. `log1p_previous_state_duration_hours`;
-3. `log1p_hours_since_previous_transition`;
-4. `transition_count_trailing_24h`;
-5. `transition_count_trailing_72h`;
-6. `transition_count_trailing_168h`.
-
-No thresholds, bins, interactions, splines, polynomial terms, or data-dependent feature selection are authorized.
-
-### Outcomes
-
-At exact 24-, 72-, and 168-hour horizons:
-
-- Family R: directional forward log return;
-- Family M: absolute forward log return;
-- Family V: forward realized volatility using every exact hourly return in the interval;
-- Family S: uninterrupted current-regime survival indicator.
-
-Any missing exact timestamp required by an outcome makes that outcome unavailable. No filling is permitted.
-
-### Controls and estimator
-
-Each candidate uses:
-
-- trailing 24-, 72-, and 168-hour log returns;
-- trailing 24- and 168-hour realized volatility;
-- normalized distance from trailing 168-hour close mean;
-- development-defined current-regime fixed effects.
-
-Continuous predictors and controls are standardized using development rows only for chronological evaluations.
-
-Estimator:
-
-- ordinary least squares with intercept;
-- one structural predictor;
-- six continuous controls;
-- current-regime fixed effects;
-- HC3 covariance;
-- two-sided normal p-value;
-- 95% normal confidence interval.
-
-Family S uses the same specification as a linear probability model and makes no calibrated-probability claim.
-
-### Candidate family and multiplicity
-
-- 6 predictors;
-- 4 outcome families;
-- 3 horizons;
-- 72 frozen candidates.
-
-Benjamini-Hochberg FDR at `q = 0.05` is applied separately within each prespecified 18-test outcome family.
-
-### Support and directional consistency
-
-A candidate requires at least:
-
-- 90 complete pooled anchors;
-- 25 complete anchors in each chronological partition;
-- finite, nonconstant predictors and controls;
-- full-rank estimator designs;
-- finite nonzero coefficients;
-- finite strictly positive HC3 standard errors;
-- no development-absent regime level in an evaluation sample.
-
-A supported research association requires:
-
-- BH-adjusted family q-value `<= 0.05`; and
-- finite nonzero coefficients of the same sign in partition-2 evaluation, partition-3 evaluation, and the pooled fit.
-
-Unrankable, null, missing, failed, and insufficient-support candidates must remain visible.
-
-A supported association does not establish deployable alpha, economic usefulness, or strategy value.
+1. the exact governed BTC source and source hash;
+2. the anchor interval and earliest eligible timestamp;
+3. the exact predictor list and trailing windows;
+4. whether closely related windows are separate candidates or grouped families;
+5. the exact forward outcome families;
+6. the exact forward horizons;
+7. the baseline and incremental model structures;
+8. development-only scaling and chronological evaluation rules;
+9. minimum pooled and partition support;
+10. estimator and robust covariance method;
+11. full-rank and finite-estimate requirements;
+12. directional-consistency requirements;
+13. multiplicity families and false-discovery control;
+14. canonical outputs and deterministic ordering;
+15. preflight, replay, source-immutability, and publication gates;
+16. explicit interpretation boundaries.
 
 ## Authorized file surfaces
 
-Campaign #47 may modify only:
+Campaign #48 design work may modify only:
 
 - `docs/ITERA_CAMPAIGN_BOARD.md`;
-- `docs/research/HISTORICAL_REGIME_PERSISTENCE_DURATION_CLUSTERING_AND_SPACING_DISCOVERY.md`;
-- `docs/research/HISTORICAL_REGIME_PERSISTENCE_DURATION_CLUSTERING_AND_SPACING_DISCOVERY_IMPLEMENTATION_HANDOFF.md`;
-- `research/ml/validation/historical_regime_structure_discovery.py`;
-- `scripts/run_historical_regime_structure_discovery.py`;
-- `tests/test_historical_regime_structure_discovery.py`;
-- `artifacts/historical_regime_structure/**`.
+- `docs/research/SIMPLE_BTC_PRICE_STATE_PREDICTIVE_BASELINES.md`.
 
-Any additional surface requires an explicit board transition.
+Any implementation file, runner, test, artifact, runtime, or additional documentation surface requires a later explicit board transition.
 
-## Campaign #47 acceptance gates
+## Campaign #48 design acceptance gates
 
-1. The frozen specification predates predictive outcome generation. **Passed: `bc71511`.**
-2. The frozen implementation handoff predates predictive outcome generation. **Passed: `fd41466`.**
-3. A separate implementation GO is recorded. **Passed by this board transition.**
-4. Governed source identities, hashes, schemas, ordering, state/run/transition relationships, and timestamps pass preflight. **Passed.**
-5. Exact anchor, predictor, candidate, outcome, and partition inventories serialize deterministically before ranking. **Passed.**
-6. Focused Campaign #47 tests pass. **Passed: `21 passed`.**
-7. Controls, transformations, development-only scaling, fixed effects, outcomes, OLS, HC3, support gates, direction rules, and family-specific BH correction reconcile exactly. **Passed.**
-8. Null, missing, failed, and insufficient-support candidates remain visible. **Passed: all `72` candidates serialized.**
-9. Two governed runs produce byte-identical canonical outputs. **Passed: all ten outputs matched.**
-10. Canonical text is LF-only and JSON is strict. **Passed.**
-11. Governed source bytes remain identical before and after generation. **Passed.**
-12. Full repository suite passes with no new failures. **Passed: `504 passed`, `75 warnings`.**
-13. Scope review finds no runtime, threshold, regime, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training changes. **Passed.**
-14. Any supported candidate remains research-only and enters a separate confirmation campaign before any Core v1 overlay test. **Not triggered: zero supported candidates.**
+1. Campaign #47 is closed before Campaign #48 begins. **Passed: `d8f8b23`.**
+2. S-008 is selected as the next governed research priority. **Passed by this transition.**
+3. The campaign is described in simple, non-alpha-claiming language. **Passed by this transition.**
+4. The governed source identity and immutability contract are explicit. **Pending specification.**
+5. The predictor inventory and all trailing windows are exact and finite. **Pending specification.**
+6. Outcomes and horizons are exact and prespecified. **Pending specification.**
+7. Chronological evaluation and leakage controls are exact. **Pending specification.**
+8. Estimator, support, rankability, consistency, and multiplicity rules are exact. **Pending specification.**
+9. Canonical outputs, replay, serialization, and failure visibility are exact. **Pending specification.**
+10. The specification prohibits outcome generation before freeze. **Pending specification.**
+11. No runtime, regime, threshold, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change occurs. **Must remain true.**
 
 ## Immediate sequence
 
-1. Complete and merge Campaign #45 on its governed research lineage. **Completed: PR #43, merge `42e5d7c`.**
-2. Freeze the Campaign #47 specification before predictive outcome generation. **Completed: `bc71511`.**
-3. Freeze the Campaign #47 implementation handoff before predictive outcome generation. **Completed: `fd41466`.**
-4. Review and accept the frozen Campaign #47 design. **Completed.**
-5. Record a separate Campaign #47 implementation GO. **Completed by this board transition.**
-6. Implement the observation-only module, runner, and focused tests. **Completed.**
-7. Run focused tests and governed preflight before outcome construction. **Completed.**
-8. Generate canonical outputs twice and verify byte identity. **Completed.**
-9. Inspect results, run the full suite, and perform scope review. **Completed.**
-10. Publish and close Campaign #47 only if every acceptance gate passes. **Completed: publication `16692c1`.**
+1. Record the Campaign #48 design transition. **Completed by this board update.**
+2. Draft the simple BTC price-state baseline specification. **Authorized next.**
+3. Review predictor scope and remove unnecessary or duplicative features. **Pending.**
+4. Freeze the specification before predictive outcome generation. **Pending.**
+5. Draft and freeze a separate implementation handoff. **Not yet authorized.**
+6. Record a separate implementation GO only after final governance review. **Not yet authorized.**
+7. Generate predictive outcomes only after all preceding gates pass. **Prohibited now.**
 
 ## Campaign #47 completion record
 
