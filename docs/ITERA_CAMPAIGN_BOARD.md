@@ -12,7 +12,7 @@ The board is project state and authorization record. It does not authorize produ
 
 **Classification:** Research-only confirmation following Campaign #48 discovery
 
-**Status:** METHODOLOGICAL DESIGN LOCKED; INITIAL PROSPECTIVE SOURCE PUBLISHED; SOURCE-MAINTENANCE IMPLEMENTATION GO ONLY
+**Status:** PROSPECTIVE SOURCE ACCUMULATION — methodology locked; initial post-2025 source published; deterministic source-maintenance utility validated; confirmation computation remains prohibited until the final cumulative source satisfies every locked sample gate
 
 **Governance branch:** `agent/campaign-49-btc-volatility-state-confirmation-governance`
 
@@ -23,6 +23,12 @@ The board is project state and authorization record. It does not authorize produ
 **Governing method:** `docs/research/BTC_VOLATILITY_STATE_AND_DRAWDOWN_CONFIRMATION.md`
 
 **Methodological design lock:** `9203b6f20983b8c168182e6bc58135f4f7d5913c`
+
+**Source-maintenance implementation GO:** `e5d53c1997738790ba286abe4dd4f7656bf89be7`
+
+**Source updater implementation:** `57c70731309300791b12203011b84caf28b502d9`
+
+**Source updater tests:** `7fced0696969609bf0a21c11609c110b96a22934`
 
 ## Objective
 
@@ -75,7 +81,32 @@ Source evidence:
 - governed missing timestamps: exactly `2026-05-08 02:00:00` through `2026-05-08 06:00:00` inclusive;
 - no Campaign #49 predictor, outcome, anchor, regression, p-value, or result was generated or inspected.
 
-The published branch scope between the acquisition-governance checkpoint and the method-lock commit contains exactly the two source files plus the governing specification update.
+## Source-maintenance validation evidence
+
+The source-only updater is:
+
+`scripts/update_campaign49_coinbase_source.py`
+
+The synthetic focused suite passed:
+
+`12 passed in 0.61s`
+
+The module entry point was also verified successfully:
+
+`python -m scripts.update_campaign49_coinbase_source --help`
+
+Validated behavior includes:
+
+- fixed start `2026-01-01T00:00:00Z` and explicit whole-hour end;
+- exact ordered schema and LF-only canonical CSV serialization;
+- prior source-manifest hash reconciliation;
+- timestamp, ordering, duplicate, alignment, OHLCV, and endpoint validation;
+- complete missing-hour inventory without repair;
+- fail-closed detection of changed historical values;
+- fail-closed detection of disappeared prior candles;
+- fail-closed detection of newly appearing candles inside a previously frozen gap;
+- deterministic source-only manifest generation;
+- no predictor, outcome, anchor, regression, p-value, or confirmation-result computation.
 
 ## Data maturity
 
@@ -85,26 +116,16 @@ Confirmation computation remains prohibited until a final cumulative source meet
 
 ## Current authorization
 
-**Decision:** GO to implement deterministic source-only cumulative acquisition and historical-revision reconciliation. No confirmation computation is authorized.
+**Decision:** Continue prospective Coinbase source accumulation through the validated source-only updater. No confirmation computation is authorized.
 
-Authorized implementation surfaces:
+Authorized now:
 
-1. `scripts/update_campaign49_coinbase_source.py` — source-only cumulative acquisition, canonical serialization, prior-prefix reconciliation, and deterministic source manifest generation;
-2. `tests/test_update_campaign49_coinbase_source.py` — synthetic source-only tests;
-3. `docs/ITERA_CAMPAIGN_BOARD.md` and the governing method for implementation evidence or pre-outcome correction;
-4. future cumulative source CSV and source manifest files only after source-only validation and explicit publication review.
-
-The source-maintenance utility must:
-
-- call or reuse the existing Coinbase hourly fetch logic without calculating predictors or outcomes;
-- require fixed start `2026-01-01T00:00:00Z` and an explicit whole-hour end;
-- preserve exact ordered schema and canonical LF-only CSV serialization;
-- compare every timestamp and OHLCV value in the prior frozen interval;
-- fail closed on changed values, disappeared candles, or newly appearing candles inside that interval using `HISTORICAL_SOURCE_REVISION`;
-- record the complete missing-hour inventory without repair;
-- generate only source-level metadata and hashes;
-- be deterministic and replay-safe apart from the external acquisition itself;
-- never modify the prior frozen snapshot.
+- use `scripts/update_campaign49_coinbase_source.py` to create later cumulative Coinbase snapshots from the fixed start;
+- run the focused source-updater tests after any updater change;
+- validate source identity, provenance, timestamps, OHLCV values, endpoints, missing-hour inventory, hashes, and prior-interval immutability;
+- present each proposed cumulative snapshot for publication review before committing it;
+- update this board with source-only evidence;
+- make pre-outcome corrections only if separately recorded before any confirmation computation.
 
 Not authorized:
 
@@ -124,10 +145,11 @@ Not authorized:
 3. Select Coinbase and acquire the initial prospective source. **Completed.**
 4. Publish and reconcile the initial source. **Completed.**
 5. Lock the methodological design before Campaign #49 outcomes. **Completed: `9203b6f`.**
-6. Implement and test the source-only cumulative reconciliation utility. **Authorized next.**
-7. Continue prospective source accumulation without confirmation computation. **Pending.**
-8. Freeze the final cumulative source annex only after all sample gates are met. **Not yet feasible.**
-9. Freeze a separate confirmation implementation handoff and record a separate implementation GO before any confirmation computation. **Not authorized.**
+6. Implement the source-only cumulative reconciliation utility. **Completed: `57c7073`.**
+7. Validate the source-only utility. **Completed: `12 passed in 0.61s`; module entry point verified.**
+8. Continue prospective source accumulation without confirmation computation. **Active.**
+9. Freeze the final cumulative source annex only after all sample gates are met. **Not yet feasible.**
+10. Freeze a separate confirmation implementation handoff and record a separate implementation GO before any confirmation computation. **Not authorized.**
 
 ## Campaign #48 completion record
 
