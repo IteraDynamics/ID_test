@@ -1,0 +1,49 @@
+{
+  "anchor_count": 403,
+  "anchor_spacing_hours": 168,
+  "partition_2_evaluation": {
+    "development_partitions": [
+      1
+    ],
+    "evaluation_partition": 2
+  },
+  "partition_3_evaluation": {
+    "development_partitions": [
+      1,
+      2
+    ],
+    "evaluation_partition": 3
+  },
+  "partitions": [
+    {
+      "count": 135,
+      "end_ordinal": 134,
+      "end_timestamp": "2020-10-19 00:00:00",
+      "partition": 1,
+      "start_ordinal": 0,
+      "start_timestamp": "2018-01-08 00:00:00"
+    },
+    {
+      "count": 134,
+      "end_ordinal": 268,
+      "end_timestamp": "2023-05-29 00:00:00",
+      "partition": 2,
+      "start_ordinal": 135,
+      "start_timestamp": "2020-11-02 00:00:00"
+    },
+    {
+      "count": 134,
+      "end_ordinal": 402,
+      "end_timestamp": "2025-12-29 00:00:00",
+      "partition": 3,
+      "start_ordinal": 269,
+      "start_timestamp": "2023-06-05 00:00:00"
+    }
+  ],
+  "pooled_partitions": [
+    1,
+    2,
+    3
+  ],
+  "remainder_assignment_rule": "earlier_partitions_first"
+}

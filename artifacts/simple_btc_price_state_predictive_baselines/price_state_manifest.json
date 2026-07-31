@@ -1,0 +1,98 @@
+{
+  "anchor_count": 403,
+  "campaign_id": 48,
+  "candidate_count": 72,
+  "canonical_files": [
+    "price_state_anchor_inventory.csv",
+    "price_state_anchor_inventory.json",
+    "price_state_candidate_inventory.csv",
+    "price_state_candidate_inventory.json",
+    "price_state_fold_plan.json",
+    "price_state_results.csv",
+    "price_state_results.json",
+    "price_state_report.md",
+    "price_state_source_manifest.json",
+    "price_state_manifest.json"
+  ],
+  "files": [
+    {
+      "byte_count": 77973,
+      "path": "price_state_anchor_inventory.csv",
+      "sha256": "5e47fea80f55a0bc17c352a1412d058d2c423d2b00fcaae5d5410fa2f185e550"
+    },
+    {
+      "byte_count": 222379,
+      "path": "price_state_anchor_inventory.json",
+      "sha256": "c118c87fee79223ef09a6d2dc52c15041285739e9e9e0d4547f78beba10aba29"
+    },
+    {
+      "byte_count": 6321,
+      "path": "price_state_candidate_inventory.csv",
+      "sha256": "7f8cdfc054f3a78715edd49ece509eb5c5a923e10df5ddb4c72d7af47062a7ca"
+    },
+    {
+      "byte_count": 16967,
+      "path": "price_state_candidate_inventory.json",
+      "sha256": "1a753fcd0499533514f438098daf68138a2deddc7c741def06562bb2c6fa48a1"
+    },
+    {
+      "byte_count": 1025,
+      "path": "price_state_fold_plan.json",
+      "sha256": "3e854f1c04b021524c4d38fac0f98125861d29c16e0171e2f6bcf08e95b83cc6"
+    },
+    {
+      "byte_count": 43928,
+      "path": "price_state_results.csv",
+      "sha256": "c5555acc58d1f9a8739ae21d29e7eeef291376cebd644479d97f15dddcf90ce6"
+    },
+    {
+      "byte_count": 126447,
+      "path": "price_state_results.json",
+      "sha256": "f4eaaaca4529f1fe7c3695876c1efda45edfb764dc440443d40f8cc9ac434b43"
+    },
+    {
+      "byte_count": 2566,
+      "path": "price_state_report.md",
+      "sha256": "5c8821ebafbca714d46346276d8914d8c1c363de3dc5a3a1b73568908eff0d3d"
+    },
+    {
+      "byte_count": 1661,
+      "path": "price_state_source_manifest.json",
+      "sha256": "8356dbd54d711645e2f50d35e0430d4d410035b8c0bfbf9df51a66988c4e45e1"
+    }
+  ],
+  "horizons": [
+    24,
+    72,
+    168
+  ],
+  "implementation_handoff_freeze_commit": "a16c152608df481a66a2e29f7a1d7795b5490459",
+  "observation_only": true,
+  "outcome_families": [
+    "R",
+    "M",
+    "V"
+  ],
+  "partition_counts": [
+    135,
+    134,
+    134
+  ],
+  "payload_digest": "4c6ad32e0e387c9713713845c7284434ad02a0e927d4a75d0c6745f3c328a97c",
+  "predictive_outcomes_generated": true,
+  "predictors": [
+    "return_trailing_24h",
+    "return_trailing_72h",
+    "return_trailing_168h",
+    "realized_volatility_trailing_24h",
+    "realized_volatility_trailing_168h",
+    "distance_from_mean_trailing_168h",
+    "range_position_trailing_168h",
+    "drawdown_from_high_trailing_168h"
+  ],
+  "research_only": true,
+  "serialization_contract_version": "campaign-48-v1",
+  "source_cadence_amendment_commit": "d9fc7e7103a5033a9dbbe06b7abf93aea27d863b",
+  "source_manifest_digest": "8356dbd54d711645e2f50d35e0430d4d410035b8c0bfbf9df51a66988c4e45e1",
+  "specification_freeze_commit": "e8777df3442d093fd84fb92c25d13aadc2bfe1ed"
+}
