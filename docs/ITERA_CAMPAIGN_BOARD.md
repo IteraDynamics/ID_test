@@ -10,11 +10,11 @@ The board is project state and authorization record. It does not authorize produ
 
 **Campaign:** Campaign #50 — Holdout-First Alpha Research
 
-**Classification:** Research planning for an immediately testable alpha-development pipeline
+**Classification:** Research implementation for an immediately testable alpha-development pipeline
 
-**Status:** PRIMARY FAMILY SELECTED — equity breadth deterioration and recovery; source-universe reconciliation and statistical-specification drafting only; no outcomes, implementation, economic backtests, paper trading, runtime work, or strategy work authorized
+**Status:** IMPLEMENTATION GO — build and validate discovery/validation machinery only; 2025 holdout access, real outcome execution, economic backtests, paper trading, runtime work, and strategy work remain prohibited
 
-**Planning branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
+**Planning and implementation branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
 **Repository:** `IteraDynamics/ID_test`
 
@@ -26,122 +26,153 @@ The board is project state and authorization record. It does not authorize produ
 
 **Family-selection commit:** `bfa0b43a7a281f2a6a6aca19f61bc8078e19b17a`
 
+**Frozen source universe:** `docs/research/CAMPAIGN_50_EQUITY_SOURCE_UNIVERSE.md`
+
+**Source-universe commit:** `f32cac981bf55d0b1799949988df70e5546394e5`
+
+**Source validator tolerance commit:** `99976db643da2cd8b056998eb0487ae963a39e87`
+
+**Frozen statistical specification:** `docs/research/CAMPAIGN_50_EQUITY_BREADTH_STATISTICAL_SPEC.md`
+
+**Statistical-specification commit:** `36dd499d00740062f10c1c070896f740f55f6808`
+
 ## Objective
 
 > Identify a narrowly defined research-alpha hypothesis that can be discovered, confirmed on an untouched historical holdout, tested economically, and—only after separate gates—advanced to forward paper trading without waiting for new calendar-time data.
 
 Itera Dynamics is building toward an operating quantitative fund. Campaign #50 therefore prioritizes a credible path from research to historical confirmation, economic testing, paper trading, and a future live track record.
 
-## Process correction from Campaigns #48 and #49
+## Selected research family
 
-Campaign #48 found 15 promising BTC volatility-state and drawdown associations, but its full 2018–2025 source participated in discovery and selection. No terminal Coinbase holdout remained untouched.
+**Equity breadth deterioration and recovery.**
 
-Campaign #49 correctly froze a prospective confirmation design and began accumulating post-2025 Coinbase data. Its locked 52-anchor weekly gate cannot mature until approximately January 2027, potentially later because of missing windows.
+The frozen research question is whether broad participation across a fixed domestic equity ETF universe contains incremental information about subsequent SPY and QQQ returns beyond each target index's own price-trend state.
 
-Campaign #49 remains valid research, but it is no longer the active alpha-development critical path.
+The governed universe contains:
 
-Campaign #50 reserves an untouched historical terminal holdout before candidate outcomes are generated.
+- targets: SPY and QQQ;
+- breadth members: RSP, MDY, IWM, IWD, IWF, XLB, XLE, XLF, XLI, XLK, XLP, XLU, XLV, and XLY.
 
-## Repository inventory conclusion
+The selected family is distinct from Core v1 own-price trend logic, has low expected turnover if later mapped economically, and can be confirmed on an untouched 2025 terminal holdout.
 
-The repository contains sufficient research and future execution infrastructure to support an immediate holdout-first program:
+## Source reconciliation evidence
 
-- daily and hourly OHLCV source patterns;
-- deterministic loaders, validation, resampling, backtesting, costs, turnover, replay, and paper-broker infrastructure;
-- existing SPY/QQQ equity-book and Core v1 baselines;
-- broad daily ETF files spanning index, size, style, sector, international, bond, gold, and cash-like instruments.
+The exact 16 source files and SHA-256 identities are frozen in the source-universe annex.
 
-Several obvious families were rejected as the Campaign #50 primary because their 2025 observations or closely related economic mappings already participated in prior work:
+Source-only reconciliation established:
 
-- BTC simple price state and volatility;
-- BTC/ETH relative strength;
-- crash-short and long/short combinations;
-- jump risk;
-- trend persistence and regime-transition/state research;
-- SPY/QQQ own-price trend and defensive-cash mappings.
+- exact hashes matched;
+- exact ordered OHLCV schemas matched;
+- unique strictly increasing sessions;
+- all 16 files share the complete 2,010-session SPY/QQQ target calendar;
+- development, validation, and holdout intervals require no dropped common sessions;
+- no Campaign #50 predictor or outcome was generated during inventory or reconciliation.
 
-## Ranked family decision
+The validator permits only deterministic machine-scale adjusted-price rounding tolerance. It does not repair or rewrite source values.
 
-1. **Equity breadth deterioration and recovery — selected primary.**
-2. BTC/ETH hour-of-week continuation and reversal.
-3. Cross-asset defensive confirmation state.
+## Frozen temporal architecture
 
-The selected family asks whether broad participation across a small frozen equity universe contains incremental information about subsequent SPY and QQQ behavior beyond each index's own trend state.
+- development: `2018-01-02` through `2022-12-30`;
+- validation: `2023-01-03` through `2024-12-31`;
+- untouched confirmation holdout: `2025-01-02` through `2025-12-30`.
 
-Reasons for selection:
+The 2025 holdout may not be loaded by discovery or validation code. It may not be used for debugging, feature selection, transformation selection, threshold selection, expected-sign selection, candidate ranking, model choice, or decision-rule modification.
 
-- plausible market-participation mechanism;
-- clear incremental distinction from Core v1 own-price trend logic;
-- low expected turnover;
-- direct mapping to the existing equity book if later confirmed economically;
-- sufficient historical daily support for development, validation, and an immediate 2025 terminal holdout;
-- lower holdout-contamination risk than previously researched families.
+## Frozen statistical design summary
+
+The specification freezes:
+
+- four predictors: breadth level, 20-session breadth change, narrow-strength divergence, and broad recovery;
+- two targets: SPY and QQQ;
+- three forward-return horizons: 5, 20, and 60 sessions;
+- exactly 24 candidates;
+- horizon-specific non-overlapping anchor grids;
+- OLS with HC3 covariance;
+- two-sided raw p-values and frozen expected-sign checks;
+- Holm correction across all 24 candidates separately within development, validation, and holdout;
+- deterministic minimum-support, compatibility, shortlist, confirmation, and family-level decision rules;
+- canonical output schemas and deterministic failure precedence;
+- mechanical holdout isolation and separate discovery/validation and confirmation entry points.
+
+No candidate, predictor, target, horizon, transformation, control, interaction, or outcome may be added without a new pre-outcome governance decision.
 
 ## Mandatory stage separation
 
 Campaign #50 preserves separate governance gates for:
 
-1. discovery on a frozen development interval;
-2. historical confirmation on a mechanically untouched terminal holdout;
-3. economic-value testing for statistically confirmed candidates only;
-4. forward paper trading for economically confirmed candidates only;
-5. later limited-live-capital review after a predetermined paper record.
+1. implementation and synthetic/preflight validation;
+2. development and validation execution;
+3. historical confirmation on the mechanically untouched terminal holdout;
+4. economic-value testing for statistically confirmed candidates only;
+5. forward paper trading for economically confirmed candidates only;
+6. later limited-live-capital review after a predetermined paper record.
 
 Passing one stage does not authorize the next.
 
-## Provisional temporal architecture
-
-Subject to exact source-coverage reconciliation before outcomes:
-
-- development: `2018-01-01` through `2022-12-31`;
-- validation: `2023-01-01` through `2024-12-31`;
-- untouched confirmation holdout: `2025-01-01` through the frozen 2025 source endpoint.
-
-Any adjustment must be recorded before outcomes and must preserve a meaningful terminal holdout.
-
-The 2025 holdout may not be used for universe selection, discovery, transformation selection, threshold selection, feature selection, expected-sign selection, candidate ranking, model selection, or real-outcome debugging.
-
 ## Current authorization
 
-**Decision:** GO to reconcile the daily source universe and draft the frozen statistical specification for the selected equity-breadth family only.
+**Decision:** GO to implement and validate the Campaign #50 discovery/validation machinery under the frozen statistical specification.
 
 Authorized now:
 
-- inventory exact daily source files, providers, manifests, coverage, schemas, hashes, duplicate status, and missing-session inventories;
-- define a small economically justified ETF universe without using Campaign #50 outcomes;
-- identify assets that fail complete-coverage or source-governance requirements;
-- draft the statistical specification freezing source identity, universe, intervals, holdout isolation, predictor formulas, outcomes, horizons, expected signs or two-sided rules, multiplicity, support gates, confirmation rules, deterministic statuses, and output schemas;
-- update this board with planning evidence.
+- implement deterministic source loading for the 16 exact frozen source identities;
+- implement source, schema, ordering, session-calendar, interval, candidate-inventory, and clean-output preflight checks;
+- implement the four frozen predictor formulas and three frozen forward-return horizons;
+- implement deterministic non-overlapping anchor construction for development and validation only;
+- implement the frozen OLS, HC3, raw p-value, confidence interval, standardization, Holm correction, support-gate, sign, magnitude-compatibility, and shortlist logic;
+- implement canonical discovery/validation outputs exactly as specified;
+- implement separate discovery/validation and confirmation entry-point boundaries;
+- implement a fail-closed rejection of any discovery/validation source row dated after `2024-12-31` before analytical construction;
+- create synthetic and fixture-based tests for formulas, anchoring, support gates, statistics, multiplicity, deterministic statuses, canonical serialization, replay identity, and holdout-access rejection;
+- run source-only preflight against the real frozen files, provided no predictor or outcome is constructed;
+- update this board with implementation and validation evidence.
 
 Not authorized:
 
-- generating or inspecting Campaign #50 predictor or outcome values;
+- running the discovery/validation machinery against real prices to generate predictor values, forward returns, coefficients, p-values, rankings, validation results, or shortlist outcomes;
+- loading any 2025 source row into discovery/validation analytical structures;
+- implementing or running the real holdout confirmation path beyond a fail-closed boundary stub;
 - accessing newly calculated 2025 holdout outcomes;
-- implementing Campaign #50 predictors, outcomes, models, labels, or runners;
 - economic-value backtesting or Core v1 comparison;
 - paper-trading activation;
 - Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, or portfolio optimization for Campaign #50 candidates;
 - any runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
 
+## Required implementation properties
+
+Implementation must remain:
+
+- deterministic;
+- replay-safe;
+- observation-only;
+- chronological and leakage-safe;
+- fail-closed;
+- isolated from runtime and production modules;
+- incapable of silently repairing, substituting, interpolating, forward-filling, backward-filling, or resampling source data.
+
+The discovery/validation entry point must reject post-2024 rows before predictor or outcome construction. The confirmation entry point must remain unusable without a later board-recorded confirmation GO, a committed shortlist, a committed discovery/validation manifest, and exact source identities.
+
 ## Immediate sequence
 
 1. Preserve Campaign #49 as a passive prospective confirmation track. **Completed.**
 2. Open Campaign #50 planning branch and charter. **Completed: `63a9b24`.**
-3. Inventory available sources and reusable infrastructure. **Completed for family selection.**
+3. Inventory available sources and reusable infrastructure. **Completed.**
 4. Identify and rank no more than three hypothesis families. **Completed.**
-5. Select one primary family. **Completed: equity breadth deterioration and recovery, `bfa0b43`.**
-6. Reconcile and freeze the exact daily source universe. **Authorized next.**
-7. Draft and freeze the statistical research specification and untouched holdout. **Authorized after source reconciliation.**
-8. Record a separate implementation GO. **Not authorized.**
-9. Generate discovery outcomes only after implementation and preflight gates. **Not authorized.**
-10. Unlock the historical holdout only after shortlist and confirmation rules are frozen. **Not authorized.**
-11. Economic testing and paper trading require later separate gates. **Not authorized.**
+5. Select one primary family. **Completed: `bfa0b43`.**
+6. Reconcile and freeze the exact daily source universe. **Completed: `f32cac9`; 2,010 common sessions validated.**
+7. Freeze the statistical research specification and untouched holdout. **Completed: `36dd499`.**
+8. Record a separate implementation GO. **Completed by this board decision.**
+9. Implement discovery/validation machinery and synthetic tests. **Authorized next.**
+10. Validate implementation and source-only preflight. **Pending.**
+11. Record a separate real development/validation execution GO. **Not authorized.**
+12. Freeze and commit the shortlist before any holdout execution GO. **Not authorized.**
+13. Economic testing and paper trading require later separate gates. **Not authorized.**
 
 ## Passive campaign
 
 ### Campaign #49 — Confirmation of BTC Volatility-State and Drawdown Associations
 
-**Status:** PASSIVE PROSPECTIVE ACCUMULATION — methodology locked; initial post-2025 source published; deterministic source updater validated; no confirmation computation until every locked sample gate is met
+**Status:** PASSIVE PROSPECTIVE ACCUMULATION — methodology locked; initial post-2025 Coinbase source published; deterministic source updater validated; no confirmation computation until every locked sample gate is met
 
 **Governance branch:** `agent/campaign-49-btc-volatility-state-confirmation-governance`
 
