@@ -12,7 +12,7 @@ The board is project state and authorization record. It does not authorize produ
 
 **Classification:** Research-only confirmation following Campaign #48 discovery
 
-**Status:** SOURCE ACQUISITION GO — Coinbase Exchange BTC-USD selected; fixed initial snapshot and source manifest authorized; no confirmation predictors, outcomes, anchors, models, results, economic tests, runtime work, or strategy work authorized
+**Status:** INITIAL SOURCE SNAPSHOT VALIDATED LOCALLY — exact Coinbase BTC-USD source identity recorded; publication of the source CSV and source manifest only is authorized; no confirmation predictors, outcomes, anchors, models, results, economic tests, runtime work, or strategy work authorized
 
 **Governance branch:** `agent/campaign-49-btc-volatility-state-confirmation-governance`
 
@@ -27,6 +27,8 @@ The board is project state and authorization record. It does not authorize produ
 **Initial draft:** `0c47262b9d4f0335f1568e785e000197c0be7bcf`
 
 **Source-selection and feasibility commit:** `0359058bd2628202d7d6e502ce9fec5a9a700fa2`
+
+**Source-acquisition authorization:** `21a5d6f5a74cf34b355fb67546c9f7952088a362`
 
 ## Plain-English objective
 
@@ -47,25 +49,49 @@ The selected prospective confirmation provider is Coinbase Exchange.
 
 Coinbase one-hour candles are accepted only under exact reconciliation. Missing intervals are recorded, never repaired. No interpolation, filling, resampling, nearest-row matching, as-of matching, shifting, synthetic bars, or source substitution is permitted.
 
-## Authorized initial snapshot
+## Initial governed snapshot evidence
 
-Acquire exactly:
+The fixed initial snapshot was acquired locally under the authorized command for:
 
 - start: `2026-01-01T00:00:00Z`;
 - end: `2026-07-31T13:00:00Z`;
 - product: `BTC-USD`;
 - granularity: `3600`;
-- intended output: `data/btcusd_3600s_2026-01-01_to_2026-07-31.csv`.
+- local source path: `data/btcusd_3600s_2026-01-01_to_2026-07-31.csv`;
+- local manifest path: `data/btcusd_3600s_2026-01-01_to_2026-07-31.source_manifest.json`.
 
-The initial source manifest must record provider, endpoint family, product, acquisition command, fixed start and end, SHA-256, byte count, row count, exact schema, first and last timestamp, timezone convention, duplicate/order/alignment checks, OHLCV validity, continuous-hour count, and the complete missing-hour inventory.
+Source-only validation evidence:
 
-Any warning or mismatch fails closed. The snapshot must not be repaired.
+- source validation status: `PASS`;
+- SHA-256: `7af947322b878aee905fb4bd2643f4dec6e9bf0a78551c31a092899c4b8d38ce`;
+- byte count: `350,460`;
+- data rows: `5,073`;
+- continuous hourly positions implied by endpoints: `5,078`;
+- first timestamp: `2026-01-01 00:00:00`;
+- last timestamp: `2026-07-31 13:00:00`;
+- exact ordered schema: `timestamp,open,high,low,close,volume`;
+- whole-hour alignment: passed;
+- uniqueness and strict ordering: passed;
+- finite positive OHLC and nonnegative volume: passed;
+- complete governed missing-hour count: `5`.
+
+Exact missing timestamps:
+
+1. `2026-05-08 02:00:00`;
+2. `2026-05-08 03:00:00`;
+3. `2026-05-08 04:00:00`;
+4. `2026-05-08 05:00:00`;
+5. `2026-05-08 06:00:00`.
+
+The observed gap is preserved as source identity. No repair, interpolation, filling, resampling, matching, shifting, or synthetic candle is permitted.
+
+No Campaign #49 predictor, outcome, anchor, regression, candidate statistic, or result was generated or inspected during source acquisition or validation.
 
 ## Data-maturity finding
 
 As of July 31, 2026, even perfect post-2025 hourly coverage can provide at most 29 complete non-overlapping 168-hour confirmation anchors after the required 168-hour predictor lookback and 168-hour forward outcome.
 
-The proposed minimum is 52 complete 168-hour anchors. The 52nd weekly anchor requires source coverage through approximately `2027-01-07 00:00:00`, with any missing windows potentially delaying maturity.
+The proposed minimum is 52 complete 168-hour anchors. The 52nd weekly anchor requires source coverage through approximately `2027-01-07 00:00:00`, with missing windows potentially delaying maturity.
 
 The minimum gate must not be reduced merely to run the campaign earlier.
 
@@ -81,23 +107,22 @@ No Campaign #48 directional-return association was supported.
 
 ## Current authorization
 
-**Decision:** GO to acquire and validate the fixed initial Coinbase source snapshot only.
+**Decision:** GO to publish and reconcile the exact initial Coinbase source CSV and deterministic source manifest only.
 
 Authorized now:
 
-- run the existing Coinbase hourly-history fetcher for the exact fixed window;
-- validate source identity, schema, timestamps, duplicates, ordering, whole-hour alignment, OHLCV values, endpoints, and complete missing-hour inventory;
-- calculate only source-level metadata and hashes;
-- create and commit the source CSV and a deterministic source manifest;
-- update the draft specification and board with source evidence;
-- inspect Campaign #48 canonical results only for future design freeze inputs.
+- commit exactly `data/btcusd_3600s_2026-01-01_to_2026-07-31.csv`;
+- commit exactly `data/btcusd_3600s_2026-01-01_to_2026-07-31.source_manifest.json`;
+- verify the GitHub-published bytes, source SHA-256, manifest values, exact five-gap inventory, and branch scope;
+- update the draft specification and board with the publication commit after reconciliation;
+- inspect Campaign #48 canonical results only for later design-freeze inputs.
 
 Not authorized:
 
 - calculating Campaign #49 predictors or outcomes;
 - constructing confirmation anchors;
 - fitting, ranking, or interpreting Campaign #49 candidates;
-- changing the candidate inventory, formulas, horizons, expected signs, or source provider;
+- changing the candidate inventory, formulas, horizons, expected signs, sample gates, or source provider;
 - implementation module, confirmation runner, result artifacts, economic-value testing, Core v1 comparison, or sensitivity outcomes;
 - Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, or portfolio optimization;
 - any runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
@@ -108,11 +133,13 @@ Not authorized:
 2. Record Campaign #49 design authorization. **Completed: `098ebe9`.**
 3. Draft the confirmation specification. **Completed: `0c47262`.**
 4. Select provider and record current feasibility. **Completed: `0359058`.**
-5. Acquire the exact initial Coinbase source snapshot. **Authorized next.**
-6. Validate and freeze its source manifest without confirmation outcomes. **Pending.**
-7. Continue prospective accumulation under immutable reconciliation. **Pending.**
-8. Freeze the final governing specification only when source identity and final design decisions are complete. **Not authorized yet.**
-9. Freeze a separate implementation handoff and record implementation GO before any confirmation computation. **Not authorized yet.**
+5. Authorize fixed initial source acquisition. **Completed: `21a5d6f`.**
+6. Acquire and source-validate the exact initial Coinbase snapshot. **Completed locally: PASS.**
+7. Publish exactly the source CSV and source manifest. **Authorized next.**
+8. Reconcile the published files and record their publication commit. **Pending.**
+9. Continue prospective accumulation under immutable reconciliation. **Pending.**
+10. Freeze the final governing specification only when source identity and final design decisions are complete. **Not authorized yet.**
+11. Freeze a separate implementation handoff and record implementation GO before any confirmation computation. **Not authorized yet.**
 
 ## Campaign #48 completion record
 
