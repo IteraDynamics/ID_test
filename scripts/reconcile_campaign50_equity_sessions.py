@@ -50,6 +50,7 @@ INTERVALS = {
     "validation": (date(2023, 1, 3), date(2024, 12, 31)),
     "holdout": (date(2025, 1, 2), date(2025, 12, 30)),
 }
+OHLC_RELATIVE_TOLERANCE = 1e-12
 
 
 def sha256_file(path: Path) -> str:
@@ -74,6 +75,10 @@ def validate_float(value: str, field: str, filename: str, row_number: int) -> fl
     if parsed != parsed or parsed in (float("inf"), float("-inf")):
         raise ValueError(f"NONFINITE_{field.upper()}: {filename}:{row_number}")
     return parsed
+
+
+def ohlc_tolerance(*prices: float) -> float:
+    return OHLC_RELATIVE_TOLERANCE * max(1.0, *(abs(price) for price in prices))
 
 
 def load_source(path: Path) -> tuple[list[date], dict[str, Any]]:
@@ -110,9 +115,10 @@ def load_source(path: Path) -> tuple[list[date], dict[str, Any]]:
             volume = validate_float(row["volume"], "volume", filename, row_number)
             if min(open_price, high_price, low_price, close_price) <= 0:
                 raise ValueError(f"NONPOSITIVE_PRICE: {filename}:{row_number}")
-            if low_price > min(open_price, high_price, close_price):
+            tolerance = ohlc_tolerance(open_price, high_price, low_price, close_price)
+            if low_price - min(open_price, high_price, close_price) > tolerance:
                 raise ValueError(f"INVALID_LOW: {filename}:{row_number}")
-            if high_price < max(open_price, low_price, close_price):
+            if max(open_price, low_price, close_price) - high_price > tolerance:
                 raise ValueError(f"INVALID_HIGH: {filename}:{row_number}")
             if volume < 0:
                 raise ValueError(f"NEGATIVE_VOLUME: {filename}:{row_number}")
@@ -123,6 +129,7 @@ def load_source(path: Path) -> tuple[list[date], dict[str, Any]]:
         "row_count": len(sessions),
         "first_session": sessions[0].isoformat() if sessions else None,
         "last_session": sessions[-1].isoformat() if sessions else None,
+        "ohlc_relative_tolerance": OHLC_RELATIVE_TOLERANCE,
         "status": "PASS",
     }
 
@@ -186,6 +193,7 @@ def build_reconciliation(data_root: Path) -> dict[str, Any]:
         "reconciliation_type": "campaign50_equity_source_only",
         "predictors_generated": False,
         "outcomes_generated": False,
+        "ohlc_relative_tolerance": OHLC_RELATIVE_TOLERANCE,
         "target_calendar_definition": "intersection(SPY_1D.csv, QQQ_1D.csv)",
         "target_calendar_first_session": target_calendar[0].isoformat(),
         "target_calendar_last_session": target_calendar[-1].isoformat(),
