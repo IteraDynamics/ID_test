@@ -12,7 +12,7 @@ The board is project state and authorization record. It does not authorize produ
 
 **Classification:** Research implementation for an immediately testable alpha-development pipeline
 
-**Status:** IMPLEMENTATION VALIDATED — discovery/validation machinery and source-only preflight passed; real development/validation outcome execution, 2025 holdout access, economic backtests, paper trading, runtime work, and strategy work remain prohibited
+**Status:** EXECUTION PROCEDURE PREPARED — implementation and source-only preflight validated; deterministic development/validation execution procedure frozen for review; real outcome execution, 2025 holdout access, economic backtests, paper trading, runtime work, and strategy work remain prohibited
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -35,6 +35,7 @@ Itera Dynamics is building toward an operating quantitative fund. Campaign #50 t
 - Core research module: commit `562f47b02ef825466be554433232bb78b54ca19a`
 - Synthetic test suite: commits `270ab55489fd87ac17d0825edf9b45ffa533718d` and `b3ea0f4cdff64b739b6488681d275c3a976a684f`
 - Source-only implementation preflight: commit `5e22c0b28c7bdb74ef7608b72dcfe57a286784d2`
+- Development/validation execution procedure: `docs/research/CAMPAIGN_50_DEVELOPMENT_VALIDATION_EXECUTION_PROCEDURE.md`; commit `16b00d8e5f33a1636a65cb6a3885b19562726551`
 
 ## Selected research family
 
@@ -123,6 +124,28 @@ User-run real source-only preflight:
 
 This evidence validates implementation and source identity only. It contains no real predictor values, forward returns, coefficients, p-values, rankings, validation results, or shortlist outcomes.
 
+## Execution procedure evidence
+
+The proposed execution procedure is frozen in:
+
+- `docs/research/CAMPAIGN_50_DEVELOPMENT_VALIDATION_EXECUTION_PROCEDURE.md`
+- commit `16b00d8e5f33a1636a65cb6a3885b19562726551`
+
+It specifies:
+
+- a separate future board-recorded execution GO;
+- exact governed branch, specification, source, and interval identities;
+- clean, non-existing run-1 and run-2 output directories;
+- exactly six canonical files per replay;
+- source, schema, ordering, calendar, and post-2024 rejection gates;
+- two independent deterministic replay runs;
+- exact file-set, byte-length, and SHA-256 replay comparison;
+- deterministic manifest requirements without wall-clock or machine-specific fields;
+- one canonical result set and one frozen shortlist after replay identity passes;
+- return to HOLD before any historical-confirmation GO.
+
+The documented real runner command remains proposed and is not enabled or executed under the current HOLD.
+
 ## Mandatory stage separation
 
 Campaign #50 preserves separate governance gates for:
@@ -138,16 +161,16 @@ Passing one stage does not authorize the next.
 
 ## Current authorization
 
-**Decision:** HOLD after successful implementation validation. A separate board-recorded real development/validation execution GO is required before any real Campaign #50 predictor or outcome is generated.
+**Decision:** HOLD after successful implementation validation and execution-procedure preparation. A separate board-recorded real development/validation execution GO is required before any real Campaign #50 predictor or outcome is generated.
 
 Authorized now:
 
-- inspect implementation and synthetic/preflight evidence;
+- inspect implementation, tests, preflight evidence, and the frozen execution procedure;
 - add tests that do not use real Campaign #50 outcomes;
 - correct implementation defects without changing the frozen design;
 - rerun synthetic tests and source-only preflight;
-- prepare the proposed real execution procedure and clean-output/replay commands;
-- update this board with additional implementation evidence.
+- review the proposed execution procedure and commands;
+- update this board with additional non-outcome evidence.
 
 Not authorized:
 
@@ -164,12 +187,13 @@ Not authorized:
 
 1. Implementation and synthetic tests — **completed**.
 2. Real source-only preflight — **completed; PASS**.
-3. Review the real development/validation execution procedure and deterministic replay plan — **authorized next**.
+3. Review the real development/validation execution procedure and deterministic replay plan — **completed; procedure frozen at `16b00d8`.**
 4. Record a separate real development/validation execution GO — **pending**.
-5. Execute development/validation only after that GO — **not authorized**.
-6. Commit canonical results and frozen shortlist before any holdout GO — **not authorized**.
-7. Historical holdout confirmation requires a later separate gate — **not authorized**.
-8. Economic testing and paper trading require later separate gates — **not authorized**.
+5. Implement or enable the governed real runner only under that GO — **not authorized**.
+6. Execute development/validation only after that GO — **not authorized**.
+7. Commit canonical results and frozen shortlist before any holdout GO — **not authorized**.
+8. Historical holdout confirmation requires a later separate gate — **not authorized**.
+9. Economic testing and paper trading require later separate gates — **not authorized**.
 
 ## Passive campaign
 
