@@ -8,148 +8,113 @@ The board is project state and authorization record. It does not authorize produ
 
 ## Active campaign
 
-**Campaign:** Campaign #49 — Confirmation of BTC Volatility-State and Drawdown Associations
+**Campaign:** Campaign #50 — Holdout-First Alpha Research
 
-**Classification:** Research-only confirmation following Campaign #48 discovery
+**Classification:** Research planning for an immediately testable alpha-development pipeline
 
-**Status:** PROSPECTIVE SOURCE ACCUMULATION — methodology locked; initial post-2025 source published; deterministic source-maintenance utility validated; confirmation computation remains prohibited until the final cumulative source satisfies every locked sample gate
+**Status:** PLANNING GO — repository inventory and hypothesis-family selection only; no Campaign #50 outcomes, implementation, economic backtests, paper trading, runtime work, or strategy work authorized
 
-**Governance branch:** `agent/campaign-49-btc-volatility-state-confirmation-governance`
+**Planning branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
 **Repository:** `IteraDynamics/ID_test`
 
-**Governed lineage base:** Campaign #48 closure `77c1ae8c70de7a16cca847aeb1a4cb2eea638007`
+**Planning charter:** `docs/research/CAMPAIGN_50_HOLDOUT_FIRST_ALPHA_RESEARCH.md`
 
-**Governing method:** `docs/research/BTC_VOLATILITY_STATE_AND_DRAWDOWN_CONFIRMATION.md`
-
-**Methodological design lock:** `9203b6f20983b8c168182e6bc58135f4f7d5913c`
-
-**Source-maintenance implementation GO:** `e5d53c1997738790ba286abe4dd4f7656bf89be7`
-
-**Source updater implementation:** `57c70731309300791b12203011b84caf28b502d9`
-
-**Source updater tests:** `7fced0696969609bf0a21c11609c110b96a22934`
+**Planning-charter commit:** `63a9b24aaf13a2baaef21140f1ed6a99e6d39ac1`
 
 ## Objective
 
-> Do the volatility-state persistence and drawdown-linked future-volatility associations discovered in Campaign #48 survive an honestly independent, prospectively untouched confirmation sample?
+> Identify a narrowly defined research-alpha hypothesis that can be discovered, confirmed on an untouched historical holdout, tested economically, and—only after separate gates—advanced to forward paper trading without waiting for new calendar-time data.
 
-Campaign #49 is confirmation, not discovery. It carries forward exactly 15 Campaign #48 associations across five scientific groups and does not reopen directional-return research.
+Itera Dynamics is building toward an operating quantitative fund. Campaign #50 therefore prioritizes a credible path from research to historical confirmation, economic testing, paper trading, and a future live track record.
 
-## Locked method
+## Process correction from Campaigns #48 and #49
 
-The design lock fixes before Campaign #49 outcomes:
+Campaign #48 found 15 promising BTC volatility-state and drawdown associations, but its full 2018–2025 source participated in discovery and selection. No terminal Coinbase holdout remained untouched.
 
-- Coinbase Exchange `BTC-USD` as the sole provider and product;
-- cumulative post-2025 hourly source protocol;
-- exactly three predictors and two outcome families;
-- exactly 15 candidates and expected signs;
-- horizon-specific non-overlapping 24-, 72-, and 168-hour anchor grids;
-- OLS with one standardized predictor, intercept, HC3 covariance, and no controls or interactions;
-- minimum gates of 180, 90, and 52 candidate-complete anchors by horizon;
-- Holm family-wise correction across all 15 candidates;
-- a fixed Campaign #48 effect-size compatibility band of 0.25x through 4.0x absolute discovery coefficient with the same sign;
-- two-of-three horizon group confirmation;
-- three-of-five campaign confirmation including at least one M and one V group;
-- deterministic failure precedence and exactly ten future canonical outputs;
-- preflight, two-run byte-identical replay, and source immutability requirements.
+Campaign #49 correctly froze a prospective confirmation design and began accumulating post-2025 Coinbase data. Its locked 52-anchor weekly gate cannot mature until approximately January 2027, potentially later because of missing windows.
 
-The final cumulative source bytes and source annex remain intentionally unfrozen until the untouched sample is mature. The later source annex may identify source bytes and coverage only; it may not alter the locked method.
+Campaign #49 remains valid research, but it is no longer the active alpha-development critical path.
 
-## Initial prospective source publication
+Campaign #50 must reserve an untouched historical terminal holdout before candidate outcomes are generated.
 
-Published files:
+## Mandatory stage separation
 
-1. `data/btcusd_3600s_2026-01-01_to_2026-07-31.csv`
-   - Git blob: `41c7489df6830eede734b867962eb91616ea036b`
-   - SHA-256: `7af947322b878aee905fb4bd2643f4dec6e9bf0a78551c31a092899c4b8d38ce`
-   - bytes: `350,460`
-   - rows: `5,073`
-2. `data/btcusd_3600s_2026-01-01_to_2026-07-31.source_manifest.json`
-   - Git blob: `0b80a70503caa45c32ddd7afd7c9f420f56a422a`
+Campaign #50 must preserve separate governance gates for:
 
-Source evidence:
+1. discovery on a frozen development interval;
+2. historical confirmation on a mechanically untouched terminal holdout;
+3. economic-value testing for statistically confirmed candidates only;
+4. forward paper trading for economically confirmed candidates only;
+5. later limited-live-capital review after a predetermined paper record.
 
-- provider: Coinbase Exchange;
-- product: `BTC-USD`;
-- granularity: `3600` seconds;
-- first timestamp: `2026-01-01 00:00:00`;
-- last timestamp: `2026-07-31 13:00:00`;
-- continuous hourly positions: `5,078`;
-- exact schema: `timestamp,open,high,low,close,volume`;
-- source validation: `PASS`;
-- governed missing timestamps: exactly `2026-05-08 02:00:00` through `2026-05-08 06:00:00` inclusive;
-- no Campaign #49 predictor, outcome, anchor, regression, p-value, or result was generated or inspected.
+Passing one stage does not authorize the next.
 
-## Source-maintenance validation evidence
+## Provisional temporal architecture
 
-The source-only updater is:
+Subject to source-coverage inventory before outcomes:
 
-`scripts/update_campaign49_coinbase_source.py`
+- development: `2018-01-01 00:00:00` through `2022-12-31 23:00:00`;
+- validation: `2023-01-01 00:00:00` through `2024-12-31 23:00:00`;
+- untouched confirmation holdout: `2025-01-01 00:00:00` through the frozen 2025 source endpoint.
 
-The synthetic focused suite passed:
+Any adjustment must be recorded before outcomes and must preserve a meaningful terminal holdout.
 
-`12 passed in 0.61s`
-
-The module entry point was also verified successfully:
-
-`python -m scripts.update_campaign49_coinbase_source --help`
-
-Validated behavior includes:
-
-- fixed start `2026-01-01T00:00:00Z` and explicit whole-hour end;
-- exact ordered schema and LF-only canonical CSV serialization;
-- prior source-manifest hash reconciliation;
-- timestamp, ordering, duplicate, alignment, OHLCV, and endpoint validation;
-- complete missing-hour inventory without repair;
-- fail-closed detection of changed historical values;
-- fail-closed detection of disappeared prior candles;
-- fail-closed detection of newly appearing candles inside a previously frozen gap;
-- deterministic source-only manifest generation;
-- no predictor, outcome, anchor, regression, p-value, or confirmation-result computation.
-
-## Data maturity
-
-As of July 31, 2026, the source cannot meet the locked 52-anchor 168-hour gate. Even perfect coverage could provide at most 29 non-overlapping 168-hour observations after lookback and outcome requirements.
-
-Confirmation computation remains prohibited until a final cumulative source meets every locked gate. Coverage into approximately January 2027 is required, and missing windows may delay maturity.
+The 2025 holdout may not be used for discovery, transformation selection, threshold selection, feature selection, model selection, expected-sign selection, candidate ranking, or real-outcome debugging.
 
 ## Current authorization
 
-**Decision:** Continue prospective Coinbase source accumulation through the validated source-only updater. No confirmation computation is authorized.
+**Decision:** GO to Campaign #50 planning and repository inventory only.
 
 Authorized now:
 
-- use `scripts/update_campaign49_coinbase_source.py` to create later cumulative Coinbase snapshots from the fixed start;
-- run the focused source-updater tests after any updater change;
-- validate source identity, provenance, timestamps, OHLCV values, endpoints, missing-hour inventory, hashes, and prior-interval immutability;
-- present each proposed cumulative snapshot for publication review before committing it;
-- update this board with source-only evidence;
-- make pre-outcome corrections only if separately recorded before any confirmation computation.
+- inspect existing source manifests, coverage, schemas, and missing-hour inventories;
+- inspect existing research, regime, signal, feature, strategy, cost, execution, and paper-trading infrastructure;
+- inspect prior campaign specifications and canonical artifacts for process and duplication analysis;
+- identify no more than three narrowly defined hypothesis families;
+- assess each family for mechanism, novelty versus Core v1, sample feasibility, multiplicity burden, expected holding horizon, likely turnover, economic testability, and path to paper trading;
+- select one primary family;
+- draft a statistical research specification that freezes source, intervals, holdout isolation, candidate inventory, formulas, expected signs or two-sided rules, multiplicity, support gates, decision rules, deterministic statuses, and output schemas;
+- update this board with planning evidence.
 
 Not authorized:
 
-- Campaign #49 predictor or outcome calculation;
-- confirmation anchor construction;
-- regression, p-value, Holm, compatibility, group, or campaign-result computation;
-- confirmation runner or result artifacts;
-- historical sensitivity outcomes;
-- economic-value testing or Core v1 comparison;
-- Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, or portfolio optimization;
+- generating or inspecting Campaign #50 candidate outcomes;
+- accessing newly calculated 2025 holdout outcomes;
+- implementing Campaign #50 predictors, outcomes, models, labels, or runners;
+- economic-value backtesting or Core v1 comparison;
+- paper-trading activation;
+- Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, or portfolio optimization for Campaign #50 candidates;
 - any runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
 
 ## Immediate sequence
 
-1. Branch from Campaign #48 closure. **Completed.**
-2. Draft Campaign #49 confirmation design. **Completed.**
-3. Select Coinbase and acquire the initial prospective source. **Completed.**
-4. Publish and reconcile the initial source. **Completed.**
-5. Lock the methodological design before Campaign #49 outcomes. **Completed: `9203b6f`.**
-6. Implement the source-only cumulative reconciliation utility. **Completed: `57c7073`.**
-7. Validate the source-only utility. **Completed: `12 passed in 0.61s`; module entry point verified.**
-8. Continue prospective source accumulation without confirmation computation. **Active.**
-9. Freeze the final cumulative source annex only after all sample gates are met. **Not yet feasible.**
-10. Freeze a separate confirmation implementation handoff and record a separate implementation GO before any confirmation computation. **Not authorized.**
+1. Preserve Campaign #49 as a passive prospective confirmation track. **Completed by Campaign #50 opening decision.**
+2. Open Campaign #50 planning branch and charter. **Completed: `63a9b24`.**
+3. Inventory available governed sources and reusable research infrastructure. **Authorized next.**
+4. Identify and rank no more than three hypothesis families. **Pending.**
+5. Select one primary family. **Pending.**
+6. Freeze the statistical research specification and untouched holdout. **Not authorized until planning evidence is complete.**
+7. Record a separate implementation GO. **Not authorized.**
+8. Generate discovery outcomes only after implementation and preflight gates. **Not authorized.**
+9. Unlock the historical holdout only after shortlist and confirmation rules are frozen. **Not authorized.**
+10. Economic testing and paper trading require later separate gates. **Not authorized.**
+
+## Passive campaign
+
+### Campaign #49 — Confirmation of BTC Volatility-State and Drawdown Associations
+
+**Status:** PASSIVE PROSPECTIVE ACCUMULATION — methodology locked; initial post-2025 Coinbase source published; deterministic source updater validated; no confirmation computation until every locked sample gate is met
+
+**Governance branch:** `agent/campaign-49-btc-volatility-state-confirmation-governance`
+
+**Method lock:** `9203b6f20983b8c168182e6bc58135f4f7d5913c`
+
+**Source updater:** `57c70731309300791b12203011b84caf28b502d9`
+
+**Validation evidence:** `12 passed in 0.61s`; module entry point verified
+
+Campaign #49 retains exactly 15 frozen associations, Coinbase `BTC-USD` as its prospective provider, a fixed post-2025 source protocol, and minimum horizon gates of 180, 90, and 52 candidate-complete anchors. It remains prohibited from generating confirmation outcomes before source maturity and a later execution GO.
 
 ## Campaign #48 completion record
 
@@ -162,3 +127,13 @@ Not authorized:
 **Canonical publication:** `fd7ee01`
 
 Campaign #48 found reproducible association between recent BTC volatility/drawdown information and future movement magnitude/volatility, but not direction. It authorized no runtime or strategy change.
+
+## Historical carryover
+
+Campaign #47 completed historical regime-structure discovery with zero rankable candidates and zero supported associations.
+
+Campaign #45 completed historical regime-transition discovery with zero supported exact ordered-transition associations.
+
+Campaign #46 completed the full historical regime-state source.
+
+Campaign #43 Candidate A-001 remains preliminary and is not revised, promoted, or retested by Campaign #50 unless separately authorized.
