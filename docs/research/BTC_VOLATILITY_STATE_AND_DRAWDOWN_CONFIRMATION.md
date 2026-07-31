@@ -2,7 +2,7 @@
 
 ## Status
 
-**DRAFT GOVERNING SPECIFICATION — design only; not frozen.**
+**DRAFT GOVERNING SPECIFICATION — SOURCE PROVIDER SELECTED; SOURCE ACQUISITION ONLY.**
 
 No Campaign #49 confirmation outcome may be generated, calculated, viewed, inspected, ranked, or interpreted under this draft.
 
@@ -12,21 +12,14 @@ It authorizes no runtime, regime, threshold, classifier, signal, strategy, order
 
 ## Plain-English question
 
-Campaign #49 asks:
-
 > Do the volatility-state persistence and drawdown-linked future-volatility associations discovered in Campaign #48 survive an honestly independent, separately frozen confirmation design?
 
-Campaign #49 is not a new feature-discovery campaign. It must not search for better predictors, transformations, horizons, thresholds, interactions, or labels.
+Campaign #49 is not a new discovery sweep. It must not search for better predictors, transformations, horizons, thresholds, interactions, labels, or economic implementations.
 
 ## Governed lineage
 
-Campaign #49 begins from the Campaign #48 closure commit:
-
-`77c1ae8c70de7a16cca847aeb1a4cb2eea638007`
-
-Campaign #48 canonical publication:
-
-`fd7ee01`
+- Campaign #48 closure: `77c1ae8c70de7a16cca847aeb1a4cb2eea638007`
+- Campaign #48 canonical publication: `fd7ee01`
 
 Campaign #48 established 15 supported horizon-specific associations across five scientific groups:
 
@@ -36,64 +29,121 @@ Campaign #48 established 15 supported horizon-specific associations across five 
 4. trailing 168-hour realized volatility positively associated with future realized volatility;
 5. deeper drawdown from the trailing 168-hour high associated with higher future realized volatility.
 
-Each group was supported at exact 24-hour, 72-hour, and 168-hour horizons.
+Each group was supported at exact 24-hour, 72-hour, and 168-hour horizons. No directional-return association was supported, so Campaign #49 will not reopen directional-return discovery.
 
-No Campaign #48 directional-return association was supported. Campaign #49 will not reopen directional-return discovery.
+## Independent-confirmation principle
 
-## Confirmation principle
-
-The primary confirmation claim must rely on BTC hourly observations that were not part of the Campaign #48 governed source ending at:
+The primary confirmation claim must rely only on BTC hourly observations strictly after the Campaign #48 source endpoint:
 
 `2025-12-31 00:00:00`
 
 Historical reuse may be used only for implementation testing, source reconciliation, or explicitly labeled sensitivity analysis. It may not be described as independent confirmation.
 
-At the time of this draft, no repository-tracked post-2025 hourly BTC confirmation source has been identified.
+## Selected primary source provider
 
-Therefore Campaign #49 must stop before specification freeze unless an authorized source is identified with fixed bytes, schema, timestamp coverage, and provenance.
+The selected provider is **Coinbase Exchange**, using the spot product:
 
-## Proposed primary confirmation source contract
+`BTC-USD`
 
-The eventual frozen source must be a single immutable hourly BTC close series beginning strictly after the Campaign #48 source endpoint.
+The selected official endpoint family is:
 
-The frozen specification must record:
+`https://api.exchange.coinbase.com/products/BTC-USD/candles`
 
-- repository path;
-- source provider and acquisition method;
-- SHA-256;
-- byte count;
-- data-row count;
-- exact ordered schema;
-- first and last timestamp;
-- timezone convention;
-- complete missing-hour inventory;
-- duplicate and ordering checks;
-- close-value validity requirements;
-- whether the source was available or inspected before the Campaign #49 design freeze.
+The fixed acquisition granularity is:
 
-No source substitution, downloading during governed execution, interpolation, filling, resampling, nearest-row matching, as-of matching, shifting, synthetic bars, or timestamp repair is permitted.
+`3600` seconds
 
-## Frozen predictor formulas carried forward from Campaign #48
+The repository already contains the deterministic acquisition utility:
 
-Only three predictors are eligible for confirmation.
+`scripts/fetch_coinbase_hourly_history.py`
 
-Let `C_t` denote the exact hourly close at timestamp `t`, and let hourly log return be:
+The existing utility requests Coinbase Exchange candles in bounded chunks, parses the documented response order `[time, low, high, open, close, volume]`, converts timestamps to timezone-naive UTC hourly values, sorts, removes duplicate timestamps deterministically, and writes the exact research schema:
 
-`r_u = ln(C_u / C_{u-1h})`
+`timestamp,open,high,low,close,volume`
 
-### Predictor P1 — trailing 24-hour realized volatility
+### Provider-specific constraints
+
+Coinbase Exchange documents that:
+
+- one-hour granularity is supported;
+- one request may return at most 300 candles;
+- larger ranges must be retrieved through multiple bounded requests;
+- historical candles may be incomplete;
+- intervals with no ticks may have no published candle.
+
+Therefore Coinbase data is acceptable only under exact source reconciliation. Missing timestamps are not repaired, shifted, filled, interpolated, resampled, or synthesized. The full missing-hour inventory must be recorded and frozen for every governed snapshot.
+
+## Prospective source-acquisition protocol
+
+Campaign #49 will use immutable, cumulative snapshots from the same provider, product, endpoint family, schema, timezone convention, and acquisition utility.
+
+### Initial governed snapshot
+
+The first acquisition window is fixed as:
+
+- start: `2026-01-01T00:00:00Z`;
+- end: `2026-07-31T13:00:00Z`;
+- product: `BTC-USD`;
+- granularity: `3600` seconds;
+- output schema: `timestamp,open,high,low,close,volume`.
+
+The intended initial local output path is:
+
+`data/btcusd_3600s_2026-01-01_to_2026-07-31.csv`
+
+The snapshot must be acquired once, validated without confirmation outcomes, hashed, and committed with a separate source manifest. Any acquisition warning is evidence to inspect, not permission to repair data.
+
+### Subsequent cumulative snapshots
+
+Later snapshots must:
+
+- begin at the same fixed start timestamp;
+- extend only the exact end timestamp;
+- use the same Coinbase product and endpoint family;
+- use the same one-hour granularity and ordered schema;
+- preserve all previously frozen rows byte-for-value after canonical serialization;
+- report any historical revision, disappeared candle, added candle inside the prior frozen interval, or changed OHLCV value as a hard reconciliation failure;
+- never substitute another exchange or aggregate provider.
+
+A later cumulative snapshot may become the final confirmation source only after its exact identity, bytes, coverage, provenance, and complete missing-hour inventory are frozen before outcomes.
+
+## Current feasibility as of July 31, 2026
+
+Even assuming perfect hourly coverage from January 1 through July 31, 2026, the untouched source is not yet mature enough for the proposed primary 168-hour confirmation gate.
+
+For a 168-hour predictor lookback and non-overlapping 168-hour forward outcomes:
+
+- the first eligible anchor is no earlier than `2026-01-08 00:00:00`;
+- the initial snapshot can support at most 29 complete non-overlapping 168-hour anchors;
+- the proposed minimum is 52 complete 168-hour anchors.
+
+The 52nd weekly anchor requires source coverage through at least approximately:
+
+`2027-01-07 00:00:00`
+
+Missing windows may push the actual maturity date later.
+
+The minimum gate will not be reduced merely to accelerate the campaign.
+
+## Frozen predictor formulas carried forward
+
+Only three predictors are eligible.
+
+Let `C_t` denote the exact hourly close and `r_u = ln(C_u / C_{u-1h})`.
+
+### P1 — trailing 24-hour realized volatility
 
 `rv_24_t = sqrt(sum(r_u^2))`
 
-using all 24 exact hourly returns with endpoint timestamps in `(t-24h, t]`.
+using all 24 exact hourly returns with endpoints in `(t-24h, t]`.
 
-### Predictor P2 — trailing 168-hour realized volatility
+### P2 — trailing 168-hour realized volatility
 
 `rv_168_t = sqrt(sum(r_u^2))`
 
-using all 168 exact hourly returns with endpoint timestamps in `(t-168h, t]`.
+using all 168 exact hourly returns with endpoints in `(t-168h, t]`.
 
-### Predictor P3 — drawdown from trailing 168-hour high
+### P3 — drawdown from trailing 168-hour high
 
 Let `high_168_t` be the maximum of the 169 exact hourly closes in `[t-168h, t]`.
 
@@ -101,13 +151,11 @@ Let `high_168_t` be the maximum of the 169 exact hourly closes in `[t-168h, t]`.
 
 No additional predictor is authorized.
 
-## Frozen outcome formulas carried forward from Campaign #48
+## Frozen outcome formulas carried forward
 
-Only two outcome families are eligible for confirmation.
+For `h` in `{24, 72, 168}`:
 
-For horizon `h` in `{24, 72, 168}`:
-
-### Family M — future absolute return magnitude
+### Family M — future absolute return
 
 `forward_return_h = ln(C_{t+h} / C_t)`
 
@@ -117,13 +165,13 @@ For horizon `h` in `{24, 72, 168}`:
 
 `forward_realized_volatility_h = sqrt(sum(r_u^2))`
 
-using all `h` exact hourly returns with endpoint timestamps in `(t, t+h]`.
+using all exact hourly returns with endpoints in `(t, t+h]`.
 
-No directional-return confirmation family is included because Campaign #48 did not support one.
+No directional-return family is included.
 
-## Exact horizon-specific candidate inventory
+## Exact candidate inventory
 
-The proposed confirmation inventory contains exactly the 15 Campaign #48 supported associations:
+Exactly 15 Campaign #48 supported associations enter confirmation:
 
 1. P1 → M at 24 hours;
 2. P1 → M at 72 hours;
@@ -141,58 +189,37 @@ The proposed confirmation inventory contains exactly the 15 Campaign #48 support
 14. P3 → V at 72 hours;
 15. P3 → V at 168 hours.
 
-No candidate may be added, removed, combined, replaced, or reprioritized after confirmation outcomes are generated or inspected.
+No candidate may be added, removed, transformed, replaced, or reprioritized after confirmation outcomes are generated or inspected.
 
 ## Proposed anchor construction
 
-This section is not yet frozen.
-
-The preferred design uses horizon-specific non-overlapping anchor grids rather than forcing all horizons onto the 168-hour Campaign #48 grid.
-
 For each horizon `h`:
 
-- the anchor origin is the earliest exact source timestamp with a complete 168-hour predictor window and complete `h`-hour outcome window;
+- the anchor origin is the earliest exact timestamp with a complete 168-hour predictor window and complete `h`-hour outcome window;
 - scheduled anchors advance by exactly `h` hours;
-- an anchor is retained only when every timestamp required by the applicable predictor and outcome exists;
+- an anchor is retained only when every required timestamp exists;
 - missing scheduled anchors are not shifted or replaced;
 - adjacent outcomes within the same horizon do not overlap.
 
-Rationale:
-
-- 24-hour claims receive one non-overlapping observation per day;
-- 72-hour claims receive one non-overlapping observation per three days;
-- 168-hour claims receive one non-overlapping observation per week;
-- the design preserves temporal independence more directly than a common weekly grid while avoiding artificial loss of short-horizon confirmation power.
-
-This differs from Campaign #48 anchor construction and therefore requires explicit pre-outcome approval at specification freeze. Predictor and outcome formulas remain unchanged.
+This design produces one non-overlapping observation per day, three days, and week for the 24-, 72-, and 168-hour horizons respectively.
 
 ## Proposed estimator
 
-Each horizon-specific candidate uses ordinary least squares containing:
+Each candidate uses OLS with:
 
-- an intercept;
+- intercept;
 - exactly one standardized predictor;
 - no regimes;
 - no fixed effects;
-- no additional price controls;
-- no interactions.
-
-HC3 heteroskedasticity-consistent covariance is proposed.
-
-Reported quantities:
-
-- coefficient on the standardized predictor;
-- HC3 standard error;
+- no additional controls;
+- no interactions;
+- HC3 covariance;
 - two-sided normal p-value;
 - 95% normal confidence interval using `1.959963984540054`.
 
-Predictor standardization uses the complete confirmation sample for the candidate with population standard deviation `ddof=0`. Because the source is prospectively untouched and no parameter selection occurs, there is no development/evaluation split for scaling.
+Predictor standardization uses the complete confirmation sample for the candidate with population standard deviation `ddof=0`. Outcomes are not standardized.
 
-Outcomes are not standardized.
-
-## Proposed confirmation direction
-
-The expected coefficient sign is frozen from Campaign #48:
+## Expected signs
 
 - P1 → M: positive;
 - P1 → V: positive;
@@ -204,77 +231,43 @@ A zero, nonfinite, or opposite-sign coefficient fails directional replication.
 
 ## Proposed multiplicity and decision rule
 
-This section is not yet frozen.
+The 15 candidates form one confirmatory family under Holm family-wise error control at alpha `0.05`.
 
-The preferred primary rule treats the 15 horizon-specific associations as one confirmatory family and applies Holm family-wise error-rate control at alpha `0.05`.
+A horizon-specific association confirms only when:
 
-A horizon-specific association is confirmed only when:
-
-1. its coefficient has the Campaign #48 expected sign;
+1. its coefficient has the expected sign;
 2. its two-sided Holm-adjusted p-value is `<= 0.05`;
-3. its candidate passes all sample, variance, rank, and estimator gates.
+3. it passes all source, sample, variance, rank, and estimator gates;
+4. it passes the frozen effect-size compatibility rule.
 
-A scientific group is confirmed only when at least two of its three horizons confirm and the remaining horizon has the expected sign.
+A scientific group confirms only when at least two of its three horizons confirm and the remaining horizon has the expected sign.
 
-The campaign-level result is positive only when at least three of the five scientific groups confirm, including at least one future-absolute-return group and at least one future-realized-volatility group.
-
-Rationale:
-
-- Holm is stricter than the discovery-stage Benjamini-Hochberg rule;
-- group-level replication prevents one isolated horizon from carrying a scientific claim;
-- the campaign-level conjunctive rule requires breadth across both movement magnitude and volatility persistence.
-
-Alternative rules must be resolved before freeze. No rule may be changed after outcomes are generated or inspected.
+The campaign result is positive only when at least three of five groups confirm, including at least one future-absolute-return group and one future-realized-volatility group.
 
 ## Proposed minimum sample gates
-
-This section is not yet frozen because the available untouched source horizon is not yet established.
-
-Initial design target:
 
 - at least 180 candidate-complete 24-hour anchors;
 - at least 90 candidate-complete 72-hour anchors;
 - at least 52 candidate-complete 168-hour anchors.
 
-These targets imply approximately six months, nine months, and one year of usable untouched hourly data respectively after accounting for the predictor lookback and missing windows.
-
-Because all three horizons are part of every scientific group, the primary Campaign #49 confirmation should not run until the 168-hour horizon meets its minimum gate.
-
-A candidate failing its horizon-specific minimum is unrankable and cannot confirm.
-
-The final frozen sample thresholds require explicit power and feasibility review before implementation authorization.
+Because every group includes all three horizons, primary confirmation may not run until the 168-hour gate is met.
 
 ## Effect-size compatibility
 
-Statistical significance alone should not permit exaggerated interpretation.
+The exact compatibility interval remains unresolved and must be frozen using Campaign #48 canonical results only, before Campaign #49 outcomes.
 
-The frozen design should include a prespecified compatibility check comparing the confirmation coefficient with the Campaign #48 discovery coefficient.
+The final rule must require:
 
-Preferred rule:
+- expected sign replication;
+- finite nonzero confirmation estimate;
+- compatibility with a prespecified Campaign #48 reference interval;
+- explicit caution for materially larger confirmation effects.
 
-- expected sign must match;
-- the confirmation estimate must be finite and nonzero;
-- the confirmation 95% confidence interval must overlap a prespecified discovery compatibility interval recorded from Campaign #48 canonical results;
-- the confirmation point estimate must not exceed the absolute Campaign #48 estimate by more than a prespecified multiplier without explicit caution.
+## Rankability and deterministic statuses
 
-The exact compatibility construction is unresolved and must be frozen before outcomes.
+A candidate is rankable only when the source reconciles exactly, minimum support is met, all values are finite, predictor variance is positive, the design is full rank, coefficient and HC3 standard error are valid, and the p-value is finite.
 
-## Rankability and failure states
-
-A candidate is rankable only when:
-
-- the frozen source reconciles exactly;
-- the candidate meets its horizon-specific minimum support;
-- predictor and outcome values are finite;
-- predictor population standard deviation is finite and strictly positive;
-- the two-column OLS design has full rank;
-- the coefficient is finite and nonzero;
-- the HC3 standard error is finite and strictly positive;
-- the p-value is finite.
-
-Every candidate remains visible.
-
-Proposed deterministic statuses:
+Every candidate remains visible under one deterministic status:
 
 1. `CONFIRMED_ASSOCIATION`;
 2. `MULTIPLICITY_NOT_MET`;
@@ -288,86 +281,48 @@ Proposed deterministic statuses:
 
 Failure precedence must be frozen in the implementation handoff.
 
-## Required canonical outputs
-
-The exact output set is unresolved, but should include at minimum:
-
-- confirmation source manifest;
-- anchor inventories by horizon;
-- exact candidate inventory;
-- confirmation results in CSV and JSON;
-- group-level decision table;
-- campaign-level decision record;
-- deterministic report;
-- canonical manifest.
-
-All outputs must be UTF-8, LF-only, strict JSON where applicable, and free of wall-clock timestamps, machine-specific absolute paths, random identifiers, unordered mappings, or nonfinite JSON values.
-
 ## Preflight requirement
 
-Before any confirmation outcome is generated, the future runner must support preflight-only mode verifying:
+Before any confirmation outcome is generated, preflight must verify source identity and provenance, schema, timestamps, complete missing-hour inventory, positive finite closes, candidate and expected-sign inventories, anchor rules, multiplicity, sample gates, and anticipated anchor counts.
 
-- source identity and provenance;
-- ordered schema;
-- timestamp parsing, timezone, uniqueness, ordering, alignment, endpoints, and complete missing-hour inventory;
-- finite strictly positive closes;
-- exact predictor, outcome, candidate, expected-sign, anchor-grid, multiplicity, and sample-gate inventories;
-- deterministic anticipated anchor counts by horizon;
-- absence of confirmation outcome generation.
+Preflight must report:
 
-Preflight must explicitly report `confirmation_outcomes_generated:false`.
+`confirmation_outcomes_generated:false`
 
 ## Replay and immutability
 
-A future implementation must require:
-
-1. governed source hash before generation;
-2. one canonical generation;
-3. hashes of all canonical outputs;
-4. a second canonical generation from the same source;
-5. byte identity across all outputs;
-6. post-generation preflight;
-7. proof that governed source bytes remained unchanged.
-
-Any mismatch is a hard failure and prohibits publication.
+A future implementation must require source hashing before generation, two byte-identical canonical runs, post-generation preflight, and proof that governed source bytes remained unchanged.
 
 ## Interpretation boundary
 
-Campaign #49 can confirm a statistical association only.
+Campaign #49 can confirm a statistical association only. It cannot establish alpha, economic value, transaction-cost robustness, portfolio improvement, sizing, timing, Core v1 superiority, or production readiness.
 
-It does not establish:
+Only a successfully confirmed result may enter a later separately frozen economic-value campaign.
 
-- deployable alpha;
-- directional forecasting ability;
-- economic value;
-- transaction-cost robustness;
-- portfolio improvement;
-- sizing value;
-- timing value;
-- superiority to Core v1;
-- production readiness.
+## Current authorization boundary
 
-Only a successfully confirmed result may be proposed for a later separately frozen incremental economic-value campaign.
+Authorized now:
 
-## Stop conditions before specification freeze
+- acquire the fixed initial Coinbase BTC-USD snapshot;
+- validate only source identity, schema, timestamps, OHLCV validity, exact missing-hour inventory, and deterministic serialization;
+- create a source manifest containing provenance, command, endpoint family, product, fixed start/end, SHA-256, byte count, row count, schema, endpoints, timezone, and missing timestamps;
+- commit only the source CSV and source manifest on the governance branch after validation;
+- continue refining this specification using Campaign #48 results only.
 
-Work must stop before freeze if:
+Not authorized:
 
-- no genuinely untouched authorized hourly BTC source exists;
-- source provenance or bytes cannot be frozen;
-- the untouched sample cannot meet the minimum 168-hour confirmation gate;
-- the multiplicity or group-level confirmation rule remains ambiguous;
-- effect-size compatibility remains ambiguous;
-- any design decision is informed by viewing Campaign #49 outcomes;
-- any runtime or strategy change is proposed.
+- calculating any Campaign #49 predictor or outcome;
+- constructing confirmation anchors;
+- fitting or inspecting any Campaign #49 candidate;
+- implementation module, confirmation runner, result artifact, economic test, Core v1 comparison, runtime, or strategy work.
 
-## Design-review decisions still required
+## Remaining design-review decisions
 
-1. Confirm the untouched source and its exact coverage.
-2. Confirm horizon-specific non-overlapping grids versus a common 168-hour grid.
+1. Validate and freeze the initial Coinbase source snapshot.
+2. Confirm horizon-specific non-overlapping grids.
 3. Confirm Holm correction across all 15 candidates.
-4. Confirm the two-of-three horizon group rule.
+4. Confirm the two-of-three group rule.
 5. Confirm the three-of-five campaign rule.
-6. Freeze minimum sample requirements.
-7. Freeze effect-size compatibility intervals using Campaign #48 canonical results only.
+6. Freeze minimum sample gates without outcome inspection.
+7. Freeze effect-size compatibility intervals from Campaign #48 only.
 8. Freeze exact output schemas and status precedence in a later implementation handoff.
