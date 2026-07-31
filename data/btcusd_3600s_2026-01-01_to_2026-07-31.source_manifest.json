@@ -1,0 +1,33 @@
+{
+  "acquisition_command": "python scripts/fetch_coinbase_hourly_history.py --products BTC-USD --start 2026-01-01T00:00:00Z --end 2026-07-31T13:00:00Z --out-dir data",
+  "byte_count": 350460,
+  "continuous_hour_count": 5078,
+  "data_row_count": 5073,
+  "endpoint_family": "https://api.exchange.coinbase.com/products/BTC-USD/candles",
+  "first_timestamp": "2026-01-01 00:00:00",
+  "granularity_seconds": 3600,
+  "last_timestamp": "2026-07-31 13:00:00",
+  "missing_hour_count": 5,
+  "missing_timestamps": [
+    "2026-05-08 02:00:00",
+    "2026-05-08 03:00:00",
+    "2026-05-08 04:00:00",
+    "2026-05-08 05:00:00",
+    "2026-05-08 06:00:00"
+  ],
+  "ordered_schema": [
+    "timestamp",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+  ],
+  "product_id": "BTC-USD",
+  "provider": "Coinbase Exchange",
+  "sha256": "7af947322b878aee905fb4bd2643f4dec6e9bf0a78551c31a092899c4b8d38ce",
+  "source_path": "data/btcusd_3600s_2026-01-01_to_2026-07-31.csv",
+  "source_validation_status": "PASS",
+  "timestamp_alignment": "whole_hour",
+  "timezone_convention": "UTC serialized as timezone-naive"
+}
