@@ -67,7 +67,9 @@ def test_candidate_inventory_is_exact_and_stable() -> None:
 
 def test_moving_average_and_forward_returns() -> None:
     assert moving_average([1.0, 2.0, 3.0, 4.0], 3) == [None, None, 2.0, 3.0]
-    assert forward_returns([100.0, 110.0, 121.0], 1) == pytest.approx([0.1, 0.1, None])
+    returns = forward_returns([100.0, 110.0, 121.0], 1)
+    assert returns[:2] == pytest.approx([0.1, 0.1])
+    assert returns[2] is None
 
 
 def test_predictor_formulas_produce_expected_domains() -> None:
