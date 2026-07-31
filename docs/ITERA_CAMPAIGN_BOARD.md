@@ -10,90 +10,31 @@ The long-term institutional objective is defined in `docs/ITERA_FIRM_THESIS.md`.
 
 ## Active campaign
 
-**Campaign:** Campaign #48 - Simple BTC Price-State Predictive Baselines
+**Campaign:** Campaign #49 — Confirmation of BTC Volatility-State and Drawdown Associations
 
-**Final status:** COMPLETE - canonical artifacts published; 15 supported research associations under the frozen discovery design
+**Classification:** Research-only confirmation design following Campaign #48 discovery
 
-**Governance branch:** `agent/campaign-48-simple-btc-price-state-baselines-governance`
+**Status:** DESIGN GO — specification drafting only; no implementation, confirmation outcomes, result inspection, artifact generation, economic-value testing, Core v1 comparison, runtime work, or strategy work is authorized
 
-**Implementation branch:** `agent/campaign-48-simple-btc-price-state-baselines-implementation`
+**Governance branch:** `agent/campaign-49-btc-volatility-state-confirmation-governance`
 
 **Repository:** `IteraDynamics/ID_test`
 
-**Governed lineage base:** Campaign #47 closure `d8f8b234ccd342369d3d134e1dd7d7b916557b0a`
+**Governed lineage base:** Campaign #48 closure `77c1ae8c70de7a16cca847aeb1a4cb2eea638007`
 
-**Specification freeze commit:** `e8777df3442d093fd84fb92c25d13aadc2bfe1ed`
+## Plain-English objective
 
-**Implementation handoff freeze commit:** `a16c152608df481a66a2e29f7a1d7795b5490459`
+Campaign #49 asks:
 
-**Initial implementation GO:** `99a7db937f68bb16662c4d28701f1cd52e661f36`
+> Do the volatility-state persistence and drawdown-linked future-volatility associations discovered in Campaign #48 survive a separately frozen confirmation design?
 
-**Source-cadence amendment:** `d9fc7e7103a5033a9dbbe06b7abf93aea27d863b`
+Campaign #49 is a confirmation campaign, not a second discovery sweep. It must test the Campaign #48 findings without adding new predictors, searching new transformations, changing horizons after inspection, or converting the findings into strategy logic.
 
-**Canonical artifact publication commit:** `fd7ee01`
+## Campaign #48 findings entering confirmation
 
-## Campaign #48 question
+Campaign #48 completed S-008 and established a transparent simple-price-state predictive baseline.
 
-> Does BTC's recent price behavior contain reliable information about what happens next?
-
-Campaign #48 tested eight prespecified recent-return, realized-volatility, and price-location predictors against future directional return, absolute return, and realized volatility at exact 24-hour, 72-hour, and 168-hour horizons.
-
-It was a research-only predictive-baseline discovery campaign, not a trading-strategy backtest.
-
-## Governed source and corrective amendment
-
-The only authorized source was:
-
-- path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`;
-- SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`;
-- byte count: `4,792,028`;
-- data rows: `70,069`;
-- timestamps: `2018-01-01 00:00:00` through `2025-12-31 00:00:00`;
-- exact ordered schema: `timestamp`, `open`, `high`, `low`, `close`, `volume`.
-
-The first governed preflight failed closed with `SOURCE_CADENCE_FAILURE` and `predictive_outcomes_generated:false`. An observation-only reconciliation established exactly 36 governed missing hourly timestamps. The board amendment at `d9fc7e7` superseded only the contradictory gapless-cadence language.
-
-The corrected frozen rule required timestamps to be timezone-naive, unique, strictly increasing, and aligned to whole hours; required the full missing-hour inventory to equal the exact governed 36 timestamps; prohibited interpolation, filling, resampling, matching, shifting, synthetic bars, or repair; and treated incomplete predictor and outcome windows as unavailable.
-
-No predictor, outcome, horizon, anchor spacing, chronological partition rule, estimator, standardization rule, support threshold, directional-consistency rule, multiplicity family, interpretation boundary, runtime behavior, or strategy behavior changed.
-
-## Completed evidence
-
-- corrected focused suite: `27 passed`;
-- governed preflight: `PASS`;
-- predictive outcomes generated during preflight: `false`;
-- governed missing hourly timestamps: `36`;
-- source rows: `70,069`;
-- continuous hourly positions implied by endpoints: `70,105`;
-- common 168-hour anchor grid: `403` retained anchors;
-- chronological partitions: `135`, `134`, `134`;
-- predictors: `8`;
-- outcome families: `3`;
-- horizons: `3`;
-- candidate inventory: `72`;
-- rankable candidates: `72`;
-- directionally consistent candidates: `48`;
-- supported research associations: `15`;
-- multiplicity not met: `55`;
-- multiplicity met but direction inconsistent: `2`;
-- insufficient-support candidates: `0`;
-- unavailable candidates: `0`;
-- variance failures: `0`;
-- rank-deficient designs: `0`;
-- estimator failures: `0`;
-- two governed canonical runs completed successfully;
-- all ten canonical outputs were byte-identical across replay;
-- post-generation preflight passed with `predictive_outcomes_generated:false`;
-- governed source SHA-256 remained unchanged;
-- full repository suite: `531 passed`, `75 warnings`;
-- implementation scope from GO commit contained only the authorized board, analysis module, runner, focused test file, and ten canonical artifact files;
-- no runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training surface changed.
-
-## Campaign #48 result
-
-All 15 supported associations were concentrated in volatility-state persistence and drawdown-linked future volatility.
-
-Supported groups:
+Confirmed-for-design discovery groups:
 
 1. trailing 24-hour realized volatility positively associated with future absolute return at 24, 72, and 168 hours;
 2. trailing 24-hour realized volatility positively associated with future realized volatility at 24, 72, and 168 hours;
@@ -101,126 +42,103 @@ Supported groups:
 4. trailing 168-hour realized volatility positively associated with future realized volatility at 24, 72, and 168 hours;
 5. deeper drawdown from the trailing 168-hour high associated with higher future realized volatility at 24, 72, and 168 hours.
 
-No directional-return candidate was supported.
+Campaign #48 supported 15 horizon-specific associations. No directional-return candidate was supported.
 
-Campaign #48 therefore establishes a transparent BTC price-state predictive baseline for future research: simple recent volatility and drawdown information contains reproducible association with the magnitude and volatility of subsequent movement, but not with direction under this frozen design.
+## Confirmation boundary
 
-## Interpretation boundary
+Campaign #49 must preserve the distinction between discovery and confirmation.
 
-This is a positive research result only. It does not establish deployable alpha, economic value, transaction-cost robustness, portfolio improvement, sizing value, timing value, superiority to Core v1, or production readiness.
+The design must:
 
-Any supported Campaign #48 candidate must enter a separately frozen confirmation campaign before any incremental economic-value or Core v1 comparison.
+- predeclare the exact confirmation sample or temporal validation construction before outcomes are generated or inspected;
+- carry forward only the supported Campaign #48 predictor-outcome-horizon associations or a formally justified grouped confirmation family;
+- preserve deterministic, replay-safe, chronological, leakage-safe, observation-only, and fail-closed behavior;
+- keep predictor formulas and outcome formulas unchanged unless an explicit pre-outcome governance amendment is separately frozen;
+- define support, multiplicity, directional-consistency, and minimum-sample requirements before outcome generation;
+- keep all failed, unavailable, and unrankable confirmation candidates visible;
+- prohibit source repair, interpolation, filling, resampling, nearest-row matching, as-of matching, shifting, or synthetic bars;
+- remain research-only.
 
-Campaign #48 authorizes no runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
+## Design questions that must be resolved before specification freeze
+
+1. Whether a genuinely untouched post-2025 BTC hourly confirmation source exists and is sufficiently mature for exact 24-, 72-, and 168-hour outcomes.
+2. If no adequate untouched source exists, which separately justified temporal confirmation construction provides the strongest honest validation without rebranding Campaign #48 reuse as independent confirmation.
+3. Whether the confirmatory unit is all 15 horizon-specific associations or five grouped scientific claims with prespecified within-group requirements.
+4. Whether confirmation requires effect-direction replication only, multiplicity-adjusted significance, effect-size compatibility intervals, or a conjunctive rule.
+5. How to prevent the strong overlap between 24-hour and 168-hour realized-volatility predictors from inflating interpretation.
+6. What minimum confirmation sample is required at each horizon and whether the longest horizon creates unacceptable delay or low power.
+7. What exact result would permit a later economic-value campaign and what result would close this research path.
 
 ## Current authorization
 
-**Decision:** Campaign #48 is closed. No further Campaign #48 implementation, artifact, result, runtime, or strategy work is authorized.
+**Decision:** GO to draft the Campaign #49 governing confirmation specification only.
 
-The next research campaign requires a separate board transition and explicit authorization before design or implementation begins.
+Authorized now:
 
-## Campaign #47 completion record
+- create and refine `docs/research/BTC_VOLATILITY_STATE_AND_DRAWDOWN_CONFIRMATION.md`;
+- inspect already published Campaign #48 canonical artifacts for design inputs and exact lineage;
+- inspect repository data inventories only to determine whether an untouched confirmation source exists;
+- update this board for design review and later specification freeze;
+- create no implementation module, runner, test file, or confirmation artifact yet.
 
-**Campaign:** Campaign #47 - Historical Regime Persistence, Duration, Clustering, and Spacing Discovery
+Not authorized:
 
-**Final status:** COMPLETE - canonical artifacts published; zero rankable candidates and zero supported research associations
+- generating, calculating, viewing, ranking, or interpreting Campaign #49 confirmation outcomes;
+- re-running Campaign #48 as though it were independent confirmation;
+- adding predictors, technical indicators, bins, thresholds, interactions, regime labels, or learned features;
+- Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, portfolio, or Core v1 testing;
+- any runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
 
-**Working branch:** `agent/campaign-47-regime-structure-implementation`
+## Immediate sequence
 
-**Publication commit:** `16692c1`
+1. Branch from Campaign #48 closure. **Completed.**
+2. Record Campaign #49 design authorization. **Completed by this board commit.**
+3. Draft the confirmation specification without outcomes. **Authorized next.**
+4. Review the source and temporal confirmation options.
+5. Freeze the governing specification before implementation or confirmation outcomes.
+6. Freeze a separate implementation handoff.
+7. Record a separate implementation GO.
+
+## Campaign #48 completion record
+
+**Campaign:** Campaign #48 — Simple BTC Price-State Predictive Baselines
+
+**Final status:** COMPLETE — canonical artifacts published; 15 supported research associations under the frozen discovery design
+
+**Implementation branch:** `agent/campaign-48-simple-btc-price-state-baselines-implementation`
+
+**Closure commit:** `77c1ae8c70de7a16cca847aeb1a4cb2eea638007`
+
+**Canonical artifact publication:** `fd7ee01`
 
 Completed evidence:
 
-- focused suite: `21 passed`;
-- governed preflight before generation: `PASS`;
-- predictive outcomes generated during preflight: `false`;
-- canonical Campaign #46 source ledger: `70,069` states, `2,790` runs, and `2,789` transitions;
-- common 168-hour anchor grid: `403` anchors;
-- chronological partitions: `135`, `134`, `134`;
-- frozen candidate inventory: `72`;
-- rankable candidates: `0`;
-- supported research associations: `0`;
-- two governed canonical runs completed successfully;
-- all ten canonical outputs were byte-identical and LF-only;
+- corrected focused suite: `27 passed`;
+- governed preflight: `PASS` with outcomes `false`;
+- exact governed missing-hour inventory: `36`;
+- anchors: `403`;
+- partitions: `135`, `134`, `134`;
+- candidates: `72`;
+- rankable: `72`;
+- directionally consistent: `48`;
+- supported research associations: `15`;
+- multiplicity not met: `55`;
+- direction inconsistent: `2`;
+- two canonical runs replayed byte-identically;
 - governed source bytes remained unchanged;
-- full repository suite: `504 passed`, `75 warnings`.
+- full suite: `531 passed`, `75 warnings`;
+- no runtime or strategy surface changed.
 
-Campaign #47 conclusion:
+Campaign #48 conclusion:
 
-Under the frozen development-defined fixed-effect, full-rank, HC3, chronological-evaluation, and fail-closed requirements, none of the 72 prespecified temporal regime-structure candidates was rankable. This was a negative and support-limited result and authorized no Core v1 or runtime change.
+Simple recent BTC volatility and drawdown information contained reproducible association with the magnitude and volatility of subsequent movement, but not direction. The findings require separately frozen confirmation before any economic-value or Core v1 comparison.
 
-## Campaign #45 completion record
+## Prior campaign carryover
 
-**Campaign:** Campaign #45 - Historical Regime State and Transition Discovery
+Campaign #47 completed historical regime-structure discovery with zero rankable candidates and zero supported associations.
 
-**Final status:** COMPLETE - canonical artifacts published; no supported exact ordered-transition association
+Campaign #45 completed historical regime-transition discovery with zero supported exact ordered-transition associations.
 
-**Working branch:** `agent/campaign-45-historical-regime-transitions`
+Campaign #46 completed the full historical regime-state source.
 
-**Publication commit:** `5fa4b8434ed4927e69b8cc973ba0009f99215a24`
-
-**Pull request:** PR #43
-
-**Governed merge commit:** `42e5d7c47d90e1941e61e0e229d4fa71da07b449`
-
-Completed evidence:
-
-- focused suite: `24 passed`;
-- governed preflight: `PASS`;
-- source transitions: `2,789`;
-- eligible non-`UNKNOWN` transitions: `2,788`;
-- independent 168-hour-purged anchors: `242`;
-- partitions: `81`, `81`, `80`;
-- candidate-horizon tests: `51`;
-- rankable candidates: `9`;
-- insufficient binary-side support: `42`;
-- supported associations: `0`;
-- two governed runs completed successfully;
-- all ten canonical outputs replayed byte-identically;
-- governed source bytes remained unchanged;
-- full repository suite: `483 passed`, `75 warnings`.
-
-Campaign #45 conclusion:
-
-No exact ordered BTC regime transition met the frozen multiplicity-adjusted and directional-consistency requirements for incremental 24-hour, 72-hour, or 168-hour forward-return association after controlling for the six frozen BTC price-state controls. No runtime or strategy change was authorized.
-
-## Campaign #46 completion record
-
-**Campaign:** Campaign #46 - Full Historical Regime State Sequence
-
-**Final status:** COMPLETE - canonical artifacts published; `CAMPAIGN_45_SOURCE_FEASIBLE`
-
-**Working branch:** `agent/campaign-46-full-regime-state-source`
-
-**Canonical publication commit:** `34a6999`
-
-Completed evidence:
-
-- focused suite: `10 passed`;
-- governed preflight: `PASS`;
-- two-run replay: all eight files byte-identical;
-- state rows: `70,069`;
-- total transitions: `2,789`;
-- eligible transitions: `2,788`;
-- independent purged transitions: `242`;
-- partition counts: `81`, `81`, `80`;
-- predictive outcomes generated: `false`;
-- full repository suite: `459 passed`, `75 warnings`.
-
-Campaign #46 made no predictive, economic, directional, or alpha claim.
-
-## Research-priority context
-
-Campaign #44 ranked S-002 first, S-003 second, and S-008 and S-001 tied next. Campaign #45 completed S-002. Campaign #47 completed S-003. Campaign #48 completed S-008 and established the transparent simple-price-state predictive hurdle for later candidates.
-
-## Research progression boundary
-
-Campaign #48 is a discovery campaign. Its supported associations require a separately frozen confirmation campaign. Only candidates surviving confirmation may enter a later separately authorized incremental-value comparison against untouched Core v1.
-
-## Registered Candidate A-001
-
-Campaign #43 Candidate A-001 remains preliminary and is not revised, promoted, or retested unless separately authorized.
-
-## Historical carryover
-
-Campaign #42 validation was previously completed on branch `agent/campaign-42-event-robustness`, PR #42. Its merge state does not expand current authorization.
+Campaign #43 Candidate A-001 remains preliminary and is not revised, promoted, or retested by Campaign #49 unless separately authorized.
