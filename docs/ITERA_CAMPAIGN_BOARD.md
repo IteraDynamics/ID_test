@@ -12,7 +12,7 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Classification:** Pre-outcome statistical-design correction
 
-**Status:** HOLD — development/validation execution GO suspended after a date-only feasibility preflight proved the frozen development support gates structurally impossible at the 20-session and 60-session horizons; no real prices, predictors, outcomes, coefficients, rankings, validation results, shortlist results, or 2025 observations were generated or loaded
+**Status:** HOLD — development/validation execution remains suspended while the pre-outcome support-gate amendment is validated; no real prices, predictors, outcomes, coefficients, rankings, validation results, shortlist results, or 2025 observations have been generated or loaded
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -27,10 +27,15 @@ Identify a narrowly defined research-alpha hypothesis that can be discovered, co
 - Planning charter: `docs/research/CAMPAIGN_50_HOLDOUT_FIRST_ALPHA_RESEARCH.md`; commit `63a9b24aaf13a2baaef21140f1ed6a99e6d39ac1`
 - Family selection: `docs/research/CAMPAIGN_50_HYPOTHESIS_FAMILY_SELECTION.md`; commit `bfa0b43a7a281f2a6a6aca19f61bc8078e19b17a`
 - Source universe: `docs/research/CAMPAIGN_50_EQUITY_SOURCE_UNIVERSE.md`; commit `f32cac981bf55d0b1799949988df70e5546394e5`
-- Statistical specification: `docs/research/CAMPAIGN_50_EQUITY_BREADTH_STATISTICAL_SPEC.md`; commit `36dd499d00740062f10c1c070896f740f55f6808`
+- Base statistical specification: `docs/research/CAMPAIGN_50_EQUITY_BREADTH_STATISTICAL_SPEC.md`; commit `36dd499d00740062f10c1c070896f740f55f6808`
 - Execution procedure: `docs/research/CAMPAIGN_50_DEVELOPMENT_VALIDATION_EXECUTION_PROCEDURE.md`; commit `16b00d8e5f33a1636a65cb6a3885b19562726551`
 - Structural feasibility finding: `docs/research/CAMPAIGN_50_SUPPORT_GATE_FEASIBILITY_FINDING.md`; commit `ea0ef2380ee6dfb022432a0a1726f7fb57cdb3ea`
-- Date-only feasibility detail update: commit `bebe83152e335ca9c5ce74af1bb0f0eba6653291`
+- Support-gate amendment: `docs/research/CAMPAIGN_50_SUPPORT_GATE_AMENDMENT.md`; commit `18ff04022fac611c4c2c6136132afa57ee8ad30e`
+- Amended feasibility constants: commit `0649f09747b2d90ff9d2cca3e18b94b600443f0e`
+- Amended implementation constants: commit `29b38116eccb2802756c622ac260eb0908492ad2`
+- Amended support-boundary tests: commit `fb9fa45b0c52ef0aaff40a256abd01d5d4f2bc2a`
+
+The support-gate amendment supersedes only the development minimum-total-support values for 20-session and 60-session candidates in the base statistical specification.
 
 ## Frozen research family
 
@@ -55,37 +60,36 @@ Frozen candidate inventory:
 
 Every 2025 row remains forbidden during discovery/validation.
 
-## Validation evidence
+## Structural feasibility evidence
 
-User-run tests:
+Date-only maximum stage-contained development anchors after the frozen 220-session lookback:
 
-- `14 passed in 0.25s`
+- 5 sessions: 207
+- 20 sessions: 51
+- 60 sessions: 17
 
-User-run date-only feasibility preflight:
+Original development support gates of 55 at 20 sessions and 18 at 60 sessions were structurally impossible.
 
-- status: `FAIL`
-- structurally impossible gates:
-  - `development__horizon_20`
-  - `development__horizon_60`
-- prices loaded: `false`
-- predictors generated: `false`
-- outcomes generated: `false`
-- holdout loaded: `false`
+The pre-outcome amendment applies the stated ex ante rule and freezes:
 
-The failure is structural and pre-outcome. It arises from the fixed development interval, 220-session lookback, stage-contained outcomes, and non-overlapping horizon grids. It is not an empirical result.
+- development 5-session minimum: 180, unchanged;
+- development 20-session minimum: 50, amended from 55;
+- development 60-session minimum: 16, amended from 18.
+
+Validation and holdout total-support gates remain unchanged. Binary event/non-event gates remain unchanged. No empirical outcome informed the amendment.
 
 ## Current authorization
 
-**Decision:** HOLD. The prior development/validation execution GO is suspended.
+**Decision:** HOLD pending non-outcome validation of the amended support gates.
 
 Authorized now:
 
-- rerun the date-only feasibility preflight to record exact maximum anchor counts for every stage and horizon;
-- inspect calendar-only feasibility evidence;
-- draft a pre-outcome governance amendment using only calendar mechanics and an explicit ex ante support rule;
-- update the statistical specification, implementation constants, and tests after that amendment;
-- rerun synthetic tests, source-only preflight, and date-only feasibility preflight;
-- update this board with non-outcome evidence.
+- rerun synthetic tests;
+- rerun source-only implementation preflight;
+- rerun the date-only feasibility preflight;
+- inspect only non-outcome validation evidence;
+- correct implementation defects without changing the amended governed design;
+- update this board with validation evidence.
 
 Not authorized:
 
@@ -100,13 +104,12 @@ Not authorized:
 
 ## Immediate sequence
 
-1. Pull the HOLD transition and expanded date-only feasibility output.
-2. Rerun the date-only feasibility preflight.
-3. Record exact maximum anchor counts for all six stage/horizon combinations.
-4. Freeze a pre-outcome support-gate amendment based only on those calendar counts and a stated ex ante rule.
-5. Align specification, implementation, feasibility checks, and tests.
-6. Rerun all non-outcome validation.
-7. Require a new board-recorded development/validation execution GO.
+1. Pull the governed amendment and aligned implementation.
+2. Run the full Campaign #50 synthetic test set.
+3. Run source-only implementation preflight.
+4. Run date-only execution-feasibility preflight.
+5. Require all three to pass with no prices/predictors/outcomes generated by either preflight.
+6. Record a new board-authorized development/validation execution GO only after review.
 
 ## Passive campaign
 
