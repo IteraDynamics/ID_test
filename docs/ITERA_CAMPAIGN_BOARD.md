@@ -10,7 +10,7 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Campaign:** Campaign #50 — Holdout-First Alpha Research
 
-**Status:** DEVELOPMENT/VALIDATION EXECUTION GO — amended support gates passed all non-outcome validation; execute exactly two deterministic 2018–2024 replays through the amended governed entry point only. Every 2025 row, holdout confirmation, economic testing, paper trading, and runtime/strategy work remain prohibited.
+**Status:** DEVELOPMENT/VALIDATION COMPLETE — EMPTY SHORTLIST; two governed 2018–2024 replays were byte-identical, zero candidates were discovery-supported, zero candidates were validation-supported, and no 2025 holdout execution is authorized or necessary.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -23,7 +23,8 @@ The board does not authorize production, runtime, threshold, signal, order, port
 - Amended implementation constants: commit `29b38116eccb2802756c622ac260eb0908492ad2`
 - Fresh execution GO: commit `07276cc5831de016ebb55259c3c8154ec10cde86`
 - Amended execution entry point: commit `71a77cf4969fbc61a56db711c1e8ef781d5e1c5f`
-- Amended-entrypoint metadata test: commit `f864571d26bf235332afe46e5b0b43388e9078ef`
+- Read-only reviewer: commit `fb0efde552e5e16e75f2123871e9d9cdae5a2a99`
+- Development/validation result record: `docs/research/CAMPAIGN_50_DEVELOPMENT_VALIDATION_RESULT.md`; commit `61deee7c94e22ad88aac498f50fb13748f78cd58`
 
 Research family: equity breadth deterioration and recovery.
 
@@ -45,52 +46,72 @@ Amended development total-support gates:
 - 20 sessions: 50
 - 60 sessions: 16
 
-All other frozen methods and gates remain unchanged.
+All other frozen methods and gates remained unchanged.
 
-## Validation evidence
+## Execution evidence
 
-- Synthetic and runner tests: `14 passed in 0.13s`
-- Source-only preflight: `PASS`; candidate count 24; confirmation disabled; no predictors or outcomes generated
-- Date-only feasibility preflight: `PASS`; no impossible gates; no prices, predictors, outcomes, or holdout loaded
-- Maximum/minimum anchors: development 207/180, 51/50, 17/16; validation 100/80, 25/22, 8/8 for 5/20/60 sessions
+- complete Campaign #50 tests: `15 passed in 0.12s`
+- amended run 1: `PASS`
+- amended run 2: `PASS`
+- candidate count: `24`
+- predictors generated: `true`
+- outcomes generated: `true`
+- holdout loaded: `false`
+- confirmation enabled: `false`
+- method mutation: `false`
+- replay identity: all six canonical artifacts byte-identical
+- read-only review: `PASS`
 
-No real Campaign #50 predictor, return, coefficient, p-value, ranking, validation result, shortlist result, or 2025 observation informed the amendment or this execution GO.
+Development status counts:
+
+- `DISCOVERY_NOT_SUPPORTED`: 16
+- `INSUFFICIENT_EVENT_SUPPORT`: 8
+- `DISCOVERY_SUPPORTED`: 0
+
+Validation status counts:
+
+- `VALIDATION_NOT_ELIGIBLE`: 20
+- `INSUFFICIENT_EVENT_SUPPORT`: 4
+- `VALIDATION_SUPPORTED`: 0
+
+Frozen shortlist count: `0`.
+
+## Canonical artifact hashes
+
+- candidate inventory: `d99457662519151f0735964374e9e6d8ecfa155be9caa0c50f8a8491487d3d19`
+- development results: `639387c0f68eba59e007d345eae592391738dc36f6c8b672ce9affd0e08f7b0e`
+- preflight: `826a9332f34de76ee19305639125b11b41c0d64d48276a523a501d469cbd3e39`
+- shortlist: `0fbf25b2bcb93f63ecd92e30d81f980d1d38412ebaa15b3a680a664da8810d2e`
+- stage manifest: `7a44a19b3373465b99aa95989614b468d5572b092120374cb0299d2f603827b5`
+- validation results: `3fac458eef010e34eeb8e66f911bd8f2bde77422b9f3363c67223a7676e033da`
+
+The canonical run-1 bytes remain local under `artifacts/campaign50_development_validation_run1/`. The result record preserves their governed identities; repository publication of those bytes, if required, must preserve the exact hashes above.
 
 ## Current authorization
 
-**Decision:** GO to execute exactly two deterministic development/validation replays using:
-
-`scripts.run_campaign50_development_validation_amended`
+**Decision:** HOLD after a valid negative development/validation result.
 
 Authorized now:
 
-- rerun the complete test set and both non-outcome preflights;
-- verify both governed output directories do not exist;
-- execute run 1 and run 2 through the amended entry point;
-- generate development/validation predictors, forward returns, coefficients, p-values, Holm adjustments, deterministic statuses, and shortlist only for 2018–2024;
-- write exactly six canonical artifacts per replay;
-- verify exact file-set, byte-length, and SHA-256 replay identity;
-- inspect and commit one canonical result set and frozen shortlist;
-- update this board and return to HOLD.
+- preserve the result record and canonical artifact identities;
+- publish the unchanged canonical run-1 artifact bytes if repository policy requires it;
+- review Campaign #50 process lessons without altering the completed result;
+- plan a new campaign or hypothesis family under a separate pre-outcome charter and gate;
+- continue Campaign #49 passive prospective accumulation.
 
 Not authorized:
 
-- use of the superseded unamended execution entry point for canonical execution;
-- loading any 2025 row analytically;
-- holdout confirmation;
-- changing any method in response to results;
-- economic testing, Core v1 comparison, paper trading, or any runtime/strategy/order/NAV/exposure change.
+- running the 2025 Campaign #50 holdout, because the frozen shortlist is empty;
+- changing Campaign #50 predictors, thresholds, horizons, support gates, signs, covariance, multiplicity, or shortlist rules after observing results;
+- economic testing or Core v1 comparison for Campaign #50;
+- paper trading;
+- runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training changes.
 
-## Immediate sequence
+## Conclusion
 
-1. Pull this board and amended entry point.
-2. Run all 15 Campaign #50 tests.
-3. Rerun source-only and date-only preflights.
-4. Verify run-1 and run-2 directories do not exist.
-5. Execute amended run 1.
-6. Execute amended run 2.
-7. Verify byte-identical replay across all six files.
-8. Return results for governed review.
+Campaign #50 did not establish a supported predictive association under the frozen equity-breadth design. This is a valid governed negative result.
+
+No historical-confirmation GO should be issued for Campaign #50. The untouched 2025 holdout remains unaccessed analytically.
 
 ## Passive campaign
 
