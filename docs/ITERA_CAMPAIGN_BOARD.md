@@ -10,9 +10,9 @@ The board is project state and authorization record. It does not authorize produ
 
 **Campaign:** Campaign #50 — Holdout-First Alpha Research
 
-**Classification:** Research implementation for an immediately testable alpha-development pipeline
+**Classification:** Governed real development/validation execution for an immediately testable alpha-development pipeline
 
-**Status:** EXECUTION PROCEDURE PREPARED — implementation and source-only preflight validated; deterministic development/validation execution procedure frozen for review; real outcome execution, 2025 holdout access, economic backtests, paper trading, runtime work, and strategy work remain prohibited
+**Status:** DEVELOPMENT/VALIDATION EXECUTION GO — enable and run the frozen 2018–2024 discovery/validation procedure with two byte-identical replays only; 2025 holdout access, economic backtests, paper trading, runtime work, and strategy work remain prohibited
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -53,29 +53,21 @@ Breadth members:
 - RSP, MDY, IWM, IWD, IWF
 - XLB, XLE, XLF, XLI, XLK, XLP, XLU, XLV, XLY
 
-The family is distinct from Core v1 own-price trend logic, has low expected turnover if later mapped economically, and can be confirmed on an untouched 2025 terminal holdout.
-
-## Source evidence
+## Source and interval lock
 
 The exact 16 source files and SHA-256 identities are frozen in the source-universe annex.
 
-Source-only reconciliation established:
-
-- exact hashes and ordered OHLCV schemas matched;
-- unique strictly increasing sessions;
-- all 16 files share the complete 2,010-session SPY/QQQ target calendar;
-- development, validation, and holdout require no dropped common sessions;
-- no Campaign #50 predictor or outcome was generated during inventory or reconciliation.
-
-The validator permits only deterministic machine-scale adjusted-price rounding tolerance. It does not repair or rewrite source values.
-
-## Frozen temporal architecture
+Authorized analytical intervals only:
 
 - development: `2018-01-02` through `2022-12-30`
 - validation: `2023-01-03` through `2024-12-31`
-- untouched confirmation holdout: `2025-01-02` through `2025-12-30`
 
-The 2025 holdout may not be loaded by discovery or validation code. It may not be used for debugging, feature selection, transformation selection, threshold selection, expected-sign selection, candidate ranking, model choice, or decision-rule modification.
+Untouched and forbidden during this stage:
+
+- holdout: `2025-01-02` through `2025-12-30`
+- every source row after `2024-12-31`
+
+The discovery/validation loader must reject a post-2024 row before placing prices into analytical structures.
 
 ## Frozen statistical design
 
@@ -86,114 +78,81 @@ The 2025 holdout may not be loaded by discovery or validation code. It may not b
 - horizon-specific non-overlapping anchor grids;
 - OLS with HC3 covariance;
 - two-sided raw p-values and frozen expected-sign checks;
-- Holm correction across all 24 candidates separately within development, validation, and holdout;
-- deterministic support, compatibility, shortlist, confirmation, and family-level rules;
-- canonical output schemas and deterministic failure precedence;
-- separate discovery/validation and confirmation boundaries.
+- Holm correction across all 24 candidates separately within development and validation;
+- deterministic support, sign, magnitude-compatibility, and shortlist rules;
+- canonical output schemas and deterministic failure precedence.
 
-No candidate, predictor, target, horizon, transformation, control, interaction, or outcome may be added without a new pre-outcome governance decision.
+No candidate, predictor, target, horizon, transformation, control, interaction, outcome, threshold, or method may be added or changed in response to results.
 
-## Implementation validation evidence
+## Validation evidence before execution
 
-User-run validation on Windows / Python 3.14.6:
+User-run synthetic validation:
 
-- `python -m pytest tests/test_campaign50_equity_breadth.py -q`
-- result: `10 passed in 0.16s`
-
-The synthetic suite covers:
-
-- exact stable 24-candidate inventory;
-- moving-average and forward-return formulas;
-- predictor domains;
-- non-overlapping anchors;
-- OLS/HC3 behavior;
-- deterministic Holm adjustment;
-- support gates, expected-sign checks, and magnitude compatibility;
-- canonical replay-identical JSON and LF-only CSV serialization;
-- fail-closed post-2024 discovery-loader rejection;
-- always-disabled confirmation boundary.
+- `10 passed in 0.16s`
 
 User-run real source-only preflight:
 
-- `python -m scripts.preflight_campaign50_equity_breadth --data-root data --output artifacts/campaign50_implementation_preflight.json`
 - status: `PASS`
 - candidate count: `24`
 - confirmation enabled: `false`
 - predictors generated: `false`
 - outcomes generated: `false`
 
-This evidence validates implementation and source identity only. It contains no real predictor values, forward returns, coefficients, p-values, rankings, validation results, or shortlist outcomes.
-
-## Execution procedure evidence
-
-The proposed execution procedure is frozen in:
-
-- `docs/research/CAMPAIGN_50_DEVELOPMENT_VALIDATION_EXECUTION_PROCEDURE.md`
-- commit `16b00d8e5f33a1636a65cb6a3885b19562726551`
-
-It specifies:
-
-- a separate future board-recorded execution GO;
-- exact governed branch, specification, source, and interval identities;
-- clean, non-existing run-1 and run-2 output directories;
-- exactly six canonical files per replay;
-- source, schema, ordering, calendar, and post-2024 rejection gates;
-- two independent deterministic replay runs;
-- exact file-set, byte-length, and SHA-256 replay comparison;
-- deterministic manifest requirements without wall-clock or machine-specific fields;
-- one canonical result set and one frozen shortlist after replay identity passes;
-- return to HOLD before any historical-confirmation GO.
-
-The documented real runner command remains proposed and is not enabled or executed under the current HOLD.
-
-## Mandatory stage separation
-
-Campaign #50 preserves separate governance gates for:
-
-1. implementation and synthetic/preflight validation — **completed**;
-2. development and validation execution — **not yet authorized**;
-3. historical confirmation on the mechanically untouched terminal holdout — **not authorized**;
-4. economic-value testing for statistically confirmed candidates only — **not authorized**;
-5. forward paper trading for economically confirmed candidates only — **not authorized**;
-6. later limited-live-capital review after a predetermined paper record — **not authorized**.
-
-Passing one stage does not authorize the next.
+The deterministic execution procedure is frozen at commit `16b00d8e5f33a1636a65cb6a3885b19562726551`.
 
 ## Current authorization
 
-**Decision:** HOLD after successful implementation validation and execution-procedure preparation. A separate board-recorded real development/validation execution GO is required before any real Campaign #50 predictor or outcome is generated.
+**Decision:** GO to implement or enable the governed real development/validation runner and execute exactly two deterministic replays under the frozen procedure.
 
 Authorized now:
 
-- inspect implementation, tests, preflight evidence, and the frozen execution procedure;
-- add tests that do not use real Campaign #50 outcomes;
-- correct implementation defects without changing the frozen design;
-- rerun synthetic tests and source-only preflight;
-- review the proposed execution procedure and commands;
-- update this board with additional non-outcome evidence.
+- implement or enable `scripts.run_campaign50_development_validation` without changing the frozen statistical design;
+- validate exact source hashes, schemas, ordering, common calendar, branch, output cleanliness, and candidate inventory before analytical construction;
+- reject every post-2024 row before placing source values into discovery/validation analytical structures;
+- generate real Campaign #50 predictors and forward-return outcomes for development and validation only;
+- compute the frozen 24 development and validation candidate results;
+- apply the frozen support, OLS/HC3, Holm, expected-sign, magnitude-compatibility, and shortlist rules;
+- write exactly the six canonical files per replay specified in the execution procedure;
+- run exactly two independent replays in the two governed output directories;
+- compare exact file sets, byte lengths, and SHA-256 identities;
+- inspect and commit one canonical result set and the frozen shortlist, including an empty shortlist if no candidate passes;
+- update this board with execution and replay evidence;
+- return to HOLD after the canonical development/validation results are recorded.
 
 Not authorized:
 
-- running discovery/validation machinery against real prices to generate predictor values, forward returns, coefficients, p-values, rankings, validation results, or shortlist outcomes;
 - loading any 2025 row into discovery/validation analytical structures;
-- implementing or running real holdout confirmation beyond the fail-closed boundary;
+- running or enabling real holdout confirmation;
+- changing any frozen method in response to development or validation results;
 - accessing newly calculated 2025 holdout outcomes;
 - economic-value backtesting or Core v1 comparison;
 - paper-trading activation;
 - Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, or portfolio optimization;
 - any runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
 
+## Mandatory stage separation
+
+1. Implementation and synthetic/preflight validation — **completed**.
+2. Development and validation execution — **authorized now**.
+3. Historical confirmation on the mechanically untouched terminal holdout — **not authorized**.
+4. Economic-value testing — **not authorized**.
+5. Forward paper trading — **not authorized**.
+6. Limited-live-capital review — **not authorized**.
+
+Passing this stage does not authorize the next.
+
 ## Immediate sequence
 
-1. Implementation and synthetic tests — **completed**.
-2. Real source-only preflight — **completed; PASS**.
-3. Review the real development/validation execution procedure and deterministic replay plan — **completed; procedure frozen at `16b00d8`.**
-4. Record a separate real development/validation execution GO — **pending**.
-5. Implement or enable the governed real runner only under that GO — **not authorized**.
-6. Execute development/validation only after that GO — **not authorized**.
-7. Commit canonical results and frozen shortlist before any holdout GO — **not authorized**.
-8. Historical holdout confirmation requires a later separate gate — **not authorized**.
-9. Economic testing and paper trading require later separate gates — **not authorized**.
+1. Enable the governed runner under this GO.
+2. Rerun synthetic tests and source-only preflight.
+3. Verify clean run-1 and run-2 destinations.
+4. Execute run 1.
+5. Execute run 2.
+6. Verify byte-identical replay across all six files.
+7. Inspect deterministic development/validation statuses.
+8. Commit one canonical result set and frozen shortlist.
+9. Update the board and return to HOLD.
+10. Require a separate historical-confirmation GO before any 2025 analytical access.
 
 ## Passive campaign
 
