@@ -10,7 +10,7 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Campaign:** Campaign #51 — Conditional Directional Value of Supported BTC Movement States
 
-**Status:** IMPLEMENTATION GO — frozen statistical specification and implementation handoff complete; research-only implementation, focused synthetic tests, and source-only preflight are authorized. Real Campaign #51 predictor generation, forward outcomes, model fitting, development/validation execution, 2025 analytical access, economic testing, paper trading, and runtime/strategy work remain prohibited.
+**Status:** IMPLEMENTATION VALIDATION HOLD — frozen research core, focused synthetic tests, and source-only preflight are committed; local test and preflight evidence are required before any development/validation execution decision. Real Campaign #51 predictor generation, forward outcomes, model fitting on governed values, 2025 analytical access, economic testing, paper trading, and runtime/strategy work remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -22,35 +22,19 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 Campaign #51 tests conditional association, not unconditional directional prediction and not a trading strategy.
 
-## Governed antecedents
+## Governed records
 
-### Campaign #48
-
-Campaign #48 established 15 supported research associations concentrated in recent realized volatility, future movement magnitude/volatility, and drawdown-linked future volatility. No directional-return candidate was supported.
-
-- closure: `77c1ae8c70de7a16cca847aeb1a4cb2eea638007`
-- canonical publication: `fd7ee01`
-
-### Campaign #50
-
-Campaign #50 is permanently closed as a valid governed negative result.
-
-- final closure: `docs/research/CAMPAIGN_50_FINAL_CLOSURE.md`
-- closure commit: `abc38f2cba5cb28603632c4302845e490cb9f4c1`
-- shortlist: empty
-- 2025 holdout: untouched
-
-Campaign #50 may not be reopened through post-outcome method changes.
-
-## Campaign #51 governed records
-
-- planning charter: `docs/research/CAMPAIGN_51_CONDITIONAL_DIRECTIONAL_VALUE_PLANNING_CHARTER.md`; commit `59359493787dcac855063debbda8a76895a55378`
+- Campaign #48 closure: `77c1ae8c70de7a16cca847aeb1a4cb2eea638007`
+- Campaign #48 canonical publication: `fd7ee01`
+- Campaign #50 final closure: `docs/research/CAMPAIGN_50_FINAL_CLOSURE.md`; commit `abc38f2cba5cb28603632c4302845e490cb9f4c1`
+- Campaign #51 planning charter: `docs/research/CAMPAIGN_51_CONDITIONAL_DIRECTIONAL_VALUE_PLANNING_CHARTER.md`; commit `59359493787dcac855063debbda8a76895a55378`
 - source-and-variable inventory: `docs/research/CAMPAIGN_51_SOURCE_VARIABLE_FEASIBILITY_INVENTORY.md`; commit `5bdef3783975902516bac49ca23b00b023d108f9`
-- timestamp-only feasibility preflight: `scripts/preflight_campaign51_source_variable_feasibility.py`; commit `d6348422f03529f065abe1d096086c01c30ded9d`
-- helper tests: `tests/test_campaign51_source_variable_feasibility.py`; commit `6aae3b7d83708b8281eafd0efa056b1d104c366b`
 - hypothesis-family selection: `docs/research/CAMPAIGN_51_HYPOTHESIS_FAMILY_SELECTION.md`; commit `11db395e117343e10ea836231b0903b982e9a674`
 - frozen statistical specification: `docs/research/CAMPAIGN_51_STATISTICAL_SPECIFICATION.md`; commit `c2f4770ac84e460a387ad2c341d7a4129034b720`
 - implementation handoff: `docs/research/CAMPAIGN_51_IMPLEMENTATION_HANDOFF.md`; commit `ecc69384a4951928a88857809b8af54a9c7c1a6d`
+- research core: `research/campaign51_conditional_directional.py`; commit `a0e4857c8582682d0f025085456f56e76e2c2d63`
+- source-only implementation preflight: `scripts/preflight_campaign51_implementation.py`; commit `2a597e0c6f32b3e4d93931ad5e948bbdd4960762`
+- focused synthetic tests: `tests/test_campaign51_conditional_directional.py`; commit `2309356ac0ef11c279d6c2d3a75c78d626a861f8`
 
 ## Governed source
 
@@ -67,23 +51,10 @@ Only `timestamp` and `close` may later enter Campaign #51 calculations. No inter
 
 ## Frozen candidate family
 
-Directional variables:
-
-- trailing 24-hour signed log return;
-- trailing 168-hour signed log return.
-
-Conditioning states:
-
-- trailing 24-hour realized volatility;
-- drawdown from the trailing 168-hour close high.
-
-Horizons:
-
-- 24 hours;
-- 72 hours;
-- 168 hours.
-
-Exactly 12 candidates: `2 × 2 × 3`.
+- directional variables: trailing 24-hour and 168-hour signed log return;
+- conditioning states: trailing 24-hour realized volatility and drawdown from the trailing 168-hour close high;
+- horizons: 24, 72, and 168 hours;
+- exactly 12 candidates.
 
 ## Frozen statistical model
 
@@ -93,32 +64,25 @@ For each candidate:
 
 - outcome: forward BTC log return;
 - primary estimand: interaction coefficient `betaI`;
-- standardization: candidate-specific development-only arithmetic mean and population standard deviation (`ddof=0`), reused unchanged in validation and any later confirmation;
+- candidate-specific development-only standardization with population standard deviation (`ddof=0`), reused unchanged later;
 - interaction formed after standardization;
-- estimator: OLS;
-- covariance: HC3;
-- test: two-sided normal test of `betaI = 0`;
-- 95% normal confidence interval;
-- both main effects and intercept required.
+- OLS with HC3 covariance;
+- two-sided normal test and 95% confidence interval for `betaI`;
+- intercept and both main effects required.
 
-No thresholding, quantiling, winsorization, clipping, ranking, sign conversion, nonlinear transformation, residualization, controls, fixed effects, HAC, bootstrap, regularization, or alternative model is permitted.
-
-## Frozen stages and anchor mechanics
+## Frozen stages and mechanics
 
 - development: `2018-01-01 00:00:00` through `2022-12-31 23:00:00`
 - validation: `2023-01-01 00:00:00` through `2024-12-31 23:00:00`
 - untouched confirmation: `2025-01-01 00:00:00` through `2025-12-31 00:00:00`
 - anchor origin: `2018-01-08 00:00:00`
-- anchor spacing: exactly 168 hours
-- exact trailing timestamp windows required
-- exact future endpoint required inside the same stage
+- spacing: exactly 168 hours
+- exact predictor windows and same-stage future endpoints required
 - no stage-boundary crossing
 
 Every 2025 close remains forbidden from analytical loading until a later confirmation GO after a non-empty frozen shortlist.
 
 ## Frozen support gates
-
-Minimum candidate-complete observations:
 
 | Stage | 24h | 72h | 168h |
 |---|---:|---:|---:|
@@ -126,37 +90,30 @@ Minimum candidate-complete observations:
 | Validation | 90 | 89 | 89 |
 | Confirmation | 40 | 39 | 39 |
 
-Timestamp-only maxima were:
+Timestamp-only maxima:
 
 - development: `248, 248, 247`;
 - validation: `104, 103, 103`;
 - confirmation: `51, 50, 50`.
 
-## Frozen multiplicity and pass rules
+## Frozen inference and pass rules
 
-- Holm step-down correction across all 12 candidates separately within each stage;
-- family size remains 12 even when candidates are unrankable;
-- canonical candidate order breaks ties;
+- Holm correction across all 12 candidates separately within each stage;
+- family size remains 12 when candidates are unrankable;
+- canonical order breaks ties;
 - interaction sign is not prespecified.
 
-Development support requires rankability and Holm-adjusted `p <= 0.05`.
+Development support: rankable and Holm-adjusted `p <= 0.05`.
 
-Validation support additionally requires:
+Validation support additionally requires prior development support, same non-zero sign, Holm-adjusted `p <= 0.10`, and absolute validation/development coefficient ratio in `[0.25, 4.00]`.
 
-- prior development support;
-- same non-zero interaction sign as development;
-- validation Holm-adjusted `p <= 0.10`;
-- absolute validation interaction coefficient between `0.25` and `4.00` times the absolute development coefficient, inclusive.
+Only validation-supported candidates enter the frozen confirmation shortlist. An empty shortlist closes Campaign #51 and prohibits 2025 analytical loading.
 
-Only validation-supported candidates enter the frozen confirmation shortlist.
+Confirmation remains unauthorized.
 
-An empty shortlist closes Campaign #51 as a valid negative result and prohibits 2025 analytical loading.
+## Existing non-outcome evidence
 
-Confirmation remains unauthorized. If separately authorized later, support requires the same sign through all three stages, confirmation Holm-adjusted `p <= 0.05`, and an absolute confirmation/development coefficient ratio in `[0.25, 4.00]`.
-
-## Non-outcome feasibility evidence
-
-Timestamp-only source preflight: `PASS`.
+Timestamp-only feasibility preflight: `PASS`.
 
 - prices loaded: `false`
 - predictors generated: `false`
@@ -165,28 +122,28 @@ Timestamp-only source preflight: `PASS`.
 - holdout outcomes loaded: `false`
 - runtime modified: `false`
 
-Focused timestamp-only helper tests were reported PASS. The exact pytest count was not supplied and is not asserted.
+Earlier timestamp-only helper tests were reported PASS; exact count was not supplied.
 
 ## Current authorization
 
-**Decision:** GO for research-only implementation, synthetic tests, and source-only preflight.
+**Decision:** HOLD pending local validation of the newly committed implementation.
 
 Authorized now:
 
-- add one new side-effect-free Campaign #51 research analysis module;
-- add one new source-only implementation preflight;
-- add focused synthetic tests covering formulas, exact windows, standardization, model construction, HC3 inference, support gates, Holm correction, classification, serialization, and safety flags;
-- validate source bytes, schema, timestamps, governed gaps, frozen candidate inventory, support gates, and specification identities without parsing close values;
-- update this board with implementation evidence;
-- correct implementation defects without changing the frozen design.
+- pull the committed research core, tests, and source-only preflight;
+- run `tests/test_campaign51_conditional_directional.py`;
+- run `scripts.preflight_campaign51_implementation` against the governed source;
+- inspect only synthetic-test results and source-only safety evidence;
+- correct implementation defects without changing the frozen design;
+- update this board with implementation-validation evidence.
 
 Not authorized:
 
 - a real development/validation runner;
 - generation or inspection of real Campaign #51 predictors or forward outcomes;
-- fitting Campaign #51 models on governed source values;
+- fitting Campaign #51 models on governed close values;
 - analytically loading any 2025 close;
-- changing any frozen method in response to tests or later results;
+- changing any frozen method in response to implementation results;
 - economic-value testing or Core v1 comparison;
 - paper trading;
 - any runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
@@ -197,7 +154,7 @@ Not authorized:
 2. Source-and-variable feasibility inventory — **completed**.
 3. Hypothesis-family selection — **completed**.
 4. Frozen statistical specification — **completed**.
-5. Implementation and synthetic tests — **authorized next**.
+5. Implementation and synthetic tests — **implementation committed; validation pending**.
 6. Development and validation execution — **not authorized**.
 7. Untouched historical confirmation — **not authorized**.
 8. Economic testing — **not authorized**.
@@ -208,11 +165,11 @@ Passing one stage does not authorize the next.
 
 ## Immediate sequence
 
-1. Implement the frozen research module only.
-2. Add focused synthetic tests.
-3. Add and run the source-only implementation preflight.
-4. Require all safety flags to remain false for analytical generation and holdout access.
-5. Return implementation evidence to this board for a separate execution decision.
+1. Pull the implementation commits.
+2. Run the focused synthetic suite.
+3. Run the source-only implementation preflight.
+4. Require all analytical-generation, execution, holdout, confirmation, and runtime flags to remain false.
+5. Return both console outputs for a separate execution decision.
 
 ## Passive campaign
 
