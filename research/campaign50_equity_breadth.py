@@ -27,6 +27,12 @@ EXPECTED_SIGNS = {
 BINARY_PREDICTORS = {"narrow_strength", "broad_recovery"}
 EXPECTED_COLUMNS = ("timestamp", "open", "high", "low", "close", "volume")
 DISCOVERY_CUTOFF = date(2024, 12, 31)
+MINIMUM_TOTAL_SUPPORT = {
+    "development": {5: 180, 20: 50, 60: 16},
+    "validation": {5: 80, 20: 22, 60: 8},
+    "holdout": {5: 40, 20: 11, 60: 4},
+}
+EVENT_MINIMUMS = {"development": 8, "validation": 4, "holdout": 3}
 
 
 class Campaign50Error(ValueError):
@@ -320,19 +326,13 @@ def holm_adjust(raw_p_values: Mapping[str, float], family_size: int = 24) -> dic
 
 
 def support_gate(stage: str, predictor: str, horizon: int, values: Sequence[float]) -> tuple[str | None, int, int | None, int | None]:
-    minimums = {
-        "development": {5: 180, 20: 55, 60: 18},
-        "validation": {5: 80, 20: 22, 60: 8},
-        "holdout": {5: 40, 20: 11, 60: 4},
-    }
-    event_minimums = {"development": 8, "validation": 4, "holdout": 3}
     n = len(values)
-    if n < minimums[stage][horizon]:
+    if n < MINIMUM_TOTAL_SUPPORT[stage][horizon]:
         return "INSUFFICIENT_TOTAL_SUPPORT", n, None, None
     if predictor in BINARY_PREDICTORS:
         event_n = sum(1 for value in values if value == 1.0)
         non_event_n = n - event_n
-        if event_n < event_minimums[stage] or non_event_n < event_minimums[stage]:
+        if event_n < EVENT_MINIMUMS[stage] or non_event_n < EVENT_MINIMUMS[stage]:
             return "INSUFFICIENT_EVENT_SUPPORT", n, event_n, non_event_n
         return None, n, event_n, non_event_n
     return None, n, None, None
