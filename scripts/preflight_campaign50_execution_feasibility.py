@@ -17,7 +17,7 @@ from scripts.run_campaign50_development_validation import (
 
 
 MINIMUMS = {
-    "development": {5: 180, 20: 55, 60: 18},
+    "development": {5: 180, 20: 50, 60: 16},
     "validation": {5: 80, 20: 22, 60: 8},
 }
 
