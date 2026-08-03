@@ -8,111 +8,154 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 ## Active campaign
 
-**Campaign:** None — Campaign #51 closed.
+**Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** HOLD AFTER VALID NEGATIVE RESULT — Campaign #51 completed with an empty shortlist. No 2025 confirmation is authorized or necessary.
+**Status:** PLANNING OPEN — planning charter committed; reference-artifact and intervention feasibility inventory is the next authorized deliverable. Counterfactual generation, NAV reconstruction, performance comparison, model fitting, execution, holdout access, and runtime/strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
 **Repository:** `IteraDynamics/ID_test`
 
-## Campaign #51 conclusion
+## Objective
 
-Campaign #51 tested whether BTC volatility and drawdown states previously supported by Campaign #48 condition the directional association of recent signed return.
+> Determine whether canonical Core v1 derives material value from the correct chronological alignment of its state-conditioned decisions, beyond what can be explained by average exposures, sleeve composition, and activity profile.
 
-Frozen family:
+Campaign #52 is an architecture-falsification campaign. It is not another standalone directional-feature search and it does not reopen Campaign #51.
 
-- trailing 24-hour and 168-hour signed log return;
-- trailing 24-hour realized volatility and drawdown from the trailing 168-hour close high;
-- 24-hour, 72-hour, and 168-hour forward-return horizons;
-- exactly 12 interaction candidates.
+## Governed antecedents
 
-Frozen model:
+### Campaign #48
 
-`Y = beta0 + betaD * D_z + betaS * S_z + betaI * (D_z * S_z) + epsilon`
+Campaign #48 retained supported associations involving BTC volatility, drawdown, and future movement magnitude or volatility.
 
-Primary estimand: interaction coefficient `betaI`.
+### Campaign #50
 
-Inference:
+Campaign #50 closed as a governed negative directional result with an empty shortlist and untouched 2025 holdout.
 
-- OLS;
-- HC3 covariance;
-- two-sided normal test;
-- Holm correction across all 12 candidates separately within each stage.
+### Campaign #51
 
-## Final result
+Campaign #51 closed as a governed negative result:
 
-Two governed development/validation executions completed successfully.
+- final closure: `docs/research/CAMPAIGN_51_FINAL_CLOSURE.md`;
+- closure commit: `f9858cf8ceacb669f69d569250410ae289c6126d`;
+- 12 of 12 candidates: `DISCOVERY_NOT_SUPPORTED`;
+- validation eligible: `0`;
+- shortlist: empty;
+- 2025 analytical values: untouched;
+- canonical replay artifacts: byte-identical.
 
-Both runs reported:
+Campaign #51 may not be reopened or reinterpreted through post-outcome method changes.
 
-- candidate count: `12`;
-- `DISCOVERY_NOT_SUPPORTED`: `12`;
-- `VALIDATION_NOT_ELIGIBLE`: `12`;
-- shortlist count: `0`;
-- predictors generated: `true`;
-- forward outcomes generated: `true`;
-- models fitted: `true`;
-- prices loaded through: `2024-12-31 23:00:00`;
-- holdout loaded: `false`;
-- confirmation enabled: `false`;
-- runtime modified: `false`.
+## Campaign #52 planning record
 
-All five canonical artifacts were byte-identical across replay.
+- planning charter: `docs/research/CAMPAIGN_52_CORE_V1_CHRONOLOGICAL_STATE_VALUE_PLANNING_CHARTER.md`;
+- charter commit: `8ad9f3aae3dc4b36010ef8f723ae1c88bbf7db9d`.
 
-Canonical SHA-256 identities:
+## Planning reference
 
-- candidate inventory: `06c29c8caddf56d9278c53971d7a014f8fb596d36435f74257af9ddee15d5386`;
-- development results: `ddfa49087995850cabf6dadbaf74038c12c6fe7954dce04fd2ec2176de51c774`;
-- validation results: `afc389e2b4283e94e396bce4ba4c0ffbce23d74f2e6b0d81301a28ed13c7e2d9`;
-- shortlist: `5d6088e94d033382d421c9ddb34b940d5a645a26cd15beada4b69ba2aa04acad`;
-- stage manifest: `0b332f2353202b88be841277c04f579bc988568deb869e6a5963ac48b0b48814`.
+The current planning reference is the blessed Core v1 candidate documented in:
 
-Final closure record:
+- `research/trade_idea_radar/CORE_V1_BASELINE_MANIFEST.md`;
+- allocation: trend `0.40`, equity `0.35`, gold `0.15`, hedge `0.10`, mean reversion `0.00`;
+- defining architecture: explicit BTC macro-state ownership across crypto trend sleeves.
 
-- `docs/research/CAMPAIGN_51_FINAL_CLOSURE.md`;
-- commit `f9858cf8ceacb669f69d569250410ae289c6126d`.
+This is not yet a frozen Campaign #52 execution reference. Exact commits, sources, commands, costs, intervals, state/exposure artifacts, and replay requirements remain to be inventoried and separately frozen.
 
-## Interpretation
+## Distinction from prior Core work
 
-Campaign #51 did not establish that recent BTC momentum becomes directionally informative as a function of recent volatility or drawdown under the frozen design.
+Existing Core v1 work already includes:
 
-This is a valid governed negative result, not an implementation or reproducibility failure.
+- allocation robustness;
+- risk-sleeve ablation;
+- cost sensitivity;
+- regime attribution;
+- historical event and regime analysis.
 
-Campaign #48 remains intact: volatility and drawdown showed supported association with future movement magnitude and volatility. Campaign #51 rejects only this specific interaction-based directional-conditioning family.
+Campaign #52 must not duplicate those studies.
+
+Its distinct question is whether authentic chronological alignment adds value after preserving non-timing characteristics as closely as a frozen counterfactual design permits.
+
+## Proposed counterfactual classes
+
+Planning candidates only; none is selected or authorized for generation.
+
+1. **Static exposure-matched control** — preserve predetermined average composition while removing dynamic state timing.
+2. **Deterministically displaced state sequence** — preserve sequence order and durations but apply decisions at fixed, preselected offsets.
+3. **Deterministic block-permuted state sequence** — preserve approximate prevalence, duration, exposure distribution, and activity while destroying authentic chronology.
+
+## Interpretation targets
+
+Campaign #52 is intended to distinguish among:
+
+1. chronological state value;
+2. static allocation value;
+3. capital-protection value concentrated in drawdown control, loss containment, or recovery rather than raw return.
+
+These are interpretation targets, not frozen pass rules.
+
+## Mandatory controls against self-confirmation
+
+Before any outcome comparison, Campaign #52 must separately freeze:
+
+- canonical Core v1 reference commit and configuration;
+- source identities and date intervals;
+- cost and cash-yield treatment;
+- exact intervention object: state, signal, target, exposure, or order series;
+- static-matching method;
+- displacement values;
+- block construction and deterministic permutation procedure;
+- number of controls and multiplicity family;
+- primary and secondary metrics;
+- superiority, equivalence, support, and negative-result rules;
+- deterministic artifacts and replay identities.
+
+Core v1 logic, thresholds, weights, ordering, costs, or execution assumptions may not be changed in response to Campaign #52 results.
 
 ## Current authorization
 
-**Decision:** HOLD.
+**Decision:** GO for reference-artifact and intervention feasibility inventory only.
 
 Authorized now:
 
-- preserve the Campaign #51 closure record and canonical artifact identities;
-- publish unchanged canonical artifact bytes if repository policy requires it;
-- review Campaign #51 process lessons without changing the result;
-- plan a new campaign or hypothesis family under a separate pre-outcome charter and gate;
-- continue Campaign #49 passive prospective accumulation.
+- inspect existing Core v1 manifests, canonical commands, source identities, cost assumptions, state/exposure artifacts, and deterministic replay records;
+- identify the exact series that could serve as the chronology intervention object without modifying strategy logic;
+- determine whether static exposure matching, deterministic displacement, and deterministic block permutation are mechanically feasible;
+- identify overlap with prior Core studies and exclude duplicated questions;
+- inspect source and artifact structure without generating counterfactuals or performance results;
+- draft `docs/research/CAMPAIGN_52_REFERENCE_INTERVENTION_FEASIBILITY_INVENTORY.md`;
+- return to this board for a separate hypothesis-family-selection decision.
 
 Not authorized:
 
-- any Campaign #51 2025 confirmation run;
-- analytically loading 2025 close values for Campaign #51;
-- changing Campaign #51 candidates, formulas, horizons, support gates, standardization, covariance, multiplicity, pass rules, or signs after observing the result;
-- economic-value testing or Core v1 comparison for Campaign #51;
-- paper trading;
-- runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training changes.
+- running canonical Core v1 or any counterfactual;
+- generating shifted, permuted, randomized, or static-matched state, signal, target, exposure, order, return, or NAV series;
+- calculating or comparing CAGR, Sharpe, Calmar, drawdown, recovery, cost, or any other performance metric;
+- selecting controls based on Campaign #52 outcomes;
+- fitting models or computing p-values, rankings, or support decisions;
+- changing Core v1 runtime, thresholds, regime logic, classifier logic, signal logic, strategy logic, order behavior, execution, portfolio weights, NAV, exposure, dashboard, or model training;
+- paper trading or live execution;
+- accessing any separately protected holdout not explicitly authorized later.
 
 ## Mandatory stage separation
 
-Campaign #51 is closed.
+1. Planning charter — **completed**.
+2. Reference-artifact and intervention feasibility inventory — **authorized next**.
+3. Hypothesis-family selection — **not authorized**.
+4. Frozen statistical specification — **not authorized**.
+5. Implementation and synthetic tests — **not authorized**.
+6. Development and validation execution — **not authorized**.
+7. Untouched confirmation or prospective observation — **not authorized**.
+8. Economic, paper, or runtime action — **not authorized**.
 
-Any next campaign requires:
+Passing one stage does not authorize the next.
 
-1. a separate pre-outcome planning charter;
-2. a fresh source-and-variable feasibility review;
-3. a separately frozen hypothesis family;
-4. a separately frozen statistical specification;
-5. a fresh implementation and execution gate.
+## Immediate sequence
+
+1. Inventory the canonical Core v1 reference and exact artifact lineage.
+2. Identify whether chronology can be isolated at the state, target, exposure, or order layer without strategy modification.
+3. Assess deterministic static, displaced, and block-permuted control feasibility.
+4. Exclude designs that leak future information or merely repeat allocation/ablation work.
+5. Return to the board before selecting any counterfactual family.
 
 ## Passive campaign
 
