@@ -10,17 +10,13 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Campaign:** Campaign #50 — Holdout-First Alpha Research
 
-**Classification:** Pre-outcome statistical-design correction
+**Classification:** Governed real development/validation execution
 
-**Status:** HOLD — development/validation execution remains suspended while the pre-outcome support-gate amendment is validated; no real prices, predictors, outcomes, coefficients, rankings, validation results, shortlist results, or 2025 observations have been generated or loaded
+**Status:** DEVELOPMENT/VALIDATION EXECUTION GO — amended support gates passed synthetic, source-only, and date-only validation; execute exactly two deterministic 2018–2024 replays only; 2025 holdout access, economic testing, paper trading, runtime work, and strategy work remain prohibited
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
 **Repository:** `IteraDynamics/ID_test`
-
-## Objective
-
-Identify a narrowly defined research-alpha hypothesis that can be discovered, confirmed on an untouched historical holdout, tested economically, and—only after separate gates—advanced to forward paper trading.
 
 ## Governed records
 
@@ -35,81 +31,110 @@ Identify a narrowly defined research-alpha hypothesis that can be discovered, co
 - Amended implementation constants: commit `29b38116eccb2802756c622ac260eb0908492ad2`
 - Amended support-boundary tests: commit `fb9fa45b0c52ef0aaff40a256abd01d5d4f2bc2a`
 
-The support-gate amendment supersedes only the development minimum-total-support values for 20-session and 60-session candidates in the base statistical specification.
+The amendment supersedes only the development minimum-total-support values for 20-session and 60-session candidates.
 
-## Frozen research family
+## Frozen research design
 
-**Equity breadth deterioration and recovery.**
+Research family: **equity breadth deterioration and recovery**.
 
 Targets: SPY and QQQ.
 
 Breadth members: RSP, MDY, IWM, IWD, IWF, XLB, XLE, XLF, XLI, XLK, XLP, XLU, XLV, and XLY.
 
-Frozen candidate inventory:
+Candidate inventory:
 
 - four predictors;
 - two targets;
 - 5-, 20-, and 60-session forward-return horizons;
 - exactly 24 candidates.
 
-## Frozen intervals
+Intervals:
 
 - development: `2018-01-02` through `2022-12-30`
 - validation: `2023-01-03` through `2024-12-31`
 - untouched holdout: `2025-01-02` through `2025-12-30`
 
-Every 2025 row remains forbidden during discovery/validation.
+Every 2025 row remains forbidden during this stage.
 
-## Structural feasibility evidence
+Amended development total-support gates:
 
-Date-only maximum stage-contained development anchors after the frozen 220-session lookback:
+- 5 sessions: 180
+- 20 sessions: 50
+- 60 sessions: 16
 
-- 5 sessions: 207
-- 20 sessions: 51
-- 60 sessions: 17
+Validation and holdout total-support gates remain unchanged. Binary event/non-event gates remain unchanged. Predictors, outcomes, horizons, expected signs, OLS/HC3, Holm correction, compatibility rules, and shortlist rules remain unchanged.
 
-Original development support gates of 55 at 20 sessions and 18 at 60 sessions were structurally impossible.
+## Non-outcome validation evidence after amendment
 
-The pre-outcome amendment applies the stated ex ante rule and freezes:
+User-run synthetic tests on Windows / Python 3.14.6:
 
-- development 5-session minimum: 180, unchanged;
-- development 20-session minimum: 50, amended from 55;
-- development 60-session minimum: 16, amended from 18.
+- `14 passed in 0.13s`
 
-Validation and holdout total-support gates remain unchanged. Binary event/non-event gates remain unchanged. No empirical outcome informed the amendment.
+User-run source-only implementation preflight:
+
+- status: `PASS`
+- candidate count: `24`
+- confirmation enabled: `false`
+- predictors generated: `false`
+- outcomes generated: `false`
+
+User-run date-only execution-feasibility preflight:
+
+- status: `PASS`
+- structurally impossible gates: none
+- prices loaded: `false`
+- predictors generated: `false`
+- outcomes generated: `false`
+- holdout loaded: `false`
+
+Maximum stage-contained anchors and frozen minimums:
+
+- development 5: maximum 207; minimum 180
+- development 20: maximum 51; minimum 50
+- development 60: maximum 17; minimum 16
+- validation 5: maximum 100; minimum 80
+- validation 20: maximum 25; minimum 22
+- validation 60: maximum 8; minimum 8
+
+No real Campaign #50 predictor, forward return, coefficient, p-value, ranking, validation result, shortlist result, or 2025 observation informed the amendment or this GO.
 
 ## Current authorization
 
-**Decision:** HOLD pending non-outcome validation of the amended support gates.
+**Decision:** GO to execute the governed real development/validation runner exactly twice under the frozen procedure.
 
 Authorized now:
 
-- rerun synthetic tests;
-- rerun source-only implementation preflight;
-- rerun the date-only feasibility preflight;
-- inspect only non-outcome validation evidence;
-- correct implementation defects without changing the amended governed design;
-- update this board with validation evidence.
+- rerun synthetic tests and source-only/date-only preflights immediately before execution;
+- verify the two governed output directories do not exist;
+- execute `scripts.run_campaign50_development_validation` once into run 1 and once into run 2;
+- generate real predictors, forward returns, coefficients, p-values, Holm-adjusted values, deterministic statuses, and shortlist results for development and validation only;
+- write exactly the six canonical artifacts per replay;
+- compare exact file sets, byte lengths, and SHA-256 identities;
+- inspect and commit one canonical result set and the frozen shortlist, including an empty shortlist if no candidate passes;
+- update this board with execution evidence and return to HOLD.
 
 Not authorized:
 
-- running `scripts.run_campaign50_development_validation`;
-- generating or inspecting real Campaign #50 predictors, returns, coefficients, p-values, rankings, validation results, or shortlist outcomes;
 - loading any 2025 row into analytical structures;
-- holdout confirmation;
-- changing methods in response to empirical results;
-- economic backtesting or Core v1 comparison;
+- running or enabling holdout confirmation;
+- modifying any frozen method in response to results;
+- economic-value backtesting or Core v1 comparison;
 - paper trading;
-- runtime, threshold, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training changes.
+- Sharpe, CAGR, drawdown, turnover, sizing, timing, allocation, exposure, or portfolio optimization;
+- runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training changes.
 
 ## Immediate sequence
 
-1. Pull the governed amendment and aligned implementation.
-2. Run the full Campaign #50 synthetic test set.
-3. Run source-only implementation preflight.
-4. Run date-only execution-feasibility preflight.
-5. Require all three to pass with no prices/predictors/outcomes generated by either preflight.
-6. Record a new board-authorized development/validation execution GO only after review.
+1. Pull this execution GO.
+2. Verify tests and preflights remain PASS.
+3. Verify both replay destinations do not exist.
+4. Execute run 1.
+5. Execute run 2.
+6. Verify byte-identical replay across all six files.
+7. Review deterministic development/validation statuses only.
+8. Commit one canonical result set and frozen shortlist.
+9. Update the board and return to HOLD.
+10. Require a separate historical-confirmation GO before any 2025 analytical access.
 
 ## Passive campaign
 
