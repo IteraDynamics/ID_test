@@ -10,7 +10,7 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Campaign:** Campaign #51 — Conditional Directional Value of Supported BTC Movement States
 
-**Status:** PLANNING OPEN — source-and-variable inventory documented; timestamp-only source feasibility validation authorized next. Campaign #51 forward outcomes, model fitting, family selection, holdout analysis, economic testing, paper trading, and runtime/strategy work remain prohibited.
+**Status:** PLANNING HOLD — timestamp-only source feasibility passed; focused helper-test evidence remains pending before hypothesis-family selection may be considered. Campaign #51 forward outcomes, model fitting, family selection, holdout analysis, economic testing, paper trading, and runtime/strategy work remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -89,35 +89,50 @@ The inventory recommends, but does not yet select, a narrow 12-candidate family:
 
 The 72-hour return, 168-hour realized volatility, and price-location variables remain documented alternatives. They are excluded from the initial recommendation to limit nested-variable duplication and multiplicity, not because of Campaign #51 outcomes.
 
-## Proposed feasibility intervals
+## Timestamp-only feasibility evidence
 
-For timestamp-only review only, not yet frozen:
+The governed preflight passed against the frozen Campaign #48 source.
 
-- development: `2018-01-01 00:00:00` through `2022-12-31 23:00:00`
-- validation: `2023-01-01 00:00:00` through `2024-12-31 23:00:00`
-- untouched confirmation: `2025-01-01 00:00:00` through `2025-12-31 00:00:00`
+Safety flags:
 
-The feasibility preflight:
+- `status`: `PASS`
+- `prices_loaded`: `false`
+- `predictors_generated`: `false`
+- `forward_outcomes_generated`: `false`
+- `models_fitted`: `false`
+- `holdout_outcomes_loaded`: `false`
+- `runtime_modified`: `false`
+- `family_selected`: `false`
 
-- reads and validates source bytes, schema, and timestamps;
-- does not parse or load close values;
-- uses the Campaign #48 168-hour anchor grid;
-- requires exact trailing timestamp windows;
-- checks only whether exact future endpoint timestamps exist inside each proposed stage;
-- generates no predictor values, forward returns, models, coefficients, p-values, rankings, or economic results.
+Source identity:
+
+- SHA-256 matched the governed source;
+- rows: `70,069`;
+- first timestamp: `2018-01-01 00:00:00`;
+- last timestamp: `2025-12-31 00:00:00`;
+- governed missing timestamps: `36`.
+
+Calendar-only stage-contained endpoint anchor counts:
+
+- development: 24h `248`, 72h `248`, 168h `247`;
+- validation: 24h `104`, 72h `103`, 168h `103`;
+- untouched confirmation: 24h `51`, 72h `50`, 168h `50`.
+
+The recommended 12-candidate family is structurally feasible on the frozen 168-hour anchor grid. This finding is based only on source bytes, schema, timestamps, exact trailing-window availability, and exact future endpoint existence. No close values or Campaign #51 outcomes were loaded.
+
+Focused helper-test console evidence has not yet been supplied and remains the final gate for completing this planning-validation stage.
 
 ## Current authorization
 
-**Decision:** GO to validate the inventory with tests and one real timestamp-only preflight. Family selection remains pending.
+**Decision:** HOLD pending focused helper-test evidence.
 
 Authorized now:
 
 - run `tests/test_campaign51_source_variable_feasibility.py`;
-- run `scripts.preflight_campaign51_source_variable_feasibility` against the governed source;
-- inspect timestamp-only source identity, gap inventory, coverage, and stage/horizon counts;
+- inspect only its synthetic test result;
 - correct defects in the timestamp-only inventory tooling without changing the planning recommendation in response to outcomes;
-- update this board with non-outcome feasibility evidence;
-- draft a later family-selection memo only after timestamp feasibility passes.
+- update this board with the focused test evidence;
+- draft a family-selection memo only after the focused tests pass.
 
 Not authorized:
 
@@ -135,7 +150,7 @@ Not authorized:
 ## Mandatory stage separation
 
 1. Planning charter — **completed**.
-2. Source-and-variable inventory — **documented; timestamp validation pending**.
+2. Source-and-variable inventory — **timestamp feasibility passed; focused tests pending**.
 3. Hypothesis-family selection — **pending**.
 4. Frozen statistical specification — **not authorized**.
 5. Implementation and synthetic tests — **not authorized**.
@@ -147,11 +162,10 @@ Not authorized:
 
 ## Immediate sequence
 
-1. Pull the inventory, preflight, tests, and board update.
-2. Run the focused timestamp-only tests.
-3. Run the governed timestamp-only preflight.
-4. Record exact stage/horizon counts and all safety flags.
-5. Decide whether the recommended 12-candidate family is feasible for a later selection memo.
+1. Pull this board update.
+2. Run the focused timestamp-only helper tests.
+3. Record the exact test result.
+4. If they pass, consider a separate family-selection memo and board decision.
 
 ## Passive campaign
 
