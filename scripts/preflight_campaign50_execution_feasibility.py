@@ -117,6 +117,7 @@ def main() -> None:
         json.dumps(
             {
                 "status": result["status"],
+                "records": result["records"],
                 "structurally_impossible_gates": result["structurally_impossible_gates"],
                 "predictors_generated": False,
                 "outcomes_generated": False,
