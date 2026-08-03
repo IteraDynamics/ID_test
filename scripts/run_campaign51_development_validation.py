@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from research.campaign51_conditional_directional import (
     FAMILY_SIZE,
     SOURCE_BYTE_COUNT,
@@ -17,6 +19,7 @@ from research.campaign51_conditional_directional import (
     SPECIFICATION_COMMIT,
     Campaign51Error,
     Candidate,
+    Standardization,
     candidate_inventory,
     canonical_csv_bytes,
     canonical_json_bytes,
@@ -46,47 +49,22 @@ ANCHOR_ORIGIN = datetime(2018, 1, 8, 0, 0, 0)
 ANCHOR_SPACING = timedelta(hours=168)
 
 INVENTORY_FIELDS = (
-    "candidate_ordinal",
-    "candidate_key",
-    "directional_variable",
-    "movement_state",
-    "horizon_hours",
+    "candidate_ordinal", "candidate_key", "directional_variable",
+    "movement_state", "horizon_hours",
 )
 RESULT_FIELDS = (
-    "candidate_ordinal",
-    "candidate_key",
-    "directional_variable",
-    "movement_state",
-    "horizon_hours",
-    "stage",
-    "status",
-    "rankable",
-    "n",
-    "directional_mean_development",
-    "directional_sd_development",
-    "state_mean_development",
-    "state_sd_development",
-    "beta0",
-    "beta_directional",
-    "beta_state",
-    "beta_interaction",
-    "se_interaction_hc3",
-    "t_stat",
-    "raw_p_value",
-    "holm_adjusted_p_value",
-    "ci_low",
-    "ci_high",
-    "failure_reason",
+    "candidate_ordinal", "candidate_key", "directional_variable",
+    "movement_state", "horizon_hours", "stage", "status", "rankable", "n",
+    "directional_mean_development", "directional_sd_development",
+    "state_mean_development", "state_sd_development", "beta0",
+    "beta_directional", "beta_state", "beta_interaction",
+    "se_interaction_hc3", "t_stat", "raw_p_value",
+    "holm_adjusted_p_value", "ci_low", "ci_high", "failure_reason",
 )
 SHORTLIST_FIELDS = (
-    "candidate_ordinal",
-    "candidate_key",
-    "directional_variable",
-    "movement_state",
-    "horizon_hours",
-    "development_beta_interaction",
-    "development_holm_adjusted_p_value",
-    "validation_beta_interaction",
+    "candidate_ordinal", "candidate_key", "directional_variable",
+    "movement_state", "horizon_hours", "development_beta_interaction",
+    "development_holm_adjusted_p_value", "validation_beta_interaction",
     "validation_holm_adjusted_p_value",
     "validation_to_development_abs_ratio",
 )
@@ -94,12 +72,6 @@ SHORTLIST_FIELDS = (
 
 def _timestamp_text(value: datetime) -> str:
     return value.strftime("%Y-%m-%d %H:%M:%S")
-
-
-def _finite_or_none(value: float | None) -> float | None:
-    if value is None or not math.isfinite(float(value)):
-        return None
-    return float(value)
 
 
 def _source_gap_inventory(timestamps: list[datetime]) -> tuple[str, ...]:
@@ -113,7 +85,9 @@ def _source_gap_inventory(timestamps: list[datetime]) -> tuple[str, ...]:
     return tuple(missing)
 
 
-def load_source_without_holdout_close(source: Path) -> tuple[list[datetime], dict[datetime, float]]:
+def load_source_without_holdout_close(
+    source: Path,
+) -> tuple[list[datetime], dict[datetime, float]]:
     raw = source.read_bytes()
     if sha256_bytes(raw) != SOURCE_SHA256:
         raise Campaign51Error("SOURCE_SHA256_MISMATCH")
@@ -130,7 +104,9 @@ def load_source_without_holdout_close(source: Path) -> tuple[list[datetime], dic
         for row_number, row in enumerate(reader, start=2):
             timestamp = parse_timestamp(row["timestamp"])
             if timestamp.minute or timestamp.second or timestamp.microsecond:
-                raise Campaign51Error(f"SOURCE_TIMESTAMP_ALIGNMENT_FAILURE:{row_number}")
+                raise Campaign51Error(
+                    f"SOURCE_TIMESTAMP_ALIGNMENT_FAILURE:{row_number}"
+                )
             if previous is not None and timestamp <= previous:
                 raise Campaign51Error(f"SOURCE_TIMESTAMP_ORDER_FAILURE:{row_number}")
             timestamps.append(timestamp)
@@ -172,11 +148,10 @@ def candidate_rows(
     stage_end: datetime,
 ) -> tuple[list[float], list[float], list[float]]:
     directional: list[float] = []
-    state: list[float] = []
+    movement: list[float] = []
     outcomes: list[float] = []
     for anchor in stage_anchors(stage_start, stage_end):
-        endpoint = anchor + timedelta(hours=candidate.horizon_hours)
-        if endpoint > stage_end:
+        if anchor + timedelta(hours=candidate.horizon_hours) > stage_end:
             continue
         try:
             predictors = predictor_values(close_by_time, anchor)
@@ -192,9 +167,9 @@ def candidate_rows(
                 continue
             raise
         directional.append(float(predictors[candidate.directional_variable]))
-        state.append(float(predictors[candidate.movement_state]))
+        movement.append(float(predictors[candidate.movement_state]))
         outcomes.append(float(outcome))
-    return directional, state, outcomes
+    return directional, movement, outcomes
 
 
 def _blank_result(index: int, candidate: Candidate, stage: str) -> dict[str, Any]:
@@ -226,11 +201,35 @@ def _blank_result(index: int, candidate: Candidate, stage: str) -> dict[str, Any
     }
 
 
+def _put_params(row: dict[str, Any], params: Standardization) -> None:
+    row.update({
+        "directional_mean_development": params.directional_mean,
+        "directional_sd_development": params.directional_sd,
+        "state_mean_development": params.state_mean,
+        "state_sd_development": params.state_sd,
+    })
+
+
+def _put_fit(row: dict[str, Any], fit: Any) -> None:
+    row.update({
+        "rankable": True,
+        "beta0": fit.beta0,
+        "beta_directional": fit.beta_directional,
+        "beta_state": fit.beta_state,
+        "beta_interaction": fit.beta_interaction,
+        "se_interaction_hc3": fit.se_interaction_hc3,
+        "t_stat": fit.t_stat,
+        "raw_p_value": fit.p_value,
+        "ci_low": fit.ci_low,
+        "ci_high": fit.ci_high,
+    })
+
+
 def fit_development(
     candidates: list[Candidate], close_by_time: dict[datetime, float]
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], dict[str, Standardization]]:
     rows: list[dict[str, Any]] = []
-    state: dict[str, Any] = {}
+    params_by_key: dict[str, Standardization] = {}
     raw_p: dict[str, float] = {}
     for index, candidate in enumerate(candidates):
         row = _blank_result(index, candidate, "development")
@@ -245,32 +244,18 @@ def fit_development(
             continue
         try:
             params = standardization_params(directional, movement)
+            params_by_key[candidate.key] = params
+            _put_params(row, params)
             directional_z, movement_z, _ = transform_predictors(
                 directional, movement, params
             )
             fit = ols_hc3_interaction(directional_z, movement_z, outcomes)
-        except (Campaign51Error, np.linalg.LinAlgError) as exc:  # type: ignore[name-defined]
+        except (Campaign51Error, np.linalg.LinAlgError) as exc:
             row["failure_reason"] = str(exc)
             rows.append(row)
             continue
-        row.update({
-            "rankable": True,
-            "directional_mean_development": params.directional_mean,
-            "directional_sd_development": params.directional_sd,
-            "state_mean_development": params.state_mean,
-            "state_sd_development": params.state_sd,
-            "beta0": fit.beta0,
-            "beta_directional": fit.beta_directional,
-            "beta_state": fit.beta_state,
-            "beta_interaction": fit.beta_interaction,
-            "se_interaction_hc3": fit.se_interaction_hc3,
-            "t_stat": fit.t_stat,
-            "raw_p_value": fit.p_value,
-            "ci_low": fit.ci_low,
-            "ci_high": fit.ci_high,
-        })
+        _put_fit(row, fit)
         raw_p[candidate.key] = fit.p_value
-        state[candidate.key] = {"params": params, "beta": fit.beta_interaction}
         rows.append(row)
 
     adjusted = holm_adjust(raw_p, FAMILY_SIZE)
@@ -280,14 +265,14 @@ def fit_development(
             row["status"] = classify_development(
                 True, row["holm_adjusted_p_value"]
             )
-    return rows, state
+    return rows, params_by_key
 
 
 def fit_validation(
     candidates: list[Candidate],
     close_by_time: dict[datetime, float],
     development_rows: list[dict[str, Any]],
-    development_state: dict[str, Any],
+    params_by_key: dict[str, Standardization],
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     raw_p: dict[str, float] = {}
@@ -298,46 +283,28 @@ def fit_validation(
             candidate, close_by_time, VALIDATION_START, VALIDATION_END
         )
         row["n"] = len(outcomes)
-        dev_row = development_by_key[candidate.key]
-        dev = development_state.get(candidate.key)
-        if dev is not None:
-            params = dev["params"]
-            row.update({
-                "directional_mean_development": params.directional_mean,
-                "directional_sd_development": params.directional_sd,
-                "state_mean_development": params.state_mean,
-                "state_sd_development": params.state_sd,
-            })
+        params = params_by_key.get(candidate.key)
+        if params is not None:
+            _put_params(row, params)
         gate_failure = support_gate("validation", candidate.horizon_hours, len(outcomes))
         if gate_failure is not None:
             row["failure_reason"] = gate_failure
             rows.append(row)
             continue
-        if dev is None:
+        if params is None:
             row["failure_reason"] = "DEVELOPMENT_STANDARDIZATION_UNAVAILABLE"
             rows.append(row)
             continue
         try:
             directional_z, movement_z, _ = transform_predictors(
-                directional, movement, dev["params"]
+                directional, movement, params
             )
             fit = ols_hc3_interaction(directional_z, movement_z, outcomes)
-        except (Campaign51Error, np.linalg.LinAlgError) as exc:  # type: ignore[name-defined]
+        except (Campaign51Error, np.linalg.LinAlgError) as exc:
             row["failure_reason"] = str(exc)
             rows.append(row)
             continue
-        row.update({
-            "rankable": True,
-            "beta0": fit.beta0,
-            "beta_directional": fit.beta_directional,
-            "beta_state": fit.beta_state,
-            "beta_interaction": fit.beta_interaction,
-            "se_interaction_hc3": fit.se_interaction_hc3,
-            "t_stat": fit.t_stat,
-            "raw_p_value": fit.p_value,
-            "ci_low": fit.ci_low,
-            "ci_high": fit.ci_high,
-        })
+        _put_fit(row, fit)
         raw_p[candidate.key] = fit.p_value
         rows.append(row)
 
@@ -345,13 +312,13 @@ def fit_validation(
     for row in rows:
         if row["rankable"]:
             row["holm_adjusted_p_value"] = adjusted[row["candidate_key"]]
-            dev_row = development_by_key[row["candidate_key"]]
+            development = development_by_key[row["candidate_key"]]
             row["status"] = classify_validation(
-                dev_row["status"],
+                development["status"],
                 True,
-                _finite_or_none(dev_row["beta_interaction"]),
-                _finite_or_none(row["beta_interaction"]),
-                _finite_or_none(row["holm_adjusted_p_value"]),
+                development["beta_interaction"],
+                row["beta_interaction"],
+                row["holm_adjusted_p_value"],
             )
     return rows
 
@@ -365,23 +332,25 @@ def shortlist_rows(
     validation_by_key = {row["candidate_key"]: row for row in validation_rows}
     shortlist: list[dict[str, Any]] = []
     for index, candidate in enumerate(candidates):
-        dev = development_by_key[candidate.key]
-        val = validation_by_key[candidate.key]
-        if val["status"] != "VALIDATION_SUPPORTED":
+        development = development_by_key[candidate.key]
+        validation = validation_by_key[candidate.key]
+        if validation["status"] != "VALIDATION_SUPPORTED":
             continue
-        dev_beta = float(dev["beta_interaction"])
-        val_beta = float(val["beta_interaction"])
+        development_beta = float(development["beta_interaction"])
+        validation_beta = float(validation["beta_interaction"])
         shortlist.append({
             "candidate_ordinal": index,
             "candidate_key": candidate.key,
             "directional_variable": candidate.directional_variable,
             "movement_state": candidate.movement_state,
             "horizon_hours": candidate.horizon_hours,
-            "development_beta_interaction": dev_beta,
-            "development_holm_adjusted_p_value": dev["holm_adjusted_p_value"],
-            "validation_beta_interaction": val_beta,
-            "validation_holm_adjusted_p_value": val["holm_adjusted_p_value"],
-            "validation_to_development_abs_ratio": abs(val_beta) / abs(dev_beta),
+            "development_beta_interaction": development_beta,
+            "development_holm_adjusted_p_value": development["holm_adjusted_p_value"],
+            "validation_beta_interaction": validation_beta,
+            "validation_holm_adjusted_p_value": validation["holm_adjusted_p_value"],
+            "validation_to_development_abs_ratio": (
+                abs(validation_beta) / abs(development_beta)
+            ),
         })
     return shortlist
 
@@ -396,9 +365,9 @@ def _status_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
 def execute(source: Path, output_dir: Path) -> dict[str, Any]:
     timestamps, close_by_time = load_source_without_holdout_close(source)
     candidates = candidate_inventory()
-    development, development_state = fit_development(candidates, close_by_time)
+    development, params_by_key = fit_development(candidates, close_by_time)
     validation = fit_validation(
-        candidates, close_by_time, development, development_state
+        candidates, close_by_time, development, params_by_key
     )
     shortlist = shortlist_rows(candidates, development, validation)
 
@@ -440,10 +409,18 @@ def execute(source: Path, output_dir: Path) -> dict[str, Any]:
 
     output_dir.mkdir(parents=True, exist_ok=True)
     outputs = {
-        "campaign51_candidate_inventory.csv": canonical_csv_bytes(INVENTORY_FIELDS, inventory),
-        "campaign51_development_results.csv": canonical_csv_bytes(RESULT_FIELDS, development),
-        "campaign51_validation_results.csv": canonical_csv_bytes(RESULT_FIELDS, validation),
-        "campaign51_shortlist.csv": canonical_csv_bytes(SHORTLIST_FIELDS, shortlist),
+        "campaign51_candidate_inventory.csv": canonical_csv_bytes(
+            INVENTORY_FIELDS, inventory
+        ),
+        "campaign51_development_results.csv": canonical_csv_bytes(
+            RESULT_FIELDS, development
+        ),
+        "campaign51_validation_results.csv": canonical_csv_bytes(
+            RESULT_FIELDS, validation
+        ),
+        "campaign51_shortlist.csv": canonical_csv_bytes(
+            SHORTLIST_FIELDS, shortlist
+        ),
         "campaign51_stage_manifest.json": canonical_json_bytes(manifest),
     }
     for name, payload in outputs.items():
