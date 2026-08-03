@@ -10,7 +10,7 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Campaign:** Campaign #51 — Conditional Directional Value of Supported BTC Movement States
 
-**Status:** IMPLEMENTATION VALIDATION HOLD — source-only implementation preflight passed; focused synthetic-test evidence remains required before any development/validation execution decision.
+**Status:** RUNNER VALIDATION HOLD — the focused Campaign #51 synthetic suite was reported PASS; a development/validation execution GO and governed runner are committed. New runner-boundary tests must pass locally before real development/validation execution.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -35,6 +35,12 @@ Campaign #51 tests conditional association, not unconditional directional predic
 - research core: `a0e4857c8582682d0f025085456f56e76e2c2d63`
 - source-only implementation preflight: `2a597e0c6f32b3e4d93931ad5e948bbdd4960762`
 - focused synthetic tests: `2309356ac0ef11c279d6c2d3a75c78d626a861f8`
+- development/validation execution GO: `e9eba6f7141851934fbe6a31b4f5c999493d7ab8`
+- governed runner initial commit: `5d3680e59ea3dd463d196f15149cc9a99f627d96`
+- governed runner correction: `4fb144de0ddd49dff68ac6b450e35384e49a31c5`
+- runner-boundary tests: `5e87611edc352c29ec3bf9cd14c46674df37be96`
+
+The exact pytest count for the earlier focused synthetic suite was not supplied and is not asserted; the suite was reported PASS.
 
 ## Governed source
 
@@ -47,7 +53,9 @@ Only this source is authorized:
 - coverage: `2018-01-01 00:00:00` through `2025-12-31 00:00:00`
 - exact governed missing timestamps: `36`
 
-Only `timestamp` and `close` may later enter calculations. No interpolation, filling, resampling, matching, shifting, synthetic bars, timestamp repair, source substitution, or source acquisition is permitted.
+Only `timestamp` and pre-2025 `close` values may enter development/validation calculations. No interpolation, filling, resampling, matching, shifting, synthetic bars, timestamp repair, source substitution, or source acquisition is permitted.
+
+The runner may validate full-source timestamps and bytes, but it must not parse or analytically load any 2025 close value.
 
 ## Frozen family and model
 
@@ -61,7 +69,7 @@ For each candidate:
 `Y = beta0 + betaD * D_z + betaS * S_z + betaI * (D_z * S_z) + epsilon`
 
 - primary estimand: `betaI`;
-- candidate-specific development-only standardization with population standard deviation (`ddof=0`), reused unchanged later;
+- candidate-specific development-only standardization with population standard deviation (`ddof=0`), reused unchanged in validation;
 - OLS with HC3 covariance;
 - two-sided normal test and 95% confidence interval;
 - Holm correction across all 12 candidates separately within each stage.
@@ -90,56 +98,46 @@ Validation support additionally requires prior development support, the same non
 
 Only validation-supported candidates may enter a later confirmation shortlist. An empty shortlist closes Campaign #51 and prohibits 2025 analytical loading.
 
-## Implementation-validation evidence
+## Existing validation evidence
 
-The governed source-only implementation preflight returned `PASS`.
-
-Identity and contract evidence:
+Source-only implementation preflight: `PASS`.
 
 - candidate count: `12`
 - model term count: `4`
 - covariance: `HC3`
 - multiplicity: `Holm`
-- multiplicity family size: `12`
-- specification commit: `c2f4770ac84e460a387ad2c341d7a4129034b720`
-- source SHA-256, byte count, row count, timestamp endpoints, and 36-gap inventory matched the frozen contract
-- all 12 canonical candidate keys matched the frozen family
-- all stage/horizon support gates matched the frozen specification
+- family size: `12`
+- source identity and exact 36-gap inventory matched
+- prices loaded: `false`
+- predictors generated: `false`
+- forward outcomes generated: `false`
+- models fitted: `false`
+- development/validation execution enabled: `false`
+- holdout loaded: `false`
+- confirmation enabled: `false`
+- runtime modified: `false`
 
-Safety flags:
-
-- `prices_loaded`: `false`
-- `predictors_generated`: `false`
-- `forward_outcomes_generated`: `false`
-- `models_fitted`: `false`
-- `development_validation_execution_enabled`: `false`
-- `holdout_loaded`: `false`
-- `confirmation_enabled`: `false`
-- `runtime_modified`: `false`
-
-The preflight therefore validates source identity and implementation constants without generating or inspecting governed predictors, outcomes, model results, or 2025 analytical values.
-
-Focused synthetic-test console evidence remains pending.
+Focused synthetic suite: reported `PASS`.
 
 ## Current authorization
 
-**Decision:** HOLD pending focused synthetic-test evidence.
+**Decision:** HOLD for local validation of the newly committed governed runner.
 
 Authorized now:
 
-- run `tests/test_campaign51_conditional_directional.py`;
-- inspect only the synthetic test result;
-- correct implementation defects without changing the frozen design;
-- update this board with the exact test evidence;
-- consider a separate development/validation execution decision only after the focused suite passes.
+- pull the execution GO, corrected runner, and runner-boundary tests;
+- run the focused Campaign #51 core tests together with the runner-boundary tests;
+- inspect only the local test result;
+- correct runner defects without changing the frozen statistical design;
+- after the runner tests pass, execute the governed development/validation runner twice into separate directories;
+- compare the five canonical output files for exact file-set and byte identity;
+- inspect development/validation results only after both runs complete successfully and replay identity passes.
 
 Not authorized:
 
-- a real development/validation runner;
-- generation or inspection of real Campaign #51 predictors or forward outcomes;
-- fitting Campaign #51 models on governed close values;
-- analytically loading any 2025 close;
-- changing any frozen method in response to implementation results;
+- parsing or analytically loading any 2025 close value;
+- historical confirmation;
+- changing any frozen candidate, formula, interval, support gate, model, covariance, multiplicity, or pass rule;
 - economic-value testing or Core v1 comparison;
 - paper trading;
 - any runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
@@ -150,8 +148,8 @@ Not authorized:
 2. Source-and-variable feasibility inventory — completed.
 3. Hypothesis-family selection — completed.
 4. Frozen statistical specification — completed.
-5. Implementation and synthetic tests — implementation preflight passed; focused tests pending.
-6. Development and validation execution — not authorized.
+5. Implementation and synthetic tests — completed.
+6. Development and validation execution — runner committed; local runner validation pending.
 7. Untouched historical confirmation — not authorized.
 8. Economic testing — not authorized.
 9. Forward paper trading — not authorized.
