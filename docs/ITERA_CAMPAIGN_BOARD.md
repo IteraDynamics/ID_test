@@ -10,7 +10,7 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Campaign:** Campaign #51 — Conditional Directional Value of Supported BTC Movement States
 
-**Status:** PLANNING HOLD — timestamp-only source feasibility passed; focused helper-test evidence remains pending before hypothesis-family selection may be considered. Campaign #51 forward outcomes, model fitting, family selection, holdout analysis, economic testing, paper trading, and runtime/strategy work remain prohibited.
+**Status:** FAMILY SELECTED — planning and non-outcome feasibility complete; frozen statistical specification is the next authorized deliverable. Predictor generation, forward outcomes, analytical implementation, model fitting, holdout access, economic testing, paper trading, and runtime/strategy work remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -18,9 +18,9 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 ## Objective
 
-> Determine whether BTC volatility and drawdown states already supported by Campaign #48 identify conditions under which a separately defined, pre-existing directional variable has materially different forward directional value.
+> Determine whether BTC volatility and drawdown states already supported by Campaign #48 identify conditions under which a separately defined recent-return variable has materially different forward directional value.
 
-Campaign #51 does not ask volatility or drawdown to predict direction unconditionally. It asks whether supported movement states condition the value of independently defined directional information.
+Campaign #51 does not ask volatility or drawdown to predict direction unconditionally. It asks whether supported movement states condition the directional association of recent signed return.
 
 ## Governed antecedents
 
@@ -44,16 +44,17 @@ Campaign #50 is permanently closed as a valid governed negative result.
 
 Campaign #50 may not be reopened through post-outcome method changes.
 
-## Campaign #51 planning records
+## Campaign #51 governed records
 
 - planning charter: `docs/research/CAMPAIGN_51_CONDITIONAL_DIRECTIONAL_VALUE_PLANNING_CHARTER.md`; commit `59359493787dcac855063debbda8a76895a55378`
 - source-and-variable feasibility inventory: `docs/research/CAMPAIGN_51_SOURCE_VARIABLE_FEASIBILITY_INVENTORY.md`; commit `5bdef3783975902516bac49ca23b00b023d108f9`
 - timestamp-only feasibility preflight: `scripts/preflight_campaign51_source_variable_feasibility.py`; commit `d6348422f03529f065abe1d096086c01c30ded9d`
 - preflight helper tests: `tests/test_campaign51_source_variable_feasibility.py`; commit `6aae3b7d83708b8281eafd0efa056b1d104c366b`
+- hypothesis-family selection: `docs/research/CAMPAIGN_51_HYPOTHESIS_FAMILY_SELECTION.md`; commit `11db395e117343e10ea836231b0903b982e9a674`
 
 ## Governed source
 
-The inventory uses the existing Campaign #48 hourly BTC source only:
+Only the existing Campaign #48 hourly BTC source is authorized for planning:
 
 - path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`
 - SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`
@@ -61,88 +62,82 @@ The inventory uses the existing Campaign #48 hourly BTC source only:
 - coverage: `2018-01-01 00:00:00` through `2025-12-31 00:00:00`
 - exact governed missing timestamps: 36 under Campaign #48 amendment `d9fc7e7103a5033a9dbbe06b7abf93aea27d863b`
 
-No interpolation, fill, resampling, matching, shifting, synthetic bars, or source repair is permitted.
+No interpolation, filling, resampling, matching, shifting, synthetic bars, or source repair is permitted.
 
-## Inventory finding
+## Selected hypothesis family
 
-Existing transparent directional variables:
+Directional variables:
 
-- 24-hour signed log return;
-- 72-hour signed log return;
-- 168-hour signed log return;
-- distance from the 168-hour mean;
-- position within the 168-hour range.
+- trailing 24-hour signed log return;
+- trailing 168-hour signed log return.
 
-Campaign #48-supported movement-state variables:
+Conditioning movement states:
 
 - trailing 24-hour realized volatility;
-- trailing 168-hour realized volatility;
-- drawdown from the trailing 168-hour high.
+- drawdown from the trailing 168-hour close high.
 
-The inventory recommends, but does not yet select, a narrow 12-candidate family:
+Proposed forward horizons:
 
-- directional variables: 24-hour and 168-hour signed return;
-- conditioning states: 24-hour realized volatility and 168-hour drawdown;
-- horizons: 24, 72, and 168 hours;
-- candidate effect: continuous directional-variable × movement-state interaction;
-- count: `2 × 2 × 3 = 12`.
+- 24 hours;
+- 72 hours;
+- 168 hours.
 
-The 72-hour return, 168-hour realized volatility, and price-location variables remain documented alternatives. They are excluded from the initial recommendation to limit nested-variable duplication and multiplicity, not because of Campaign #51 outcomes.
+Candidate effect:
 
-## Timestamp-only feasibility evidence
+- one continuous directional variable;
+- one continuous movement-state variable;
+- their interaction;
+- later forward directional BTC return outcome, subject to a separately frozen statistical specification.
 
-The governed preflight passed against the frozen Campaign #48 source.
+Candidate count:
+
+- `2 × 2 × 3 = 12`.
+
+The trailing 72-hour return, trailing 168-hour realized volatility, distance from the trailing 168-hour mean, and position within the trailing 168-hour range remain excluded to reduce nested-variable duplication, interpretation overlap, and multiplicity. Their exclusion was not informed by Campaign #51 outcomes.
+
+## Non-outcome feasibility evidence
+
+Timestamp-only source preflight: `PASS`.
 
 Safety flags:
 
-- `status`: `PASS`
-- `prices_loaded`: `false`
-- `predictors_generated`: `false`
-- `forward_outcomes_generated`: `false`
-- `models_fitted`: `false`
-- `holdout_outcomes_loaded`: `false`
-- `runtime_modified`: `false`
-- `family_selected`: `false`
+- prices loaded: `false`;
+- predictors generated: `false`;
+- forward outcomes generated: `false`;
+- models fitted: `false`;
+- holdout outcomes loaded: `false`;
+- runtime modified: `false`.
 
-Source identity:
-
-- SHA-256 matched the governed source;
-- rows: `70,069`;
-- first timestamp: `2018-01-01 00:00:00`;
-- last timestamp: `2025-12-31 00:00:00`;
-- governed missing timestamps: `36`.
-
-Calendar-only stage-contained endpoint anchor counts:
+Stage-contained endpoint anchor counts on the existing 168-hour anchor grid:
 
 - development: 24h `248`, 72h `248`, 168h `247`;
 - validation: 24h `104`, 72h `103`, 168h `103`;
 - untouched confirmation: 24h `51`, 72h `50`, 168h `50`.
 
-The recommended 12-candidate family is structurally feasible on the frozen 168-hour anchor grid. This finding is based only on source bytes, schema, timestamps, exact trailing-window availability, and exact future endpoint existence. No close values or Campaign #51 outcomes were loaded.
-
-Focused helper-test console evidence has not yet been supplied and remains the final gate for completing this planning-validation stage.
+Focused timestamp-only helper tests were reported PASS. The exact pytest count was not supplied and is not asserted by this board.
 
 ## Current authorization
 
-**Decision:** HOLD pending focused helper-test evidence.
+**Decision:** GO to draft and freeze a statistical specification only.
 
 Authorized now:
 
-- run `tests/test_campaign51_source_variable_feasibility.py`;
-- inspect only its synthetic test result;
-- correct defects in the timestamp-only inventory tooling without changing the planning recommendation in response to outcomes;
-- update this board with the focused test evidence;
-- draft a family-selection memo only after the focused tests pass.
+- define the exact Campaign #51 model equation and interpretation of the interaction term;
+- define predictor transformations and development-only standardization rules;
+- freeze development, validation, and untouched-confirmation intervals;
+- freeze anchor spacing, exact-window availability, and stage-contained endpoint rules;
+- set ex ante minimum support gates using only calendar/source mechanics;
+- select covariance estimator, inferential procedure, multiplicity correction, and pass rules;
+- define deterministic artifact and replay requirements;
+- inspect no Campaign #51 forward outcomes while doing so;
+- update this board with the frozen specification and a separate implementation-authorization decision.
 
 Not authorized:
 
-- parsing close values in the Campaign #51 preflight;
-- generating Campaign #51 predictors or forward outcomes;
-- selecting or changing variables based on forward performance;
-- fitting models or computing coefficients, p-values, rankings, or support decisions;
-- analytically loading 2025 holdout values;
-- freezing the statistical specification;
-- implementing an analytical runner;
+- generating Campaign #51 predictor values or forward returns;
+- fitting Campaign #51 models or computing coefficients, p-values, rankings, or support decisions;
+- analytically loading 2025 values;
+- implementing an analytical runner before a separate GO;
 - economic-value testing or Core v1 comparison;
 - paper trading;
 - any runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
@@ -150,9 +145,9 @@ Not authorized:
 ## Mandatory stage separation
 
 1. Planning charter — **completed**.
-2. Source-and-variable inventory — **timestamp feasibility passed; focused tests pending**.
-3. Hypothesis-family selection — **pending**.
-4. Frozen statistical specification — **not authorized**.
+2. Source-and-variable feasibility inventory — **completed**.
+3. Hypothesis-family selection — **completed**.
+4. Frozen statistical specification — **authorized next**.
 5. Implementation and synthetic tests — **not authorized**.
 6. Development and validation execution — **not authorized**.
 7. Untouched historical confirmation — **not authorized**.
@@ -160,12 +155,14 @@ Not authorized:
 9. Forward paper trading — **not authorized**.
 10. Limited-live-capital review — **not authorized**.
 
+Passing one stage does not authorize the next.
+
 ## Immediate sequence
 
-1. Pull this board update.
-2. Run the focused timestamp-only helper tests.
-3. Record the exact test result.
-4. If they pass, consider a separate family-selection memo and board decision.
+1. Draft the exact statistical specification without generating outcomes.
+2. Reconcile support gates against the documented calendar-only maxima.
+3. Freeze model, inference, multiplicity, shortlist, and replay rules.
+4. Return to this board for a separate implementation decision.
 
 ## Passive campaign
 
