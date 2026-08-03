@@ -10,7 +10,7 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Campaign:** Campaign #51 — Conditional Directional Value of Supported BTC Movement States
 
-**Status:** PLANNING OPEN — source-and-variable feasibility inventory authorized; implementation, forward outcomes, model fitting, holdout access, economic testing, paper trading, and runtime/strategy work prohibited.
+**Status:** PLANNING OPEN — source-and-variable inventory documented; timestamp-only source feasibility validation authorized next. Campaign #51 forward outcomes, model fitting, family selection, holdout analysis, economic testing, paper trading, and runtime/strategy work remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -26,138 +26,108 @@ Campaign #51 does not ask volatility or drawdown to predict direction unconditio
 
 ### Campaign #48
 
-Campaign #48 established 15 supported research associations under its frozen BTC price-state design.
+Campaign #48 established 15 supported research associations concentrated in recent realized volatility, future movement magnitude/volatility, and drawdown-linked future volatility. No directional-return candidate was supported.
 
-All supported associations were concentrated in:
-
-- recent realized volatility and future absolute return;
-- recent realized volatility and future realized volatility;
-- deeper drawdown from the trailing 168-hour high and higher future realized volatility.
-
-No directional-return candidate was supported.
-
-Campaign #48 closure:
-
-- `77c1ae8c70de7a16cca847aeb1a4cb2eea638007`
-
-Campaign #48 canonical publication:
-
-- `fd7ee01`
+- closure: `77c1ae8c70de7a16cca847aeb1a4cb2eea638007`
+- canonical publication: `fd7ee01`
 
 ### Campaign #50
 
 Campaign #50 is permanently closed as a valid governed negative result.
 
-Final closure record:
+- final closure: `docs/research/CAMPAIGN_50_FINAL_CLOSURE.md`
+- closure commit: `abc38f2cba5cb28603632c4302845e490cb9f4c1`
+- discovery-supported: `0`
+- validation-supported: `0`
+- shortlist: empty
+- 2025 holdout: untouched
 
-- `docs/research/CAMPAIGN_50_FINAL_CLOSURE.md`
-- commit `abc38f2cba5cb28603632c4302845e490cb9f4c1`
+Campaign #50 may not be reopened through post-outcome method changes.
 
-Final result:
+## Campaign #51 planning records
 
-- 24 frozen equity-breadth candidates;
-- 16 `DISCOVERY_NOT_SUPPORTED`;
-- 8 `INSUFFICIENT_EVENT_SUPPORT`;
-- 0 discovery-supported;
-- 0 validation-supported;
-- empty shortlist;
-- 2025 holdout untouched;
-- all six canonical artifacts byte-identical across two governed replays.
+- planning charter: `docs/research/CAMPAIGN_51_CONDITIONAL_DIRECTIONAL_VALUE_PLANNING_CHARTER.md`; commit `59359493787dcac855063debbda8a76895a55378`
+- source-and-variable feasibility inventory: `docs/research/CAMPAIGN_51_SOURCE_VARIABLE_FEASIBILITY_INVENTORY.md`; commit `5bdef3783975902516bac49ca23b00b023d108f9`
+- timestamp-only feasibility preflight: `scripts/preflight_campaign51_source_variable_feasibility.py`; commit `d6348422f03529f065abe1d096086c01c30ded9d`
+- preflight helper tests: `tests/test_campaign51_source_variable_feasibility.py`; commit `6aae3b7d83708b8281eafd0efa056b1d104c366b`
 
-Campaign #50 may not be reopened by post-outcome method changes.
+## Governed source
 
-## Campaign #51 planning charter
+The inventory uses the existing Campaign #48 hourly BTC source only:
 
-The governing planning document is:
+- path: `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`
+- SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`
+- rows: `70,069`
+- coverage: `2018-01-01 00:00:00` through `2025-12-31 00:00:00`
+- exact governed missing timestamps: 36 under Campaign #48 amendment `d9fc7e7103a5033a9dbbe06b7abf93aea27d863b`
 
-- `docs/research/CAMPAIGN_51_CONDITIONAL_DIRECTIONAL_VALUE_PLANNING_CHARTER.md`
-- commit `59359493787dcac855063debbda8a76895a55378`
+No interpolation, fill, resampling, matching, shifting, synthetic bars, or source repair is permitted.
 
-The charter freezes the planning purpose and stage boundaries but does not select or authorize a final candidate family.
+## Inventory finding
 
-## Planning scope
+Existing transparent directional variables:
 
-Initial directional-variable inventory may inspect only variables that are:
+- 24-hour signed log return;
+- 72-hour signed log return;
+- 168-hour signed log return;
+- distance from the 168-hour mean;
+- position within the 168-hour range.
 
-- already present in the repository or mechanically derivable from a governed price source;
-- defined independently of Campaign #51 outcomes;
-- interpretable before testing;
-- chronologically and leakage-safe;
-- available with enough coverage for development, validation, and untouched confirmation;
-- research-only and disconnected from runtime behavior.
-
-Possible inventory categories include:
-
-- recent signed return or momentum state;
-- long-horizon trend state;
-- price-location or breakout state;
-- existing deterministic research-only directional intent or score.
-
-This is inventory scope, not authorization to test every category.
-
-Initial movement-state inventory is limited to Campaign #48-supported families:
+Campaign #48-supported movement-state variables:
 
 - trailing 24-hour realized volatility;
 - trailing 168-hour realized volatility;
 - drawdown from the trailing 168-hour high.
 
-No threshold optimization is authorized.
+The inventory recommends, but does not yet select, a narrow 12-candidate family:
 
-## Candidate-budget constraint
+- directional variables: 24-hour and 168-hour signed return;
+- conditioning states: 24-hour realized volatility and 168-hour drawdown;
+- horizons: 24, 72, and 168 hours;
+- candidate effect: continuous directional-variable × movement-state interaction;
+- count: `2 × 2 × 3 = 12`.
 
-The later frozen candidate family should be deliberately small:
+The 72-hour return, 168-hour realized volatility, and price-location variables remain documented alternatives. They are excluded from the initial recommendation to limit nested-variable duplication and multiplicity, not because of Campaign #51 outcomes.
 
-- preferred range: 6 to 12 candidates;
-- planning ceiling: 18 candidates unless a separate pre-outcome board decision justifies more.
+## Proposed feasibility intervals
 
-Candidate count must be frozen before any outcome generation.
+For timestamp-only review only, not yet frozen:
 
-## Required next deliverable
+- development: `2018-01-01 00:00:00` through `2022-12-31 23:00:00`
+- validation: `2023-01-01 00:00:00` through `2024-12-31 23:00:00`
+- untouched confirmation: `2025-01-01 00:00:00` through `2025-12-31 00:00:00`
 
-A source-and-variable feasibility inventory that generates no Campaign #51 forward outcomes.
+The feasibility preflight:
 
-It must document:
-
-- exact candidate directional variables already available;
-- exact formulas and source lineage;
-- compatible Campaign #48 movement-state variables;
-- exact common date coverage;
-- source hashes, schemas, cadence, and missing-data constraints;
-- calendar-only maximum sample counts by proposed horizon and partition;
-- leakage, duplication, and dependency concerns;
-- a recommended narrow family for later board selection.
-
-It must not calculate:
-
-- forward returns;
-- conditional directional accuracy;
-- coefficients;
-- p-values;
-- rankings;
-- support outcomes;
-- economic performance.
+- reads and validates source bytes, schema, and timestamps;
+- does not parse or load close values;
+- uses the Campaign #48 168-hour anchor grid;
+- requires exact trailing timestamp windows;
+- checks only whether exact future endpoint timestamps exist inside each proposed stage;
+- generates no predictor values, forward returns, models, coefficients, p-values, rankings, or economic results.
 
 ## Current authorization
 
-**Decision:** GO for planning and observation-only feasibility inventory only.
+**Decision:** GO to validate the inventory with tests and one real timestamp-only preflight. Family selection remains pending.
 
 Authorized now:
 
-- inspect repository research variables and source lineage;
-- inspect Campaign #48 definitions and governed artifacts;
-- inventory directional variables without generating Campaign #51 outcomes;
-- validate source hashes, schemas, timestamp ordering, cadence, and coverage;
-- compute calendar-only sample feasibility without loading forward outcomes;
-- draft a family-selection memo based only on economic rationale and non-outcome feasibility;
-- update this board with planning evidence.
+- run `tests/test_campaign51_source_variable_feasibility.py`;
+- run `scripts.preflight_campaign51_source_variable_feasibility` against the governed source;
+- inspect timestamp-only source identity, gap inventory, coverage, and stage/horizon counts;
+- correct defects in the timestamp-only inventory tooling without changing the planning recommendation in response to outcomes;
+- update this board with non-outcome feasibility evidence;
+- draft a later family-selection memo only after timestamp feasibility passes.
 
 Not authorized:
 
-- implementation of a Campaign #51 analytical runner;
-- generation of Campaign #51 forward outcomes;
+- parsing close values in the Campaign #51 preflight;
+- generating Campaign #51 predictors or forward outcomes;
+- selecting or changing variables based on forward performance;
 - fitting models or computing coefficients, p-values, rankings, or support decisions;
-- selecting variables based on observed forward performance;
-- loading an untouched holdout analytically;
+- analytically loading 2025 holdout values;
+- freezing the statistical specification;
+- implementing an analytical runner;
 - economic-value testing or Core v1 comparison;
 - paper trading;
 - any runtime, threshold, regime, classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or model-training change.
@@ -165,9 +135,9 @@ Not authorized:
 ## Mandatory stage separation
 
 1. Planning charter — **completed**.
-2. Source-and-variable feasibility inventory — **authorized next**.
+2. Source-and-variable inventory — **documented; timestamp validation pending**.
 3. Hypothesis-family selection — **pending**.
-4. Frozen statistical specification — **not authorized yet**.
+4. Frozen statistical specification — **not authorized**.
 5. Implementation and synthetic tests — **not authorized**.
 6. Development and validation execution — **not authorized**.
 7. Untouched historical confirmation — **not authorized**.
@@ -175,16 +145,13 @@ Not authorized:
 9. Forward paper trading — **not authorized**.
 10. Limited-live-capital review — **not authorized**.
 
-Passing one stage does not authorize the next.
-
 ## Immediate sequence
 
-1. Inventory existing deterministic directional variables and their exact formulas.
-2. Map them to governed source files and date coverage.
-3. Reconcile them with Campaign #48-supported movement-state definitions.
-4. Produce calendar-only feasibility and leakage analysis.
-5. Recommend one narrow candidate family without examining forward outcomes.
-6. Return to the board for family-selection authorization.
+1. Pull the inventory, preflight, tests, and board update.
+2. Run the focused timestamp-only tests.
+3. Run the governed timestamp-only preflight.
+4. Record exact stage/horizon counts and all safety flags.
+5. Decide whether the recommended 12-candidate family is feasible for a later selection memo.
 
 ## Passive campaign
 
