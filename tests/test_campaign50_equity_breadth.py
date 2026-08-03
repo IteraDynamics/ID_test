@@ -9,6 +9,7 @@ import pytest
 from research.campaign50_equity_breadth import (
     BREADTH_MEMBERS,
     Campaign50Error,
+    MINIMUM_TOTAL_SUPPORT,
     TARGETS,
     anchor_indices,
     build_predictors,
@@ -126,6 +127,12 @@ def test_holm_is_deterministic_and_monotone() -> None:
 
 
 def test_support_gates_and_sign_rules() -> None:
+    assert MINIMUM_TOTAL_SUPPORT["development"] == {5: 180, 20: 50, 60: 16}
+    assert support_gate("development", "breadth50", 20, [0.0] * 49)[0] == "INSUFFICIENT_TOTAL_SUPPORT"
+    assert support_gate("development", "breadth50", 20, [0.0] * 50)[0] is None
+    assert support_gate("development", "breadth50", 60, [0.0] * 15)[0] == "INSUFFICIENT_TOTAL_SUPPORT"
+    assert support_gate("development", "breadth50", 60, [0.0] * 16)[0] is None
+
     status, n, event_n, non_event_n = support_gate(
         "development", "narrow_strength", 20, [1.0] * 7 + [0.0] * 60
     )
