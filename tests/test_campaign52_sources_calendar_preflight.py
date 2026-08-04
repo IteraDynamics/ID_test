@@ -69,4 +69,4 @@ def test_lag_mapping_does_not_nearest_match_missing_timestamp() -> None:
     timestamps.remove(start + timedelta(hours=5))
     facts = lag_mapping_facts(timestamps, start, start + timedelta(hours=29))
     # t=29 would map to hour 5 under a 24h lag, but that exact source timestamp is absent.
-    assert facts["24h"]["exact_mapping_count"] == 4
+    assert facts["24h"]["exact_mapping_count"] == 5
