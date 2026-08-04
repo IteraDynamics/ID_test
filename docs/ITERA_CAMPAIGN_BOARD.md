@@ -10,7 +10,7 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** SOURCE-PREFLIGHT VALIDATION HOLD — the frozen statistical specification, source-only identity/calendar preflight, and focused synthetic tests are committed. Local test evidence and source-only preflight evidence are required before any capture/replay implementation decision.
+**Status:** SOURCE/CALENDAR PREFLIGHT PASS — source identities and stage geometry are frozen. Capture/replay adapter implementation and synthetic equivalence tests are the next authorized deliverable. Canonical Core outcome execution, counterfactual generation, development/validation NAVs, performance metrics, and runtime/strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -27,8 +27,11 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - hypothesis-family selection: `e2aa9ceafe531e11bea7040fe4309ac9e65b8ab2`
 - frozen statistical specification: `14a96b4078eec516570fce0c289baa061398a995`
 - source/calendar preflight implementation: `597c32fd0b5ba3846b7ca74d13223ea3fdfa2ea1`
-- source/calendar synthetic tests: `59b8b4297be1df783aef52b537f9fc00730623e5`
-- inclusive-calendar coverage correction: `a250323fd816e0a9737822a6c8ea9323d6793645`
+- inclusive-date correction: `0ba18dfcb0193fc267b07691cf81fb36efd46593`
+- focused tests correction: `c3ce60580a973305da7c05e91cea656e91126a6f`
+- source/calendar PASS evidence: `docs/research/CAMPAIGN_52_SOURCE_CALENDAR_PREFLIGHT_EVIDENCE.md`; commit `bd2af6c11991a637510122bdb4a3300b9653be14`
+
+Focused synthetic tests were reported as passed. Exact pytest count/output was not supplied and is not asserted.
 
 ## Frozen Core reference
 
@@ -53,73 +56,106 @@ Exactly 20 controls:
 
 Primary endpoints are annualized geometric return, maximum drawdown magnitude, and Calmar ratio. Inference uses paired daily log returns, a deterministic 21-day moving-block bootstrap with 10,000 replications, and Holm correction across all 20 controls separately within each stage. The authoritative details remain in `docs/research/CAMPAIGN_52_STATISTICAL_SPECIFICATION.md`.
 
-## Governed source contract
+## Frozen source identities
 
-Authorized paths:
-
-- `data/btcusd_3600s_2018-01-01_to_2025-12-31.csv`
-- `data/ethusd_3600s_2018-01-01_to_2025-12-31.csv`
-- `data/SPY_1D.csv`
-- `data/QQQ_1D.csv`
-- `data/BIL_1D.csv`
-- `data/GLD_1D.csv`
-
-Known BTC identity:
+### BTC
 
 - SHA-256: `d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079`
 - bytes: `4,792,028`
 - rows: `70,069`
+- coverage: `2018-01-01 00:00:00` through `2025-12-31 00:00:00`
+- missing expected hourly timestamps: `36`
 
-The source-only preflight must freeze the remaining source hashes, byte counts, row counts, schemas, timestamp coverage, ordering, duplicate counts, cadence/missing-calendar characteristics, stage coverage, lag mapping counts, and 28-day block facts. No substitution, repair, interpolation, fill, or acquisition is permitted.
+### ETH
 
-## Source-only preflight implementation
+- SHA-256: `73721a1ef1dffbff64bf6ef2d92fb508a59b20d5c847684d96fdc7015912845f`
+- bytes: `4,550,061`
+- rows: `70,086`
+- coverage: `2018-01-01 00:00:00` through `2025-12-31 00:00:00`
+- missing expected hourly timestamps: `19`
 
-Script:
+### SPY
 
-- `scripts/preflight_campaign52_sources_calendar.py`
+- SHA-256: `85a24eb44e2377cdcb9c22b0f4062730d332ec276f371e71405e1cbfc0b8ac86`
+- bytes: `213,839`
+- rows: `2,010`
+- coverage: `2018-01-02` through `2025-12-30`
 
-Focused tests:
+### QQQ
 
-- `tests/test_campaign52_sources_calendar_preflight.py`
+- SHA-256: `34867c2b2da4aece23892b8e035e528f547173f3bc137cbe33b1295af0c1ff7b`
+- bytes: `214,940`
+- rows: `2,010`
+- coverage: `2018-01-02` through `2025-12-30`
 
-The preflight is limited to file bytes, headers, row counts, and timestamps. It must keep these flags false:
+### BIL
 
-- `prices_parsed`
-- `targets_generated`
-- `signals_generated`
-- `positions_generated`
-- `trades_generated`
-- `costs_generated`
-- `returns_generated`
-- `nav_generated`
-- `performance_metrics_calculated`
-- `capture_replay_implemented`
-- `runtime_modified`
-- `strategy_modified`
-- `weights_modified`
+- SHA-256: `8c7522487662bc65711deb5a784806fcdb5006f631d2359d3bbaaca9e226ae7a`
+- bytes: `156,266`
+- rows: `1,714`
+- coverage: `2019-03-08` through `2025-12-30`
+
+### GLD
+
+- SHA-256: `f740b144a1ceea2ce85afdc503175a5e7c0f96a8cfbd6ddea3ed26cfed7d491b`
+- bytes: `216,737`
+- rows: `2,010`
+- coverage: `2018-01-02` through `2025-12-30`
+
+All six sources are strictly increasing, duplicate-free, and cover both retrospective stages under governed inclusive-calendar-date semantics. No substitution, repair, interpolation, fill, or acquisition is permitted.
+
+## Frozen calendar facts
+
+Each stage contains:
+
+- `39` complete 28-day blocks;
+- one terminal remainder of `4` days.
+
+Exact lag mappings were verified for all six sources. Uncovered timestamps remain flat under the frozen design; no nearest matching, resampling, forward fill, wraparound, cross-stage carry, or cross-fold carry is permitted.
+
+## Source-preflight safety state
+
+The successful preflight reported all of the following false:
+
+- prices parsed
+- targets generated
+- signals generated
+- positions generated
+- trades generated
+- costs generated
+- returns generated
+- NAV generated
+- performance metrics calculated
+- capture/replay implemented
+- runtime modified
+- strategy modified
+- weights modified
 
 ## Current authorization
 
-**Decision:** HOLD pending local focused-test and source-only preflight evidence.
+**Decision:** GO for capture/replay adapter implementation and synthetic equivalence tests only.
 
 Authorized now:
 
-- pull the committed preflight and tests;
-- run `tests/test_campaign52_sources_calendar_preflight.py` only;
-- run the source-only preflight against the six exact governed paths;
-- inspect only the test output and emitted source/calendar JSON;
-- correct preflight or calendar-logic defects without changing the frozen Campaign #52 design;
-- update this board with exact evidence;
-- consider a separate capture/replay implementation decision only after both checks pass.
+- implement an additive, research-only adapter that captures the signed target exposure implied by canonical `StrategyIntent` before execution;
+- implement replay of an externally supplied target stream through unchanged cooldown, rebalance threshold, fill, fee, spread, slippage, cash-yield, and mark-to-market mechanics;
+- preserve the canonical engine and strategy modules unchanged;
+- implement deterministic target serialization under the frozen CSV contract;
+- add synthetic tests proving action-to-signed-target conversion, signed long/short/flat handling, native timestamp preservation, cooldown and threshold preservation, cost preservation, cash-yield preservation, stage/fold isolation, fail-closed malformed-stream handling, and deterministic serialization;
+- implement a synthetic capture-only versus canonical equivalence test;
+- implement a synthetic unmodified-target replay equivalence test;
+- document the implementation and return to this board for a separate source-backed equivalence-run decision.
 
 Not authorized:
 
-- parsing price or return values for analysis;
-- running canonical Core v1 or any counterfactual;
-- generating targets, signals, positions, trades, costs, returns, NAVs, or metrics;
-- implementing capture/replay or counterfactual execution;
-- changing any frozen method or Core setting;
-- paper trading, live execution, or runtime modification.
+- running the adapter against the six governed Campaign #52 sources;
+- generating or inspecting canonical Core targets from governed data;
+- generating static, lagged, or permuted controls;
+- generating governed trades, exposures, costs, returns, NAVs, or metrics;
+- development or validation execution;
+- bootstrap, multiplicity, rankings, or support decisions;
+- changing Core v1 strategy, regime, thresholds, cooldowns, costs, weights, folds, order behavior, execution semantics, runtime, dashboard, or model training;
+- paper trading or live execution.
 
 ## Mandatory stage separation
 
@@ -127,11 +163,12 @@ Not authorized:
 2. Reference-artifact/intervention feasibility — completed.
 3. Hypothesis-family selection — completed.
 4. Frozen statistical specification — completed.
-5. Source-only identity/calendar preflight — implementation committed; local evidence pending.
-6. Capture/replay implementation and synthetic tests — not authorized.
-7. Development/validation execution — not authorized.
-8. Prospective confirmation — not authorized.
-9. Economic, paper, or runtime action — not authorized.
+5. Source-only identity/calendar preflight — **PASS**.
+6. Capture/replay implementation and synthetic tests — **authorized next**.
+7. Governed-source capture/replay equivalence run — not authorized.
+8. Development/validation execution — not authorized.
+9. Prospective confirmation — not authorized.
+10. Economic, paper, or runtime action — not authorized.
 
 Passing one stage does not authorize the next.
 
