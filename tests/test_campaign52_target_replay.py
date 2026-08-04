@@ -192,6 +192,50 @@ def test_malformed_or_cross_stage_stream_fails_closed():
         )
 
 
+def test_hold_target_may_preserve_realized_exposure_drift_above_one():
+    df = synthetic_ohlcv(4)
+    records = [
+        TargetRecord("development", "2024", ts, "s", "BTC", "1H", "x", Action.HOLD.value, 0.0, 1.0004, i)
+        for i, ts in enumerate(df.index)
+    ]
+    replayed = run_capture_or_replay(
+        df=df,
+        strategy_module=None,
+        target_records=records,
+        stage="development",
+        fold="2024",
+        sleeve_label="s",
+        asset="BTC",
+        native_timeframe="1H",
+    )
+    assert len(replayed.targets) == len(df)
+
+
+def test_entry_target_outside_declared_range_still_fails_closed():
+    df = synthetic_ohlcv(4)
+    records = [
+        TargetRecord("development", "2024", ts, "s", "BTC", "1H", "x", Action.HOLD.value, 0.0, 0.0, i)
+        for i, ts in enumerate(df.index)
+    ]
+    records[0] = replace(
+        records[0],
+        action=Action.ENTER_LONG.value,
+        desired_exposure_frac=1.0,
+        signed_target_exposure=1.0004,
+    )
+    with pytest.raises(Campaign52ReplayError, match="TARGET_EXPOSURE_OUT_OF_RANGE"):
+        run_capture_or_replay(
+            df=df,
+            strategy_module=None,
+            target_records=records,
+            stage="development",
+            fold="2024",
+            sleeve_label="s",
+            asset="BTC",
+            native_timeframe="1H",
+        )
+
+
 def test_target_serialization_is_deterministic(tmp_path: Path):
     df = synthetic_ohlcv(8)
     captured = run_capture_or_replay(
