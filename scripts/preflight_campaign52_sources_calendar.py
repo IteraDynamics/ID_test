@@ -117,17 +117,28 @@ def stage_coverage_facts(
     last_timestamp: datetime,
     cadence_seconds: int | None,
 ) -> dict[str, bool]:
-    """Check stage coverage without treating trading-calendar gaps as missing data.
+    """Check inclusive calendar-date stage coverage without repairing data.
 
-    Hourly and other intraday sources must span the exact stage endpoints.
-    Daily-or-slower sources may begin after, or end before, a calendar endpoint
-    by at most seven days so weekends and exchange holidays do not create a
-    false coverage failure. This is timestamp-only and does not repair data.
+    The frozen stages are specified as inclusive calendar dates. Therefore an
+    intraday source stamped at 00:00 on the final stage date covers that date;
+    it need not contain a synthetic 23:59:59 row. Daily-or-slower trading
+    sources may end up to seven calendar days before the inclusive end date to
+    tolerate weekends and exchange holidays. Start coverage remains strict by
+    calendar date for every source.
     """
     daily_or_slower = cadence_seconds is not None and cadence_seconds >= 86_400
-    tolerance = timedelta(days=DAILY_STAGE_EDGE_TOLERANCE_DAYS) if daily_or_slower else timedelta(0)
     return {
-        stage: first_timestamp <= start + tolerance and last_timestamp >= end - tolerance
+        stage: (
+            first_timestamp.date() <= start.date()
+            and (
+                last_timestamp.date() >= end.date()
+                or (
+                    daily_or_slower
+                    and last_timestamp.date()
+                    >= (end - timedelta(days=DAILY_STAGE_EDGE_TOLERANCE_DAYS)).date()
+                )
+            )
+        )
         for stage, (start, end) in STAGES.items()
     }
 
@@ -145,7 +156,7 @@ def inspect_source(path: Path) -> TimestampInventory:
         strictly_increasing = True
         duplicates = 0
         seen: set[datetime] = set()
-        for row_number, row in enumerate(reader, start=2):
+        for row in reader:
             timestamp = parse_timestamp(row.get(timestamp_column, ""))
             if timestamp in seen:
                 duplicates += 1
@@ -263,6 +274,7 @@ def execute(paths: Sequence[Path], output: Path) -> dict[str, object]:
         "preflight_type": "campaign52_source_identity_calendar",
         "specification_commit_sha": SPECIFICATION_COMMIT,
         "reference_commit_sha": REFERENCE_COMMIT,
+        "stage_coverage_semantics": "inclusive_calendar_date",
         "daily_stage_edge_tolerance_days": DAILY_STAGE_EDGE_TOLERANCE_DAYS,
         "sources": [item.__dict__ for item in inventories],
         "calendar": calendar,
