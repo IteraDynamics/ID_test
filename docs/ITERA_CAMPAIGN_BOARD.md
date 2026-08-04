@@ -10,7 +10,7 @@ No production or portfolio behavior is authorized unless explicitly stated.
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** CAPTURE/REPLAY SYNTHETIC VALIDATION HOLD
+**Status:** SYNTHETIC CAPTURE/REPLAY PASS — governed-source capture/replay equivalence run is the next authorized stage. Counterfactual generation, development/validation execution, performance metrics, and runtime or strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -30,6 +30,20 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - capture/replay adapter: `bf5d7d7d7c18f23ddea6a1c622ce26359ef12393`
 - synthetic tests: `1adb2c255bbd56e2332ceada15862f7a10d70c99`
 - implementation record: `fc23c02e8c2543f29f6378368ab65725576977b4`
+- synthetic PASS evidence: `docs/research/CAMPAIGN_52_CAPTURE_REPLAY_SYNTHETIC_EVIDENCE.md`; commit `d7e786ff97375f47b9a0343076fc2cb4afc4e0e8`
+
+## Synthetic evidence
+
+Exact reported focused-test result:
+
+```text
+platform win32 -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+collected 6 items
+tests\test_campaign52_target_replay.py ...... [100%]
+6 passed in 3.00s
+```
+
+This passes the synthetic implementation gate only. It does not establish governed-source equivalence or any Campaign #52 research outcome.
 
 ## Frozen design
 
@@ -46,22 +60,27 @@ The six governed source identities and calendar facts are frozen in `docs/resear
 
 ## Current authorization
 
-**Decision:** HOLD pending exact local output from:
-
-`python -m pytest tests/test_campaign52_target_replay.py -q`
+**Decision:** GO for a governed-source capture/replay equivalence run only.
 
 Authorized now:
 
-- run that focused synthetic test file only;
-- report exact output;
-- correct adapter or synthetic-test defects without changing the frozen design.
+- add a research-only runner that uses the six exact governed source paths and frozen `baseline_40_35_15_10` scenario;
+- verify source hashes before any governed-source execution;
+- run canonical capture-only and unmodified-target replay only;
+- compare canonical versus capture-only and capture-only versus replay for target rows, trades, fees, slippage, spread, realized exposure, sleeve equity, fold fund NAV, and stitched NAV;
+- require two independent runs with deterministic artifact identities;
+- write an equivalence manifest and artifact SHA-256 manifest;
+- fail closed before any counterfactual generation if any mismatch occurs;
+- report exact local command output and artifact identities;
+- return to this board for a separate development-execution decision.
 
 Not authorized:
 
-- running the adapter on governed Campaign #52 sources;
-- generating governed targets, controls, trades, exposures, returns, NAVs, or metrics;
-- development or validation execution;
-- changing Core behavior.
+- generating static, lagged, or block-permuted controls;
+- calculating Campaign #52 performance metrics, bootstrap inference, multiplicity, rankings, or support decisions;
+- development or validation outcome comparisons;
+- changing Core logic, source data, weights, thresholds, costs, folds, orders, or execution semantics;
+- paper trading, live execution, or runtime modification.
 
 ## Stage separation
 
@@ -70,9 +89,11 @@ Not authorized:
 3. Family selection — completed.
 4. Statistical specification — completed.
 5. Source/calendar preflight — PASS.
-6. Capture/replay implementation — committed; synthetic evidence pending.
-7. Governed-source equivalence run — not authorized.
+6. Capture/replay implementation and synthetic validation — PASS.
+7. Governed-source capture/replay equivalence run — **authorized next**.
 8. Development/validation execution — not authorized.
+9. Prospective confirmation — not authorized.
+10. Economic, paper, or runtime action — not authorized.
 
 Passing one stage does not authorize the next.
 
