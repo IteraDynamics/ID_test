@@ -9,6 +9,7 @@ execution is considered.
 from __future__ import annotations
 
 import csv
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -81,6 +82,34 @@ def intent_to_signed_target(
     raise Campaign52ReplayError(f"UNSUPPORTED_ACTION:{intent.action}")
 
 
+def _validate_action_target(record: TargetRecord) -> None:
+    """Validate target semantics without clipping realized HOLD exposure drift.
+
+    Entry intents remain bounded by the frozen desired-exposure contract.
+    Exit and flat intents must target zero. HOLD intentionally inherits current
+    realized exposure, which can move slightly outside +/-1 after price changes
+    and execution costs; it must therefore be finite but is not entry-bounded.
+    """
+    try:
+        action = Action(record.action)
+    except ValueError as exc:
+        raise Campaign52ReplayError(f"TARGET_ACTION_INVALID:{record.action}") from exc
+
+    desired = float(record.desired_exposure_frac)
+    target = float(record.signed_target_exposure)
+    if not math.isfinite(desired) or not math.isfinite(target):
+        raise Campaign52ReplayError("TARGET_NONFINITE")
+    if not 0.0 <= desired <= 1.0:
+        raise Campaign52ReplayError("TARGET_DESIRED_EXPOSURE_OUT_OF_RANGE")
+
+    if action == Action.ENTER_LONG and not 0.0 <= target <= 1.0:
+        raise Campaign52ReplayError("TARGET_EXPOSURE_OUT_OF_RANGE")
+    if action == Action.ENTER_SHORT and not -1.0 <= target <= 0.0:
+        raise Campaign52ReplayError("TARGET_EXPOSURE_OUT_OF_RANGE")
+    if action in (Action.EXIT_LONG, Action.EXIT_SHORT, Action.FLAT) and target != 0.0:
+        raise Campaign52ReplayError("TARGET_EXIT_NOT_FLAT")
+
+
 def _validate_target_records(
     records: Sequence[TargetRecord],
     index: pd.DatetimeIndex,
@@ -107,8 +136,7 @@ def _validate_target_records(
             raise Campaign52ReplayError("TARGET_TIMEFRAME_MISMATCH")
         if record.sequence_number != previous_sequence + 1:
             raise Campaign52ReplayError("TARGET_SEQUENCE_FAILURE")
-        if not -1.0 <= float(record.signed_target_exposure) <= 1.0:
-            raise Campaign52ReplayError("TARGET_EXPOSURE_OUT_OF_RANGE")
+        _validate_action_target(record)
         mapping[ts] = record
         previous_sequence = record.sequence_number
     expected = set(pd.DatetimeIndex(index))
