@@ -42,13 +42,21 @@ def test_infer_cadence_prefers_modal_positive_interval() -> None:
     assert infer_cadence_seconds(timestamps) == 3600
 
 
-def test_stage_coverage_is_exact_for_hourly_sources() -> None:
+def test_stage_coverage_uses_inclusive_calendar_date_for_hourly_sources() -> None:
     facts = stage_coverage_facts(
         datetime(2018, 1, 1),
         datetime(2025, 12, 31, 0, 0, 0),
         3600,
     )
-    assert facts["development"] is True
+    assert facts == {"development": True, "validation": True}
+
+
+def test_hourly_source_still_fails_when_final_calendar_date_is_absent() -> None:
+    facts = stage_coverage_facts(
+        datetime(2018, 1, 1),
+        datetime(2025, 12, 30, 23, 0, 0),
+        3600,
+    )
     assert facts["validation"] is False
 
 
