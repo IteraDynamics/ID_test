@@ -11,6 +11,7 @@ from scripts.preflight_campaign52_sources_calendar import (
     infer_cadence_seconds,
     lag_mapping_facts,
     parse_timestamp,
+    stage_coverage_facts,
 )
 
 
@@ -41,6 +42,34 @@ def test_infer_cadence_prefers_modal_positive_interval() -> None:
     assert infer_cadence_seconds(timestamps) == 3600
 
 
+def test_stage_coverage_is_exact_for_hourly_sources() -> None:
+    facts = stage_coverage_facts(
+        datetime(2018, 1, 1),
+        datetime(2025, 12, 31, 0, 0, 0),
+        3600,
+    )
+    assert facts["development"] is True
+    assert facts["validation"] is False
+
+
+def test_stage_coverage_allows_trading_calendar_edge_for_daily_sources() -> None:
+    facts = stage_coverage_facts(
+        datetime(2018, 1, 2),
+        datetime(2025, 12, 30),
+        86400,
+    )
+    assert facts == {"development": True, "validation": True}
+
+
+def test_stage_coverage_still_fails_large_daily_gap() -> None:
+    facts = stage_coverage_facts(
+        datetime(2018, 1, 2),
+        datetime(2025, 12, 20),
+        86400,
+    )
+    assert facts["validation"] is False
+
+
 def test_complete_block_facts_are_stage_contained() -> None:
     facts = complete_block_facts(
         datetime(2020, 1, 1),
@@ -68,5 +97,6 @@ def test_lag_mapping_does_not_nearest_match_missing_timestamp() -> None:
     timestamps = [start + timedelta(hours=i) for i in range(30)]
     timestamps.remove(start + timedelta(hours=5))
     facts = lag_mapping_facts(timestamps, start, start + timedelta(hours=29))
-    # t=29 would map to hour 5 under a 24h lag, but that exact source timestamp is absent.
+    # Six stage timestamps have a nominal 24h predecessor; the hour-29 mapping
+    # is absent because hour 5 is missing, leaving five exact mappings.
     assert facts["24h"]["exact_mapping_count"] == 5
