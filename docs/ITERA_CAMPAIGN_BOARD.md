@@ -10,7 +10,7 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** STATISTICAL SPECIFICATION FROZEN — the method and 20-control family are frozen. Implementation remains on HOLD pending a source-only identity and calendar preflight for all six governed sources. Canonical Core execution, target capture, counterfactual generation, replay implementation, NAV reconstruction, metric calculation, and runtime/strategy changes remain prohibited.
+**Status:** SOURCE-PREFLIGHT VALIDATION HOLD — the frozen statistical specification, source-only identity/calendar preflight, and focused synthetic tests are committed. Local test evidence and source-only preflight evidence are required before any capture/replay implementation decision.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -18,14 +18,17 @@ The board does not authorize production, runtime, threshold, signal, order, port
 
 ## Objective
 
-Determine whether canonical Core v1 derives material value from authentic chronological alignment of its sleeve-level pre-execution signed target exposures, beyond static composition or chronology-destroyed controls replayed through identical execution mechanics.
+Determine whether canonical Core v1 derives material value from authentic chronological alignment of sleeve-level pre-execution signed target exposures, beyond static composition or chronology-destroyed controls replayed through identical execution mechanics.
 
 ## Governed records
 
-- planning charter: `docs/research/CAMPAIGN_52_CORE_V1_CHRONOLOGICAL_STATE_VALUE_PLANNING_CHARTER.md`; commit `8ad9f3aae3dc4b36010ef8f723ae1c88bbf7db9d`
-- reference/intervention feasibility inventory: `docs/research/CAMPAIGN_52_REFERENCE_INTERVENTION_FEASIBILITY_INVENTORY.md`; commit `a86eba5392e57e936d65c4eb46207cb51c03b309`
-- hypothesis-family selection: `docs/research/CAMPAIGN_52_HYPOTHESIS_FAMILY_SELECTION.md`; commit `e2aa9ceafe531e11bea7040fe4309ac9e65b8ab2`
-- frozen statistical specification: `docs/research/CAMPAIGN_52_STATISTICAL_SPECIFICATION.md`; commit `14a96b4078eec516570fce0c289baa061398a995`
+- planning charter: `8ad9f3aae3dc4b36010ef8f723ae1c88bbf7db9d`
+- reference/intervention feasibility inventory: `a86eba5392e57e936d65c4eb46207cb51c03b309`
+- hypothesis-family selection: `e2aa9ceafe531e11bea7040fe4309ac9e65b8ab2`
+- frozen statistical specification: `14a96b4078eec516570fce0c289baa061398a995`
+- source/calendar preflight implementation: `597c32fd0b5ba3846b7ca74d13223ea3fdfa2ea1`
+- source/calendar synthetic tests: `59b8b4297be1df783aef52b537f9fc00730623e5`
+- inclusive-calendar coverage correction: `a250323fd816e0a9737822a6c8ea9323d6793645`
 
 ## Frozen Core reference
 
@@ -35,37 +38,22 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - no mean-reversion sleeve
 - no Core logic, threshold, cost, fold, order, execution, or weight change permitted
 
-## Frozen retrospective stages
-
-Core v1 has already been researched through 2025; Campaign #52 makes no untouched-2025 claim.
+## Frozen stages and controls
 
 - development: `2020-01-01` through `2022-12-31`
 - validation: `2023-01-01` through `2025-12-31`
-- prospective confirmation: requires future data and a separate later authorization
-
-## Frozen intervention and controls
-
-Primary intervention object: each sleeve's signed target exposure derived from canonical `StrategyIntent` before execution.
+- no untouched-2025 claim
+- prospective confirmation requires future data and separate authorization
 
 Exactly 20 controls:
 
 1. one development-frozen static arithmetic-mean signed target per sleeve;
-2. positive wall-clock target lags of `24h`, `168h`, and `672h`;
-3. sixteen deterministic stage/fold-contained permutations of complete `28`-day wall-clock blocks.
+2. positive target lags of `24h`, `168h`, and `672h`;
+3. sixteen deterministic stage/fold-contained permutations of complete `28`-day blocks.
 
-No negative displacement, wraparound, cross-stage carry, cross-fold carry, order reassignment, position shifting, or NAV rearrangement.
+Primary endpoints are annualized geometric return, maximum drawdown magnitude, and Calmar ratio. Inference uses paired daily log returns, a deterministic 21-day moving-block bootstrap with 10,000 replications, and Holm correction across all 20 controls separately within each stage. The authoritative details remain in `docs/research/CAMPAIGN_52_STATISTICAL_SPECIFICATION.md`.
 
-## Frozen primary endpoints
-
-- annualized geometric return
-- maximum drawdown magnitude
-- Calmar ratio
-
-The inferential series is paired daily log return. A deterministic 21-day moving-block bootstrap with 10,000 replications is frozen. Holm correction applies across all 20 controls separately within each stage.
-
-The exact development, validation, interpretation, multiplicity, replay, and artifact rules are authoritative in `CAMPAIGN_52_STATISTICAL_SPECIFICATION.md`.
-
-## Source contract
+## Governed source contract
 
 Authorized paths:
 
@@ -82,39 +70,64 @@ Known BTC identity:
 - bytes: `4,792,028`
 - rows: `70,069`
 
-The ETH, SPY, QQQ, BIL, and GLD SHA-256, bytes, rows, schemas, timestamp coverage, and missing-timestamp inventories are not yet frozen. No substitution, repair, interpolation, fill, or acquisition is permitted.
+The source-only preflight must freeze the remaining source hashes, byte counts, row counts, schemas, timestamp coverage, ordering, duplicate counts, cadence/missing-calendar characteristics, stage coverage, lag mapping counts, and 28-day block facts. No substitution, repair, interpolation, fill, or acquisition is permitted.
+
+## Source-only preflight implementation
+
+Script:
+
+- `scripts/preflight_campaign52_sources_calendar.py`
+
+Focused tests:
+
+- `tests/test_campaign52_sources_calendar_preflight.py`
+
+The preflight is limited to file bytes, headers, row counts, and timestamps. It must keep these flags false:
+
+- `prices_parsed`
+- `targets_generated`
+- `signals_generated`
+- `positions_generated`
+- `trades_generated`
+- `costs_generated`
+- `returns_generated`
+- `nav_generated`
+- `performance_metrics_calculated`
+- `capture_replay_implemented`
+- `runtime_modified`
+- `strategy_modified`
+- `weights_modified`
 
 ## Current authorization
 
-**Decision:** GO for a source-only identity and calendar preflight only.
+**Decision:** HOLD pending local focused-test and source-only preflight evidence.
 
 Authorized now:
 
-- implement a research-only preflight that reads file bytes, headers, row counts, and timestamps only;
-- compute and report SHA-256, byte count, row count, schema, first/last timestamp, ordering, duplicate counts, and missing-timestamp/calendar characteristics for all six sources;
-- verify that development and validation intervals are mechanically coverable;
-- verify the 28-day complete-block counts and terminal-block facts using timestamps only;
-- verify the `24h`, `168h`, and `672h` displacement calendar mappings using timestamps only;
-- keep canonical Core execution, target capture, counterfactual generation, orders, exposures, NAV, metrics, and runtime flags false;
-- add focused synthetic tests for timestamp/calendar logic;
-- return the evidence for a separate implementation decision.
+- pull the committed preflight and tests;
+- run `tests/test_campaign52_sources_calendar_preflight.py` only;
+- run the source-only preflight against the six exact governed paths;
+- inspect only the test output and emitted source/calendar JSON;
+- correct preflight or calendar-logic defects without changing the frozen Campaign #52 design;
+- update this board with exact evidence;
+- consider a separate capture/replay implementation decision only after both checks pass.
 
 Not authorized:
 
 - parsing price or return values for analysis;
 - running canonical Core v1 or any counterfactual;
 - generating targets, signals, positions, trades, costs, returns, NAVs, or metrics;
-- implementing capture/replay or the counterfactual engine;
+- implementing capture/replay or counterfactual execution;
 - changing any frozen method or Core setting;
 - paper trading, live execution, or runtime modification.
 
 ## Mandatory stage separation
 
 1. Planning charter — completed.
-2. Reference-artifact and intervention feasibility inventory — completed.
+2. Reference-artifact/intervention feasibility — completed.
 3. Hypothesis-family selection — completed.
 4. Frozen statistical specification — completed.
-5. Source-only identity/calendar preflight — authorized next.
+5. Source-only identity/calendar preflight — implementation committed; local evidence pending.
 6. Capture/replay implementation and synthetic tests — not authorized.
 7. Development/validation execution — not authorized.
 8. Prospective confirmation — not authorized.
