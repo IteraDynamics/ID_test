@@ -139,7 +139,7 @@ def inspect_source(path: Path) -> TimestampInventory:
 
     cadence = infer_cadence_seconds(timestamps)
     stage_coverage = {
-        stage: timestamps[0] <= start and timestamps[-1] >= end
+        stage: timestamps[0].date() <= start.date() and timestamps[-1].date() >= end.date()
         for stage, (start, end) in STAGES.items()
     }
     return TimestampInventory(
