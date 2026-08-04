@@ -10,7 +10,7 @@ No production or portfolio behavior is authorized unless explicitly stated.
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** SYNTHETIC CAPTURE/REPLAY PASS — governed-source capture/replay equivalence run is the next authorized stage. Counterfactual generation, development/validation execution, performance metrics, and runtime or strategy changes remain prohibited.
+**Status:** GOVERNED EQUIVALENCE RUNNER COMMITTED — local governed-source capture/replay equivalence evidence is required next. Counterfactual generation, performance metrics, development/validation comparisons, and runtime or strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -29,21 +29,9 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - source/calendar evidence: `bd2af6c11991a637510122bdb4a3300b9653be14`
 - capture/replay adapter: `bf5d7d7d7c18f23ddea6a1c622ce26359ef12393`
 - synthetic tests: `1adb2c255bbd56e2332ceada15862f7a10d70c99`
-- implementation record: `fc23c02e8c2543f29f6378368ab65725576977b4`
-- synthetic PASS evidence: `docs/research/CAMPAIGN_52_CAPTURE_REPLAY_SYNTHETIC_EVIDENCE.md`; commit `d7e786ff97375f47b9a0343076fc2cb4afc4e0e8`
-
-## Synthetic evidence
-
-Exact reported focused-test result:
-
-```text
-platform win32 -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
-collected 6 items
-tests\test_campaign52_target_replay.py ...... [100%]
-6 passed in 3.00s
-```
-
-This passes the synthetic implementation gate only. It does not establish governed-source equivalence or any Campaign #52 research outcome.
+- synthetic PASS evidence: `d7e786ff97375f47b9a0343076fc2cb4afc4e0e8`
+- governed equivalence runner: `scripts/run_campaign52_governed_equivalence.py`; commit `92b274c57c2cca2a3ac094896894779a7bb0a42a`
+- governed runner implementation record: `docs/research/CAMPAIGN_52_GOVERNED_EQUIVALENCE_RUNNER_IMPLEMENTATION.md`; commit `4c6edda17861fc36c9580679f3a589fe7b0a128d`
 
 ## Frozen design
 
@@ -54,33 +42,42 @@ This passes the synthetic implementation gate only. It does not establish govern
 - exactly 20 controls: one static, lags `24h`, `168h`, `672h`, and sixteen 28-day block permutations
 - no Core logic, weights, thresholds, costs, folds, or execution semantics may change
 
-## Source state
+## Governed equivalence runner contract
 
-The six governed source identities and calendar facts are frozen in `docs/research/CAMPAIGN_52_SOURCE_CALENDAR_PREFLIGHT_EVIDENCE.md`.
+The runner must:
+
+- verify all six frozen source hashes before execution;
+- run canonical, capture-only, and unchanged-target replay paths only;
+- compare sleeve equity, realized exposure, and trade economics;
+- compare fold fund NAV and stitched NAV;
+- repeat independently twice;
+- require identical artifact SHA-256 maps;
+- write a PASS manifest only after all checks succeed.
+
+Replay audit reason text is excluded from economic trade equivalence; timestamps, directions, prices, quantities, notionals, fees, slippage, spread, cost basis points, exposures, and strategy identities remain included.
 
 ## Current authorization
 
-**Decision:** GO for a governed-source capture/replay equivalence run only.
+**Decision:** HOLD pending exact local output from:
+
+`python -m scripts.run_campaign52_governed_equivalence`
 
 Authorized now:
 
-- add a research-only runner that uses the six exact governed source paths and frozen `baseline_40_35_15_10` scenario;
-- verify source hashes before any governed-source execution;
-- run canonical capture-only and unmodified-target replay only;
-- compare canonical versus capture-only and capture-only versus replay for target rows, trades, fees, slippage, spread, realized exposure, sleeve equity, fold fund NAV, and stitched NAV;
-- require two independent runs with deterministic artifact identities;
-- write an equivalence manifest and artifact SHA-256 manifest;
-- fail closed before any counterfactual generation if any mismatch occurs;
-- report exact local command output and artifact identities;
+- pull the committed runner;
+- execute it once using its six governed default paths and frozen defaults;
+- inspect only the command output and equivalence/artifact manifests;
+- correct runner defects without changing the frozen Campaign #52 design;
+- report exact output and manifest identities;
 - return to this board for a separate development-execution decision.
 
 Not authorized:
 
 - generating static, lagged, or block-permuted controls;
 - calculating Campaign #52 performance metrics, bootstrap inference, multiplicity, rankings, or support decisions;
-- development or validation outcome comparisons;
-- changing Core logic, source data, weights, thresholds, costs, folds, orders, or execution semantics;
-- paper trading, live execution, or runtime modification.
+- development or validation outcome comparison;
+- changing Core behavior, sources, weights, thresholds, costs, folds, orders, execution, runtime, dashboard, or model training;
+- paper trading or live execution.
 
 ## Stage separation
 
@@ -90,7 +87,7 @@ Not authorized:
 4. Statistical specification — completed.
 5. Source/calendar preflight — PASS.
 6. Capture/replay implementation and synthetic validation — PASS.
-7. Governed-source capture/replay equivalence run — **authorized next**.
+7. Governed-source capture/replay equivalence runner — committed; local evidence pending.
 8. Development/validation execution — not authorized.
 9. Prospective confirmation — not authorized.
 10. Economic, paper, or runtime action — not authorized.
