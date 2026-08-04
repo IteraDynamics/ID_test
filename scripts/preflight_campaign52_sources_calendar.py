@@ -18,6 +18,7 @@ STAGES = {
 }
 LAGS_HOURS = (24, 168, 672)
 BLOCK_DAYS = 28
+DAILY_STAGE_EDGE_TOLERANCE_DAYS = 7
 
 TIMESTAMP_COLUMNS = ("timestamp", "date", "datetime", "time")
 TIMESTAMP_FORMATS = (
@@ -111,6 +112,26 @@ def count_missing_expected(timestamps: Sequence[datetime], cadence_seconds: int 
     return max(0, expected - unique)
 
 
+def stage_coverage_facts(
+    first_timestamp: datetime,
+    last_timestamp: datetime,
+    cadence_seconds: int | None,
+) -> dict[str, bool]:
+    """Check stage coverage without treating trading-calendar gaps as missing data.
+
+    Hourly and other intraday sources must span the exact stage endpoints.
+    Daily-or-slower sources may begin after, or end before, a calendar endpoint
+    by at most seven days so weekends and exchange holidays do not create a
+    false coverage failure. This is timestamp-only and does not repair data.
+    """
+    daily_or_slower = cadence_seconds is not None and cadence_seconds >= 86_400
+    tolerance = timedelta(days=DAILY_STAGE_EDGE_TOLERANCE_DAYS) if daily_or_slower else timedelta(0)
+    return {
+        stage: first_timestamp <= start + tolerance and last_timestamp >= end - tolerance
+        for stage, (start, end) in STAGES.items()
+    }
+
+
 def inspect_source(path: Path) -> TimestampInventory:
     raw = path.read_bytes()
     timestamps: list[datetime] = []
@@ -138,10 +159,7 @@ def inspect_source(path: Path) -> TimestampInventory:
         raise Campaign52PreflightError(f"NO_DATA_ROWS:{path.as_posix()}")
 
     cadence = infer_cadence_seconds(timestamps)
-    stage_coverage = {
-        stage: timestamps[0].date() <= start.date() and timestamps[-1].date() >= end.date()
-        for stage, (start, end) in STAGES.items()
-    }
+    stage_coverage = stage_coverage_facts(timestamps[0], timestamps[-1], cadence)
     return TimestampInventory(
         path=path.as_posix(),
         sha256=sha256_bytes(raw),
@@ -203,11 +221,26 @@ def execute(paths: Sequence[Path], output: Path) -> dict[str, object]:
         raise Campaign52PreflightError("EXACTLY_SIX_SOURCES_REQUIRED")
     inventories = [inspect_source(path) for path in paths]
     if any(not item.strictly_increasing for item in inventories):
-        raise Campaign52PreflightError("SOURCE_TIMESTAMP_ORDER_FAILURE")
+        failures = [item.path for item in inventories if not item.strictly_increasing]
+        raise Campaign52PreflightError(f"SOURCE_TIMESTAMP_ORDER_FAILURE:{json.dumps(failures)}")
     if any(item.duplicate_timestamp_count for item in inventories):
-        raise Campaign52PreflightError("SOURCE_DUPLICATE_TIMESTAMP_FAILURE")
-    if any(not all(item.stage_coverage.values()) for item in inventories):
-        raise Campaign52PreflightError("SOURCE_STAGE_COVERAGE_FAILURE")
+        failures = {
+            item.path: item.duplicate_timestamp_count
+            for item in inventories
+            if item.duplicate_timestamp_count
+        }
+        raise Campaign52PreflightError(
+            f"SOURCE_DUPLICATE_TIMESTAMP_FAILURE:{json.dumps(failures, sort_keys=True)}"
+        )
+    coverage_failures = {
+        item.path: [stage for stage, covered in item.stage_coverage.items() if not covered]
+        for item in inventories
+        if not all(item.stage_coverage.values())
+    }
+    if coverage_failures:
+        raise Campaign52PreflightError(
+            f"SOURCE_STAGE_COVERAGE_FAILURE:{json.dumps(coverage_failures, sort_keys=True)}"
+        )
 
     btc = inventories[0]
     if btc.sha256 != "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079":
@@ -230,6 +263,7 @@ def execute(paths: Sequence[Path], output: Path) -> dict[str, object]:
         "preflight_type": "campaign52_source_identity_calendar",
         "specification_commit_sha": SPECIFICATION_COMMIT,
         "reference_commit_sha": REFERENCE_COMMIT,
+        "daily_stage_edge_tolerance_days": DAILY_STAGE_EDGE_TOLERANCE_DAYS,
         "sources": [item.__dict__ for item in inventories],
         "calendar": calendar,
         "prices_parsed": False,
