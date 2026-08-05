@@ -7,6 +7,7 @@ import json
 import math
 import os
 import shutil
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -84,11 +85,25 @@ def build_args() -> argparse.Namespace:
     p.add_argument("--cooldown", type=int, default=2)
     p.add_argument("--mr-cooldown", type=int, default=12)
     p.add_argument("--rebalance-threshold", type=float, default=0.02)
+    p.add_argument(
+        "--pass-workers",
+        type=int,
+        choices=(1, 2),
+        default=2,
+        help="Run the two required independent passes concurrently by default.",
+    )
     return p.parse_args()
 
 
 def _load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _utc_naive(value: Any) -> pd.Timestamp:
+    timestamp = pd.Timestamp(value)
+    if timestamp.tzinfo is not None:
+        timestamp = timestamp.tz_convert("UTC").tz_localize(None)
+    return timestamp
 
 
 def verify_equivalence_root(root: Path) -> tuple[dict[str, Any], dict[str, str]]:
@@ -138,7 +153,7 @@ def load_target_csv(path: Path) -> list[TargetRecord]:
                 TargetRecord(
                     stage=row["stage"],
                     fold=row["fold"],
-                    timestamp=pd.Timestamp(row["timestamp"]),
+                    timestamp=_utc_naive(row["timestamp"]),
                     sleeve_label=row["sleeve_label"],
                     asset=row["asset"],
                     native_timeframe=row["native_timeframe"],
@@ -196,12 +211,13 @@ def _write_trade_json(path: Path, trades: Sequence[Any]) -> None:
 
 def _secondary_metrics(daily_nav: pd.Series, trades: Sequence[Any]) -> dict[str, float | int]:
     log_returns = np.log(daily_nav / daily_nav.shift(1)).dropna()
-    simple = daily_nav.pct_change().dropna()
     vol = float(log_returns.std(ddof=1) * math.sqrt(365.25)) if len(log_returns) > 1 else 0.0
     sharpe = float(log_returns.mean() / log_returns.std(ddof=1) * math.sqrt(365.25)) if len(log_returns) > 1 and log_returns.std(ddof=1) > 0 else 0.0
+
     def worst_days(days: int) -> float:
         values = daily_nav / daily_nav.shift(days) - 1.0
         return float(values.min()) if values.notna().any() else float("nan")
+
     dd = daily_nav / daily_nav.cummax() - 1.0
     durations: list[int] = []
     current = 0
@@ -280,6 +296,7 @@ def _one_pass(
     imported: Mapping[tuple[str, str], Sequence[TargetRecord]],
     raw: Mapping[str, pd.DataFrame],
 ) -> dict[str, Any]:
+    print(f"{pass_root.name} START transformations", flush=True)
     specs = [s for s in _build_sleeves(args) if s.capital > 0]
     folds = [f for f in _build_folds(args.data_start, args.oos_start, args.oos_end) if f.label in DEVELOPMENT_FOLDS]
     base_cfg, mr_cfg, equity_cfg = make_execution_configs(args)
@@ -293,8 +310,8 @@ def _one_pass(
     all_records = [r for key in sorted(imported) for r in imported[key]]
     means = static_mean_values(all_records)
     canonical_json(pass_root / "static_mean_manifest.json", means)
-    fold_starts = {f.label: pd.Timestamp(f.is_start) for f in folds}
-    fold_ends = {f.label: pd.Timestamp(f.oos_end) for f in folds}
+    fold_starts = {f.label: _utc_naive(f.is_start) for f in folds}
+    fold_ends = {f.label: _utc_naive(f.oos_end) for f in folds}
 
     transformed: dict[str, dict[tuple[str, str], list[TargetRecord]]] = {}
     transformation_manifest: dict[str, Any] = {"controls": {}}
@@ -326,6 +343,7 @@ def _one_pass(
                 transformed[cid][key] = replay_ready(by_key[key], cid)
             transformation_manifest["controls"][cid] = info
     canonical_json(pass_root / "transformation_manifest.json", transformation_manifest)
+    print(f"{pass_root.name} DONE transformations", flush=True)
 
     target_hashes: dict[str, str] = {}
     for cid in CONTROL_IDS:
@@ -406,10 +424,13 @@ def _one_pass(
     canonical_json(pass_root / "metrics.json", metrics)
     inference: dict[str, Any] = {}
     raw_p: dict[str, float] = {}
+    print(f"{pass_root.name} START bootstrap", flush=True)
     for cid in CONTROL_IDS:
+        print(f"{pass_root.name} START bootstrap control={cid}", flush=True)
         result = _bootstrap_comparison(daily_navs["canonical"], daily_navs[cid], cid)
         inference[cid] = result
         raw_p[cid] = float(result["one_sided_p"])
+        print(f"{pass_root.name} DONE bootstrap control={cid}", flush=True)
     adjusted = holm_adjust(raw_p)
     for cid in CONTROL_IDS:
         inference[cid]["holm_adjusted_p"] = adjusted[cid]
@@ -418,7 +439,21 @@ def _one_pass(
     canonical_json(pass_root / "development_decision.json", decision)
     hashes = _hash_tree(pass_root)
     canonical_json(pass_root / "artifact_sha256.json", hashes)
+    print(f"{pass_root.name} PASS complete", flush=True)
     return {"hashes": hashes, "decision": decision, "metrics": metrics, "inference": inference}
+
+
+def _run_pass_worker(
+    args: argparse.Namespace,
+    pass_root: Path,
+    equivalence_root: Path,
+    artifact_hashes: Mapping[str, str],
+) -> dict[str, Any]:
+    print(f"{pass_root.name} START load", flush=True)
+    imported = import_development_targets(equivalence_root, artifact_hashes)
+    raw = load_data(args)
+    print(f"{pass_root.name} DONE load", flush=True)
+    return _one_pass(args, pass_root, imported, raw)
 
 
 def main() -> None:
@@ -427,9 +462,7 @@ def main() -> None:
         raise Campaign52DevelopmentRunnerError("DEVELOPMENT_WINDOW_FROZEN")
     source_hashes = verify_sources(args)
     equivalence_root = Path(args.equivalence_root)
-    manifest, artifact_hashes = verify_equivalence_root(equivalence_root)
-    imported = import_development_targets(equivalence_root, artifact_hashes)
-    raw = load_data(args)
+    _manifest, artifact_hashes = verify_equivalence_root(equivalence_root)
 
     final_root = Path(args.out_dir)
     temp_root = final_root.with_name(final_root.name + ".tmp")
@@ -446,8 +479,19 @@ def main() -> None:
             "validation_targets_opened": False,
             "canonical_strategy_invoked": False,
         })
-        pass1 = _one_pass(args, temp_root / "pass_1", imported, raw)
-        pass2 = _one_pass(args, temp_root / "pass_2", imported, raw)
+        if args.pass_workers == 2:
+            print("START independent passes workers=2", flush=True)
+            with ProcessPoolExecutor(max_workers=2) as pool:
+                future1 = pool.submit(_run_pass_worker, args, temp_root / "pass_1", equivalence_root, artifact_hashes)
+                future2 = pool.submit(_run_pass_worker, args, temp_root / "pass_2", equivalence_root, artifact_hashes)
+                pass1 = future1.result()
+                pass2 = future2.result()
+        else:
+            print("START independent passes workers=1", flush=True)
+            imported = import_development_targets(equivalence_root, artifact_hashes)
+            raw = load_data(args)
+            pass1 = _one_pass(args, temp_root / "pass_1", imported, raw)
+            pass2 = _one_pass(args, temp_root / "pass_2", imported, raw)
         if pass1["hashes"] != pass2["hashes"]:
             raise Campaign52DevelopmentRunnerError("INDEPENDENT_PASS_ARTIFACT_MISMATCH")
         if pass1["decision"] != pass2["decision"]:
@@ -462,6 +506,7 @@ def main() -> None:
             "classification": pass1["decision"]["classification"],
             "controls": list(CONTROL_IDS),
             "independent_passes": 2,
+            "parallel_pass_workers": args.pass_workers,
             "bootstrap_replications_per_control": 10_000,
             "validation_targets_opened": False,
             "canonical_strategy_invoked": False,
