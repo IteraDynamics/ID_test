@@ -10,7 +10,7 @@ No production or portfolio behavior is authorized unless explicitly stated.
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** DEVELOPMENT TOOLING IMPLEMENTATION AUTHORIZED — deterministic observation-only development transformation/inference tooling and synthetic tests may be implemented. Governed control generation, governed replay, development outcomes, validation access, and runtime or strategy changes remain prohibited.
+**Status:** DEVELOPMENT TOOLING AND SYNTHETIC TESTS COMMITTED — exact local focused-test output is required next. Governed artifact import, control generation, replay, metrics, inference, development outcomes, validation access, and runtime or strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -28,16 +28,13 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - frozen specification: `14a96b4078eec516570fce0c289baa061398a995`
 - source/calendar evidence: `bd2af6c11991a637510122bdb4a3300b9653be14`
 - capture/replay adapter: `bf5d7d7d7c18f23ddea6a1c622ce26359ef12393`
-- synthetic tests: `1adb2c255bbd56e2332ceada15862f7a10d70c99`
-- synthetic PASS evidence: `d7e786ff97375f47b9a0343076fc2cb4afc4e0e8`
-- governed equivalence runner: `92b274c57c2cca2a3ac094896894779a7bb0a42a`
-- governed runner implementation record: `4c6edda17861fc36c9580679f3a589fe7b0a128d`
-- HOLD exposure validation correction: `105cc81e8d5dd5b2d158e088b717adfae52292df`
-- HOLD validation regression tests: `184229dafc2f4b96bdb43b3135e6a6e1f5e339ea`
-- governed runner performance correction: `0da89d7af340ca8bdb629ce29ee09cfbb683f971`
-- governed runner optimization tests: `1017fdffaa2e6abe5b1d5b40988380dfe0676baa`
-- governed-source equivalence PASS evidence: `docs/research/CAMPAIGN_52_GOVERNED_EQUIVALENCE_PASS_EVIDENCE.md`; commit `0db3875d2c181f65b41e06145825f7d5363226e4`
-- development-only execution procedure: `docs/research/CAMPAIGN_52_DEVELOPMENT_EXECUTION_PROCEDURE.md`; commit `af30879a0f37b4a635780a9cea5e8cf2b2590e29`
+- synthetic capture/replay tests: `1adb2c255bbd56e2332ceada15862f7a10d70c99`
+- governed-source equivalence PASS evidence: `0db3875d2c181f65b41e06145825f7d5363226e4`
+- development-only execution procedure: `af30879a0f37b4a635780a9cea5e8cf2b2590e29`
+- development tooling authorization: `82b1e920c5b0e1bd4918e62d9b13eed511463d1b`
+- development helper implementation: `f9ef8eb41dbbdd9417b1ec0b85918da0e98d2898`
+- development synthetic tests: `54ce33a0f3c9edc881aad69b8f5efbd913516e95`
+- development tooling implementation record: `640ff3a3edd131c622b43e24fe4061742f88a662`
 
 ## Frozen design
 
@@ -50,42 +47,46 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 
 ## Governed-source equivalence result
 
-The corrected local governed-source equivalence run reported:
+The governed-source equivalence gate passed with all six frozen source identities, canonical-versus-capture equality, capture-versus-replay equality, two independent artifact-identical passes, and no counterfactual or performance analysis.
 
-- `status: PASS`;
-- all six frozen source SHA-256 identities matched;
-- canonical versus capture equivalence passed;
-- capture versus unchanged-target replay equivalence passed;
-- sleeve equity, realized exposure, trade economics, fold fund NAV, and stitched NAV checks passed;
-- two independent passes produced identical artifact SHA-256 maps;
-- no counterfactuals, Campaign performance metrics, bootstrap, runtime modification, strategy modification, or weight modification occurred.
+This was an implementation gate only, not a Campaign #52 alpha or support result.
 
-The uninterrupted successful run began at 08:27 local time on 2026-08-05. An earlier run stopped for computer shutdown is not evidence.
+## Development tooling implementation
 
-This is an implementation/equivalence gate only. It is not a Campaign #52 alpha, performance, statistical, development-versus-validation, ranking, support, or economic result.
+The committed pure helper module and fabricated-data tests cover:
 
-## Development procedure result
+- structural validation-path rejection;
+- exact static, lagged, and deterministic block-permutation transformations;
+- deterministic seed and Fisher-Yates behavior;
+- terminal-block and row-count invariants;
+- daily end-of-day NAV and primary metric conventions;
+- deterministic 21-day, 10,000-replication moving-block bootstrap;
+- exact 20-member Holm adjustment;
+- development decision boundaries;
+- atomic output promotion and stale-output rejection.
 
-The committed development-only procedure freezes import identity checks, development-only path isolation, exact 20-control construction, unchanged replay, daily NAV and metrics, deterministic 21-day/10,000-replication inference, Holm adjustment, development decision logic, two-pass identity, atomic outputs, fail-closed behavior, and synthetic-test coverage.
+The implementation has no governed artifact discovery, source loading, strategy invocation, replay orchestration, or validation-stage access.
 
-The procedure reuses validated canonical target artifacts and prohibits rerunning canonical strategy evaluation.
+No governed target, control, replay, NAV, metric, inference, ranking, or development decision was generated or inspected.
 
 ## Current authorization
 
-**Decision:** GO for implementation of deterministic, observation-only, fail-closed development tooling and synthetic tests only.
+**Decision:** HOLD pending exact local output from:
+
+`python -m pytest tests/test_campaign52_development.py -q`
 
 Authorized now:
 
-- implement pure transformation helpers for the exact static, lagged, and 16 deterministic block-permutation controls;
-- implement development-only path and manifest preflight helpers;
-- implement deterministic daily NAV, primary-metric, bootstrap, Holm, and development-decision helpers;
-- implement atomic-output safeguards;
-- add focused synthetic tests using fabricated targets, NAVs, and prices only;
-- document implementation and return to this board for a separate synthetic-validation decision.
+- pull the committed pure helper implementation and synthetic tests;
+- run only the focused synthetic test file above;
+- inspect and report exact test output;
+- correct synthetic implementation defects without opening governed artifacts or changing the frozen design;
+- return to this board for a separate synthetic-validation and governed-runner implementation decision.
 
 Not authorized:
 
-- opening governed equivalence target artifacts from the local artifact root during implementation or tests;
+- opening governed equivalence target artifacts;
+- implementing or running a governed development artifact importer or execution runner;
 - generating governed static, lagged, or block-permuted controls;
 - replaying canonical or control development outcomes;
 - calculating or inspecting governed return, drawdown, Calmar, bootstrap, rankings, or support decisions;
@@ -104,12 +105,13 @@ Not authorized:
 6. Capture/replay implementation and synthetic validation — PASS.
 7. Governed-source capture/replay equivalence — PASS.
 8. Development execution procedure — completed.
-9. Development tooling implementation and synthetic tests — **authorized now**.
-10. Synthetic validation — not yet passed.
-11. Governed development execution — not authorized.
-12. Validation execution — not authorized.
-13. Prospective confirmation — not authorized.
-14. Economic, paper, or runtime action — not authorized.
+9. Development tooling implementation and synthetic tests — committed.
+10. Synthetic validation — **pending local evidence**.
+11. Governed development runner implementation — not authorized.
+12. Governed development execution — not authorized.
+13. Validation execution — not authorized.
+14. Prospective confirmation — not authorized.
+15. Economic, paper, or runtime action — not authorized.
 
 Passing one stage does not authorize the next.
 
