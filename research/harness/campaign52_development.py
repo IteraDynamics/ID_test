@@ -77,7 +77,8 @@ def static_mean_values(records: Sequence[TargetRecord]) -> dict[str, float]:
 def transform_static(records: Sequence[TargetRecord], means: Mapping[str, float] | None = None) -> list[TargetRecord]:
     validate_development_records(records)
     resolved = dict(means or static_mean_values(records))
-    if set(resolved) != {r.sleeve_label for r in records}:
+    required_sleeves = {r.sleeve_label for r in records}
+    if not required_sleeves.issubset(resolved):
         raise Campaign52DevelopmentError("STATIC_SLEEVE_SET_MISMATCH")
     return [replace(r, signed_target_exposure=float(resolved[r.sleeve_label])) for r in records]
 
