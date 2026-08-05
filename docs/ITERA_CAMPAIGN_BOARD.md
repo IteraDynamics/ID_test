@@ -10,7 +10,7 @@ No production or portfolio behavior is authorized unless explicitly stated.
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** GOVERNED-SOURCE CAPTURE/REPLAY EQUIVALENCE PASS — separate development-execution authorization is required next. Counterfactual generation, performance metrics, development/validation comparisons, and runtime or strategy changes remain prohibited.
+**Status:** DEVELOPMENT-ONLY EXECUTION PROCEDURE COMMITTED — explicit authorization is required before implementing development tooling. Control generation, governed replay, performance metrics, inference, development outcomes, validation access, and runtime or strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -37,6 +37,7 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - governed runner performance correction: `0da89d7af340ca8bdb629ce29ee09cfbb683f971`
 - governed runner optimization tests: `1017fdffaa2e6abe5b1d5b40988380dfe0676baa`
 - governed-source equivalence PASS evidence: `docs/research/CAMPAIGN_52_GOVERNED_EQUIVALENCE_PASS_EVIDENCE.md`; commit `0db3875d2c181f65b41e06145825f7d5363226e4`
+- development-only execution procedure: `docs/research/CAMPAIGN_52_DEVELOPMENT_EXECUTION_PROCEDURE.md`; commit `af30879a0f37b4a635780a9cea5e8cf2b2590e29`
 
 ## Frozen design
 
@@ -63,22 +64,44 @@ The uninterrupted successful run began at 08:27 local time on 2026-08-05. An ear
 
 This is an implementation/equivalence gate only. It is not a Campaign #52 alpha, performance, statistical, development-versus-validation, ranking, support, or economic result.
 
+## Development procedure result
+
+The committed development-only procedure freezes:
+
+- import and hash verification of the existing governed equivalence target artifacts;
+- structural prohibition on opening validation paths;
+- exact construction of the static, lagged, and 16 deterministic block-permutation controls;
+- two-pass transformation identity before any replay;
+- unchanged target replay and canonical import-integrity checks;
+- fold, stitched hourly, and daily end-of-day NAV construction;
+- primary and secondary metrics;
+- paired 21-day moving-block bootstrap with 10,000 replications;
+- deterministic seed derivation and Holm adjustment across all 20 controls;
+- the frozen development support rule;
+- two-pass artifact identity, atomic output promotion, and fail-closed conditions;
+- required synthetic tests and runtime safeguards.
+
+The procedure explicitly reuses the already validated canonical target artifacts and prohibits rerunning canonical strategy evaluation during development execution.
+
+This is a procedure record only. It contains no generated control, replay, metric, inference, ranking, or development decision.
+
 ## Current authorization
 
-**Decision:** HOLD pending a separate development-execution decision.
+**Decision:** HOLD pending explicit authorization to implement observation-only development tooling and synthetic tests.
 
 Authorized now:
 
-- inspect the committed equivalence PASS record and local manifests only;
-- design and review the exact development-only execution procedure against the frozen specification;
-- add observation-only, deterministic, fail-closed development-run tooling only after explicit board authorization;
-- correct evidence-record defects without changing the frozen Campaign #52 design.
+- inspect and review the committed development-only execution procedure;
+- correct procedure-record defects without changing the frozen Campaign #52 design;
+- decide whether to authorize implementation of deterministic, observation-only, fail-closed development tooling and synthetic tests.
 
 Not authorized:
 
-- generating the static, lagged, or block-permuted controls;
-- executing development or validation Campaign #52 outcomes;
+- implementing development tooling before a separate explicit board authorization;
+- generating static, lagged, or block-permuted controls;
+- replaying canonical or control development outcomes;
 - calculating return, drawdown, Calmar, bootstrap inference, multiplicity, rankings, or support decisions;
+- opening, reading, transforming, replaying, or measuring validation outcomes;
 - comparing development and validation outcomes;
 - changing Core behavior, sources, weights, thresholds, costs, folds, orders, execution, exposure, runtime, dashboard, or model training;
 - paper trading or live execution.
@@ -92,10 +115,12 @@ Not authorized:
 5. Source/calendar preflight — PASS.
 6. Capture/replay implementation and synthetic validation — PASS.
 7. Governed-source capture/replay equivalence — PASS.
-8. Development execution — not authorized.
-9. Validation execution — not authorized.
-10. Prospective confirmation — not authorized.
-11. Economic, paper, or runtime action — not authorized.
+8. Development execution procedure — completed; implementation not authorized.
+9. Development tooling and synthetic validation — not authorized.
+10. Governed development execution — not authorized.
+11. Validation execution — not authorized.
+12. Prospective confirmation — not authorized.
+13. Economic, paper, or runtime action — not authorized.
 
 Passing one stage does not authorize the next.
 
