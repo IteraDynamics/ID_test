@@ -10,7 +10,7 @@ No production or portfolio behavior is authorized unless explicitly stated.
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** CALENDAR-COMPATIBLE BLOCK AMENDMENT AND REPLAY-INPUT CACHING IMPLEMENTED — one focused test gate is required, then the actual 2020-2022 development hypothesis test is authorized immediately.
+**Status:** DEVELOPMENT NEGATIVE — the governed 2020-2022 hypothesis test completed successfully and failed the frozen development gate. Campaign #52 does not advance to validation. Development-result interpretation is authorized; validation access and all runtime or strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -39,6 +39,7 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - irregular-calendar regression tests: `addfc084d5408b837af32ccb47d9d96f2acb9f68`
 - replay-input caching: `abb3262f008d7d0038352cfa8b2bb4562125de6d`
 - amendment implementation record: `bae64a8161fbff3a2345bc24ea9abe28494052db`
+- development-negative result record: `f566958dc94fdff207355ad8f550720a80aeabb3`
 
 ## Frozen design
 
@@ -46,62 +47,62 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - scenario: `baseline_40_35_15_10`
 - development: `2020-01-01` through `2022-12-31`
 - validation: `2023-01-01` through `2025-12-31`
-- exactly 20 controls: one static, lags `24h`, `168h`, `672h`, and sixteen deterministic 28-day block permutations
+- exactly 20 controls: one static, lags `24h`, `168h`, `672h`, and sixteen deterministic calendar-compatible 28-day block permutations
 - primary endpoints: annualized geometric return, maximum drawdown magnitude, Calmar
 - paired daily log-return inference: deterministic 21-day moving-block bootstrap, 10,000 replications
 - Holm adjustment across all 20 controls within development
 - no Core logic, weights, thresholds, costs, folds, orders, execution, NAV, or exposure semantics may change
 
-## Calendar-compatible block amendment
+## Development result
 
-The first amended governed run reached real development target transformation and failed closed because actual complete 28-day blocks do not always contain equal row counts for every sleeve.
+The governed development run completed with:
 
-The authorized correction preserves the 28-day wall-clock design but stratifies complete blocks by the ordered row-count signature across the entire frozen sleeve set. Blocks are permuted only within identical-signature groups using deterministic group seeds. Singleton groups remain fixed. No target row may be truncated, padded, interpolated, filled, duplicated, or moved across folds or stages.
+- status: `PASS`
+- classification: `DEVELOPMENT_NEGATIVE`
+- development gate passed: `false`
+- independent passes: `2`
+- controls: `20`
+- bootstrap replications per control: `10,000`
+- calendar-compatible block permutation: `true`
+- validation targets opened: `false`
+- canonical strategy invoked: `false`
+- runtime, strategy, and weights modified: `false`
 
-The manifest must disclose every signature, compatible group, mapping, movable/fixed count, and per-sleeve equality check.
-
-## Runtime safeguards and efficiency
-
-- two required independent passes execute concurrently by default;
-- each pass prepares the 27 fold/sleeve replay inputs once and reuses them across canonical plus all 20 controls;
-- all sleeve-level artifacts remain materialized in both passes for exact hash identity;
-- all 20 controls and all 10,000 bootstrap replications remain unchanged;
-- progress output reports load, input preparation, transformation, each family, bootstrap controls, and pass completion.
-
-## Prior failed attempts
-
-The governed runner has failed closed three times before any valid development result:
-
-1. static helper received the full verified sleeve mean map while transforming a single stream;
-2. UTC-aware imported timestamps met timezone-naive fold boundaries;
-3. actual sleeve calendars violated the equal-row-count assumption across all complete 28-day blocks.
-
-None of those attempts completed control replay, metrics, inference, multiplicity, or a Campaign classification. Temporary outputs were removed on failure.
+This is a valid negative development result under the frozen Campaign #52 rules. It is not a runtime or economic-action decision.
 
 ## Current authorization
 
-Run the focused implementation suite:
+Authorized now:
 
-`python -m pytest tests/test_campaign52_development.py tests/test_campaign52_development_runner.py -q`
-
-If and only if it passes, immediately run the actual development hypothesis test with no further authorization step:
-
-`python -m scripts.run_campaign52_development`
-
-The governed run is authorized to:
-
-- verify the governed equivalence artifacts and all six source hashes;
-- import only the 27 development target streams;
-- generate the amended frozen family of 20 development controls;
-- replay canonical plus controls through unchanged execution mechanics;
-- calculate the frozen development metrics, bootstrap inference, Holm adjustment, and development decision;
-- produce a valid `ADVANCE_TO_VALIDATION_DECISION` or `DEVELOPMENT_NEGATIVE` classification.
+- inspect and summarize the promoted development artifacts;
+- determine which frozen sub-rules failed;
+- quantify canonical-versus-static, lag, and permutation differences;
+- inspect adjusted p-values, confidence intervals, movable/fixed permutation blocks, and endpoint rankings;
+- write a final Campaign #52 interpretation and closure record.
 
 Still prohibited:
 
-- opening or analyzing validation target artifacts or validation outcomes;
+- opening, reading, replaying, transforming, or measuring validation targets or outcomes;
 - changing Core behavior, sources, weights, thresholds, costs, folds, orders, execution, NAV, exposure, runtime, dashboard, or training;
-- paper trading, live execution, or economic action.
+- paper trading, live execution, or economic action;
+- reframing or retesting Campaign #52 after seeing the result without a separately chartered new campaign.
+
+## Stage separation
+
+1. Planning — completed.
+2. Feasibility — completed.
+3. Family selection — completed.
+4. Statistical specification — frozen.
+5. Source/calendar preflight — PASS.
+6. Capture/replay implementation and synthetic validation — PASS.
+7. Governed-source capture/replay equivalence — PASS.
+8. Development execution procedure — completed.
+9. Development tooling and runner implementation — completed.
+10. Governed development execution — **DEVELOPMENT_NEGATIVE**.
+11. Development-result interpretation and closure — pending artifact review.
+12. Validation execution — prohibited by development result.
+13. Prospective confirmation — not authorized.
+14. Economic, paper, or runtime action — not authorized.
 
 ## Passive campaign
 
