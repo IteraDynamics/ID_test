@@ -10,7 +10,7 @@ No production or portfolio behavior is authorized unless explicitly stated.
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** DEVELOPMENT TOOLING AND SYNTHETIC TESTS COMMITTED — exact local focused-test output is required next. Governed artifact import, control generation, replay, metrics, inference, development outcomes, validation access, and runtime or strategy changes remain prohibited.
+**Status:** DEVELOPMENT TOOLING SYNTHETIC VALIDATION PASS — explicit authorization is required before implementing the governed development artifact importer and execution runner. Governed control generation, replay, metrics, inference, development outcomes, validation access, and runtime or strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -35,6 +35,8 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - development helper implementation: `f9ef8eb41dbbdd9417b1ec0b85918da0e98d2898`
 - development synthetic tests: `54ce33a0f3c9edc881aad69b8f5efbd913516e95`
 - development tooling implementation record: `640ff3a3edd131c622b43e24fe4061742f88a662`
+- leap-year synthetic expectation correction: `78ebc025c421bfffce62301e5a432c484039e5cc`
+- development synthetic PASS evidence: `docs/research/CAMPAIGN_52_DEVELOPMENT_SYNTHETIC_PASS_EVIDENCE.md`; commit `04b1de5b145a451de38118d6d27562d0bdccfe53`
 
 ## Frozen design
 
@@ -69,24 +71,35 @@ The implementation has no governed artifact discovery, source loading, strategy 
 
 No governed target, control, replay, NAV, metric, inference, ranking, or development decision was generated or inspected.
 
-## Current authorization
+## Development synthetic validation result
 
-**Decision:** HOLD pending exact local output from:
+The focused local command:
 
 `python -m pytest tests/test_campaign52_development.py -q`
 
+reported on Windows with Python `3.14.6` and pytest `9.1.1`:
+
+`12 passed in 0.58s`
+
+The first local attempt exposed only a leap-year expectation defect in the fabricated annualization test. The helper correctly used the frozen `365.25 / elapsed_calendar_days` convention; commit `78ebc025c421bfffce62301e5a432c484039e5cc` corrected only the synthetic expected value. The exact rerun then passed all 12 tests.
+
+This PASS establishes fabricated-data helper behavior only. It does not validate governed artifact import, governed replay orchestration, real controls, real metrics, development support, validation outcomes, or economic action.
+
+## Current authorization
+
+**Decision:** HOLD pending explicit authorization to implement the governed development artifact importer, replay runner, and their synthetic/import-integrity tests.
+
 Authorized now:
 
-- pull the committed pure helper implementation and synthetic tests;
-- run only the focused synthetic test file above;
-- inspect and report exact test output;
-- correct synthetic implementation defects without opening governed artifacts or changing the frozen design;
-- return to this board for a separate synthetic-validation and governed-runner implementation decision.
+- inspect the committed synthetic PASS record;
+- design and review the exact governed importer and runner implementation against the frozen procedure;
+- decide whether to authorize deterministic, development-only, observation-only, fail-closed importer/runner implementation;
+- correct evidence-record defects without changing the frozen Campaign #52 design.
 
 Not authorized:
 
-- opening governed equivalence target artifacts;
-- implementing or running a governed development artifact importer or execution runner;
+- opening governed equivalence target artifacts before a separate implementation authorization;
+- implementing or running the governed development artifact importer or execution runner before that authorization;
 - generating governed static, lagged, or block-permuted controls;
 - replaying canonical or control development outcomes;
 - calculating or inspecting governed return, drawdown, Calmar, bootstrap, rankings, or support decisions;
@@ -105,8 +118,8 @@ Not authorized:
 6. Capture/replay implementation and synthetic validation — PASS.
 7. Governed-source capture/replay equivalence — PASS.
 8. Development execution procedure — completed.
-9. Development tooling implementation and synthetic tests — committed.
-10. Synthetic validation — **pending local evidence**.
+9. Development tooling implementation — completed.
+10. Development tooling synthetic validation — PASS.
 11. Governed development runner implementation — not authorized.
 12. Governed development execution — not authorized.
 13. Validation execution — not authorized.
