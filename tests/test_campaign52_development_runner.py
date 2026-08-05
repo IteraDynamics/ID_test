@@ -84,6 +84,14 @@ def test_equivalence_identity_and_exact_development_import(tmp_path: Path):
     assert all(len(records) == 1 for records in imported.values())
 
 
+def test_target_csv_normalizes_utc_to_naive_without_changing_instant(tmp_path: Path):
+    path = tmp_path / "development" / "2020" / "sleeve" / "targets.csv"
+    write_target(path, "2020", "sleeve")
+    record = load_target_csv(path)[0]
+    assert record.timestamp == pd.Timestamp("2020-01-01 00:00:00")
+    assert record.timestamp.tzinfo is None
+
+
 def test_equivalence_hash_map_mismatch_fails_closed(tmp_path: Path):
     root, hashes = make_equivalence_root(tmp_path)
     broken = dict(hashes)
