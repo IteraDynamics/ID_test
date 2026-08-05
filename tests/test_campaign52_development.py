@@ -135,7 +135,8 @@ def test_daily_eod_and_primary_metric_edge_cases():
     assert list(daily.index) == [pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02")]
     assert daily.iloc[-1] == 110.0
     metrics = primary_metrics(pd.Series([100.0, 110.0], index=pd.to_datetime(["2020-01-01", "2021-01-01"])))
-    assert metrics["annualized_geometric_return"] == pytest.approx(0.1, rel=2e-3)
+    expected = 1.1 ** (365.25 / 366.0) - 1.0
+    assert metrics["annualized_geometric_return"] == pytest.approx(expected)
     assert metrics["max_drawdown_magnitude"] == 0.0
     assert np.isinf(metrics["calmar"])
 
