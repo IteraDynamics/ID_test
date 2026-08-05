@@ -10,7 +10,7 @@ No production or portfolio behavior is authorized unless explicitly stated.
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** GOVERNED EQUIVALENCE RUNNER PERFORMANCE CORRECTION COMMITTED — local governed-source capture/replay equivalence evidence is still required. Counterfactual generation, performance metrics, development/validation comparisons, and runtime or strategy changes remain prohibited.
+**Status:** GOVERNED-SOURCE CAPTURE/REPLAY EQUIVALENCE PASS — separate development-execution authorization is required next. Counterfactual generation, performance metrics, development/validation comparisons, and runtime or strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -36,6 +36,7 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - HOLD validation regression tests: `184229dafc2f4b96bdb43b3135e6a6e1f5e339ea`
 - governed runner performance correction: `0da89d7af340ca8bdb629ce29ee09cfbb683f971`
 - governed runner optimization tests: `1017fdffaa2e6abe5b1d5b40988380dfe0676baa`
+- governed-source equivalence PASS evidence: `docs/research/CAMPAIGN_52_GOVERNED_EQUIVALENCE_PASS_EVIDENCE.md`; commit `0db3875d2c181f65b41e06145825f7d5363226e4`
 
 ## Frozen design
 
@@ -46,61 +47,40 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - exactly 20 controls: one static, lags `24h`, `168h`, `672h`, and sixteen 28-day block permutations
 - no Core logic, weights, thresholds, costs, folds, or execution semantics may change
 
-## Interrupted-run evidence
+## Governed-source equivalence result
 
-The local governed equivalence run started at `13:33:54` and was interrupted after more than two hours while capture mode repeatedly recomputed trend indicators over every growing dataframe prefix. The traceback terminated in `trend_following_v8._atr(...).ewm(...).mean()`.
+The corrected local governed-source equivalence run reported:
 
-This was a runner complexity defect, not a Campaign #52 result. No PASS manifest was produced. No counterfactuals or Campaign #52 performance metrics were generated.
+- `status: PASS`;
+- all six frozen source SHA-256 identities matched;
+- canonical versus capture equivalence passed;
+- capture versus unchanged-target replay equivalence passed;
+- sleeve equity, realized exposure, trade economics, fold fund NAV, and stitched NAV checks passed;
+- two independent passes produced identical artifact SHA-256 maps;
+- no counterfactuals, Campaign performance metrics, bootstrap, runtime modification, strategy modification, or weight modification occurred.
 
-## Performance correction
+The uninterrupted successful run began at 08:27 local time on 2026-08-05. An earlier run stopped for computer shutdown is not evidence.
 
-The corrected runner:
-
-- executes the unchanged canonical strategy once per sleeve/fold;
-- requires one canonical intent for every dataframe timestamp;
-- reuses that exact canonical `StrategyIntent` sequence for the capture adapter;
-- validates intent sequence against each chronological dataframe prefix;
-- still runs capture and unchanged-target replay through unchanged execution mechanics;
-- runs the two required independent passes concurrently by default in separate directories;
-- provides fold and sleeve progress messages;
-- preserves all equivalence comparisons and deterministic artifact hashing.
-
-This correction does not precompute approximate indicators, shorten history, alter strategy logic, change thresholds, or modify runtime behavior.
-
-## Governed equivalence runner contract
-
-The runner must:
-
-- verify all six frozen source hashes before execution;
-- run canonical, capture-only, and unchanged-target replay paths only;
-- compare sleeve equity, realized exposure, and trade economics;
-- compare fold fund NAV and stitched NAV;
-- repeat independently twice;
-- require identical artifact SHA-256 maps;
-- write a PASS manifest only after all checks succeed.
-
-Replay audit reason text is excluded from economic trade equivalence; timestamps, directions, prices, quantities, notionals, fees, slippage, spread, cost basis points, exposures, and strategy identities remain included.
+This is an implementation/equivalence gate only. It is not a Campaign #52 alpha, performance, statistical, development-versus-validation, ranking, support, or economic result.
 
 ## Current authorization
 
-**Decision:** HOLD pending focused optimization tests and exact local output from the corrected governed equivalence runner.
+**Decision:** HOLD pending a separate development-execution decision.
 
 Authorized now:
 
-- pull the performance correction and regression tests;
-- run `tests/test_campaign52_governed_equivalence_runner.py` and `tests/test_campaign52_target_replay.py` only;
-- execute `python -m scripts.run_campaign52_governed_equivalence` using the six governed defaults;
-- inspect only command output and equivalence/artifact manifests;
-- correct runner defects without changing the frozen Campaign #52 design;
-- report exact output and manifest identities;
-- return to this board for a separate development-execution decision.
+- inspect the committed equivalence PASS record and local manifests only;
+- design and review the exact development-only execution procedure against the frozen specification;
+- add observation-only, deterministic, fail-closed development-run tooling only after explicit board authorization;
+- correct evidence-record defects without changing the frozen Campaign #52 design.
 
 Not authorized:
 
-- generating static, lagged, or block-permuted controls;
-- calculating Campaign #52 performance metrics, bootstrap inference, multiplicity, rankings, or support decisions;
-- development or validation outcome comparison;
-- changing Core behavior, sources, weights, thresholds, costs, folds, orders, execution, runtime, dashboard, or model training;
+- generating the static, lagged, or block-permuted controls;
+- executing development or validation Campaign #52 outcomes;
+- calculating return, drawdown, Calmar, bootstrap inference, multiplicity, rankings, or support decisions;
+- comparing development and validation outcomes;
+- changing Core behavior, sources, weights, thresholds, costs, folds, orders, execution, exposure, runtime, dashboard, or model training;
 - paper trading or live execution.
 
 ## Stage separation
@@ -111,10 +91,11 @@ Not authorized:
 4. Statistical specification — completed.
 5. Source/calendar preflight — PASS.
 6. Capture/replay implementation and synthetic validation — PASS.
-7. Governed-source capture/replay equivalence runner — performance correction committed; local evidence pending.
-8. Development/validation execution — not authorized.
-9. Prospective confirmation — not authorized.
-10. Economic, paper, or runtime action — not authorized.
+7. Governed-source capture/replay equivalence — PASS.
+8. Development execution — not authorized.
+9. Validation execution — not authorized.
+10. Prospective confirmation — not authorized.
+11. Economic, paper, or runtime action — not authorized.
 
 Passing one stage does not authorize the next.
 
