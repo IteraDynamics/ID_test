@@ -10,7 +10,7 @@ No production or portfolio behavior is authorized unless explicitly stated.
 
 **Campaign:** Campaign #52 — Core v1 Chronological State Value
 
-**Status:** DEVELOPMENT TOOLING SYNTHETIC VALIDATION PASS — explicit authorization is required before implementing the governed development artifact importer and execution runner. Governed control generation, replay, metrics, inference, development outcomes, validation access, and runtime or strategy changes remain prohibited.
+**Status:** GOVERNED DEVELOPMENT RUNNER IMPLEMENTED — one combined focused test gate is required next; after it passes, the actual 2020-2022 development hypothesis test is authorized. Validation access and all runtime or strategy changes remain prohibited.
 
 **Branch:** `agent/campaign-50-holdout-first-alpha-research-planning`
 
@@ -25,18 +25,16 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - planning charter: `8ad9f3aae3dc4b36010ef8f723ae1c88bbf7db9d`
 - feasibility inventory: `a86eba5392e57e936d65c4eb46207cb51c03b309`
 - family selection: `e2aa9ceafe531e11bea7040fe4309ac9e65b8ab2`
-- frozen specification: `14a96b4078eec516570fce0c289baa061398a995`
+- frozen statistical specification: `14a96b4078eec516570fce0c289baa061398a995`
 - source/calendar evidence: `bd2af6c11991a637510122bdb4a3300b9653be14`
 - capture/replay adapter: `bf5d7d7d7c18f23ddea6a1c622ce26359ef12393`
-- synthetic capture/replay tests: `1adb2c255bbd56e2332ceada15862f7a10d70c99`
-- governed-source equivalence PASS evidence: `0db3875d2c181f65b41e06145825f7d5363226e4`
-- development-only execution procedure: `af30879a0f37b4a635780a9cea5e8cf2b2590e29`
-- development tooling authorization: `82b1e920c5b0e1bd4918e62d9b13eed511463d1b`
+- governed-source equivalence PASS: `0db3875d2c181f65b41e06145825f7d5363226e4`
+- development procedure: `af30879a0f37b4a635780a9cea5e8cf2b2590e29`
 - development helper implementation: `f9ef8eb41dbbdd9417b1ec0b85918da0e98d2898`
-- development synthetic tests: `54ce33a0f3c9edc881aad69b8f5efbd913516e95`
-- development tooling implementation record: `640ff3a3edd131c622b43e24fe4061742f88a662`
-- leap-year synthetic expectation correction: `78ebc025c421bfffce62301e5a432c484039e5cc`
-- development synthetic PASS evidence: `docs/research/CAMPAIGN_52_DEVELOPMENT_SYNTHETIC_PASS_EVIDENCE.md`; commit `04b1de5b145a451de38118d6d27562d0bdccfe53`
+- development synthetic PASS: `04b1de5b145a451de38118d6d27562d0bdccfe53`
+- governed development runner: `4443496290bdde5762edd8fe0deaf7a523be0c41`
+- runner integration tests: `06a750a051883f85df579aa662e0a563be389b48`
+- runner implementation record: `4a764ca0fb13e3ec38d1e7a54f06584c730dea35`
 
 ## Frozen design
 
@@ -44,89 +42,49 @@ Determine whether canonical Core v1 derives material value from authentic chrono
 - scenario: `baseline_40_35_15_10`
 - development: `2020-01-01` through `2022-12-31`
 - validation: `2023-01-01` through `2025-12-31`
-- exactly 20 controls: one static, lags `24h`, `168h`, `672h`, and sixteen 28-day block permutations
-- no Core logic, weights, thresholds, costs, folds, or execution semantics may change
+- exactly 20 controls: one static, lags `24h`, `168h`, `672h`, and sixteen deterministic 28-day block permutations
+- primary endpoints: annualized geometric return, maximum drawdown magnitude, Calmar
+- paired daily log-return inference: deterministic 21-day moving-block bootstrap, 10,000 replications
+- Holm adjustment across all 20 controls within development
+- no Core logic, weights, thresholds, costs, folds, orders, execution, NAV, or exposure semantics may change
 
-## Governed-source equivalence result
-
-The governed-source equivalence gate passed with all six frozen source identities, canonical-versus-capture equality, capture-versus-replay equality, two independent artifact-identical passes, and no counterfactual or performance analysis.
-
-This was an implementation gate only, not a Campaign #52 alpha or support result.
-
-## Development tooling implementation
-
-The committed pure helper module and fabricated-data tests cover:
-
-- structural validation-path rejection;
-- exact static, lagged, and deterministic block-permutation transformations;
-- deterministic seed and Fisher-Yates behavior;
-- terminal-block and row-count invariants;
-- daily end-of-day NAV and primary metric conventions;
-- deterministic 21-day, 10,000-replication moving-block bootstrap;
-- exact 20-member Holm adjustment;
-- development decision boundaries;
-- atomic output promotion and stale-output rejection.
-
-The implementation has no governed artifact discovery, source loading, strategy invocation, replay orchestration, or validation-stage access.
-
-No governed target, control, replay, NAV, metric, inference, ranking, or development decision was generated or inspected.
-
-## Development synthetic validation result
-
-The focused local command:
-
-`python -m pytest tests/test_campaign52_development.py -q`
-
-reported on Windows with Python `3.14.6` and pytest `9.1.1`:
-
-`12 passed in 0.58s`
-
-The first local attempt exposed only a leap-year expectation defect in the fabricated annualization test. The helper correctly used the frozen `365.25 / elapsed_calendar_days` convention; commit `78ebc025c421bfffce62301e5a432c484039e5cc` corrected only the synthetic expected value. The exact rerun then passed all 12 tests.
-
-This PASS establishes fabricated-data helper behavior only. It does not validate governed artifact import, governed replay orchestration, real controls, real metrics, development support, validation outcomes, or economic action.
-
-## Current authorization
-
-**Decision:** HOLD pending explicit authorization to implement the governed development artifact importer, replay runner, and their synthetic/import-integrity tests.
-
-Authorized now:
-
-- inspect the committed synthetic PASS record;
-- design and review the exact governed importer and runner implementation against the frozen procedure;
-- decide whether to authorize deterministic, development-only, observation-only, fail-closed importer/runner implementation;
-- correct evidence-record defects without changing the frozen Campaign #52 design.
-
-Not authorized:
-
-- opening governed equivalence target artifacts before a separate implementation authorization;
-- implementing or running the governed development artifact importer or execution runner before that authorization;
-- generating governed static, lagged, or block-permuted controls;
-- replaying canonical or control development outcomes;
-- calculating or inspecting governed return, drawdown, Calmar, bootstrap, rankings, or support decisions;
-- opening, reading, transforming, replaying, or measuring validation outcomes;
-- comparing development and validation outcomes;
-- changing Core behavior, sources, weights, thresholds, costs, folds, orders, execution, exposure, runtime, dashboard, or model training;
-- paper trading or live execution.
-
-## Stage separation
+## Completed gates
 
 1. Planning — completed.
 2. Feasibility — completed.
 3. Family selection — completed.
-4. Statistical specification — completed.
+4. Statistical specification — frozen.
 5. Source/calendar preflight — PASS.
 6. Capture/replay implementation and synthetic validation — PASS.
 7. Governed-source capture/replay equivalence — PASS.
 8. Development execution procedure — completed.
-9. Development tooling implementation — completed.
-10. Development tooling synthetic validation — PASS.
-11. Governed development runner implementation — not authorized.
-12. Governed development execution — not authorized.
-13. Validation execution — not authorized.
-14. Prospective confirmation — not authorized.
-15. Economic, paper, or runtime action — not authorized.
+9. Development helper implementation and synthetic validation — PASS (`12 passed in 0.58s`).
+10. Governed development importer/runner implementation — completed.
 
-Passing one stage does not authorize the next.
+## Current authorization
+
+**Decision:** Run one final combined focused implementation gate:
+
+`python -m pytest tests/test_campaign52_development.py tests/test_campaign52_development_runner.py -q`
+
+If and only if that command passes, the actual development hypothesis test is authorized immediately with no additional procedure or micro-gate:
+
+`python -m scripts.run_campaign52_development`
+
+The governed run is authorized to:
+
+- verify the governed equivalence artifacts and all six source hashes;
+- import only the 27 development target streams;
+- generate the frozen 20 development controls;
+- replay canonical plus controls through unchanged execution mechanics;
+- calculate the frozen development metrics, bootstrap inference, Holm adjustment, and development decision;
+- produce a valid `ADVANCE_TO_VALIDATION_DECISION` or `DEVELOPMENT_NEGATIVE` classification.
+
+Still prohibited:
+
+- opening or analyzing validation target artifacts or validation outcomes;
+- changing Core behavior, sources, weights, thresholds, costs, folds, orders, execution, NAV, exposure, runtime, dashboard, or training;
+- paper trading, live execution, or economic action.
 
 ## Passive campaign
 
