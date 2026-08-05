@@ -62,6 +62,9 @@ def test_static_mean_and_transform_are_exact():
     assert means == {"A": 0.25, "B": pytest.approx(0.3)}
     transformed = transform_static(rows, means)
     assert {r.signed_target_exposure for r in transformed if r.sleeve_label == "A"} == {0.25}
+    one_stream = [r for r in rows if r.fold == "2020" and r.sleeve_label == "A"]
+    transformed_one_stream = transform_static(one_stream, means)
+    assert {r.signed_target_exposure for r in transformed_one_stream} == {0.25}
 
 
 def test_lag_requires_exact_same_fold_timestamp_and_zero_fills():
