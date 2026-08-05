@@ -87,7 +87,6 @@ def test_seed_derivation_and_fisher_yates_are_deterministic():
 
 def test_block_permutation_preserves_terminal_rows_and_is_shared_across_sleeves():
     start = pd.Timestamp("2020-01-01")
-    # Two complete 28-day blocks plus a two-day terminal remainder.
     times = pd.date_range(start, periods=58, freq="1D")
     a = records_for_fold("2020", "A", times, np.arange(58))
     b = records_for_fold("2020", "B", times, np.arange(100, 158))
@@ -98,26 +97,68 @@ def test_block_permutation_preserves_terminal_rows_and_is_shared_across_sleeves(
         fold_starts={"2020": start},
         fold_ends={"2020": pd.Timestamp("2020-02-27")},
     )
-    assert manifest["folds"]["2020"]["complete_block_count"] == 2
+    fold_info = manifest["folds"]["2020"]
+    assert fold_info["complete_block_count"] == 2
+    assert fold_info["movable_block_count"] == 2
     by_sleeve = {s: [r for r in out if r.sleeve_label == s] for s in ("A", "B")}
     assert [r.signed_target_exposure for r in by_sleeve["A"][-2:]] == [56.0, 57.0]
     assert [r.signed_target_exposure for r in by_sleeve["B"][-2:]] == [156.0, 157.0]
-    # Shared permutation means source offsets between sleeves remain exactly 100.
-    assert all(brow.signed_target_exposure - arow.signed_target_exposure == 100 for arow, brow in zip(by_sleeve["A"][:-2], by_sleeve["B"][:-2], strict=True))
+    assert all(
+        brow.signed_target_exposure - arow.signed_target_exposure == 100
+        for arow, brow in zip(by_sleeve["A"][:-2], by_sleeve["B"][:-2], strict=True)
+    )
 
 
-def test_unequal_complete_block_rows_fail_closed():
+def test_irregular_blocks_are_stratified_without_row_loss_or_padding():
     start = pd.Timestamp("2020-01-01")
-    times = list(pd.date_range(start, periods=56, freq="1D"))
-    times.pop(40)
-    rows = records_for_fold("2020", "A", times, np.arange(len(times)))
-    with pytest.raises(Campaign52DevelopmentError, match="UNEQUAL_COMPLETE_BLOCK_ROWS"):
-        transform_block_permutation(
-            rows,
-            "perm_01",
-            fold_starts={"2020": start},
-            fold_ends={"2020": pd.Timestamp("2020-02-25")},
-        )
+    times_a = list(pd.date_range(start, periods=84, freq="1D"))
+    times_b = list(times_a)
+    times_b.remove(pd.Timestamp("2020-02-10"))  # block 1 differs only for sleeve B
+    a = records_for_fold("2020", "A", times_a, np.arange(len(times_a)))
+    b = records_for_fold("2020", "B", times_b, np.arange(100, 100 + len(times_b)))
+    rows = sorted(a + b, key=lambda r: (r.fold, r.sleeve_label, r.timestamp, r.sequence_number))
+
+    out, manifest = transform_block_permutation(
+        rows,
+        "perm_03",
+        fold_starts={"2020": start},
+        fold_ends={"2020": pd.Timestamp("2020-03-24")},
+    )
+    fold_info = manifest["folds"]["2020"]
+    assert fold_info["block_signatures"] == [[28, 28], [28, 27], [28, 28]]
+    assert fold_info["movable_block_count"] == 2
+    assert fold_info["fixed_block_count"] == 1
+    assert len(out) == len(rows)
+    assert all(all(checks) for checks in fold_info["per_sleeve_row_count_equal"].values())
+
+    by_key_in = {(r.sleeve_label, r.timestamp): r for r in rows}
+    by_key_out = {(r.sleeve_label, r.timestamp): r for r in out}
+    assert set(by_key_out) == set(by_key_in)
+    irregular_start = pd.Timestamp("2020-01-29")
+    irregular_end = pd.Timestamp("2020-02-25 23:59:59")
+    for key, original in by_key_in.items():
+        if irregular_start <= original.timestamp <= irregular_end:
+            assert by_key_out[key].signed_target_exposure == original.signed_target_exposure
+
+
+def test_block_permutation_is_deterministic_with_timezone_aware_inputs():
+    start = pd.Timestamp("2020-01-01")
+    times = pd.date_range(start, periods=56, freq="1D", tz="UTC")
+    rows = records_for_fold("2020", "A", times, np.arange(56))
+    first, first_manifest = transform_block_permutation(
+        rows,
+        "perm_08",
+        fold_starts={"2020": start},
+        fold_ends={"2020": pd.Timestamp("2020-02-25")},
+    )
+    second, second_manifest = transform_block_permutation(
+        rows,
+        "perm_08",
+        fold_starts={"2020": start},
+        fold_ends={"2020": pd.Timestamp("2020-02-25")},
+    )
+    assert first == second
+    assert first_manifest == second_manifest
 
 
 def test_two_pass_target_bytes_are_identical(tmp_path: Path):
