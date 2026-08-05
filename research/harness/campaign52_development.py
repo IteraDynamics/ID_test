@@ -1,8 +1,8 @@
 """Pure Campaign #52 development-stage transformations and inference helpers.
 
-This module is observation-only.  It contains no governed artifact discovery,
+This module is observation-only. It contains no governed artifact discovery,
 strategy invocation, source loading, replay orchestration, or validation-stage
-access.  Callers must supply already-validated synthetic or development-only
+access. Callers must supply already-validated synthetic or development-only
 records explicitly.
 """
 
@@ -14,7 +14,7 @@ import os
 import shutil
 from dataclasses import replace
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -31,6 +31,7 @@ CONTROL_IDS = (
 DEVELOPMENT_FOLDS = ("2020", "2021", "2022")
 FORBIDDEN_PATH_TOKENS = ("validation", "2023", "2024", "2025")
 BOOTSTRAP_ALGORITHM_VERSION = "moving_block_v1"
+BLOCK_PERMUTATION_ALGORITHM_VERSION = "calendar_signature_stratified_v2"
 
 
 class Campaign52DevelopmentError(ValueError):
@@ -74,7 +75,9 @@ def static_mean_values(records: Sequence[TargetRecord]) -> dict[str, float]:
     return {sleeve: math.fsum(values) / len(values) for sleeve, values in sorted(grouped.items())}
 
 
-def transform_static(records: Sequence[TargetRecord], means: Mapping[str, float] | None = None) -> list[TargetRecord]:
+def transform_static(
+    records: Sequence[TargetRecord], means: Mapping[str, float] | None = None
+) -> list[TargetRecord]:
     validate_development_records(records)
     resolved = dict(means or static_mean_values(records))
     required_sleeves = {r.sleeve_label for r in records}
@@ -83,18 +86,24 @@ def transform_static(records: Sequence[TargetRecord], means: Mapping[str, float]
     return [replace(r, signed_target_exposure=float(resolved[r.sleeve_label])) for r in records]
 
 
-def transform_lag(records: Sequence[TargetRecord], lag_hours: int) -> tuple[list[TargetRecord], dict[str, int]]:
+def transform_lag(
+    records: Sequence[TargetRecord], lag_hours: int
+) -> tuple[list[TargetRecord], dict[str, int]]:
     validate_development_records(records)
     if lag_hours not in (24, 168, 672):
         raise Campaign52DevelopmentError("UNAUTHORIZED_LAG")
     by_stream: dict[tuple[str, str], dict[pd.Timestamp, float]] = {}
     for record in records:
-        by_stream.setdefault((record.fold, record.sleeve_label), {})[pd.Timestamp(record.timestamp)] = float(record.signed_target_exposure)
+        by_stream.setdefault((record.fold, record.sleeve_label), {})[
+            pd.Timestamp(record.timestamp)
+        ] = float(record.signed_target_exposure)
     matched = zero_filled = 0
     out: list[TargetRecord] = []
     delta = pd.Timedelta(hours=lag_hours)
     for record in records:
-        value = by_stream[(record.fold, record.sleeve_label)].get(pd.Timestamp(record.timestamp) - delta)
+        value = by_stream[(record.fold, record.sleeve_label)].get(
+            pd.Timestamp(record.timestamp) - delta
+        )
         if value is None:
             value = 0.0
             zero_filled += 1
@@ -131,6 +140,16 @@ def fisher_yates(n: int, seed: int) -> list[int]:
     return order
 
 
+def _block_index(timestamp: pd.Timestamp, start: pd.Timestamp) -> int:
+    ts = pd.Timestamp(timestamp)
+    origin = pd.Timestamp(start)
+    if ts.tzinfo is not None:
+        ts = ts.tz_convert("UTC").tz_localize(None)
+    if origin.tzinfo is not None:
+        origin = origin.tz_convert("UTC").tz_localize(None)
+    return int((ts - origin) // pd.Timedelta(days=28))
+
+
 def transform_block_permutation(
     records: Sequence[TargetRecord],
     control_id: str,
@@ -138,62 +157,154 @@ def transform_block_permutation(
     fold_starts: Mapping[str, pd.Timestamp],
     fold_ends: Mapping[str, pd.Timestamp],
 ) -> tuple[list[TargetRecord], dict[str, object]]:
+    """Permute compatible 28-day blocks without altering native calendars.
+
+    Complete blocks are stratified by their ordered row-count signature across
+    the full sleeve set. Fisher-Yates is applied only within groups whose
+    signatures match exactly. Singleton groups remain fixed. This preserves one
+    source row for every destination row without truncation, padding, filling,
+    interpolation, duplication, or cross-sleeve calendar drift.
+    """
     validate_development_records(records)
-    seed = permutation_seed(control_id)
+    base_seed = permutation_seed(control_id)
     out: list[TargetRecord] = []
-    manifest: dict[str, object] = {"control_id": control_id, "seed": seed, "folds": {}}
+    manifest: dict[str, object] = {
+        "algorithm": BLOCK_PERMUTATION_ALGORITHM_VERSION,
+        "control_id": control_id,
+        "seed": base_seed,
+        "folds": {},
+    }
+
     for fold in DEVELOPMENT_FOLDS:
         fold_records = [r for r in records if r.fold == fold]
         if not fold_records:
             continue
         start = pd.Timestamp(fold_starts[fold])
         end = pd.Timestamp(fold_ends[fold])
+        if start.tzinfo is not None:
+            start = start.tz_convert("UTC").tz_localize(None)
+        if end.tzinfo is not None:
+            end = end.tz_convert("UTC").tz_localize(None)
         total_days = int((end.normalize() - start.normalize()).days) + 1
         complete_count = total_days // 28
-        permutation = fisher_yates(complete_count, seed)
-        fold_info: dict[str, object] = {
-            "complete_block_count": complete_count,
-            "canonical_order": list(range(complete_count)),
-            "permuted_order": permutation,
-            "terminal_days": total_days - complete_count * 28,
-        }
-        for sleeve in sorted({r.sleeve_label for r in fold_records}):
-            stream = [r for r in fold_records if r.sleeve_label == sleeve]
-            blocks: list[list[TargetRecord]] = [[] for _ in range(complete_count)]
+        terminal_days = total_days - complete_count * 28
+        sleeves = sorted({r.sleeve_label for r in fold_records})
+
+        blocks_by_sleeve: dict[str, list[list[TargetRecord]]] = {}
+        terminal_by_sleeve: dict[str, list[TargetRecord]] = {}
+        for sleeve in sleeves:
+            blocks = [[] for _ in range(complete_count)]
             terminal: list[TargetRecord] = []
-            for record in stream:
-                block_index = int((pd.Timestamp(record.timestamp) - start) // pd.Timedelta(days=28))
-                if 0 <= block_index < complete_count:
-                    blocks[block_index].append(record)
+            for record in (r for r in fold_records if r.sleeve_label == sleeve):
+                idx = _block_index(pd.Timestamp(record.timestamp), start)
+                if 0 <= idx < complete_count:
+                    blocks[idx].append(record)
                 else:
                     terminal.append(record)
-            counts = [len(block) for block in blocks]
-            if counts and len(set(counts)) != 1:
-                raise Campaign52DevelopmentError(f"UNEQUAL_COMPLETE_BLOCK_ROWS:{fold}:{sleeve}")
-            destination = [r for block in blocks for r in block]
-            source = [r for source_idx in permutation for r in blocks[source_idx]]
-            if len(destination) != len(source):
-                raise Campaign52DevelopmentError("BLOCK_ROW_COUNT_MISMATCH")
-            out.extend(
-                replace(dest, signed_target_exposure=float(src.signed_target_exposure))
-                for dest, src in zip(destination, source, strict=True)
+            blocks_by_sleeve[sleeve] = blocks
+            terminal_by_sleeve[sleeve] = terminal
+
+        signatures: list[tuple[int, ...]] = [
+            tuple(len(blocks_by_sleeve[sleeve][idx]) for sleeve in sleeves)
+            for idx in range(complete_count)
+        ]
+        groups: dict[tuple[int, ...], list[int]] = {}
+        for idx, signature in enumerate(signatures):
+            groups.setdefault(signature, []).append(idx)
+
+        source_for_destination = list(range(complete_count))
+        group_rows: list[dict[str, object]] = []
+        movable_blocks = 0
+        for signature, destination_indices in sorted(groups.items(), key=lambda item: item[1][0]):
+            signature_text = ",".join(str(value) for value in signature)
+            group_seed = seed64(
+                f"campaign52|block28d|perm|{control_id[-2:]}|fold|{fold}|signature|{signature_text}"
             )
-            out.extend(terminal)
-        manifest["folds"][fold] = fold_info
-    out.sort(key=lambda r: (r.fold, r.sleeve_label, pd.Timestamp(r.timestamp), r.sequence_number))
+            local_order = fisher_yates(len(destination_indices), group_seed)
+            source_indices = [destination_indices[pos] for pos in local_order]
+            for destination_idx, source_idx in zip(
+                destination_indices, source_indices, strict=True
+            ):
+                source_for_destination[destination_idx] = source_idx
+            if len(destination_indices) > 1:
+                movable_blocks += len(destination_indices)
+            group_rows.append(
+                {
+                    "signature": list(signature),
+                    "destination_blocks": destination_indices,
+                    "source_blocks": source_indices,
+                    "seed": group_seed,
+                    "movable": len(destination_indices) > 1,
+                }
+            )
+
+        equality_checks: dict[str, list[bool]] = {}
+        for sleeve in sleeves:
+            blocks = blocks_by_sleeve[sleeve]
+            checks: list[bool] = []
+            for destination_idx, source_idx in enumerate(source_for_destination):
+                destination_block = blocks[destination_idx]
+                source_block = blocks[source_idx]
+                equal = len(destination_block) == len(source_block)
+                checks.append(equal)
+                if not equal:
+                    raise Campaign52DevelopmentError(
+                        f"BLOCK_ROW_COUNT_MISMATCH:{fold}:{sleeve}:{destination_idx}:{source_idx}"
+                    )
+                out.extend(
+                    replace(dest, signed_target_exposure=float(src.signed_target_exposure))
+                    for dest, src in zip(destination_block, source_block, strict=True)
+                )
+            out.extend(terminal_by_sleeve[sleeve])
+            equality_checks[sleeve] = checks
+
+        manifest["folds"][fold] = {
+            "complete_block_count": complete_count,
+            "terminal_days": terminal_days,
+            "sleeves": sleeves,
+            "block_signatures": [list(signature) for signature in signatures],
+            "groups": group_rows,
+            "destination_to_source": source_for_destination,
+            "movable_block_count": movable_blocks,
+            "fixed_block_count": complete_count - movable_blocks,
+            "per_sleeve_row_count_equal": equality_checks,
+        }
+
+    out.sort(
+        key=lambda r: (
+            r.fold,
+            r.sleeve_label,
+            pd.Timestamp(r.timestamp),
+            r.sequence_number,
+        )
+    )
+    if len(out) != len(records):
+        raise Campaign52DevelopmentError("PERMUTATION_ROW_COUNT_CHANGED")
     return out, manifest
 
 
 def daily_eod_nav(hourly_nav: pd.Series) -> pd.Series:
-    if not isinstance(hourly_nav.index, pd.DatetimeIndex) or hourly_nav.index.has_duplicates or not hourly_nav.index.is_monotonic_increasing:
+    if (
+        not isinstance(hourly_nav.index, pd.DatetimeIndex)
+        or hourly_nav.index.has_duplicates
+        or not hourly_nav.index.is_monotonic_increasing
+    ):
         raise Campaign52DevelopmentError("INVALID_NAV_INDEX")
-    if hourly_nav.empty or not np.isfinite(hourly_nav.to_numpy(dtype=float)).all() or (hourly_nav <= 0).any():
+    if (
+        hourly_nav.empty
+        or not np.isfinite(hourly_nav.to_numpy(dtype=float)).all()
+        or (hourly_nav <= 0).any()
+    ):
         raise Campaign52DevelopmentError("INVALID_NAV_VALUES")
     return hourly_nav.resample("1D").last().dropna().rename("nav")
 
 
 def primary_metrics(daily_nav: pd.Series) -> dict[str, float]:
-    nav = daily_eod_nav(daily_nav) if daily_nav.index.freq is None and any(daily_nav.index.time) else daily_nav.astype(float)
+    nav = (
+        daily_eod_nav(daily_nav)
+        if daily_nav.index.freq is None and any(daily_nav.index.time)
+        else daily_nav.astype(float)
+    )
     if len(nav) < 2 or (nav <= 0).any() or not np.isfinite(nav.to_numpy()).all():
         raise Campaign52DevelopmentError("INSUFFICIENT_PRIMARY_METRIC_DATA")
     elapsed_days = (nav.index[-1].normalize() - nav.index[0].normalize()).days
@@ -206,7 +317,11 @@ def primary_metrics(daily_nav: pd.Series) -> dict[str, float]:
         calmar = math.inf if annual_return > 0 else (0.0 if annual_return == 0 else -math.inf)
     else:
         calmar = annual_return / max_dd
-    return {"annualized_geometric_return": annual_return, "max_drawdown_magnitude": max_dd, "calmar": float(calmar)}
+    return {
+        "annualized_geometric_return": annual_return,
+        "max_drawdown_magnitude": max_dd,
+        "calmar": float(calmar),
+    }
 
 
 def moving_block_bootstrap(
@@ -226,11 +341,15 @@ def moving_block_bootstrap(
     rng = np.random.default_rng(seed)
     chosen = rng.choice(starts, size=(replications, blocks_needed), replace=True)
     offsets = np.arange(block_length)
-    indices = (chosen[:, :, None] + offsets[None, None, :]).reshape(replications, -1)[:, : len(values)]
+    indices = (chosen[:, :, None] + offsets[None, None, :]).reshape(
+        replications, -1
+    )[:, : len(values)]
     return values[indices]
 
 
-def bootstrap_summary(paired: Sequence[float] | np.ndarray, control_id: str) -> dict[str, float | int | str]:
+def bootstrap_summary(
+    paired: Sequence[float] | np.ndarray, control_id: str
+) -> dict[str, float | int | str]:
     values = np.asarray(paired, dtype=float)
     samples = moving_block_bootstrap(values, seed=bootstrap_seed(control_id))
     means = samples.mean(axis=1)
@@ -243,7 +362,9 @@ def bootstrap_summary(paired: Sequence[float] | np.ndarray, control_id: str) -> 
         "observed_mean": observed,
         "ci_low": float(np.percentile(means, 2.5)),
         "ci_high": float(np.percentile(means, 97.5)),
-        "one_sided_p": float((np.count_nonzero(means <= 0.0) + 1) / (len(means) + 1)),
+        "one_sided_p": float(
+            (np.count_nonzero(means <= 0.0) + 1) / (len(means) + 1)
+        ),
     }
 
 
@@ -251,7 +372,16 @@ def holm_adjust(raw_p: Mapping[str, float | None]) -> dict[str, float]:
     if set(raw_p) != set(CONTROL_IDS):
         raise Campaign52DevelopmentError("HOLM_FAMILY_MISMATCH")
     ordered = sorted(
-        ((1.0 if p is None or not math.isfinite(float(p)) else min(1.0, max(0.0, float(p))), CONTROL_IDS.index(cid), cid) for cid, p in raw_p.items()),
+        (
+            (
+                1.0
+                if p is None or not math.isfinite(float(p))
+                else min(1.0, max(0.0, float(p))),
+                CONTROL_IDS.index(cid),
+                cid,
+            )
+            for cid, p in raw_p.items()
+        ),
         key=lambda item: (item[0], item[1]),
     )
     adjusted: dict[str, float] = {}
@@ -274,31 +404,45 @@ def development_decision(
     for cid in CONTROL_IDS:
         metric = controls[cid]
         separated[cid] = bool(
-            canonical["annualized_geometric_return"] > metric["annualized_geometric_return"]
+            canonical["annualized_geometric_return"]
+            > metric["annualized_geometric_return"]
             and (
-                metric["max_drawdown_magnitude"] - canonical["max_drawdown_magnitude"] >= 0.01
+                metric["max_drawdown_magnitude"]
+                - canonical["max_drawdown_magnitude"]
+                >= 0.01
                 or canonical["calmar"] - metric["calmar"] >= 0.10
             )
             and adjusted_p[cid] <= 0.10
         )
-    lag_pass = sum(separated[cid] for cid in ("lag_24h", "lag_168h", "lag_672h")) >= 2
+    lag_pass = (
+        sum(separated[cid] for cid in ("lag_24h", "lag_168h", "lag_672h")) >= 2
+    )
     permutation_ids = CONTROL_IDS[4:]
     permutation_pass = all(
-        canonical[key] > float(np.median([controls[cid][key] for cid in permutation_ids]))
+        canonical[key]
+        > float(np.median([controls[cid][key] for cid in permutation_ids]))
         for key in ("annualized_geometric_return", "calmar")
     ) and canonical["max_drawdown_magnitude"] < float(
-        np.median([controls[cid]["max_drawdown_magnitude"] for cid in permutation_ids])
+        np.median(
+            [controls[cid]["max_drawdown_magnitude"] for cid in permutation_ids]
+        )
     )
     static = controls["static_dev_mean_target"]
-    static_wins = sum((
-        canonical["annualized_geometric_return"] > static["annualized_geometric_return"],
-        canonical["max_drawdown_magnitude"] < static["max_drawdown_magnitude"],
-        canonical["calmar"] > static["calmar"],
-    ))
+    static_wins = sum(
+        (
+            canonical["annualized_geometric_return"]
+            > static["annualized_geometric_return"],
+            canonical["max_drawdown_magnitude"]
+            < static["max_drawdown_magnitude"],
+            canonical["calmar"] > static["calmar"],
+        )
+    )
     passed = bool(lag_pass and permutation_pass and static_wins >= 2)
     return {
         "development_gate_passed": passed,
-        "classification": "ADVANCE_TO_VALIDATION_DECISION" if passed else "DEVELOPMENT_NEGATIVE",
+        "classification": (
+            "ADVANCE_TO_VALIDATION_DECISION" if passed else "DEVELOPMENT_NEGATIVE"
+        ),
         "lag_rule_passed": lag_pass,
         "permutation_median_rule_passed": permutation_pass,
         "static_primary_wins": static_wins,
