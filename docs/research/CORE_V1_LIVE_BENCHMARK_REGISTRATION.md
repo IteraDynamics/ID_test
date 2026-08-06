@@ -69,6 +69,43 @@ prospectively only, once a governed bond source exists.
 6. Evaluation cadence: monthly, in the letter series (`docs/letters/`). Interim readings carry
    no decision authority.
 
+## Implementation record (2026-08-06)
+
+Recorded at first implementation, before any benchmark computation over real governed data.
+These details complete the measurement rules above and are frozen with them.
+
+- Engine: `research/live_benchmarks.py` (deterministic, stdlib-only, fail-closed).
+- Runner: `scripts/run_core_v1_live_benchmarks.py` — computes every artifact twice in-memory
+  and fails closed unless byte-identical; writes `benchmark_a_nav.csv`, `benchmark_b_nav.csv`,
+  `benchmark_metrics.json`, and `manifest.json` (source paths, SHA-256, frozen parameters)
+  under `artifacts/core_v1_live_benchmarks/`.
+- Synthetic validation: `tests/test_live_benchmarks.py` — 16 tests including hand-computed
+  scenarios; a full pass is required before any governed run (synthetic PASS recorded
+  2026-08-06, 16 passed).
+- Crypto daily close rule: for hourly sources, the daily close of a UTC day is the close of
+  the last hourly bar observed within that day; days with no bars are absent and are never
+  interpolated or repaired.
+- Valuation calendar: union of all asset session dates from inception; assets without a fresh
+  close on a valuation date are carried at their last known close.
+- Rebalance day: the first session of each calendar month (after the inception month) on which
+  every equity-family asset in the benchmark has a fresh close.
+- Initial deployment: each sleeve's traded notional is `weight x capital / (1 + fee)` so that
+  cash is exactly conserved; rebalance fees are charged on absolute turnover notional with
+  targets sized against fee-adjusted NAV.
+- Fee assumptions (matching `scripts/export_core_v1_canonical_sleeve_matrix.py` defaults):
+  crypto 0.0006, equity/gold 0.0001, cash 0.
+- Metric definitions: annualization over 365.25 days; Sharpe from valuation-calendar simple
+  returns with sample standard deviation, zero benchmark; Calmar null when maximum drawdown
+  is zero.
+
+The governed run is executed where the governed data lives:
+
+    uv run python scripts/run_core_v1_live_benchmarks.py --end <period-end> \
+        --btc-data <btc hourly csv> --eth-data <eth hourly csv> \
+        --spy-data data/SPY_1D.csv --qqq-data data/QQQ_1D.csv --gld-data data/GLD_1D.csv
+
+Its artifact digests are recorded in the letter that first reports the results.
+
 ## Authorization boundary
 
 This registration authorizes benchmark computation and reporting only. It does not authorize
