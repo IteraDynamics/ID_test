@@ -257,3 +257,92 @@ is forgiven, and any genuine divergence in sleeve set, index, or composition mak
 matrix-to-NAV ratio non-constant and still fails. Covered by
 `tests/test_sleeve_matrix_reconciliation.py` (6 tests), including a dropped sleeve and a
 time-drifting composition, both of which must still raise.
+
+---
+
+## Timing Audit Result — 2026-08-10 (first execution)
+
+Run: `artifacts/jump_risk_timing_audit/20260810T175016Z_jump-risk-timing-audit-v0`
+Audit version: `jump_risk_timing_audit_v1` (post-correction).
+Window: `2020-01-01 01:00` through `2025-12-30`, ~52,500 hourly rows per candidate.
+
+### Status
+
+- `status`: `STRUCTURAL_PASS_RUNTIME_CADENCE_PENDING`
+- `structural_checks_passed`: `true`
+- `lookahead_canary_passed`: `true`
+
+All 8 candidates (BTC and ETH x immediate_any, immediate_down, medium_up, extended_up) returned
+zero failures on every criterion: `shift_provenance_failures`, `availability_failures`,
+`same_bar_source_failures`, `backwards_or_duplicate_timestamps`,
+`gaps_shorter_than_expected_bar`, and both non-finite checks. Both overlay activation checks
+(BTC, ETH) returned `unverified_source_rows: 0` and `timing_failures: 0`.
+
+This is the first execution of this audit. Under the previous implementation the availability
+checks were tautologies and could not have failed; this result is the first evidence that the
+one-row shift is genuinely present and that every served probability traces to a strictly
+earlier source bar.
+
+### Overlay activation frequency
+
+- BTC: `3,410` active hours = **6.49%** of the window
+- ETH: `4,632` active hours = **8.81%** of the window
+
+The overlay is selective rather than near-constant. This materially distinguishes the mapping
+from undifferentiated leverage: a boost engaging under 10% of hours cannot be replicated by a
+static 1.15x exposure. This is a descriptive finding, not a performance claim.
+
+### Candidate firing rates against the 0.95 train quantile
+
+| Asset | Candidate | Model | Firing rate |
+|---|---|---|---:|
+| BTC | immediate_any | gbm | 2.64% |
+| BTC | immediate_down | logistic | 3.78% |
+| BTC | medium_up | gbm | 6.35% |
+| BTC | extended_up | logistic | 6.62% |
+| ETH | immediate_any | gbm | 3.27% |
+| ETH | immediate_down | logistic | 3.45% |
+| ETH | medium_up | gbm | 11.08% |
+| ETH | extended_up | logistic | 9.57% |
+
+A 0.95 train-derived threshold implies ~5% nominal firing if the out-of-sample probability
+distribution matched the training distribution. The immediate candidates fire *below* nominal;
+the ETH medium/extended candidates fire at roughly twice nominal. This is evidence of
+out-of-sample distribution shift in the probability scale, not of a timing defect. It is
+recorded as an open calibration question: threshold behavior derived from training quantiles
+does not transfer cleanly, most notably on ETH.
+
+### Canary coverage — a documented limitation of the provenance check
+
+The canary detects injected lookahead at materially different rates by model family:
+
+| Model family | Candidates | Detection rate |
+|---|---|---:|
+| logistic | immediate_down, extended_up | 99.6% – 100% |
+| gbm | immediate_any, medium_up | 57.1% – 78.8% |
+
+The cause is value ties. Gradient-boosted outputs are piecewise constant, so adjacent bars
+frequently carry identical probabilities; where consecutive values tie, a one-row shift is
+undetectable by value comparison. The same blind spot applies to the primary
+`shift_provenance_failures` check.
+
+Consequence, stated precisely: the zero-failure result is strong evidence, not proof. For the
+weakest case (BTC `immediate_any`) at least `29,994` rows are individually discriminating and
+all passed. For the logistic candidates coverage is effectively complete. The overlay's own
+inputs are `medium_up` (gbm, 65.6%/78.8% coverage) and `extended_up` (logistic, ~99.8%
+coverage), so the mapping that would actually run is well covered in aggregate.
+
+Closing this gap would require comparing source-bar identity rather than value equality — a
+stronger check available if the pipeline is ever refactored to carry provenance columns.
+
+### What this authorizes
+
+Phase 1 structural timing only. Explicitly NOT authorized or established:
+
+1. **Live runtime cadence.** The audit proves historical bar alignment. It does not measure the
+   paper runtime's actual data-finalization, cycle-start, order-generation, and fill timestamps.
+   Charter Phase 1 items 1-8 remain open and require live measurement.
+2. **Purge/embargo.** Train/test fold-boundary label leakage remains untested and is the larger
+   outstanding threat to the underlying AUC figures. Unchanged from the 2026-08-10 audit record.
+3. **Paper activation.** The runtime remains `PARITY_BASELINE_ONLY`. Phases 5 and 6 (telemetry,
+   dashboard baseline-vs-candidate views) precede any gate change.
