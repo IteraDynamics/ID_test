@@ -227,3 +227,33 @@ measures. Both should be resolved before any live-capital decision.
 Phases 1–2 and most of Phase 4 of this charter are implemented. The timing audit is corrected
 but **has not yet been executed against canonical data**. Paper activation remains blocked in
 `PARITY_BASELINE_ONLY` mode and is not authorized by this audit.
+
+### F3 — Sleeve matrix reconciliation compared different units (corrected 2026-08-10)
+
+`scripts/export_core_v1_canonical_sleeve_matrix.py` failed every fold with e.g.
+`Fold 2020 matrix does not reconcile to fund NAV; max delta=1618.11`, blocking regeneration of
+the Core WFO sleeve matrix that the timing audit depends on.
+
+Cause: the captured `canonical_full_sleeve_equity_matrix.csv` is the *unscaled* alignment from
+`run_core_v1_sleeve_contribution_audit.py:290` — sleeves start at allocated capital and the
+frame includes the pre-OOS warm-up. The `stitched_fund_nav_from_sleeves.csv` written beside it
+has already been rebased to starting capital (`:295-296`). The guard differenced the two
+directly, so it failed by a constant factor even on sound data.
+
+Evidence (fold 2020, via `scripts/diagnose_sleeve_matrix_reconciliation.py`):
+
+- matrix sum at first common timestamp: `98,856.370179`
+- fund NAV at first common timestamp: `100,000.000000`
+- implied constant scale: `1.011568600167`
+- pointwise ratio spread: `8.882e-16` (constant to machine precision)
+- delta after rebasing: `5.8e-11`
+
+Sleeve composition was intact throughout — six columns, exactly the Core v1 sleeves. This was a
+units defect in the check, not corrupted data.
+
+Correction: `reconcile_fold_matrix` rebases the matrix onto the NAV's basis before differencing
+and retains the `1e-6` tolerance. The guard is not weakened: only a single global scale factor
+is forgiven, and any genuine divergence in sleeve set, index, or composition makes the
+matrix-to-NAV ratio non-constant and still fails. Covered by
+`tests/test_sleeve_matrix_reconciliation.py` (6 tests), including a dropped sleeve and a
+time-drifting composition, both of which must still raise.
