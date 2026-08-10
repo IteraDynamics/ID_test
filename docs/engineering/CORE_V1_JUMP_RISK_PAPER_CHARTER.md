@@ -346,3 +346,85 @@ Phase 1 structural timing only. Explicitly NOT authorized or established:
    outstanding threat to the underlying AUC figures. Unchanged from the 2026-08-10 audit record.
 3. **Paper activation.** The runtime remains `PARITY_BASELINE_ONLY`. Phases 5 and 6 (telemetry,
    dashboard baseline-vs-candidate views) precede any gate change.
+
+---
+
+## Live Runtime Cadence Audit — 2026-08-10
+
+Run: `artifacts/paper_runtime_cadence_audit`, over 808 logged cycles (2026-07-07 to
+2026-08-10). Measured from logs the runtime already writes; no runtime change.
+
+This closes the promotion decision's blocking condition: *"Paper integration is blocked unless
+the runtime can reproduce the research timing without using information unavailable at the
+decision point."* The relevant research assumption is that the scale is actionable at source-bar
+close and applies to P&L over the immediately following hourly interval.
+
+### Result — FAIL against the research timing assumption
+
+| Asset | Bar close to decision (median) | p95 | Within 1h assumption | Within 2h overlay gate |
+|---|---:|---:|---:|---:|
+| BTC | 6.00h | 7.82h | **0.00%** | **0.00%** |
+| ETH | 3.01h | 7.66h | **0.00%** | 49.88% |
+
+Zero of 808 cycles met the research timing assumption, for either asset.
+
+### Per-sleeve observation lag
+
+| Sleeve | Bar | Median age | p95 | Max | Bar periods |
+|---|---:|---:|---:|---:|---:|
+| ETH_1H_trend | 1h | 1.59h | 1.95h | 2.00h | 1.59 |
+| BTC_4H_trend | 4h | 6.00h | 7.82h | 8.00h | 1.50 |
+| ETH_4H_trend | 4h | 6.00h | 7.82h | 8.00h | 1.50 |
+| SPY/QQQ/GLD/BIL | 1D | 40.80h | 85.87h | 95.92h | 1.70 |
+
+The lag is structural, not incidental: every sleeve sits at roughly **1.5 to 1.7 bar periods**
+behind its own bar close, across four different timeframes. Hourly polling against the last
+*fully completed* bar produces a systematic one-bar lag plus polling phase. `ETH_1H_trend` —
+the only hourly sleeve running live, and the closest available proxy for Jump Risk's data
+cadence — is bounded in roughly `[1h, 2h]` and is never fresher than about one hour.
+
+### Interpretation
+
+The approved mapping requires BTC *and* ETH aligned upside. Under live cadence:
+
+- BTC would fail the overlay's own 2h freshness gate on every observed cycle, pinning it to
+  1.00x permanently;
+- ETH would clear the gate roughly half the time, and never within the research assumption.
+
+The promotion decision states the candidate's benefit "decays sharply after the first
+implementation bar." The runtime is structurally at least one full bar late before Jump Risk
+inference is even added. The +1.09pp CAGR / +0.082 Sharpe edge was measured at a one-bar
+effective lag that this infrastructure does not achieve.
+
+### Classification
+
+`TIMING_GATE_FAILED — NOT DEPLOYABLE AT CURRENT RUNTIME CADENCE`
+
+Paper activation remains blocked. This is a valid negative operational result, not an
+implementation defect: the runtime is working as designed, and the design is one bar slower
+than the research assumed.
+
+### Note on a log artifact
+
+Observe-to-decision latency computes as slightly negative (median -0.015s) because the cycle
+summary in `signals.jsonl` is written marginally before the per-sleeve `market_data.jsonl`
+rows. This is log write ordering, not negative latency. Internal runtime overhead is
+sub-second and is not a contributing factor to the failure.
+
+### Open decision
+
+Three paths, none yet chosen:
+
+1. **Re-specify at realistic lag.** Re-run the portfolio integration with the effective
+   probability lag set to 2-3 bars instead of 1 (`_oos_probabilities` currently applies a
+   single `shift(1)`), and observe what survives. This is the scientifically correct next test
+   and is cheap. If the edge holds at realistic lag, the candidate can be re-chartered at that
+   lag. If it does not, Jump Risk retires on evidence.
+2. **Reduce runtime lag.** Investigate whether the one-bar lag is removable (bar-selection
+   policy, polling frequency, provider availability). This is a change to the Core v1 floor and
+   requires full governance under `docs/ITERA_DESTINATION_CHARTER.md`; it is engineering work
+   in service of a modest edge.
+3. **Retire Jump Risk** with this finding as the documented reason and redirect effort to
+   Campaign #53.
+
+No option is authorized by this audit.
