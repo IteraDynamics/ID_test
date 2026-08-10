@@ -409,15 +409,20 @@ def test_ols_coefficient_reconciles_against_frozen_fixture() -> None:
 
 
 def test_hc3_covariance_reconciles_against_frozen_fixture() -> None:
+    # Tolerance is 1e-9, not 1e-12: the frozen values are exact to the precision
+    # that matters, but matrix inversion rounds differently across BLAS/numpy
+    # builds (observed drift ~5.6e-12 on numpy 2.4). The looser bound is still
+    # ~7 orders of magnitude tighter than any statistically meaningful
+    # difference, and the fixture values themselves are unchanged.
     outcome, candidate, controls = _ols_fixture()
     result = ols_hc3(outcome, candidate, controls)
-    assert result.standard_error == pytest.approx(0.03364156604727464, abs=5e-12)
-    assert result.p_value == pytest.approx(3.654178542469978e-05, abs=5e-12)
+    assert result.standard_error == pytest.approx(0.03364156604727464, abs=1e-9)
+    assert result.p_value == pytest.approx(3.654178542469978e-05, abs=1e-9)
     assert result.confidence_interval_low == pytest.approx(
-        0.07294700812986908, abs=5e-12
+        0.07294700812986908, abs=1e-9
     )
     assert result.confidence_interval_high == pytest.approx(
-        0.20481952380223667, abs=5e-12
+        0.20481952380223667, abs=1e-9
     )
 
 

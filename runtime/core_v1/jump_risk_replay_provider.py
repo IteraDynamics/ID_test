@@ -69,7 +69,13 @@ class ReplayLookup:
 class ReplayProbabilityProvider:
     """Serve deterministic as-of replay probabilities without future leakage."""
 
-    def __init__(self, report: Mapping[str, Any], *, verify_digests: bool = True) -> None:
+    def __init__(
+        self,
+        report: Mapping[str, Any],
+        *,
+        verify_digests: bool = True,
+        require_digests: bool = True,
+    ) -> None:
         self.version = str(report.get("version", ""))
         self.replay_digest = str(report.get("replay_digest", ""))
         self.overlay_config_fingerprint = str(report.get("overlay_config_fingerprint", ""))
@@ -125,6 +131,11 @@ class ReplayProbabilityProvider:
                     for raw in raw_rows
                 ]
                 expected = str(block.get("decision_digest", ""))
+                # Absent evidence must not read as passing evidence: an artifact
+                # with no digest cannot be verified, so it fails closed unless
+                # the caller explicitly opts out (fixture construction only).
+                if not expected and require_digests:
+                    raise ValueError(f"Replay report has no decision_digest for {asset}")
                 actual = _digest(canonical_rows)
                 if expected and actual != expected:
                     raise ValueError(f"Replay decision digest mismatch for {asset}")
@@ -133,11 +144,17 @@ class ReplayProbabilityProvider:
             self._times[asset] = [row["decision_at"] for row in normalized]
 
     @classmethod
-    def from_path(cls, path: str | Path, *, verify_digests: bool = True) -> "ReplayProbabilityProvider":
+    def from_path(
+        cls,
+        path: str | Path,
+        *,
+        verify_digests: bool = True,
+        require_digests: bool = True,
+    ) -> "ReplayProbabilityProvider":
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
         if not isinstance(payload, Mapping):
             raise ValueError("Replay artifact root must be an object")
-        return cls(payload, verify_digests=verify_digests)
+        return cls(payload, verify_digests=verify_digests, require_digests=require_digests)
 
     def lookup(self, asset: str, decision_at: datetime) -> ReplayLookup:
         normalized_asset = str(asset).upper().strip()
