@@ -98,6 +98,29 @@ These details complete the measurement rules above and are frozen with them.
   returns with sample standard deviation, zero benchmark; Calmar null when maximum drawdown
   is zero.
 
+### Amendment 1 (2026-08-10) — source coverage guard and paper comparison
+
+Recorded after the first governed benchmark run and before any benchmark result is published
+in a letter. Neither item changes benchmark construction, weights, costs, inception, or metric
+definitions; the first governed run's numbers are unaffected.
+
+- **Coverage guard.** The first implementation carried a source forward at its last known close
+  for every valuation date after that source ended. That is correct for an ordinary
+  non-trading-day gap but would silently misprice a benchmark if a source were materially
+  stale. The engine now fails closed with `SOURCE_COVERAGE_FAILURE` when any source's last
+  session precedes the requested end date by more than `max_staleness_days` (default 4, covering
+  a Friday close valued through a long weekend). The tolerance is exposed as
+  `--max-staleness-days` and recorded in the run manifest.
+- **Paper comparison.** `scripts/run_core_v1_live_comparison.py` joins the paper runtime's
+  exported NAV series against the governed benchmark artifacts and reports all three series
+  under identical metric definitions (`compute_series_metrics`). Paper NAV is read from the
+  export written by `scripts/export_core_v1_paper_data.py`; the daily paper NAV of a UTC day is
+  `total_nav` from that day's last signal event. Series are rebased to a common starting value
+  at the first date of the overlapping window so the comparison is unaffected by differing
+  first-observation values. Benchmark series are read from their canonical artifacts and never
+  recomputed. Synthetic validation: `tests/test_live_comparison.py` (8 tests) and the extended
+  `tests/test_live_benchmarks.py` (19 tests) — 27 passed, recorded 2026-08-10.
+
 The governed run is executed where the governed data lives:
 
     uv run python scripts/run_core_v1_live_benchmarks.py --end <period-end> \

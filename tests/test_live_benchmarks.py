@@ -240,6 +240,47 @@ def test_benchmark_b_cash_is_feeless_and_flat() -> None:
     assert result.nav == pytest.approx((1000.0, 1060.0))
 
 
+# ---------------------------------------------------------------- coverage guard
+
+
+def coverage_config(end: date, **overrides: object) -> BenchmarkConfig:
+    parameters: dict[str, object] = dict(
+        name="coverage",
+        weights={"AAA": 0.5, "BBB": 0.5},
+        fees={"AAA": 0.0, "BBB": 0.0, CASH_ASSET: 0.0},
+        inception=date(2026, 7, 6),
+        end=end,
+        starting_capital=1000.0,
+    )
+    parameters.update(overrides)
+    return BenchmarkConfig(**parameters)  # type: ignore[arg-type]
+
+
+def test_coverage_guard_allows_sources_within_tolerance() -> None:
+    # BBB stops on Friday 2026-07-10 and is valued through Monday 2026-07-13.
+    aaa = {date(2026, 7, 6): 10.0, date(2026, 7, 13): 10.0}
+    bbb = {date(2026, 7, 6): 10.0, date(2026, 7, 10): 10.0}
+    result = build_static_benchmark(coverage_config(date(2026, 7, 13)), {"AAA": aaa, "BBB": bbb})
+    assert result.dates[-1] == date(2026, 7, 13)
+
+
+def test_coverage_guard_fails_closed_on_stale_source() -> None:
+    aaa = {date(2026, 7, 6): 10.0, date(2026, 7, 31): 10.0}
+    bbb = {date(2026, 7, 6): 10.0, date(2026, 7, 10): 10.0}
+    with pytest.raises(LiveBenchmarkError, match=r"SOURCE_COVERAGE_FAILURE: BBB ends 2026-07-10"):
+        build_static_benchmark(coverage_config(date(2026, 7, 31)), {"AAA": aaa, "BBB": bbb})
+
+
+def test_coverage_guard_tolerance_is_configurable() -> None:
+    aaa = {date(2026, 7, 6): 10.0, date(2026, 7, 31): 10.0}
+    bbb = {date(2026, 7, 6): 10.0, date(2026, 7, 10): 10.0}
+    config = coverage_config(date(2026, 7, 31), max_staleness_days=30)
+    result = build_static_benchmark(config, {"AAA": aaa, "BBB": bbb})
+    assert result.dates[-1] == date(2026, 7, 31)
+    with pytest.raises(LiveBenchmarkError, match="negative max_staleness_days"):
+        coverage_config(date(2026, 7, 31), max_staleness_days=-1).validate()
+
+
 # ---------------------------------------------------------------- metrics
 
 

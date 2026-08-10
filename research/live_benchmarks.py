@@ -66,6 +66,12 @@ REGISTERED_STARTING_CAPITAL = 100_000.0
 
 ANNUALIZATION_DAYS = 365.25
 
+# A source must carry a session within this many days of the requested end date.
+# Four days covers a Friday close valued through a long weekend; crypto sources
+# are effectively daily. Beyond it, carrying a stale close forward would
+# silently misprice the benchmark, so the run fails closed instead.
+DEFAULT_MAX_STALENESS_DAYS = 4
+
 
 class LiveBenchmarkError(ValueError):
     pass
@@ -79,12 +85,15 @@ class BenchmarkConfig:
     inception: date
     end: date
     starting_capital: float
+    max_staleness_days: int = DEFAULT_MAX_STALENESS_DAYS
 
     def validate(self) -> None:
         if self.end < self.inception:
             raise LiveBenchmarkError("CONFIG_FAILURE: end precedes inception")
         if self.starting_capital <= 0:
             raise LiveBenchmarkError("CONFIG_FAILURE: non-positive starting capital")
+        if self.max_staleness_days < 0:
+            raise LiveBenchmarkError("CONFIG_FAILURE: negative max_staleness_days")
         total = sum(self.weights.values())
         if abs(total - 1.0) > 1e-9:
             raise LiveBenchmarkError(f"CONFIG_FAILURE: weights sum to {total!r}, not 1.0")
@@ -239,6 +248,26 @@ def build_static_benchmark(
     if not calendar or calendar[0] != config.inception:
         raise LiveBenchmarkError("VALUATION_FAILURE: inception missing from valuation calendar")
 
+    # A source that stops well before the requested end would otherwise be
+    # carried forward silently at its last close for the remaining sessions.
+    for asset in risk_assets:
+        in_window = [
+            session for session in closes_by_asset[asset] if config.inception <= session <= config.end
+        ]
+        if not in_window:
+            raise LiveBenchmarkError(
+                f"SOURCE_COVERAGE_FAILURE: {asset} has no session in "
+                f"{config.inception.isoformat()}..{config.end.isoformat()}"
+            )
+        last_session = max(in_window)
+        staleness = (config.end - last_session).days
+        if staleness > config.max_staleness_days:
+            raise LiveBenchmarkError(
+                f"SOURCE_COVERAGE_FAILURE: {asset} ends {last_session.isoformat()}, "
+                f"{staleness} days before {config.end.isoformat()} "
+                f"(max_staleness_days={config.max_staleness_days})"
+            )
+
     equity_members = [asset for asset in risk_assets if asset in EQUITY_FAMILY_ASSETS]
 
     units: dict[str, float] = {}
@@ -297,23 +326,30 @@ def build_static_benchmark(
     )
 
 
-def compute_metrics(result: BenchmarkResult, starting_capital: float) -> dict[str, object]:
-    final_nav = result.nav[-1]
+def compute_series_metrics(
+    name: str,
+    dates: Sequence[date],
+    nav: Sequence[float],
+    starting_capital: float,
+) -> dict[str, object]:
+    """Metric definitions shared by every series (paper and benchmarks alike)."""
+    if not nav or len(nav) != len(dates):
+        raise LiveBenchmarkError(f"METRIC_FAILURE: {name}: empty or misaligned series")
+
+    final_nav = nav[-1]
     cumulative_return = final_nav / starting_capital - 1.0
-    elapsed_days = max((result.dates[-1] - result.dates[0]).days, 1)
+    elapsed_days = max((dates[-1] - dates[0]).days, 1)
     annualized_return = (final_nav / starting_capital) ** (ANNUALIZATION_DAYS / elapsed_days) - 1.0
 
     peak = -math.inf
     max_drawdown = 0.0
-    for value in result.nav:
+    for value in nav:
         peak = max(peak, value)
         max_drawdown = max(max_drawdown, 1.0 - value / peak)
 
     calmar = annualized_return / max_drawdown if max_drawdown > 0 else None
 
-    returns = [
-        result.nav[index] / result.nav[index - 1] - 1.0 for index in range(1, len(result.nav))
-    ]
+    returns = [nav[index] / nav[index - 1] - 1.0 for index in range(1, len(nav))]
     sharpe = None
     if len(returns) >= 2:
         mean = sum(returns) / len(returns)
@@ -322,10 +358,10 @@ def compute_metrics(result: BenchmarkResult, starting_capital: float) -> dict[st
             sharpe = mean / math.sqrt(variance) * math.sqrt(ANNUALIZATION_DAYS)
 
     return {
-        "benchmark": result.name,
-        "start_date": result.dates[0].isoformat(),
-        "end_date": result.dates[-1].isoformat(),
-        "observations": len(result.nav),
+        "series": name,
+        "start_date": dates[0].isoformat(),
+        "end_date": dates[-1].isoformat(),
+        "observations": len(nav),
         "starting_capital": starting_capital,
         "final_nav": round(final_nav, 6),
         "cumulative_return": round(cumulative_return, 8),
@@ -333,10 +369,74 @@ def compute_metrics(result: BenchmarkResult, starting_capital: float) -> dict[st
         "max_drawdown": round(max_drawdown, 8),
         "calmar": round(calmar, 8) if calmar is not None else None,
         "sharpe_zero_benchmark": round(sharpe, 8) if sharpe is not None else None,
-        "rebalance_count": len(result.rebalance_dates),
-        "rebalance_dates": [session.isoformat() for session in result.rebalance_dates],
-        "total_fees": round(result.total_fees, 6),
     }
+
+
+def compute_metrics(result: BenchmarkResult, starting_capital: float) -> dict[str, object]:
+    metrics = compute_series_metrics(result.name, result.dates, result.nav, starting_capital)
+    metrics["benchmark"] = metrics.pop("series")
+    metrics["rebalance_count"] = len(result.rebalance_dates)
+    metrics["rebalance_dates"] = [session.isoformat() for session in result.rebalance_dates]
+    metrics["total_fees"] = round(result.total_fees, 6)
+    return metrics
+
+
+def paper_daily_nav(export_dir: Path) -> dict[date, float]:
+    """Daily paper NAV from a Core v1 paper-runtime export directory.
+
+    Consumes the export written by ``scripts/export_core_v1_paper_data.py``.
+    The daily NAV of a UTC day is ``total_nav`` from the last signal event of
+    that day, matching the engine's last-observation-of-day close convention.
+    Fails closed rather than inferring or interpolating missing days.
+    """
+    import sys
+
+    repo_root = Path(__file__).resolve().parent.parent
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    from scripts.replay_core_v1_export import (
+        find_export_file,
+        read_csv_rows,
+        read_jsonl,
+        validate_export_structure,
+    )
+
+    problems = validate_export_structure(export_dir)
+    if problems:
+        raise LiveBenchmarkError(f"PAPER_EXPORT_FAILURE: {'; '.join(problems)}")
+
+    signals_path = find_export_file(export_dir, "signals")
+    if signals_path is None:
+        raise LiveBenchmarkError("PAPER_EXPORT_FAILURE: no signals export found")
+    rows = read_jsonl(signals_path) if signals_path.suffix == ".jsonl" else read_csv_rows(signals_path)
+
+    daily: dict[date, float] = {}
+    previous_stamp: datetime | None = None
+    seen_nav = False
+    for position, row in enumerate(rows, start=1):
+        raw_stamp = row.get("timestamp")
+        if not raw_stamp:
+            continue
+        stamp = parse_timestamp(str(raw_stamp))
+        if previous_stamp is not None and stamp < previous_stamp:
+            raise LiveBenchmarkError(f"PAPER_EXPORT_FAILURE: signals out of order at row {position}")
+        previous_stamp = stamp
+
+        raw_nav = row.get("total_nav")
+        if raw_nav is None or raw_nav == "":
+            continue
+        try:
+            nav = float(raw_nav)
+        except (TypeError, ValueError) as exc:
+            raise LiveBenchmarkError(f"PAPER_EXPORT_FAILURE: invalid total_nav at row {position}") from exc
+        if not math.isfinite(nav) or nav <= 0:
+            raise LiveBenchmarkError(f"PAPER_EXPORT_FAILURE: non-positive total_nav at row {position}")
+        daily[stamp.date()] = nav
+        seen_nav = True
+
+    if not seen_nav:
+        raise LiveBenchmarkError("PAPER_EXPORT_FAILURE: no usable total_nav events in signals export")
+    return dict(sorted(daily.items()))
 
 
 def nav_csv_bytes(result: BenchmarkResult) -> bytes:

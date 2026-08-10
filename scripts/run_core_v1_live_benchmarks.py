@@ -26,6 +26,7 @@ from research.live_benchmarks import (
     CASH_ASSET,
     DEFAULT_CRYPTO_FEE,
     DEFAULT_EQUITY_FEE,
+    DEFAULT_MAX_STALENESS_DAYS,
     REGISTERED_INCEPTION,
     REGISTERED_STARTING_CAPITAL,
     BenchmarkConfig,
@@ -55,6 +56,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--starting-capital", type=float, default=REGISTERED_STARTING_CAPITAL)
     p.add_argument("--crypto-fee", type=float, default=DEFAULT_CRYPTO_FEE)
     p.add_argument("--equity-fee", type=float, default=DEFAULT_EQUITY_FEE)
+    p.add_argument(
+        "--max-staleness-days",
+        type=int,
+        default=DEFAULT_MAX_STALENESS_DAYS,
+        help="Fail closed if any source's last session precedes --end by more than this.",
+    )
     p.add_argument("--out-dir", default="artifacts/core_v1_live_benchmarks")
     return p.parse_args(argv)
 
@@ -93,6 +100,7 @@ def _compute_artifacts(args: argparse.Namespace) -> dict[str, bytes]:
         inception=inception,
         end=end,
         starting_capital=args.starting_capital,
+        max_staleness_days=args.max_staleness_days,
     )
     config_b = BenchmarkConfig(
         name="benchmark_b_60_40",
@@ -101,6 +109,7 @@ def _compute_artifacts(args: argparse.Namespace) -> dict[str, bytes]:
         inception=inception,
         end=end,
         starting_capital=args.starting_capital,
+        max_staleness_days=args.max_staleness_days,
     )
 
     result_a = build_static_benchmark(config_a, closes)
@@ -118,6 +127,7 @@ def _compute_artifacts(args: argparse.Namespace) -> dict[str, bytes]:
         "starting_capital": args.starting_capital,
         "crypto_fee": args.crypto_fee,
         "equity_fee": args.equity_fee,
+        "max_staleness_days": args.max_staleness_days,
         "benchmark_a_weights": dict(BENCHMARK_A_WEIGHTS),
         "benchmark_b_weights": dict(BENCHMARK_B_WEIGHTS),
         "sources": {
