@@ -428,3 +428,52 @@ Three paths, none yet chosen:
    Campaign #53.
 
 No option is authorized by this audit.
+
+---
+
+## Lag Sensitivity Test — pre-registration (2026-08-10)
+
+Recorded **before** the test was executed, per
+`docs/ITERA_RESEARCH_PROCESS_AMENDMENTS.md`.
+
+### Question
+
+The approved `btc_eth_aligned_upside` edge (+1.09pp CAGR, +0.082 Sharpe) was measured at an
+effective one-bar implementation lag. The cadence audit established the live runtime operates
+at roughly 1.5-1.7 bar periods. Does the edge survive at the lag this infrastructure achieves?
+
+### Method
+
+`scripts/run_jump_risk_lag_sensitivity.py`. The frozen research path is untouched:
+probabilities come from `_oos_probabilities` exactly as in the approved study, including its
+one-bar shift. Additional lag is applied to the resulting scale series, which is equivalent to
+acting L bars later on identical information. Effective lag 1 reproduces the approved study;
+effective lags 3-4 span the observed live cadence.
+
+### Pre-registered decision rule
+
+The candidate survives at a given lag only if it still satisfies the **original** promotion
+gate against unchanged Core:
+
+`delta_sharpe > 0 AND delta_calmar > 0 AND delta_max_drawdown_pct >= 0 AND delta_cagr_pct >= -0.50`
+
+These are the four conditions from the approved study, unchanged. They are not relaxed,
+reweighted, or restated after seeing results.
+
+### Pre-registered disposition
+
+| Outcome | Disposition |
+|---|---|
+| Survives at effective lag >= 3 | Re-charter the candidate at the honest lag |
+| Survives only at effective lag <= 2 | **Retire** — the edge is not reachable on this infrastructure |
+| Fails at every lag, including lag 1 | Investigate reproduction before concluding anything |
+
+That third row matters: effective lag 1 must reproduce the approved study's PASS. If it does
+not, the discrepancy is a reproduction problem and no conclusion about lag may be drawn from
+this run.
+
+### Prior
+
+Stated in advance for the record: the promotion decision documents that the benefit "decays
+sharply after the first implementation bar," so survival at effective lag 3+ is considered
+unlikely. This prior does not alter the decision rule.
