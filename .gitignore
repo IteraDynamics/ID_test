@@ -47,4 +47,7 @@ desktop.ini
 
 runtime/argus/state/live_state.json
 
-.claude/
+# Local Claude Code state is ignored, but repo-governed skills are versioned:
+# they are governance, not editor configuration.
+.claude/*
+!.claude/skills/
