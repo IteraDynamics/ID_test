@@ -129,3 +129,47 @@ to weeks loses little to a ~1.5-bar lag; one that expires within hours loses eve
 
 This is a selection criterion, not merely a caution: it rules out a class of research before
 any effort is spent on it.
+
+---
+
+## Amendment 5 — Tradeability must precede specification (2026-08-11)
+
+Added during Campaign #53 feasibility, prompted by a question that should have been asked
+first: *can this operator actually trade the instrument the research is about?*
+
+### The gap this closes
+
+Amendment 4 established that a signal must be reachable in **time**. This amendment establishes
+that the instrument must be reachable **at all**.
+
+Campaign #53's hypothesis concerns perpetual-futures funding. Harvesting a funding premium
+requires holding a perpetual position — short perp against spot when funding is positive, or
+long when negative. If the operator cannot access perpetual futures, the premium is observable
+but not harvestable, and the campaign would research something it can never act on.
+
+This is the same class of error as the Jump Risk retirement, one step further upstream. There,
+the signal was real and unreachable in time. Here, the premium may be real and unreachable in
+instrument.
+
+### The rule
+
+**Every campaign charter must state, before its specification is frozen:**
+
+1. the **exact instrument** whose premium or effect the campaign would harvest;
+2. **which venue the operator can actually trade that instrument on**, given jurisdiction,
+   account status, and regulatory restriction — verified, not assumed;
+3. whether the **research data source and the execution venue are the same**. Where they
+   differ, the charter must state why the premium is expected to transfer between venues, and
+   the specification must include a cross-venue basis check.
+
+A campaign whose target instrument is not tradeable by this operator **must not be chartered**,
+regardless of how well documented the underlying premium is. Where a premium is real but
+untradeable in its native instrument, the charter may propose a tradeable proxy — but the proxy
+becomes the research subject, and its own premium must be evidenced separately.
+
+### Note on venue mismatch
+
+Reachable market data does not imply a tradeable instrument. Several venues publish public
+funding history while restricting trading access by jurisdiction. A campaign that researches
+venue A's funding and executes on venue B is exposed to the basis between them, which is a
+distinct risk the research would not have measured.

@@ -117,6 +117,33 @@ def hyperliquid(symbol: str, before_ms: int | None, limit: int) -> tuple[list, i
     return [(int(r["time"]), float(r["fundingRate"])) for r in payload], status, error
 
 
+def coinbase_intx(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str | None]:
+    """Coinbase International Exchange perpetual funding.
+
+    INTX is where Coinbase lists perpetuals. Market data may be publicly
+    readable even where trading access is jurisdictionally restricted --
+    which is precisely the distinction the tradeability question below turns
+    on. Reachable data does not imply a tradeable instrument.
+    """
+    url = f"https://api.international.coinbase.com/api/v1/instruments/{symbol}/funding?result_limit={limit}"
+    if before_ms is not None:
+        url += f"&time_to={datetime.fromtimestamp(before_ms / 1000, tz=timezone.utc).isoformat().replace('+00:00', 'Z')}"
+    status, payload, error = http(url)
+    if payload is None:
+        return [], status, error
+    rows = payload.get("results", payload) if isinstance(payload, dict) else payload
+    if not isinstance(rows, list):
+        return [], status, f"unexpected payload shape: {type(rows).__name__}"
+    points = []
+    for r in rows:
+        try:
+            stamp = datetime.fromisoformat(str(r["event_time"]).replace("Z", "+00:00"))
+            points.append((int(stamp.timestamp() * 1000), float(r["funding_rate"])))
+        except (KeyError, ValueError, TypeError):
+            continue
+    return points, status, error
+
+
 def dydx(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str | None]:
     url = f"https://indexer.dydx.trade/v4/historicalFunding/{symbol}?limit={limit}"
     if before_ms is not None:
@@ -147,6 +174,11 @@ VENUES: dict[str, dict[str, Any]] = {
     "deribit": {"fn": deribit, "rate_period_hours": 8, "symbols": {"BTC": "BTC-PERPETUAL", "ETH": "ETH-PERPETUAL"}},
     "hyperliquid": {"fn": hyperliquid, "rate_period_hours": 1, "symbols": {"BTC": "BTC", "ETH": "ETH"}},
     "dydx": {"fn": dydx, "rate_period_hours": 1, "symbols": {"BTC": "BTC-USD", "ETH": "ETH-USD"}},
+    "coinbase_intx": {
+        "fn": coinbase_intx,
+        "rate_period_hours": 1,
+        "symbols": {"BTC": "BTC-PERP", "ETH": "ETH-PERP"},
+    },
 }
 
 
