@@ -183,6 +183,35 @@ audit.run_audit(args)
     return script
 
 
+def metrics_from_nav(label: str, nav: pd.Series) -> dict[str, Any]:
+    """Scorecard metrics for one chained variant NAV.
+
+    Factored out so that a partial run can be summarised from the per-variant
+    ``nav.csv`` files alone (see ``scripts/peek_parameter_sensitivity.py``)
+    under exactly these definitions, rather than a second implementation that
+    could drift from the final table.
+    """
+    total_return = float(nav.iloc[-1]) / 100000.0 - 1.0
+    elapsed_days = max((nav.index[-1] - nav.index[0]).days, 1)
+    cagr = (float(nav.iloc[-1]) / 100000.0) ** (365.25 / elapsed_days) - 1.0
+    peak = nav.cummax()
+    max_dd = float((nav / peak - 1.0).min())
+    daily = nav.resample("D").last().dropna()
+    rets = daily.pct_change().dropna()
+    sharpe = float(rets.mean() / rets.std() * (365.25 ** 0.5)) if rets.std() > 0 else float("nan")
+    calmar = cagr / abs(max_dd) if max_dd < 0 else float("nan")
+
+    return {
+        "variant": label,
+        "final_nav": round(float(nav.iloc[-1]), 2),
+        "total_return_pct": round(total_return * 100, 4),
+        "cagr_pct": round(cagr * 100, 4),
+        "sharpe": round(sharpe, 4),
+        "calmar": round(calmar, 4),
+        "max_drawdown_pct": round(max_dd * 100, 4),
+    }
+
+
 def run_variant(
     args: argparse.Namespace,
     out_dir: Path,
@@ -220,25 +249,7 @@ def run_variant(
     nav = nav[~nav.index.duplicated(keep="last")]
     nav.to_csv(variant_dir / "nav.csv", header=True)
 
-    total_return = float(nav.iloc[-1]) / 100000.0 - 1.0
-    elapsed_days = max((nav.index[-1] - nav.index[0]).days, 1)
-    cagr = (float(nav.iloc[-1]) / 100000.0) ** (365.25 / elapsed_days) - 1.0
-    peak = nav.cummax()
-    max_dd = float((nav / peak - 1.0).min())
-    daily = nav.resample("D").last().dropna()
-    rets = daily.pct_change().dropna()
-    sharpe = float(rets.mean() / rets.std() * (365.25 ** 0.5)) if rets.std() > 0 else float("nan")
-    calmar = cagr / abs(max_dd) if max_dd < 0 else float("nan")
-
-    return {
-        "variant": label,
-        "final_nav": round(float(nav.iloc[-1]), 2),
-        "total_return_pct": round(total_return * 100, 4),
-        "cagr_pct": round(cagr * 100, 4),
-        "sharpe": round(sharpe, 4),
-        "calmar": round(calmar, 4),
-        "max_drawdown_pct": round(max_dd * 100, 4),
-    }
+    return metrics_from_nav(label, nav)
 
 
 def main(argv: list[str] | None = None) -> int:
