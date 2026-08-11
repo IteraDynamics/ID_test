@@ -204,3 +204,86 @@ carry trade. That reformulation:
 
 Observation-only. No data acquired, no campaign authorized, no specification frozen, and no
 runtime, strategy, portfolio, or production change.
+
+---
+
+## 8. CDE universe resolved — and a redirect (2026-08-11)
+
+`scripts/inspect_cde_universe.py` against the saved findings resolves the venue confusion and
+changes the recommended campaign.
+
+### 8a. The tradable universe was mislabelled, not missing
+
+Coinbase Derivatives Exchange lists US-regulated **perpetual-style futures as very-long-dated
+contracts**: `BIP-20DEC30-CDE` (contract 0.01) is the app's "BTC PERP", `ETP-20DEC30-CDE`
+(contract 0.1) is "ETH PERP". Contract sizes match the app exactly. The Advanced Trade API
+classifies these as `EXPIRING`, which is why a `PERPETUAL` filter returned only Coinbase
+*International* Exchange products — a venue this operator does not trade.
+
+CDE composition (99 products):
+
+| Cohort | Products | Above $1M/day |
+|---|---:|---:|
+| Perpetual-style (2029+ expiry) | 28 | **20** |
+| Dated futures | 71 | **10** |
+
+Twenty liquid perpetual-style instruments is a genuine cross-section — sufficient breadth for a
+properly powered cross-sectional design, which is precisely what Campaigns #50–#52 lacked.
+
+### 8b. Funding is not published for CDE — the Amendment 5 gap stands
+
+**Zero of 99 CDE products expose a `funding_rate` field.** A funding-carry campaign would have
+to research Deribit's premium and collect CDE's, with no evidence the two match. Amendment 5 is
+not satisfied and a funding campaign cannot be chartered on this basis.
+
+### 8c. Matched pairs — a cleaner hypothesis
+
+Five underlyings list **both** a perpetual-style and a dated contract, both liquid, both on CDE,
+tradable in one account with no cross-venue exposure:
+
+| Underlying | Perpetual-style | Dated | Spread | Days | Annualised |
+|---|---:|---:|---:|---:|---:|
+| BTC | 63,575.00 | 63,780.00 | 0.322% | 17 | 6.9% |
+| ETH | 1,859.50 | 1,865.00 | 0.296% | 17 | 6.4% |
+| XRP | 0.9999 | 1.0048 | 0.490% | 17 | 10.5% |
+| SOL | 74.84 | 74.86 | 0.027% | 17 | 0.6% |
+| DOGE | 0.0702 | 0.0709 | 0.997% | 17 | 21.4% |
+
+The implied financing rate ranges from roughly 0.6% to 21% annualised across five underlyings
+at the same instant. **That dispersion is the cross-sectional signal**, and unlike funding it is
+computed directly from two prices this operator can observe and trade.
+
+**These figures are a single non-synchronous snapshot and are not a measurement.** They
+establish that the spread exists and disperses, nothing more.
+
+### 8d. Recommended redirect
+
+Campaign #53 should be re-chartered from **funding carry** to **cross-sectional calendar basis
+on CDE**:
+
+| | Funding carry | Calendar basis |
+|---|---|---|
+| Research data | Deribit (proxy venue) | CDE prices — same venue as execution |
+| Amendment 5 | **Unsatisfied** | Satisfied by construction |
+| Cross-section | Requires INTX (untradable) | 5+ matched pairs on CDE |
+| Observability | Funding not published for CDE | Both legs directly quoted |
+
+**Honest caveat, recorded before any design work.** A long-perp-style / short-dated position
+still accrues funding on the perpetual-style leg, and that funding is a component of the trade's
+P&L. Its absence from the public endpoint is therefore a real gap for basis research too, not
+only for a funding campaign. Three possible resolutions, to be settled in the charter:
+
+1. locate a CDE funding source (account statements, a different endpoint, or the FCM feed);
+2. restrict the study to **dated-versus-dated** spreads, which carry no funding at all — the
+   expiry distribution shows 65 contracts in 2026, 6 in 2027 and 28 in 2030, so some
+   same-underlying dated pairs exist, though far fewer than the perpetual-style pairs;
+3. treat funding as an unmeasured cost and require the basis premium to exceed a
+   conservatively assumed funding drag, pre-registered before results.
+
+Option 2 is the cleanest and option 3 the most honest; neither is chosen here.
+
+### 8e. Status
+
+Campaign #53 remains **unchartered**. Its subject has provisionally moved from funding carry to
+cross-sectional calendar basis, pending resolution of the funding-accrual question above and
+completion of derivatives eligibility. No specification is frozen and no data has been acquired.
