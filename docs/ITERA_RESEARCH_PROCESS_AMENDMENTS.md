@@ -73,3 +73,59 @@ drafted; at least one review pass on a later day is required before freeze.
 
 These amendments modify research process only. They authorize no campaign execution, no data
 acquisition, and no runtime, portfolio, or production change.
+
+---
+
+## Amendment 4 — Horizon feasibility must precede specification (2026-08-11)
+
+Added after the Jump Risk Engine v0 retirement, which consumed roughly eighteen months of
+research and engineering on a candidate whose edge was unreachable on this firm's
+infrastructure from the outset.
+
+### The finding that motivates it
+
+Jump Risk's approved mapping produced +1.09pp CAGR at an effective one-bar implementation lag.
+The live runtime was measured at ~1.5-1.7 effective bars across 808 cycles. Lag sensitivity
+then showed 98% of the edge expires by the second bar, and turns mildly negative thereafter.
+The signal was real, validated, cross-asset transferable, and independently confirmed free of
+lookahead. None of that mattered: the edge decayed before the decision could be made.
+
+The failure was not statistical and no amount of better modelling could have fixed it.
+
+### The rule
+
+**Every campaign charter must state, before its specification is frozen:**
+
+1. the **expected decay horizon** of the hypothesised effect — how long after the signalling
+   event the effect is expected to persist;
+2. the **measured runtime cadence** applicable to the data the campaign would use, cited to a
+   dated cadence audit rather than assumed;
+3. an explicit **feasibility margin**: the decay horizon must exceed the measured cadence by a
+   stated factor, with the factor justified.
+
+A campaign whose decay horizon does not comfortably exceed the achievable decision lag **must
+not be chartered**, regardless of how promising the underlying hypothesis is. Discovering this
+after the research is complete is a preventable waste.
+
+### Current measured cadence
+
+From `artifacts/paper_runtime_cadence_audit` (2026-08-10, 808 cycles):
+
+| Bar size | Median observation lag | In bar periods |
+|---|---:|---:|
+| 1h | 1.59h | 1.59 |
+| 4h | 6.00h | 1.50 |
+| 1D | 40.80h | 1.70 |
+
+The runtime operates at approximately **1.5-1.7 bar periods** behind bar close, consistently
+across timeframes. This figure must be re-measured, not assumed, whenever it is cited; the
+runtime may change.
+
+### Practical consequence
+
+This firm's infrastructure supports **multi-day signals well and sub-daily signals badly**.
+Candidate families should be selected accordingly. A hypothesis whose effect persists for days
+to weeks loses little to a ~1.5-bar lag; one that expires within hours loses everything.
+
+This is a selection criterion, not merely a caution: it rules out a class of research before
+any effort is spent on it.
