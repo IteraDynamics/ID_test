@@ -51,3 +51,4 @@ runtime/argus/state/live_state.json
 # they are governance, not editor configuration.
 .claude/*
 !.claude/skills/
+data/server_data/
