@@ -1,22 +1,22 @@
 """Campaign #53 source feasibility probe — read-only, no data acquisition.
 
-Establishes empirically what perpetual funding, open-interest and basis history
-is actually obtainable, before any acquisition design is frozen. Answers the
-questions the Campaign #53 charter's feasibility section requires:
+Establishes empirically what perpetual funding history is actually obtainable
+*from this operator's location*, before any acquisition design is frozen.
 
-  - which venues respond, and on what endpoint shape;
-  - how far back funding history actually goes per venue and symbol;
-  - the true settlement cadence (nominally 8h, but venue- and era-dependent);
-  - whether the series has gaps, duplicates, or non-monotonic timestamps;
-  - whether open interest carries usable history or is snapshot-only.
+The 2026-08-11 first run established that venue accessibility is itself a
+binding constraint: Binance returned HTTP 451 and Bybit HTTP 403 from a US
+address. Those are jurisdictional blocks, not faults. Campaign #53 must
+therefore be designed around venues that are actually reachable, and the
+probe covers a wider venue set for that reason.
 
-This probe fetches only small samples -- enough to characterise coverage. It
-does not build a dataset, does not write to `data/`, and does not compute any
-predictor or outcome. Bulk acquisition requires a separate board transition
-per the Campaign #53 charter.
+For each venue and asset the probe reports: whether the endpoint responds,
+the true settlement cadence, how far back history genuinely reaches (by
+walking backwards until the series is exhausted), and whether the series is
+monotonic and free of duplicates.
 
-Public market-data endpoints only. No API key, no authentication, no trading
-scope, no account access.
+Small samples only. Writes nothing to `data/`, computes no predictor or
+outcome, uses public market-data endpoints exclusively -- no key, no auth, no
+trading scope. Bulk acquisition requires a separate board transition.
 """
 
 from __future__ import annotations
@@ -28,165 +28,209 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-USER_AGENT = "itera-research-feasibility-probe/1.0"
+USER_AGENT = "itera-research-feasibility-probe/2.0"
 TIMEOUT_SECONDS = 20
+MAX_DEPTH_PAGES = 12  # bounded backward walk; enough to characterise, not to harvest
 
-# Public funding-history endpoints. Response shapes differ per venue; the probe
-# normalises to (timestamp_ms, funding_rate) via the extractor for each.
+
+def http(url: str, payload: dict[str, Any] | None = None) -> tuple[int, Any, str | None]:
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    headers = {"User-Agent": USER_AGENT}
+    if data is not None:
+        headers["Content-Type"] = "application/json"
+    request = urllib.request.Request(url, data=data, headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+            return response.status, json.loads(response.read().decode("utf-8")), None
+    except urllib.error.HTTPError as exc:
+        reason = str(exc.reason)
+        if exc.code == 451:
+            reason += " (jurisdictional block)"
+        elif exc.code == 403:
+            reason += " (forbidden — often a jurisdictional block)"
+        return exc.code, None, f"HTTP {exc.code}: {reason}"
+    except Exception as exc:  # noqa: BLE001 — a probe reports, never raises
+        return 0, None, f"{type(exc).__name__}: {exc}"
+
+
+# Each adapter returns (points, status, error) where points is [(ts_ms, rate)].
+# `before_ms` requests rows strictly older than that timestamp, for depth walking.
+
+
+def okx(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str | None]:
+    url = f"https://www.okx.com/api/v5/public/funding-rate-history?instId={symbol}&limit={limit}"
+    if before_ms is not None:
+        url += f"&after={before_ms}"  # OKX: 'after' = records EARLIER than this ts
+    status, payload, error = http(url)
+    if payload is None:
+        return [], status, error
+    rows = payload.get("data", []) or []
+    return [(int(r["fundingTime"]), float(r["fundingRate"])) for r in rows], status, error
+
+
+def binance(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str | None]:
+    url = f"https://fapi.binance.com/fapi/v1/fundingRate?symbol={symbol}&limit={limit}"
+    if before_ms is not None:
+        url += f"&endTime={before_ms}"
+    status, payload, error = http(url)
+    if payload is None:
+        return [], status, error
+    return [(int(r["fundingTime"]), float(r["fundingRate"])) for r in payload], status, error
+
+
+def bybit(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str | None]:
+    url = f"https://api.bybit.com/v5/market/funding/history?category=linear&symbol={symbol}&limit={limit}"
+    if before_ms is not None:
+        url += f"&endTime={before_ms}"
+    status, payload, error = http(url)
+    if payload is None:
+        return [], status, error
+    rows = (payload.get("result") or {}).get("list", []) or []
+    return [(int(r["fundingRateTimestamp"]), float(r["fundingRate"])) for r in rows], status, error
+
+
+def deribit(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str | None]:
+    end = before_ms if before_ms is not None else int(time.time() * 1000)
+    start = end - limit * 8 * 3_600_000
+    url = (
+        "https://www.deribit.com/api/v2/public/get_funding_rate_history"
+        f"?instrument_name={symbol}&start_timestamp={start}&end_timestamp={end}"
+    )
+    status, payload, error = http(url)
+    if payload is None:
+        return [], status, error
+    rows = payload.get("result", []) or []
+    return [(int(r["timestamp"]), float(r["interest_8h"])) for r in rows], status, error
+
+
+def hyperliquid(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str | None]:
+    end = before_ms if before_ms is not None else int(time.time() * 1000)
+    start = end - limit * 3_600_000  # hyperliquid funds hourly
+    status, payload, error = http(
+        "https://api.hyperliquid.xyz/info",
+        {"type": "fundingHistory", "coin": symbol, "startTime": start, "endTime": end},
+    )
+    if payload is None:
+        return [], status, error
+    return [(int(r["time"]), float(r["fundingRate"])) for r in payload], status, error
+
+
+def dydx(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str | None]:
+    url = f"https://indexer.dydx.trade/v4/historicalFunding/{symbol}?limit={limit}"
+    if before_ms is not None:
+        stamp = datetime.fromtimestamp(before_ms / 1000, tz=timezone.utc).isoformat()
+        url += f"&effectiveBeforeOrAt={stamp}"
+    status, payload, error = http(url)
+    if payload is None:
+        return [], status, error
+    rows = payload.get("historicalFunding", []) or []
+    points = []
+    for r in rows:
+        stamp = datetime.fromisoformat(str(r["effectiveAt"]).replace("Z", "+00:00"))
+        points.append((int(stamp.timestamp() * 1000), float(r["rate"])))
+    return points, status, error
+
+
 VENUES: dict[str, dict[str, Any]] = {
-    "binance": {
-        "funding_url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol={symbol}&limit={limit}",
-        "funding_url_paged": "https://fapi.binance.com/fapi/v1/fundingRate?symbol={symbol}&startTime={start_ms}&limit={limit}",
-        "oi_url": "https://fapi.binance.com/futures/data/openInterestHist?symbol={symbol}&period=1h&limit=10",
-        "symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT"},
-        "funding_extract": lambda rows: [
-            (int(r["fundingTime"]), float(r["fundingRate"])) for r in rows
-        ],
-    },
-    "bybit": {
-        "funding_url": "https://api.bybit.com/v5/market/funding/history?category=linear&symbol={symbol}&limit={limit}",
-        "funding_url_paged": "https://api.bybit.com/v5/market/funding/history?category=linear&symbol={symbol}&startTime={start_ms}&limit={limit}",
-        "oi_url": "https://api.bybit.com/v5/market/open-interest?category=linear&symbol={symbol}&intervalTime=1h&limit=10",
-        "symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT"},
-        "funding_extract": lambda payload: [
-            (int(r["fundingRateTimestamp"]), float(r["fundingRate"]))
-            for r in payload["result"]["list"]
-        ],
-    },
-    "okx": {
-        "funding_url": "https://www.okx.com/api/v5/public/funding-rate-history?instId={symbol}&limit={limit}",
-        "funding_url_paged": "https://www.okx.com/api/v5/public/funding-rate-history?instId={symbol}&after={start_ms}&limit={limit}",
-        "oi_url": "https://www.okx.com/api/v5/public/open-interest?instType=SWAP&instId={symbol}",
-        "symbols": {"BTC": "BTC-USDT-SWAP", "ETH": "ETH-USDT-SWAP"},
-        "funding_extract": lambda payload: [
-            (int(r["fundingTime"]), float(r["fundingRate"])) for r in payload["data"]
-        ],
-    },
+    "okx": {"fn": okx, "symbols": {"BTC": "BTC-USDT-SWAP", "ETH": "ETH-USDT-SWAP"}},
+    "binance": {"fn": binance, "symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT"}},
+    "bybit": {"fn": bybit, "symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT"}},
+    "deribit": {"fn": deribit, "symbols": {"BTC": "BTC-PERPETUAL", "ETH": "ETH-PERPETUAL"}},
+    "hyperliquid": {"fn": hyperliquid, "symbols": {"BTC": "BTC", "ETH": "ETH"}},
+    "dydx": {"fn": dydx, "symbols": {"BTC": "BTC-USD", "ETH": "ETH-USD"}},
 }
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Probe public perpetual funding/OI sources for Campaign #53 feasibility.",
+        description="Probe public perpetual funding sources for Campaign #53 feasibility.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     p.add_argument("--venues", nargs="*", default=sorted(VENUES))
     p.add_argument("--assets", nargs="*", default=["BTC", "ETH"])
-    p.add_argument("--limit", type=int, default=200, help="Rows per sample request.")
+    p.add_argument("--limit", type=int, default=100)
+    p.add_argument("--depth-pages", type=int, default=MAX_DEPTH_PAGES)
     p.add_argument("--out-dir", default="artifacts/campaign53_source_probe")
-    p.add_argument("--pause", type=float, default=0.4, help="Seconds between requests.")
+    p.add_argument("--pause", type=float, default=0.4)
     return p.parse_args(argv)
 
 
-def fetch(url: str) -> tuple[int, Any, str | None]:
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
-            body = response.read().decode("utf-8")
-            return response.status, json.loads(body), None
-    except urllib.error.HTTPError as exc:
-        return exc.code, None, f"HTTPError: {exc.reason}"
-    except Exception as exc:  # noqa: BLE001 - probe reports, never raises
-        return 0, None, f"{type(exc).__name__}: {exc}"
-
-
 def characterise(points: list[tuple[int, float]]) -> dict[str, Any]:
-    """Describe cadence, ordering and gaps of a funding series sample."""
     if not points:
         return {"rows": 0}
-    ordered = sorted(points)
+    ordered = sorted(set(points))
     stamps = [p[0] for p in ordered]
     rates = [p[1] for p in ordered]
     deltas = [(b - a) / 3_600_000 for a, b in zip(stamps, stamps[1:])]
-    duplicates = len(stamps) - len(set(stamps))
 
-    cadence_hours = None
+    cadence = None
     if deltas:
         counts: dict[float, int] = {}
         for d in deltas:
-            key = round(d, 3)
-            counts[key] = counts.get(key, 0) + 1
-        cadence_hours = max(counts, key=counts.get)
+            counts[round(d, 3)] = counts.get(round(d, 3), 0) + 1
+        cadence = max(counts, key=counts.get)
 
-    irregular = (
-        sum(1 for d in deltas if cadence_hours and abs(d - cadence_hours) > 0.01) if deltas else 0
-    )
+    irregular = sum(1 for d in deltas if cadence and abs(d - cadence) > 0.01)
+    mean_rate = sum(rates) / len(rates)
     return {
         "rows": len(ordered),
         "first_utc": datetime.fromtimestamp(stamps[0] / 1000, tz=timezone.utc).isoformat(),
         "last_utc": datetime.fromtimestamp(stamps[-1] / 1000, tz=timezone.utc).isoformat(),
-        "modal_cadence_hours": cadence_hours,
+        "modal_cadence_hours": cadence,
         "irregular_intervals": irregular,
-        "duplicate_timestamps": duplicates,
-        "monotonic": stamps == sorted(stamps) and duplicates == 0,
+        "duplicate_timestamps": len(points) - len(set(points)),
+        "monotonic_unique": len(set(stamps)) == len(stamps),
+        "funding_rate_mean": mean_rate,
         "funding_rate_min": min(rates),
         "funding_rate_max": max(rates),
-        "funding_rate_mean": sum(rates) / len(rates),
-        "annualised_mean_pct_at_modal_cadence": (
-            round(sum(rates) / len(rates) * (24 / cadence_hours) * 365 * 100, 3)
-            if cadence_hours
-            else None
+        "annualised_mean_pct": (
+            round(mean_rate * (24 / cadence) * 365 * 100, 3) if cadence else None
         ),
     }
 
 
-def probe_venue(name: str, spec: dict[str, Any], assets: list[str], limit: int, pause: float) -> dict[str, Any]:
-    result: dict[str, Any] = {"venue": name, "assets": {}}
-    for asset in assets:
-        symbol = spec["symbols"].get(asset)
-        if symbol is None:
-            result["assets"][asset] = {"status": "SYMBOL_NOT_MAPPED"}
-            continue
+def probe(name: str, fn: Callable, symbol: str, limit: int, pages: int, pause: float) -> dict[str, Any]:
+    """Fetch the recent window, then walk backwards until the series is exhausted."""
+    points, status, error = fn(symbol, None, limit)
+    entry: dict[str, Any] = {"symbol": symbol, "http_status": status, "error": error}
+    if not points:
+        entry["recent"] = {"rows": 0}
+        return entry
 
-        entry: dict[str, Any] = {"symbol": symbol}
+    entry["recent"] = characterise(points)
+    collected = list(points)
+    oldest = min(p[0] for p in points)
+    pages_walked = 0
 
-        url = spec["funding_url"].format(symbol=symbol, limit=limit)
-        status, payload, error = fetch(url)
-        entry["funding_recent"] = {"http_status": status, "error": error}
-        if payload is not None:
-            try:
-                points = spec["funding_extract"](payload)
-                entry["funding_recent"].update(characterise(points))
-            except Exception as exc:  # noqa: BLE001
-                entry["funding_recent"]["parse_error"] = f"{type(exc).__name__}: {exc}"
+    for _ in range(max(0, pages)):
         time.sleep(pause)
+        older, status, error = fn(symbol, oldest, limit)
+        new = [p for p in older if p[0] < oldest]
+        if not new:
+            entry["depth_exhausted"] = True
+            break
+        collected.extend(new)
+        oldest = min(p[0] for p in new)
+        pages_walked += 1
+    else:
+        entry["depth_exhausted"] = False
 
-        # How far back does history reach? Ask from an early date and see what returns.
-        early_ms = int(datetime(2020, 1, 1, tzinfo=timezone.utc).timestamp() * 1000)
-        url = spec["funding_url_paged"].format(symbol=symbol, start_ms=early_ms, limit=limit)
-        status, payload, error = fetch(url)
-        entry["funding_from_2020"] = {"http_status": status, "error": error}
-        if payload is not None:
-            try:
-                points = spec["funding_extract"](payload)
-                entry["funding_from_2020"].update(characterise(points))
-            except Exception as exc:  # noqa: BLE001
-                entry["funding_from_2020"]["parse_error"] = f"{type(exc).__name__}: {exc}"
-        time.sleep(pause)
-
-        url = spec["oi_url"].format(symbol=symbol)
-        status, payload, error = fetch(url)
-        entry["open_interest"] = {
-            "http_status": status,
-            "error": error,
-            "sample_present": payload is not None,
-        }
-        time.sleep(pause)
-
-        result["assets"][asset] = entry
-    return result
+    entry["depth_pages_walked"] = pages_walked
+    entry["depth"] = characterise(collected)
+    return entry
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    findings = {
-        "probe": "campaign53_source_feasibility_v1",
+    findings: dict[str, Any] = {
+        "probe": "campaign53_source_feasibility_v2",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "read_only": True,
         "data_acquired": False,
-        "venues": [],
+        "note": "Venue reachability is location-dependent; re-run from any host intended for acquisition.",
+        "venues": {},
     }
 
     for name in args.venues:
@@ -195,27 +239,44 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Unknown venue: {name}")
             continue
         print(f"Probing {name} ...")
-        findings["venues"].append(probe_venue(name, spec, args.assets, args.limit, args.pause))
+        findings["venues"][name] = {}
+        for asset in args.assets:
+            symbol = spec["symbols"].get(asset)
+            if symbol is None:
+                findings["venues"][name][asset] = {"status": "SYMBOL_NOT_MAPPED"}
+                continue
+            findings["venues"][name][asset] = probe(
+                name, spec["fn"], symbol, args.limit, args.depth_pages, args.pause
+            )
+            time.sleep(args.pause)
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / "source_probe_findings.json"
     path.write_text(json.dumps(findings, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    print("\n" + "=" * 84)
-    header = f"{'venue':<10}{'asset':<6}{'recent':>8}{'cadence':>9}{'earliest available':>28}{'mono':>6}"
+    print("\n" + "=" * 96)
+    header = (
+        f"{'venue':<12}{'asset':<6}{'HTTP':>6}{'cadence':>9}{'rows':>7}"
+        f"{'earliest reached':>22}{'exhausted':>11}{'ann.%':>9}"
+    )
     print(header)
     print("-" * len(header))
-    for venue in findings["venues"]:
-        for asset, entry in sorted(venue.get("assets", {}).items()):
-            recent = entry.get("funding_recent", {})
-            early = entry.get("funding_from_2020", {})
-            status = recent.get("http_status", "-")
-            cadence = recent.get("modal_cadence_hours", "-")
-            earliest = early.get("first_utc", early.get("error", "-"))
-            mono = recent.get("monotonic", "-")
-            print(f"{venue['venue']:<10}{asset:<6}{str(status):>8}{str(cadence):>9}{str(earliest)[:28]:>28}{str(mono):>6}")
-    print("=" * 84)
+    for venue, assets in findings["venues"].items():
+        for asset, entry in sorted(assets.items()):
+            depth = entry.get("depth", entry.get("recent", {}))
+            status = entry.get("http_status", "-")
+            if entry.get("error") and not depth.get("rows"):
+                print(f"{venue:<12}{asset:<6}{str(status):>6}{'-':>9}{'-':>7}{str(entry['error'])[:22]:>22}{'-':>11}{'-':>9}")
+                continue
+            print(
+                f"{venue:<12}{asset:<6}{str(status):>6}"
+                f"{str(depth.get('modal_cadence_hours','-')):>9}{depth.get('rows',0):>7}"
+                f"{str(depth.get('first_utc','-'))[:19]:>22}"
+                f"{str(entry.get('depth_exhausted','-')):>11}"
+                f"{str(depth.get('annualised_mean_pct','-')):>9}"
+            )
+    print("=" * 96)
     print(f"\nFindings: {path}")
     print("Read-only probe. No data acquired; bulk acquisition needs a board transition.")
     return 0
