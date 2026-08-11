@@ -32,7 +32,7 @@ from typing import Any, Callable
 
 USER_AGENT = "itera-research-feasibility-probe/2.0"
 TIMEOUT_SECONDS = 20
-MAX_DEPTH_PAGES = 12  # bounded backward walk; enough to characterise, not to harvest
+MAX_DEPTH_PAGES = 60  # bounded backward walk; raised after 12 proved insufficient to exhaust Deribit/Hyperliquid
 
 
 def http(url: str, payload: dict[str, Any] | None = None) -> tuple[int, Any, str | None]:
@@ -120,7 +120,11 @@ def hyperliquid(symbol: str, before_ms: int | None, limit: int) -> tuple[list, i
 def dydx(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str | None]:
     url = f"https://indexer.dydx.trade/v4/historicalFunding/{symbol}?limit={limit}"
     if before_ms is not None:
-        stamp = datetime.fromtimestamp(before_ms / 1000, tz=timezone.utc).isoformat()
+        stamp = (
+            datetime.fromtimestamp(before_ms / 1000, tz=timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
         url += f"&effectiveBeforeOrAt={stamp}"
     status, payload, error = http(url)
     if payload is None:
@@ -133,13 +137,16 @@ def dydx(symbol: str, before_ms: int | None, limit: int) -> tuple[list, int, str
     return points, status, error
 
 
+# `rate_period_hours` is the period the quoted rate APPLIES TO, which is not
+# always the sampling cadence. Deribit publishes an 8-hour rate sampled hourly;
+# annualising it on the 1h sampling interval overstates by 8x.
 VENUES: dict[str, dict[str, Any]] = {
-    "okx": {"fn": okx, "symbols": {"BTC": "BTC-USDT-SWAP", "ETH": "ETH-USDT-SWAP"}},
-    "binance": {"fn": binance, "symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT"}},
-    "bybit": {"fn": bybit, "symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT"}},
-    "deribit": {"fn": deribit, "symbols": {"BTC": "BTC-PERPETUAL", "ETH": "ETH-PERPETUAL"}},
-    "hyperliquid": {"fn": hyperliquid, "symbols": {"BTC": "BTC", "ETH": "ETH"}},
-    "dydx": {"fn": dydx, "symbols": {"BTC": "BTC-USD", "ETH": "ETH-USD"}},
+    "okx": {"fn": okx, "rate_period_hours": 8, "symbols": {"BTC": "BTC-USDT-SWAP", "ETH": "ETH-USDT-SWAP"}},
+    "binance": {"fn": binance, "rate_period_hours": 8, "symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT"}},
+    "bybit": {"fn": bybit, "rate_period_hours": 8, "symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT"}},
+    "deribit": {"fn": deribit, "rate_period_hours": 8, "symbols": {"BTC": "BTC-PERPETUAL", "ETH": "ETH-PERPETUAL"}},
+    "hyperliquid": {"fn": hyperliquid, "rate_period_hours": 1, "symbols": {"BTC": "BTC", "ETH": "ETH"}},
+    "dydx": {"fn": dydx, "rate_period_hours": 1, "symbols": {"BTC": "BTC-USD", "ETH": "ETH-USD"}},
 }
 
 
@@ -157,7 +164,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-def characterise(points: list[tuple[int, float]]) -> dict[str, Any]:
+def characterise(points: list[tuple[int, float]], rate_period_hours: float = 8.0) -> dict[str, Any]:
     if not points:
         return {"rows": 0}
     ordered = sorted(set(points))
@@ -185,13 +192,12 @@ def characterise(points: list[tuple[int, float]]) -> dict[str, Any]:
         "funding_rate_mean": mean_rate,
         "funding_rate_min": min(rates),
         "funding_rate_max": max(rates),
-        "annualised_mean_pct": (
-            round(mean_rate * (24 / cadence) * 365 * 100, 3) if cadence else None
-        ),
+        "rate_period_hours": rate_period_hours,
+        "annualised_mean_pct": round(mean_rate * (8760.0 / rate_period_hours) * 100, 3),
     }
 
 
-def probe(name: str, fn: Callable, symbol: str, limit: int, pages: int, pause: float) -> dict[str, Any]:
+def probe(name: str, fn: Callable, symbol: str, limit: int, pages: int, pause: float, rate_period_hours: float) -> dict[str, Any]:
     """Fetch the recent window, then walk backwards until the series is exhausted."""
     points, status, error = fn(symbol, None, limit)
     entry: dict[str, Any] = {"symbol": symbol, "http_status": status, "error": error}
@@ -199,7 +205,7 @@ def probe(name: str, fn: Callable, symbol: str, limit: int, pages: int, pause: f
         entry["recent"] = {"rows": 0}
         return entry
 
-    entry["recent"] = characterise(points)
+    entry["recent"] = characterise(points, rate_period_hours)
     collected = list(points)
     oldest = min(p[0] for p in points)
     pages_walked = 0
@@ -218,7 +224,7 @@ def probe(name: str, fn: Callable, symbol: str, limit: int, pages: int, pause: f
         entry["depth_exhausted"] = False
 
     entry["depth_pages_walked"] = pages_walked
-    entry["depth"] = characterise(collected)
+    entry["depth"] = characterise(collected, rate_period_hours)
     return entry
 
 
@@ -246,7 +252,8 @@ def main(argv: list[str] | None = None) -> int:
                 findings["venues"][name][asset] = {"status": "SYMBOL_NOT_MAPPED"}
                 continue
             findings["venues"][name][asset] = probe(
-                name, spec["fn"], symbol, args.limit, args.depth_pages, args.pause
+                name, spec["fn"], symbol, args.limit, args.depth_pages, args.pause,
+                spec["rate_period_hours"],
             )
             time.sleep(args.pause)
 
