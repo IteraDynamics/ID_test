@@ -57,8 +57,10 @@ Days 1–30 — lock the floor:
 
 Days 31–60 — complete the pipeline once:
 
-4. finish the Jump Risk timing audit and enable the frozen overlay in paper, alongside the
-   unchanged baseline;
+4. ~~finish the Jump Risk timing audit and enable the frozen overlay in paper~~ — **CLOSED
+   2026-08-11: audits completed, candidate RETIRED as not deployable at runtime cadence. The
+   pipeline was proven end to end, which was this item's structural purpose; the overlay itself
+   is not enabled.**
 5. build the governed funding/basis/open-interest data source (after board transition).
 
 Days 61–90 — aim the machine:

@@ -205,3 +205,28 @@ This does not establish leakage, but it makes exact timestamp availability and e
 | Production/runtime promotion | NOT APPROVED |
 
 The research phase is closed. Subsequent work belongs in a separate engineering branch and must not retune the frozen research parameters.
+
+---
+
+## Addendum — Retirement, 2026-08-11
+
+The research phase closed as recorded above. The engineering phase has now also closed, with a
+negative operational result.
+
+Finding 5 of this document states: *"The edge appears transient and must be operationally
+achievable within one hourly decision cycle."* That condition was tested and is not met.
+
+| Stage | Date | Outcome |
+|---|---|---|
+| Timing provenance audit | 2026-08-10 | PASS — no lookahead; canary verified the detector fires |
+| Live runtime cadence audit | 2026-08-10 | ~1.5-1.7 effective bars; 0 of 808 cycles within assumption |
+| Lag sensitivity re-test | 2026-08-11 | 98% of the edge expires by bar 2; REJECT at achievable lag |
+
+**Paper-trading promotion is WITHDRAWN. Jump Risk Engine v0 is RETIRED.**
+
+Nothing in the predictive research is retracted. The signal was validated, transferred
+cross-asset untuned, and was independently confirmed free of lookahead by an audit built
+specifically to be capable of failing. The mapping was economically positive at the lag the
+research assumed. It is not reachable at the lag the infrastructure achieves.
+
+Governing record: `docs/engineering/CORE_V1_JUMP_RISK_PAPER_CHARTER.md`.
