@@ -82,3 +82,56 @@ This charter authorizes documentation and planning work only. It does not author
 strategy, order, execution, portfolio, NAV, exposure, threshold, model-training, or production
 changes, nor any new campaign implementation before its own charter, specification, and board
 transitions.
+
+---
+
+## Clarification to the One Rule — successor strategies (2026-08-11)
+
+The One Rule has been read as "do not build something better than Core v1." That reading is
+wrong and is corrected here.
+
+**What the rule forbids: mutating Core v1.** Its parameters, weights, and logic are frozen
+because a live record is only meaningful if the thing being measured stays fixed. Retuning
+resets the record, invalidates the pre-registered degradation band, and repeats the selection
+process that produced the original overfitting concern — on the same data.
+
+**What the rule permits: building a successor in parallel.** A Core v2 developed as a separate
+strategy, with its own charter, its own paper runtime, and its own inception date, costs Core v1
+nothing. Both records accrue simultaneously and remain comparable. This is ordinary practice:
+funds do not retune Fund I, they launch Fund II, and investors see both.
+
+### Conditions on a successor
+
+1. **Additive, not re-parameterised.** A successor must introduce a *named structural
+   deficiency* it addresses. "I think we can do better" is not a research hypothesis. Changing
+   SMA 175 to SMA 200 is retuning wearing a new name and is prohibited under this clarification
+   as surely as editing Core v1 directly.
+2. **Parallel, never replacing.** Core v1 continues untouched. A transition may only be
+   considered after the successor has its own multi-year record, and is a separate governed
+   decision.
+3. **Same standards.** Horizon feasibility (Amendment 4), tradeability (Amendment 5), power
+   analysis (Amendment 1), and pre-registration all apply.
+4. **Floor risk unchanged.** Successor development is moonshot-bucket work funded with research
+   hours, never with the floor's risk budget.
+
+### Named deficiencies of Core v1 that would justify a successor
+
+Recorded so that a future charter has a legitimate starting point rather than an impulse:
+
+- **Structurally long-only.** All six sleeves are long-with-filter. The strategy can step aside
+  from a decline but cannot profit from one.
+- **A single return source.** Every sleeve harvests trend. Diversification is across assets, not
+  across sources of return — there is no carry, value, or mean-reversion component.
+- **No rates or fixed income.** The defensive state is cash.
+- **Single-name crypto.** BTC and ETH specifically, rather than a cross-section, which the
+  Campaign #53 feasibility work established is available on the operator's own venue.
+
+These are architectural gaps addressable by adding return sources. None is a tuning problem, and
+a successor charter built on any of them touches no Core v1 constant.
+
+### Pending evidence
+
+The Core v1 frozen-parameter sensitivity pass will inform which direction is legitimate. If
+Sharpe holds across all perturbations, the design is robust and improvement cannot come from
+parameters — only from added return sources. If it collapses on specific parameters, that is
+itself a named deficiency and a legitimate successor charter item.
