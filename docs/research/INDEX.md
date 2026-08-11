@@ -5,7 +5,7 @@ This index is the front door to Itera Dynamics research. It distinguishes predic
 | Program | Research status | Predictive evidence | Portfolio result | Runtime status | Primary document |
 |---|---|---|---|---|---|
 | Core v1 | Complete | Deterministic strategy baseline | Canonical portfolio | Paper runtime active | `RESEARCH_STATUS_2026-07-15.md` |
-| Jump Risk Engine v0 | Complete | Validated on BTC; locked transfer validated on ETH | PASS — aligned-upside mapping | Paper candidate pending timing audit | `JUMP_RISK_V0_FINAL.md` |
+| Jump Risk Engine v0 | Complete — retired | Validated on BTC; locked transfer validated on ETH; timing provenance verified | PASS at research lag; REJECT at achievable lag | RETIRED — not deployable at runtime cadence | `JUMP_RISK_V0_FINAL.md` |
 | Trend Persistence Engine v0 | Complete | Validated continuation ranking | REJECT — tested sleeve mappings hurt Core | Not promoted | `TREND_PERSISTENCE_V0_FINAL.md` |
 | Research Engine v1 | Active platform capability | Reproducibility, caching, auditing, registry | Infrastructure, not a portfolio signal | Research only | `RESEARCH_STATUS_2026-07-15.md` |
 | Volatility Expansion Engine | Planned | Not started | Not tested | None | — |
@@ -30,9 +30,13 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
 
 - Predictive engine: VALIDATED
 - BTC-to-ETH transfer: VALIDATED
+- Timing provenance (2026-08-10): VERIFIED — no lookahead
 - Downside governors: REJECTED
-- BTC + ETH aligned-upside mapping: PASS
-- Paper candidacy: APPROVED SUBJECT TO TIMING AUDIT
+- BTC + ETH aligned-upside mapping at research lag: PASS
+- Live runtime cadence (2026-08-10): ~1.5-1.7 effective bars
+- Mapping at achievable lag (2026-08-11): REJECT — 98% of the edge expires by bar 2
+- Paper candidacy: **WITHDRAWN**
+- Lifecycle: **RETIRED — sound research, not reachable on this infrastructure**
 - Production runtime: NOT APPROVED
 
 ### Trend Persistence Engine v0

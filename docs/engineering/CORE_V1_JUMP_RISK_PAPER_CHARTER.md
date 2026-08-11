@@ -477,3 +477,78 @@ this run.
 Stated in advance for the record: the promotion decision documents that the benefit "decays
 sharply after the first implementation bar," so survival at effective lag 3+ is considered
 unlikely. This prior does not alter the decision rule.
+
+---
+
+## Lag Sensitivity Result and Final Disposition — 2026-08-11
+
+Run: `artifacts/jump_risk_lag_sensitivity/20260811T132219Z_jump-risk-lag-sensitivity`
+
+### Reproduction guard: SATISFIED
+
+The pre-registration required that effective lag 1 reproduce the approved study before any
+conclusion about lag could be drawn. It does, exactly:
+
+| | CAGR | Sharpe | Calmar | Max DD |
+|---|---:|---:|---:|---:|
+| Approved study | 21.02% | 1.400 | 1.347 | -15.60% |
+| Lag-1 row | 21.02% | 1.400 | 1.348 | -15.60% |
+
+The table is therefore interpretable.
+
+### Result
+
+Core baseline: CAGR 19.93%, Sharpe 1.318, Calmar 1.208, Max DD -16.50%.
+
+| Effective lag | CAGR | dCAGR | dSharpe | dCalmar | dMaxDD | Gate |
+|---:|---:|---:|---:|---:|---:|---|
+| 1 | 21.02% | +1.09 | +0.082 | +0.140 | +0.90 | **PASS** |
+| 2 | 19.95% | +0.02 | -0.013 | -0.006 | -0.10 | REJECT |
+| 3 | 19.78% | -0.15 | -0.027 | -0.024 | -0.20 | REJECT |
+| 4 | 19.80% | -0.13 | -0.027 | -0.027 | -0.26 | REJECT |
+| 5 | 19.60% | -0.33 | -0.043 | -0.046 | -0.37 | REJECT |
+
+Max surviving effective lag: **1**.
+
+### Interpretation
+
+The decay is a cliff, not a slope. **98% of the edge is gone by the second bar.** At lag 2 the
+overlay is already marginally harmful on every risk-adjusted measure, and it stays mildly
+negative thereafter. The promotion decision's warning that the benefit "decays sharply after
+the first implementation bar" is now quantified: essentially the entire +1.09pp lives inside
+the first hour after the source bar closes.
+
+The 2026-08-10 cadence audit measured live runtime cadence at roughly 1.5-1.7 effective bars,
+which sits between rows 2 and 3 of this table. There is no plausible reading of this result
+under which the approved mapping is economically positive on this infrastructure.
+
+A secondary observation, recorded for future reference: a signal whose entire value expires
+within one hour is characteristic of a very short-lived reaction effect. If this family is ever
+revisited, the binding constraint is **latency, not modelling**. Better features or models
+cannot recover an edge that has already decayed before the decision is made.
+
+### FINAL DISPOSITION
+
+**Jump Risk Engine v0 — RETIRED. Not deployable.**
+
+- Predictive research: VALIDATED and unretracted (BTC ROC AUC 0.80, untuned ETH transfer 0.76).
+- Timing provenance: VERIFIED — zero shift-provenance failures across 8 candidates, canary
+  passed (2026-08-10).
+- Portfolio value at research lag: PASS, reproduced exactly.
+- Portfolio value at achievable lag: **REJECT**.
+- Paper activation: **NOT AUTHORIZED. Permanently blocked under this charter.**
+
+The runtime remains `PARITY_BASELINE_ONLY`. No Core v1, runtime, strategy, order, NAV, or
+exposure change is authorized by this closure. The overlay code, provider, tests, and audits
+remain in the repository as governed research artifacts; they are not to be enabled.
+
+This is a valid negative operational result. The research was sound and was independently
+verified free of lookahead. The infrastructure cannot act quickly enough to collect what the
+research identified. Those are separate facts and both are now on the record.
+
+### Reopening conditions
+
+This disposition may only be revisited if runtime cadence is independently measured at an
+effective lag of 1 bar or better. That would require a change to the Core v1 floor and is
+governed by `docs/ITERA_DESTINATION_CHARTER.md`. No reopening is authorized by evidence about
+the signal itself; the signal was never the problem.
