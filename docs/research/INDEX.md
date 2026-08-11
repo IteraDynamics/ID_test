@@ -6,7 +6,7 @@ This index is the front door to Itera Dynamics research. It distinguishes predic
 |---|---|---|---|---|---|
 | Core v1 | Complete | Deterministic strategy baseline | Canonical portfolio | Paper runtime active | `RESEARCH_STATUS_2026-07-15.md` |
 | Jump Risk Engine v0 | Complete — retired | Validated on BTC; locked transfer validated on ETH; timing provenance verified | PASS at research lag; REJECT at achievable lag | RETIRED — not deployable at runtime cadence | `JUMP_RISK_V0_FINAL.md` |
-| Trend Persistence Engine v0 | Complete | Validated continuation ranking | REJECT — tested sleeve mappings hurt Core | Not promoted | `TREND_PERSISTENCE_V0_FINAL.md` |
+| Trend Persistence Engine v0 | Complete — retired | Validated continuation ranking; 3h candidates operationally unreachable | REJECT — tested sleeve mappings hurt Core | RETIRED — not promoted; 3h family infeasible at runtime cadence | `TREND_PERSISTENCE_V0_FINAL.md` |
 | Research Engine v1 | Active platform capability | Reproducibility, caching, auditing, registry | Infrastructure, not a portfolio signal | Research only | `RESEARCH_STATUS_2026-07-15.md` |
 | Volatility Expansion Engine | Planned | Not started | Not tested | None | — |
 | Liquidity Compression Engine | Planned | Not started | Not tested | None | — |
@@ -42,11 +42,17 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
 ### Trend Persistence Engine v0
 
 - Predictive signal: VALIDATED
-- Continuous sleeve gating/scaling mappings: REJECTED
-- Research lifecycle: COMPLETE — NOT PROMOTED
+- Continuous sleeve gating/scaling mappings: REJECTED (all tested mappings degraded Core)
+- Horizon feasibility (2026-08-11): 3h "central finding" candidates INFEASIBLE — a ~1.6h
+  decision lag consumes 53% of the horizon; 60h/120h candidates remain feasible
+- Research lifecycle: **RETIRED** on two independent grounds — mapping economics and
+  operational reachability
+- Any future work: restricted to 60h+ candidates, chartered as new research, not as a rescue
+  of the 3h finding
 
 ## Canonical Research Documents
 
+- `CANDIDATE_HORIZON_FEASIBILITY_SWEEP.md`
 - `RESEARCH_STATUS_2026-07-15.md`
 - `RESEARCH_PROMOTION_POLICY.md`
 - `JUMP_RISK_PORTFOLIO_V0_CHARTER.md`
