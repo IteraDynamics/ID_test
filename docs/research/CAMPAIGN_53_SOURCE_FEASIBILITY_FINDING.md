@@ -91,7 +91,81 @@ in dollars.
 Recording this before chartering is deliberate. The Jump Risk episode consumed substantial
 effort on an edge whose materiality was never assessed against this operator's actual capital.
 
-## 5. Open blocker — tradeability
+## 5. Tradeability — RESOLVED (2026-08-11)
+
+Operator account inspection confirms **perpetual futures are listed and marked tradable** on
+**Coinbase Derivatives Exchange (CDE)**, a CFTC-regulated US venue, alongside a dated-futures
+series.
+
+Perpetual products observed under the "Tradable" filter:
+
+| Product | Contract size | Last | 24h volume |
+|---|---:|---:|---:|
+| BTC PERP | 0.01 | $63,735 | $239.58M |
+| ETH PERP | 0.1 | $1,873.0 | $47.12M |
+| TECH PERP | 1 | $3,979.6 | $21.81M |
+| PAXG PERP | 1 | $4,385.8 | $19.38M |
+| XRP PERP | 500 | $1.0022 | $19.38M |
+| SOL PERP | 5 | $75.24 | $12.18M |
+| ZCASH PERP | 1 | $474.00 | $7.44M |
+| NEAR PERP | 500 | $1.5487 | $5.57M |
+| HYPE PERP | 10 | $54.31 | $5.15M |
+| AI PERP | 1 | $2,969.3 | $3.85M |
+| XLM PERP | 5K | $0.16021 | — |
+
+**Gating step:** the account has not completed derivatives onboarding. Coinbase presents an
+eligibility questionnaire ("Unlock derivatives trading… Coinbase Financial Markets"). Charter
+authorization is contingent on that eligibility being granted, which is not guaranteed and may
+depend on jurisdiction and suitability.
+
+Contract granularity is workable at this capital scale: BTC PERP is roughly $637 notional per
+contract, ETH PERP roughly $187.
+
+### 5a. Critical distinction — CDE is not INTX
+
+The probe measured **Coinbase International Exchange (INTX)** funding at 5.37% annualised. The
+operator would trade **Coinbase Derivatives Exchange (CDE)**. These are different venues with
+different participants, different access rules, and potentially different funding levels.
+
+**No CDE funding history has been obtained.** Deribit remains the only research-grade source,
+and the Amendment 5 cross-venue basis requirement is therefore *not* satisfied by the INTX
+figure. Before the specification freezes, the charter must establish either CDE funding history
+directly, or evidence that CDE funding tracks the research venue closely enough to rely on.
+
+### 5b. Observation — dated-futures basis
+
+A snapshot showed BTC PERP at $63,735 against the BTC 28-AUG-26 dated future at $64,000: a
+0.416% spread over roughly 17 days, or approximately 8.9% annualised. This is a single
+unverified observation from a screenshot, not a measurement, and the two prices may not be
+synchronous.
+
+If it holds up, the calendar basis may be a larger and more accessible premium than perpetual
+funding, harvestable with a defined expiry and no funding-rate uncertainty. It is recorded as a
+candidate for separate investigation, not as a finding.
+
+## 6. Campaign design implication — go cross-sectional
+
+The original charter contemplated a time-series carry study on BTC and ETH. The observed
+universe contains **eleven or more perpetual products**, which changes the appropriate design.
+
+A cross-sectional funding study — ranking the available perp universe by funding and trading
+the spread between extremes — is materially better than a two-asset time-series study on three
+counts:
+
+1. **Power.** Funding is heavily autocorrelated, so a year of BTC funding contains far fewer
+   independent observations than its row count suggests. A cross-section of eleven instruments
+   multiplies independent observations without requiring more history — directly addressing the
+   Amendment 1 constraint that ended Campaigns #50–#52.
+2. **Economics.** More instruments means more simultaneous opportunities and less dependence on
+   any single funding regime.
+3. **Mechanism.** Cross-sectional dispersion in funding is a cleaner crowding measure than any
+   single asset's level, since it controls for market-wide risk appetite.
+
+Liquidity is the constraint: BTC and ETH PERP carry meaningful volume, while the tail products
+trade in the single-digit millions. A cross-sectional design must include a pre-registered
+liquidity floor and a capacity assumption sized to this operator's capital.
+
+## 7. Superseded — original open blocker
 
 Per Amendment 5, Campaign #53 cannot be chartered until this is answered:
 
