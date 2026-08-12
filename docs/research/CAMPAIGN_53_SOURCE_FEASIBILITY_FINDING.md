@@ -287,3 +287,50 @@ Option 2 is the cleanest and option 3 the most honest; neither is chosen here.
 Campaign #53 remains **unchartered**. Its subject has provisionally moved from funding carry to
 cross-sectional calendar basis, pending resolution of the funding-accrual question above and
 completion of derivatives eligibility. No specification is frozen and no data has been acquired.
+
+---
+
+## 9. Funding-accrual gap resolved — the probe read the wrong field (2026-08-12)
+
+Section 8b's conclusion — "zero of 99 CDE products expose a `funding_rate` field" — is
+corrected. **The data was never missing; the probe was reading the wrong path.**
+
+`probe_coinbase_derivatives_universe.py` reads `future_product_details.perpetual_details
+.funding_rate`, which is genuinely empty for every CDE product — that field appears to be
+vestigial, populated only for Coinbase International's true `PERPETUAL`-typed products, not
+CDE's `EXPIRING`-typed perpetual-style futures. `future_product_details.funding_rate` — a
+sibling field one level up, alongside `contract_expiry`, `settlement_price`, and `index_price`
+— is populated. `scripts/probe_cde_product_detail.py` confirmed it directly against the
+single-product detail endpoint for both liquid perpetual-style majors:
+
+| Product | funding_rate | funding_interval | funding_time | index_price |
+|---|---:|---:|---|---:|
+| BIP-20DEC30-CDE (BTC PERP) | 0.000011 | 3600s | 2026-08-12T20:00:00Z | 63,437.911245 |
+| ETP-20DEC30-CDE (ETH PERP) | 0.000008 | 3600s | 2026-08-12T20:00:00Z | 1,881.933167 |
+
+Both current, both timestamped, both on an **hourly** funding interval — notably different
+cadence from Deribit's 8-hour convention, worth carrying into any specification that compares
+the two. `scripts/probe_cde_funding_coverage.py` extends this check across the full liquid
+perpetual-style cross-section (not just the two majors) and has not yet been run; its result
+belongs in this section when available.
+
+### Consequence for campaign design
+
+If coverage holds across the cross-section, the Amendment 5 funding-accrual gap that motivated
+the calendar-basis redirect (§8d) **does not exist**: CDE publishes native, same-venue,
+per-instrument funding directly. None of the three contingency options recorded in §8d are
+needed — not the search for an alternative source, not the dated-vs-dated narrowing, not the
+assumed-cost fallback. **Funding carry — Campaign #53's original subject — is reopened as the
+primary design candidate**, on cleaner footing than the calendar-basis redirect it was replaced
+by, since basis was adopted specifically to route around a gap that turns out not to be there.
+
+This is not this document's call to make alone. Section 8d's redirect was itself a considered
+recommendation, and reversing it deserves the same deliberate review this document has applied
+throughout, plus confirmation that coverage holds beyond two instruments. Recorded here as an
+open reconsideration, not a decision.
+
+### Status
+
+Campaign #53 remains **unchartered**. Funding-accrual is provisionally resolved pending full
+cross-section confirmation; derivatives eligibility remains outstanding. No specification is
+frozen and no data has been acquired.
