@@ -52,7 +52,10 @@ All Path 1/Path 2 work is classified before scheduling:
 Days 1–30 — lock the floor:
 
 1. commit benchmark registration and degradation-band pre-commitments (this session);
-2. run the Core v1 frozen-parameter sensitivity pass (report-only, never retune);
+2. ~~run the Core v1 frozen-parameter sensitivity pass (report-only, never retune)~~ — **CLOSED
+   2026-08-12: no collapse on the 6 of 10 parameters the harness could exercise. Result and
+   scope in `docs/research/CORE_V1_PARAMETER_SENSITIVITY_RESULT.md`. Direction resolved: see
+   "Pending evidence" above.**
 3. leave Core v1 otherwise untouched.
 
 Days 31–60 — complete the pipeline once:
@@ -135,3 +138,17 @@ The Core v1 frozen-parameter sensitivity pass will inform which direction is leg
 Sharpe holds across all perturbations, the design is robust and improvement cannot come from
 parameters — only from added return sources. If it collapses on specific parameters, that is
 itself a named deficiency and a legitimate successor charter item.
+
+**Resolved 2026-08-12.** Full result: `docs/research/CORE_V1_PARAMETER_SENSITIVITY_RESULT.md`.
+Of the ten perturbed constants, six were actually exercised by the harness; ΔSharpe on those six
+ranged -0.022 to +0.039 against baseline 1.319 — no collapse, no knife edge. The other four were
+provably inert in this harness (two by design, given how BTC macro state is injected into trend
+sleeves; two due to a backtest-engine gap that discards one strategy branch's exposure target,
+detailed in the result document). Under this section's own logic: **Sharpe holds. Improvement is
+not available through retuning Core v1's parameters.** The legitimate direction is a successor
+addressing a named structural deficiency (below), which Campaign #53 is already pursuing.
+
+The backtest-engine gap found during this pass does not affect the live paper record — the live
+runtime is unaffected and has run the strategy as coded since inception — but leaves an
+unquantified, narrowly-scoped asterisk on the canonical backtest ceiling. See the result document
+for scope; correcting it is a separate, not-yet-scheduled governed decision.

@@ -59,6 +59,14 @@ Measured, not assumed. Re-measure before citing; these can change.
   expectation. Live expectation ~0.7–0.9 Sharpe; drawdown planning assumption -26% to -35%.
   Never restate the backtest as an expectation. See
   `docs/research/CORE_V1_LIVE_EXPECTATION_AND_DEGRADATION_BAND.md`.
+- **`research/harness/backtest_engine.py` silently discards `desired_exposure_frac` on `HOLD`
+  intents** (line ~232) — a shortcut that works because every strategy but one echoes current
+  exposure on ordinary holds. `equity_sma175_v3`'s partial de-risk branch is the sole exception,
+  so the backtest/audit/WFO engine has never modeled it; the live paper runtime (which reads the
+  field unconditionally) has run it as coded since inception. Live record unaffected; canonical
+  backtest ceiling carries a narrow, unquantified asterisk. Details and scope:
+  `docs/research/CORE_V1_PARAMETER_SENSITIVITY_RESULT.md`. Not yet fixed — correcting it changes
+  every canonical artifact retroactively and is its own governed decision.
 
 ## Retired — do not revive
 
