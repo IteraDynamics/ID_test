@@ -1,22 +1,27 @@
 """Run the sleeve contribution audit's hedge slot with a different strategy module.
 
-`scripts/run_multi_strategy_fund.py` hardcodes HEDGE_STRATEGY = "crash_short_v6" --
-there is no CLI flag to choose a different one. `trend_following_short_v2` is fully
-built, registered in research/strategies/REGISTRY, and unused, sitting alongside
-crash_short_v6 as the other candidate for Core v2's "structurally long-only"
-deficiency: a broader bear-trend short rather than a confirmed-macro-crash-only
-short.
+`trend_following_short_v2` is fully built, registered in research.strategies.
+REGISTRY, and unused -- the other candidate for Core v2's "structurally
+long-only" deficiency alongside crash_short_v6, trading sustained bear trends
+broadly rather than confirmed-macro-crash-only conditions.
 
-This patches the HEDGE_STRATEGY module attribute before building sleeves --
-identical in kind to the constant-patching scripts/run_core_v1_parameter_
-sensitivity.py already uses and relies on, just swapping a strategy module
-reference instead of a numeric constant. HEDGE_STRATEGY is read fresh from the
-module namespace on every _build_sleeves() call (not captured as a function
-default), so the patch is live for the whole run.
-
-Defaults reproduce the same isolated, 100%-weight, standalone-read shape used for
-the crash_short_v6 and mean_reversion probes earlier in this campaign, so the
-result is directly comparable to those.
+IMPORTANT, found the hard way: scripts/run_core_v1_sleeve_contribution_audit.py
+carries its OWN HEDGE_STRATEGY constant, independent of scripts/run_multi_
+strategy_fund.py's same-named one. Its strategy_for(spec) dispatches by
+spec.family using this local constant for hedge/mr/equity/gold, and hardcodes
+trend_following_v11 directly for trend -- spec.strategy (what _build_sleeves
+sets from the fund module's constant) is never consulted for any family
+_build_sleeves actually produces. A first version of this script patched only
+the fund module's constant: it printed a successful-looking swap and silently
+ran crash_short_v6 anyway. That was caught because the result was byte-
+identical to the crash_short_v6 probe, three decimals on four metrics --
+essentially impossible by coincidence for two strategies with different EMA
+periods and gates -- not because anything in the script itself detected the
+failure. This patches scripts.run_core_v1_sleeve_contribution_audit.
+HEDGE_STRATEGY specifically, the constant strategy_for() actually reads, and
+verifies the swap by calling strategy_for() directly against a real hedge-
+family spec before running anything, so a silent no-op patch fails loudly
+here instead of downstream in a six-hour result.
 
 Writes artifacts to --out-dir like the audit script itself. Report-only: no
 runtime, Core v1, or production behavior touched.
@@ -51,12 +56,28 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
-    fund_module = importlib.import_module("scripts.run_multi_strategy_fund")
-    original = fund_module.HEDGE_STRATEGY
-    setattr(fund_module, "HEDGE_STRATEGY", args.hedge_strategy_module)
-    print(f"Hedge slot: {original} -> {fund_module.HEDGE_STRATEGY}")
-
     import scripts.run_core_v1_sleeve_contribution_audit as audit
+    from scripts.run_multi_strategy_fund import SleeveSpec
+
+    original = audit.HEDGE_STRATEGY
+    setattr(audit, "HEDGE_STRATEGY", args.hedge_strategy_module)
+    print(f"Hedge slot: {original} -> {audit.HEDGE_STRATEGY}")
+
+    # Verify against the actual dispatch function, not the SleeveSpec.strategy
+    # field the earlier broken version trusted -- that field is dead code for
+    # this audit's hedge/mr/equity/gold families.
+    probe_spec = SleeveSpec(label="_verify", family="hedge", asset="BTC",
+                             timeframe="1H", strategy="_unused", capital=1.0)
+    resolved = audit.strategy_for(probe_spec)
+    resolved_id = getattr(resolved, "STRATEGY_ID", getattr(resolved, "__name__", "?"))
+    expected_id = args.hedge_strategy_module
+    if expected_id not in str(resolved_id) and expected_id.replace("_", "") not in str(resolved_id).replace("_", ""):
+        raise RuntimeError(
+            f"Patch verification failed: strategy_for() resolved to {resolved_id!r}, "
+            f"expected something matching {expected_id!r}. Refusing to run six years "
+            f"of backtest against the wrong strategy."
+        )
+    print(f"Verified: strategy_for(hedge spec) -> {resolved_id}")
 
     audit_args = argparse.Namespace(
         btc_data=args.btc_data, eth_data=args.eth_data,
