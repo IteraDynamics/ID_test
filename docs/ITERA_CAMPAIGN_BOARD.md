@@ -100,9 +100,17 @@ Standing governance recorded this transition:
 Authorized now:
 
 - Campaign #53 feasibility planning per its charter section 2 (venue/endpoint inventory,
-  coverage verification, acquisition design, temporal-architecture draft);
+  coverage verification, acquisition design, temporal-architecture draft) — feasibility
+  resolved 2026-08-12, see `docs/research/CAMPAIGN_53_SOURCE_FEASIBILITY_FINDING.md`; not yet
+  authorized to proceed past feasibility into a frozen specification;
 - implementation of the registered Core v1 benchmark series (report-only);
-- the Core v1 frozen-parameter sensitivity pass (report-only, no retuning).
+- Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
+  or capital.
+
+Closed:
+
+- the Core v1 frozen-parameter sensitivity pass (report-only, no retuning) — CLOSED 2026-08-12,
+  `docs/research/CORE_V1_PARAMETER_SENSITIVITY_RESULT.md`.
 
 Not authorized:
 

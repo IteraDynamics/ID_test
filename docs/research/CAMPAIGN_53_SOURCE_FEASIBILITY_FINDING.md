@@ -310,27 +310,37 @@ single-product detail endpoint for both liquid perpetual-style majors:
 
 Both current, both timestamped, both on an **hourly** funding interval — notably different
 cadence from Deribit's 8-hour convention, worth carrying into any specification that compares
-the two. `scripts/probe_cde_funding_coverage.py` extends this check across the full liquid
-perpetual-style cross-section (not just the two majors) and has not yet been run; its result
-belongs in this section when available.
+the two.
+
+### Full cross-section confirmed (2026-08-12)
+
+`scripts/probe_cde_funding_coverage.py`, run fresh against the live universe rather than a
+saved file: **19 of 19** liquid (>$1M/day) CDE perpetual-style products publish
+`future_product_details.funding_rate`. Coverage is complete, not partial — every instrument a
+cross-sectional design would draw from carries the field, from BTC ($231M/day) down to the
+smallest liquid name (~$1.2M/day). The cross-section spans majors and a broad set of smaller
+names (index prices from ~$0.07 to ~$63,500), which is real breadth for Amendment 1 power, not
+a handful of large-cap coincidences.
 
 ### Consequence for campaign design
 
-If coverage holds across the cross-section, the Amendment 5 funding-accrual gap that motivated
-the calendar-basis redirect (§8d) **does not exist**: CDE publishes native, same-venue,
-per-instrument funding directly. None of the three contingency options recorded in §8d are
-needed — not the search for an alternative source, not the dated-vs-dated narrowing, not the
-assumed-cost fallback. **Funding carry — Campaign #53's original subject — is reopened as the
-primary design candidate**, on cleaner footing than the calendar-basis redirect it was replaced
-by, since basis was adopted specifically to route around a gap that turns out not to be there.
+The Amendment 5 funding-accrual gap that motivated the calendar-basis redirect (§8d) **does not
+exist**. CDE publishes native, same-venue, per-instrument funding directly, for the full liquid
+cross-section. None of the three contingency options recorded in §8d are needed.
 
-This is not this document's call to make alone. Section 8d's redirect was itself a considered
-recommendation, and reversing it deserves the same deliberate review this document has applied
-throughout, plus confirmation that coverage holds beyond two instruments. Recorded here as an
-open reconsideration, not a decision.
+**Decision: Campaign #53 reverts to funding carry as its primary subject**, superseding the
+§8d calendar-basis redirect. Funding carry is the cleaner design now that its blocker is gone —
+native data, same venue as execution, no proxy, no assumed cost — and it was the original
+economic hypothesis before the redirect existed only to route around a gap that turned out to
+be a probe reading the wrong field. Calendar basis remains a valid, fully-scoped fallback
+subject if funding carry fails a later gate, but is no longer the primary design.
+
+Housekeeping for whoever builds the specification: several liquid contract codes (e.g. `TEK`,
+`PAU`, `XPP`, `NER`, `HYP`) are not self-evident tickers and need mapping to their underlying
+asset before use.
 
 ### Status
 
-Campaign #53 remains **unchartered**. Funding-accrual is provisionally resolved pending full
-cross-section confirmation; derivatives eligibility remains outstanding. No specification is
-frozen and no data has been acquired.
+Campaign #53 remains **unchartered**. Funding-accrual and tradeability are both resolved.
+Derivatives eligibility remains the one outstanding account-status item, blocking execution but
+not research/specification work. No specification is frozen and no data has been acquired.
