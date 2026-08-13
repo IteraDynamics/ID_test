@@ -101,8 +101,10 @@ Authorized now:
 
 - Campaign #53 feasibility planning per its charter section 2 (venue/endpoint inventory,
   coverage verification, acquisition design, temporal-architecture draft) — feasibility
-  resolved 2026-08-12, see `docs/research/CAMPAIGN_53_SOURCE_FEASIBILITY_FINDING.md`; not yet
-  authorized to proceed past feasibility into a frozen specification;
+  resolved 2026-08-12, see `docs/research/CAMPAIGN_53_SOURCE_FEASIBILITY_FINDING.md`;
+- Campaign #53 frozen-specification drafting (Section 3, DRAFT, not frozen) — scoped to carry
+  capture only per the 2026-08-13 clarification appended to Section 1; not yet authorized to
+  freeze, acquire data, or execute;
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.

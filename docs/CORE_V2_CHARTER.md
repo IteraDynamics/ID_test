@@ -96,10 +96,16 @@ This charter authorizes documentation and planning only. It does not authorize:
 
 ## Open items
 
-1. Progress Campaign #53 through the `charter-campaign` skill's gate sequence (power analysis
-   is the remaining unrun gate; horizon, tradeability, and materiality are resolved) toward a
-   frozen specification under its own living document.
-2. Resolve derivatives eligibility on CDE — an account-status decision outside this charter's
+1. Campaign #53's Section 3 (frozen specification) is drafted, not frozen
+   (`docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`) — scoped to carry capture
+   only; directional conditioning and exposure gating, the charter's other two role hypotheses,
+   are deferred as a separate future Core v1 overlay campaign, not part of Core v2.
+2. `scripts/probe_cde_matched_pairs.py` (not yet run) determines whether the carry universe is
+   the full 19 liquid names (perp-vs-spot, an off-CDE leg and an unvalidated custody
+   assumption) or a smaller CDE-native set (perp-vs-dated, satisfying Amendment 5 by
+   construction). The specification does not commit to a universe size until this is in.
+3. Power analysis is plan-only pending data acquisition, itself pending the spec's freeze.
+4. Resolve derivatives eligibility on CDE — an account-status decision outside this charter's
    scope.
-3. On a later-day review pass, confirm this charter's framing still holds before treating it as
+5. On a later-day review pass, confirm this charter's framing still holds before treating it as
    non-draft.
