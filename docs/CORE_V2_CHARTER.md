@@ -100,10 +100,12 @@ This charter authorizes documentation and planning only. It does not authorize:
    (`docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`) — scoped to carry capture
    only; directional conditioning and exposure gating, the charter's other two role hypotheses,
    are deferred as a separate future Core v1 overlay campaign, not part of Core v2.
-2. `scripts/probe_cde_matched_pairs.py` (not yet run) determines whether the carry universe is
-   the full 19 liquid names (perp-vs-spot, an off-CDE leg and an unvalidated custody
-   assumption) or a smaller CDE-native set (perp-vs-dated, satisfying Amendment 5 by
-   construction). The specification does not commit to a universe size until this is in.
+2. Universe resolved 2026-08-13: 10 of 19 liquid perpetual-style names have a matched CDE
+   dated contract (BTC, ETH, XRP, SOL, HYPE, XLM, LINK, DOGE, ADA, DOT) — perp-vs-dated on
+   these 10 is the primary universe, satisfying Amendment 5 by construction. Four of the
+   remaining 9 (`CDETEK`, `CDECHN`, `CDEAI`, `CDEDEF` root units) look like thematic/basket
+   index perpetuals rather than single-asset contracts and may be the wrong instrument class
+   for this design entirely — pending a `display_name` check before the spec freezes.
 3. Power analysis is plan-only pending data acquisition, itself pending the spec's freeze.
 4. Resolve derivatives eligibility on CDE — an account-status decision outside this charter's
    scope.

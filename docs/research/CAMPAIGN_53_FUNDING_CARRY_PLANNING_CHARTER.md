@@ -140,12 +140,27 @@ question is what the *first* leg is:
   Same company, different venue — Amendment 5 is not satisfied by construction the way it is
   for the CDE-native pair.
 
-`scripts/probe_cde_matched_pairs.py` (2026-08-13, not yet run) checks the full 19 against the
-complete liquid CDE dated universe. **This specification does not commit to a universe size
-until that result is in.** If coverage is high, perp-vs-dated is the base case outright. If
-coverage is low, the choice is between a smaller, cleaner cross-section and a broader one
-carrying an assumption — the same shape of trade-off Campaign #53 already made once, for the
-same reason, in §8d/§9 of the feasibility finding.
+`scripts/probe_cde_matched_pairs.py` (run 2026-08-13, `artifacts/campaign53_source_probe/
+cde_matched_pairs_findings.json`): **10 of 19** liquid perpetual-style names have a tradeable
+same-root dated contract on CDE — BTC, ETH, XRP, SOL, HYPE, XLM, LINK, DOGE, ADA, DOT.
+
+**Resolved: perp-vs-dated on these 10 is the primary universe.** It satisfies Amendment 5 by
+construction for the whole cross-section, needs no custody or cross-venue assumption, and is a
+real improvement on the 5-name partial estimate the feasibility finding recorded. Still worth
+noting as a genuine limitation: 10 is roughly half the liquid perpetual-style set, and the
+missing half is not random — see below.
+
+**Open housekeeping item, before this becomes non-draft:** four of the 9 unmatched names carry
+a `contract_root_unit` that is not a recognizable single-asset ticker — `CDETEK`, `CDECHN`,
+`CDEAI`, `CDEDEF` (against BTC, ETH, XRP, etc. everywhere else). These read as thematic/basket
+index perpetuals (tech, China, AI, DeFi baskets), not single-underlying contracts, which would
+make them the wrong instrument class for this design regardless of a matched dated contract —
+there is no single "spot" to pair a basket index against in the way this specification assumes.
+`display_name` from `probe_cde_product_detail.py` against these four IDs confirms or refutes
+this before freeze; not yet run. If confirmed, the honest unmatched-and-eligible remainder is 5
+names (PAXG, ZEC, NEAR, ENA, ONDO), not 9 — a smaller, real gap, most plausibly filled later by
+perp-vs-spot as a documented extension once the custody assumption is separately validated, not
+by this specification at freeze.
 
 ### 3b. Horizon feasibility (Amendment 4) — carry does not fit the standard framing
 
@@ -209,8 +224,9 @@ authorized (Section 2). This section states the approach; it does not produce a 
    does not proceed as specified — the fix is redesign (broader universe, fewer gates, longer
    sample), not execution.
 
-Blocked on: (a) §3a's universe-size resolution, since sample size is a direct power input; (b)
-data acquisition authorization, itself blocked on this specification's freeze.
+Blocked on: (a) confirming the §3a basket-product housekeeping item, since it changes N=10 to a
+possibly-larger confirmed-clean universe; (b) data acquisition authorization, itself blocked on
+this specification's freeze.
 
 ## 5. Execution evidence
 
