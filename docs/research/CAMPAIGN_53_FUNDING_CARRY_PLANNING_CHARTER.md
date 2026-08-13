@@ -150,17 +150,25 @@ real improvement on the 5-name partial estimate the feasibility finding recorded
 noting as a genuine limitation: 10 is roughly half the liquid perpetual-style set, and the
 missing half is not random — see below.
 
-**Open housekeeping item, before this becomes non-draft:** four of the 9 unmatched names carry
-a `contract_root_unit` that is not a recognizable single-asset ticker — `CDETEK`, `CDECHN`,
-`CDEAI`, `CDEDEF` (against BTC, ETH, XRP, etc. everywhere else). These read as thematic/basket
-index perpetuals (tech, China, AI, DeFi baskets), not single-underlying contracts, which would
-make them the wrong instrument class for this design regardless of a matched dated contract —
-there is no single "spot" to pair a basket index against in the way this specification assumes.
-`display_name` from `probe_cde_product_detail.py` against these four IDs confirms or refutes
-this before freeze; not yet run. If confirmed, the honest unmatched-and-eligible remainder is 5
-names (PAXG, ZEC, NEAR, ENA, ONDO), not 9 — a smaller, real gap, most plausibly filled later by
-perp-vs-spot as a documented extension once the custody assumption is separately validated, not
-by this specification at freeze.
+**Resolved 2026-08-13.** `probe_cde_product_detail.py` against the four odd names (`TEK-19DEC30
+-CDE`, `CHN-19DEC30-CDE`, `AIP-19DEC30-CDE`, `DEF-19DEC30-CDE`) confirms they are equity-index
+perpetuals, not crypto: `display_name` "Tech100 Perpetual" / "China Perpetual" / "AI Perpetual" /
+"Defense Perpetual", `future_product_details.non_crypto = True` on all four,
+`futures_asset_type = 'FUTURES_ASSET_TYPE_STOCKS'`, `trading_hours_type =
+'TRADING_HOURS_TYPE_EQUITY_INDEX'`, and `twenty_four_by_seven = False` (every crypto contract
+checked so far runs 24/7; these don't). Coinbase's product schema simply reuses the same
+"perpetual-style futures on CDE" shape for equity-index products. Campaign #53's frozen Charter
+(§1) scopes this family to crypto perpetuals only — these four were never in scope, independent
+of matched-pair status, and are excluded on category grounds.
+
+**Final resolved universe: 15 crypto names in the liquid perpetual-style set (19 minus these 4
+equity-index products), of which 10 have a matched CDE dated contract** (BTC, ETH, XRP, SOL,
+HYPE, XLM, LINK, DOGE, ADA, DOT) and are the primary universe under perp-vs-dated. The remaining
+5 (PAXG, ZEC, NEAR, ENA, ONDO — PAXG a gold-backed token rather than a "pure" crypto-native
+asset, noted without excluding it) have no CDE dated match and are a documented future extension
+via perp-vs-spot, not part of this specification at freeze.
+
+This closes the last open item ahead of Section 3's one-day-minimum review gate.
 
 ### 3b. Horizon feasibility (Amendment 4) — carry does not fit the standard framing
 
@@ -224,9 +232,8 @@ authorized (Section 2). This section states the approach; it does not produce a 
    does not proceed as specified — the fix is redesign (broader universe, fewer gates, longer
    sample), not execution.
 
-Blocked on: (a) confirming the §3a basket-product housekeeping item, since it changes N=10 to a
-possibly-larger confirmed-clean universe; (b) data acquisition authorization, itself blocked on
-this specification's freeze.
+Blocked on: data acquisition authorization, itself blocked on this specification's freeze
+(earliest 2026-08-14 per this section's own pacing rule). Universe is resolved (N=10 primary).
 
 ## 5. Execution evidence
 

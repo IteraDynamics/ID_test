@@ -100,14 +100,14 @@ This charter authorizes documentation and planning only. It does not authorize:
    (`docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`) — scoped to carry capture
    only; directional conditioning and exposure gating, the charter's other two role hypotheses,
    are deferred as a separate future Core v1 overlay campaign, not part of Core v2.
-2. Universe resolved 2026-08-13: 10 of 19 liquid perpetual-style names have a matched CDE
-   dated contract (BTC, ETH, XRP, SOL, HYPE, XLM, LINK, DOGE, ADA, DOT) — perp-vs-dated on
-   these 10 is the primary universe, satisfying Amendment 5 by construction. Four of the
-   remaining 9 (`CDETEK`, `CDECHN`, `CDEAI`, `CDEDEF` root units) look like thematic/basket
-   index perpetuals rather than single-asset contracts and may be the wrong instrument class
-   for this design entirely — pending a `display_name` check before the spec freezes.
+2. Universe resolved 2026-08-13: of 19 liquid CDE perpetual-style names, 4 (`TEK`, `CHN`,
+   `AIP`, `DEF`) are confirmed equity-index products, not crypto, and are out of scope. Of the
+   remaining 15 crypto names, 10 have a matched CDE dated contract (BTC, ETH, XRP, SOL, HYPE,
+   XLM, LINK, DOGE, ADA, DOT) and are the primary universe under perp-vs-dated, satisfying
+   Amendment 5 by construction. The other 5 (PAXG, ZEC, NEAR, ENA, ONDO) are a documented
+   future extension via perp-vs-spot, not part of this specification.
 3. Power analysis is plan-only pending data acquisition, itself pending the spec's freeze.
 4. Resolve derivatives eligibility on CDE — an account-status decision outside this charter's
    scope.
-5. On a later-day review pass, confirm this charter's framing still holds before treating it as
-   non-draft.
+5. Section 3 (frozen specification) is fully drafted with no open items remaining. Earliest
+   possible freeze is 2026-08-14, per the campaign document's own one-day-minimum review rule.
