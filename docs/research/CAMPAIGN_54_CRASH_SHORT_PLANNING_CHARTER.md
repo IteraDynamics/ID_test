@@ -157,9 +157,7 @@ scaled_sleeve_annual_returns.csv`) shows 2020 as a **losing** year for this slee
 -3.06% ETH) despite the gate firing correctly for over a month — plausibly because COVID's crash
 was V-shaped and fast, and a short position entered into it was likely caught by the reversal
 before exit logic responded, unlike 2022's slow multi-month grind. **2020 corroborates the
-regime-detection mechanism; it is a contrary data point for the profitability claim.** The
-honest count of profitable corroborating crisis payoffs remains closer to one (2022) than to
-four.
+regime-detection mechanism; it is a contrary data point for the profitability claim.**
 
 **The strongest result from this census is not the episode count — it's the SPY-gate
 validation.** The "without SPY confirmation" comparison shows the gate correctly rejecting dozens
@@ -169,13 +167,37 @@ crypto-specific correction, not macro bear — caught mechanistically rather tha
 aggregate Sharpe number. This is real, direct evidence the gate does what it claims, independent
 of the profitability question above.
 
-**New, unresolved finding: 2018 is a third candidate regime**, not previously considered in this
-charter, spanning April 2018 through January 2019 with real (if fragmented) gate alignment.
-Profitability is unknown — the standalone and blended tests both start their OOS window at
-2020-01-01, and the 2018 realized return has not been computed. Extending the audit harness's
-`--oos-start` back to 2018 (the source data already covers it, `data/btcusd_3600s_2018-01-01_
-to_2025-12-31.csv`) would give a third real profitability data point, resolving this rather than
-leaving it open.
+**Resolved 2026-08-14 — 2018 is a second genuine profitable payoff, not another mixed case.**
+`scripts/run_core_v1_sleeve_contribution_audit.py` re-run with `--oos-start 2018-01-01`
+(`artifacts/core_v2_hedge_only_probe_2018/scaled_sleeve_annual_returns.csv`) gives the full
+eight-year standalone annual pattern:
+
+| Year | BTC | ETH |
+|---|---:|---:|
+| 2018 | **+8.78%** | **+22.30%** |
+| 2019 | -0.89% | -2.06% |
+| 2020 | -1.29% | -3.10% |
+| 2021 | -0.36% | -2.29% |
+| 2022 | **+5.87%** | **+13.44%** |
+| 2023 | -1.98% | -0.13% |
+| 2024 | -0.36% | -0.12% |
+| 2025 | -4.80% | -0.12% |
+
+Six of eight years show small, narrow losses (-0.12% to -4.80%) — the cost-of-insurance pattern.
+Exactly two years show large gains, and both land precisely on the two periods in this window
+where BTC and SPY were genuinely in confirmed macro bears together: 2018 (crypto winter into the
+Q4 2018 equity correction) and 2022. 2018's ETH return (+22.30%) is larger than 2022's. This is
+not a marginal addition to the case — it is a second clean profitable payoff, four years removed
+from the first, on top of the SPY-gate's demonstrated mechanistic correctness across 2021.
+
+**Updated honest count: two profitable corroborating crisis payoffs (2018, 2022), one
+correctly-fired-but-unprofitable case (2020), across a reachable window containing three
+distinct genuine macro-bear regimes total.** That is a materially stronger position than this
+section's prior draft stated, though still not the breadth Campaign #53's cross-sectional design
+achieves — three regime observations remain a small sample by conventional statistical standards,
+and Section 4's judgment-bound framing still applies. The correction is recorded here rather than
+silently overwritten: this section previously said the profitable count was "closer to one than
+to four." It was closer to one at the time, on the evidence then available; it no longer is.
 
 ### 3d. Output schema
 
@@ -186,15 +208,17 @@ Sleeve-level and blended fund-level NAV, matching the existing audit harness's o
 
 Amendment 1 requires a simulation-based power estimate before execution. This family's power is
 fundamentally limited in a way Campaign #53's is not: power there comes from breadth across 10
-simultaneous instruments; here, the mechanism-detection claim now has real corroboration (§3c:
-2018, 2020, 2022 as distinct regimes, plus mechanistic validation via 2021's correct rejections),
-but the economic payoff claim this campaign actually needs to defend still rests on essentially
-one profitable historical realization, 2022, pending 2018's still-unmeasured contribution. No
-simulation manufactures a second profitable crisis; the 2018 audit extension named in §3c is the
-one concrete step available to actually test for one rather than assume its absence.
+simultaneous instruments; here it comes from the count of genuine historical regimes, now
+resolved at three (§3c), of which two produced a profitable payoff (2018, 2022) and one fired
+correctly without paying off (2020). No simulation manufactures a fourth regime; the count is
+whatever the reachable 2018-2025 history actually contains, and that has now been fully
+enumerated rather than assumed.
 
-This must be stated plainly rather than forced into a false 50%-threshold pass. The honest paths
-forward, to be resolved at review, not here:
+This must be stated plainly rather than forced into a false 50%-threshold pass. Three regime
+observations, two of them favorable, is real evidence — meaningfully better than the single-draw
+case this section originally described — but still a small sample by conventional statistical
+standards, and still not the cross-sectional breadth Campaign #53 has. The honest paths forward,
+to be resolved at review, not here:
 
 1. Treat this as a **judgment-bound decision** rather than a power-gated one — the economic
    mechanism (why cross-asset confirmation should generalize) is sound independent of sample
@@ -203,8 +227,9 @@ forward, to be resolved at review, not here:
    more independent crisis events.
 2. Explicitly bound the claim: this campaign can support "worth including as one small,
    asymmetric component, sized conservatively, monitored for whether the next real bear
-   confirms or contradicts it" — a materially weaker and more honest claim than "validated,"
-   and the only one the evidence actually supports.
+   confirms or contradicts it" — a materially weaker and more honest claim than "validated," and
+   a more defensible one than this section could support before 2018 was checked, but still not
+   "validated" outright.
 
 ## 5. Execution evidence
 
