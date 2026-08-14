@@ -31,23 +31,25 @@ to everything else at this firm:
 
 ## Named structural deficiency addressed
 
-Per the destination charter's recorded list, Core v2's founding work addresses two of Core v1's
-four named deficiencies at once:
+Per the destination charter's recorded list, Core v2's founding work now addresses three of
+Core v1's four named deficiencies, across two parallel campaigns:
 
-1. **A single return source.** Every Core v1 sleeve harvests trend. Core v2's founding campaign
+1. **A single return source** (Campaign #53). Every Core v1 sleeve harvests trend. Campaign #53
    harvests a funding/carry premium — a structurally different return source, uncorrelated with
    directional price trend by construction.
-2. **Single-name crypto.** Core v1 trades BTC and ETH specifically. Core v2's founding campaign
+2. **Single-name crypto** (Campaign #53). Core v1 trades BTC and ETH specifically. Campaign #53
    is cross-sectional across up to 19 liquid CDE perpetual-style instruments (confirmed
    2026-08-12, `docs/research/CAMPAIGN_53_SOURCE_FEASIBILITY_FINDING.md` §9).
+3. **Structurally long-only** (Campaign #54, opened 2026-08-13). Core v1's six sleeves are all
+   long-with-filter — able to step aside from a decline but never profit from one. Campaign #54
+   evaluates `crash_short_v6`, an existing, unused, cross-asset-confirmed short sleeve, as a
+   genuine diversifying return source rather than a defensive filter.
 
-Not addressed by this founding campaign, and recorded here as open avenues for later, separate
-work under this same charter: structurally-long-only exposure in the directional sense (a
-funding-carry position is market-neutral by construction, which is a different kind of answer
-to this deficiency, not the trend-reversal answer the destination charter had in mind), and the
-absence of any rates/fixed-income sleeve.
+Not addressed by either founding campaign, and recorded here as an open avenue for later,
+separate work: the absence of any rates/fixed-income sleeve. Zero existing raw material in this
+repo touches that deficiency; it remains the most novel and most expensive avenue available.
 
-## Founding campaign
+## Founding campaigns
 
 **Campaign #53 — cross-sectional funding carry on Coinbase Derivatives Exchange.**
 
@@ -59,35 +61,49 @@ absence of any rates/fixed-income sleeve.
   interval across the full liquid cross-section.
 - **Cross-section:** 19 liquid (>$1M/day) instruments as of 2026-08-12, spanning BTC and ETH
   down to smaller liquid names — real breadth for Amendment 1 power, not a handful of majors.
-- **Status:** feasibility (venue, tradeability, funding-accrual, economic materiality) is
-  resolved. Not yet chartered under the `charter-campaign` gate sequence to a frozen
-  specification. Derivatives eligibility on CDE remains an outstanding account-status item,
-  blocking eventual execution but not research or specification work.
+- **Status:** feasibility and the frozen specification (Section 3) are both drafted with no open
+  items remaining. Not yet frozen — earliest possible freeze is 2026-08-14 per the campaign
+  document's own one-day-minimum review rule. Derivatives eligibility on CDE remains an
+  outstanding account-status item, blocking eventual execution but not specification work.
 
-Campaign #53's own living document (`docs/research/CAMPAIGN_53_SOURCE_FEASIBILITY_FINDING.md`,
-and its eventual `docs/research/CAMPAIGN_53_<NAME>.md` per Amendment 3) remains the authority on
-its own statistical design, gates, and results. This charter does not duplicate or freeze any of
-that — it only establishes that Campaign #53's successful outcome is Core v2's founding
-strategy, and that Core v2 exists as a governed identity independent of any one campaign's
-result.
+**Campaign #54 — macro-confirmed crash-short hedge sleeve.**
+
+- **Instrument and venue:** BTC/ETH, short, same execution venue as Core v1's crypto sleeves.
+  Shares Campaign #53's exact same derivatives-eligibility blocker.
+- **Mechanism:** `crash_short_v6` exactly as coded, no perturbation — a seven-gate entry
+  including cross-asset confirmation (SPY also below its own 175-day SMA) that distinguishes a
+  macro bear from a crypto-only correction.
+- **Status:** feasibility resolved; economic materiality measured directly (roughly -$2,000/yr
+  expected return for roughly $2,000 shallower drawdown at $100k, one tested weight). Section 3
+  (frozen specification) is drafted but explicitly incomplete — see its own document for why
+  this family's power analysis is genuinely, honestly constrained by having effectively one
+  historical crisis observation (2022), unlike Campaign #53's cross-sectional breadth.
+
+Each campaign's own living document remains the authority on its own statistical design, gates,
+and results. This charter does not duplicate or freeze either — it establishes that both are
+Core v2 founding threads, developed in parallel, each addressing its own named deficiency, and
+that Core v2 exists as a governed identity independent of any one campaign's result.
 
 ## Conditions this charter must keep satisfying
 
-Per the destination charter's conditions on any successor:
+Per the destination charter's conditions on any successor, for both campaigns:
 
-1. **Additive, not re-parameterised** — satisfied; funding carry is a new return source, not a
-   retuned Core v1 parameter.
+1. **Additive, not re-parameterised** — satisfied. Funding carry is a new return source, not a
+   retuned Core v1 parameter; Campaign #54 evaluates inclusion of an existing fixed mechanism,
+   explicitly not a parameter search (its own charter names this distinction directly, given the
+   parameter-sensitivity pass's own findings about what a search looks like).
 2. **Parallel, never replacing** — satisfied by this section.
-3. **Same standards** — horizon feasibility, tradeability, and power analysis apply to Campaign
-   #53 exactly as they would to any other campaign; nothing about Core v2's status exempts it.
+3. **Same standards** — horizon feasibility, tradeability, and power analysis apply to both
+   campaigns exactly as they would to any other; nothing about Core v2's status exempts either.
+   Campaign #54's power constraint is a harder, more honestly-stated case, not an exemption.
 4. **Floor risk unchanged** — satisfied by the funding boundary above.
 
 ## Not yet authorized
 
 This charter authorizes documentation and planning only. It does not authorize:
 
-- Campaign #53 specification execution, data acquisition beyond feasibility probing, or any
-  frozen statistical design (those remain gated by `charter-campaign`'s own sequence and
+- either campaign's specification execution, data acquisition beyond feasibility probing, or
+  any frozen statistical design (both remain gated by `charter-campaign`'s own sequence and
   Amendment 3's one-document-per-campaign rule);
 - a Core v2 runtime, paper account, or inception date — none is set; inception begins only once
   a specification exists and its own board transition authorizes it;
@@ -96,18 +112,30 @@ This charter authorizes documentation and planning only. It does not authorize:
 
 ## Open items
 
-1. Campaign #53's Section 3 (frozen specification) is drafted, not frozen
-   (`docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`) — scoped to carry capture
-   only; directional conditioning and exposure gating, the charter's other two role hypotheses,
-   are deferred as a separate future Core v1 overlay campaign, not part of Core v2.
-2. Universe resolved 2026-08-13: of 19 liquid CDE perpetual-style names, 4 (`TEK`, `CHN`,
-   `AIP`, `DEF`) are confirmed equity-index products, not crypto, and are out of scope. Of the
-   remaining 15 crypto names, 10 have a matched CDE dated contract (BTC, ETH, XRP, SOL, HYPE,
-   XLM, LINK, DOGE, ADA, DOT) and are the primary universe under perp-vs-dated, satisfying
-   Amendment 5 by construction. The other 5 (PAXG, ZEC, NEAR, ENA, ONDO) are a documented
-   future extension via perp-vs-spot, not part of this specification.
-3. Power analysis is plan-only pending data acquisition, itself pending the spec's freeze.
-4. Resolve derivatives eligibility on CDE — an account-status decision outside this charter's
-   scope.
-5. Section 3 (frozen specification) is fully drafted with no open items remaining. Earliest
-   possible freeze is 2026-08-14, per the campaign document's own one-day-minimum review rule.
+**Campaign #53:**
+
+1. Scoped to carry capture only (`docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`);
+   directional conditioning and exposure gating, the charter's other two role hypotheses, are
+   deferred as a separate future Core v1 overlay campaign, not part of Core v2.
+2. Universe resolved: 10 of 19 liquid CDE perpetual-style names (BTC, ETH, XRP, SOL, HYPE, XLM,
+   LINK, DOGE, ADA, DOT) via perp-vs-dated, satisfying Amendment 5 by construction; 4 more
+   (`TEK`, `CHN`, `AIP`, `DEF`) confirmed equity-index products, out of scope; remaining 5
+   (PAXG, ZEC, NEAR, ENA, ONDO) a documented future extension, not part of this specification.
+3. Section 3 fully drafted, no open items. Earliest possible freeze 2026-08-14, per the
+   document's own one-day-minimum review rule.
+4. Power analysis plan-only pending data acquisition, itself pending the spec's freeze.
+
+**Campaign #54:**
+
+1. Section 3 drafted but explicitly incomplete: whether the 2020 COVID crash counts as a second,
+   weaker macro-bear observation is unchecked; whether a broader crypto cross-section
+   (reusing Campaign #53's already-resolved CDE universe) provides real corroboration or just
+   restates the same single 2022 event is unresolved.
+2. Power analysis cannot follow Campaign #53's cross-sectional route — this family's entire
+   claim rests on one historical crisis. The charter states this plainly rather than forcing a
+   false 50%-threshold pass; resolution is a judgment-bound decision, not a simulation output.
+
+**Shared:**
+
+Both campaigns are blocked on the same account-status item — derivatives eligibility on CDE —
+outside either charter's scope to resolve.

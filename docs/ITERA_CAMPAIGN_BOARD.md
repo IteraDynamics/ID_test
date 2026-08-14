@@ -107,7 +107,11 @@ Authorized now:
   freeze, acquire data, or execute;
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
-  or capital.
+  or capital;
+- Campaign #54 (crash-short hedge sleeve) planning charter and frozen-specification drafting
+  (`docs/research/CAMPAIGN_54_CRASH_SHORT_PLANNING_CHARTER.md`, DRAFT, opened 2026-08-13) —
+  report-only exploratory backtests already run via existing harness, no new code; not yet
+  authorized to freeze, acquire data, or execute.
 
 Closed:
 
@@ -116,7 +120,7 @@ Closed:
 
 Not authorized:
 
-- Campaign #53 bulk data acquisition, predictor/outcome computation, or specification
+- Campaign #53 or #54 bulk data acquisition, predictor/outcome computation, or specification
   execution before their recorded board transitions;
 
 - opening Campaign #52 validation targets or outcomes;
