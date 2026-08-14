@@ -62,11 +62,14 @@ repo touches that deficiency; it remains the most novel and most expensive avenu
 - **Cross-section:** 19 liquid (>$1M/day) instruments as of 2026-08-12, spanning BTC and ETH
   down to smaller liquid names — real breadth for Amendment 1 power, not a handful of majors.
 - **Status:** feasibility and the frozen specification (Section 3) are drafted, but an adversarial
-  review pass (2026-08-14) found two genuinely open, unverified items: whether CDE's own
-  perpetual-style contracts have more than ~13 months of real history, and whether any historical
-  funding-rate data exists at all on that venue (every check so far confirmed only the *current*
-  rate). Both are load-bearing for the temporal architecture and neither is resolved. Not frozen,
-  and not ready to freeze until they are — see the campaign document's own §3a-i.
+  review pass (2026-08-14) plus a direct probe confirmed a real constraint: CDE's crypto
+  perpetual-style contracts are themselves only ~13 months old (zero candle history 2.5 years
+  before their listing date, plus no historical funding endpoint found), which caps available
+  history regardless of data-access workarounds. Breaks the frozen Charter's multi-year
+  assumption. Three redesign paths are named but not chosen — broader cross-section, fewer
+  gates, or splitting Deribit's longer history for discovery from CDE's native data for
+  confirmation (Amendment 5 already permits this shape). Not frozen, and not ready to freeze
+  until one is picked — see the campaign document's own §3a-i.
   Derivatives eligibility on CDE remains an outstanding account-status item, blocking eventual
   execution but not specification work.
 
@@ -129,10 +132,13 @@ This charter authorizes documentation and planning only. It does not authorize:
    LINK, DOGE, ADA, DOT) via perp-vs-dated, satisfying Amendment 5 by construction; 4 more
    (`TEK`, `CHN`, `AIP`, `DEF`) confirmed equity-index products, out of scope; remaining 5
    (PAXG, ZEC, NEAR, ENA, ONDO) a documented future extension, not part of this specification.
-3. **Open again as of 2026-08-14's adversarial review**, not closed: whether CDE's perpetual-style
-   contracts have meaningfully more than ~13 months of real history, and whether any historical
-   funding-rate data exists at all — `scripts/probe_cde_history_depth.py` checks both, not yet
-   run. Also open: the perp-vs-dated design is a funding+calendar-spread hybrid, not pure funding
+3. **Confirmed, not just suspected, as of 2026-08-14:** `scripts/probe_cde_history_depth.py`
+   found zero candle history 2.5 years before CDE's crypto perpetual-style contracts' listing
+   date, and no historical funding endpoint via any plausible pattern. History is capped at
+   ~13 months regardless of endpoint availability — the frozen Charter's multi-year assumption
+   is broken. Three redesign paths named, none chosen: broader cross-section, fewer gates, or
+   Deribit-for-discovery/CDE-for-confirmation (Amendment 5 permits this split explicitly). Also
+   still open: the perp-vs-dated design is a funding+calendar-spread hybrid, not pure funding
    capture as the frozen Charter describes, and contract roll mechanics (several matched
    contracts expire within weeks) are entirely unaddressed in Section 3.
 4. Power analysis plan-only pending data acquisition, itself pending the spec's freeze, and now

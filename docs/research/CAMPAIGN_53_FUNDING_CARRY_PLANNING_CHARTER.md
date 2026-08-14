@@ -203,19 +203,42 @@ genuinely decaying, time-bound quantity, and §3b did not say so.
 specification. This is not a reason to abandon the design; it is a real gap that needs its own
 subsection before Section 3 freezes, not an implicit assumption.
 
-**Two feasibility questions, treated as resolved above, remain genuinely unverified.**
-`scripts/probe_cde_history_depth.py` (2026-08-14, not yet run) checks both directly: whether real
-CDE trading history reaches back further than the `new_at: 2025-07-18` field the original product
-probe returned (if not, this campaign has roughly 13 months of history, not the multi-year depth
-the frozen Charter's "why the historical record can test it" section assumes for CDE
-specifically), and whether any historical funding-rate endpoint exists at all — every probe run
-so far checked only the current/snapshot `funding_rate` value, never a time series. Neither
-question can be checked from this environment (network egress is blocked here, confirmed
-directly this session); both need a real run on the operator's machine before this section is
-genuinely ready to freeze.
+**Resolved 2026-08-14, and both confirmed the concern rather than dismissing it.**
+`scripts/probe_cde_history_depth.py`, run against real CDE endpoints: zero candles for either
+BIP-20DEC30-CDE or ETP-20DEC30-CDE in a window 2.5 years before `new_at` — consistent with
+`new_at` marking genuine product inception, not some unrelated schema field. Separately, all four
+plausible historical-funding-endpoint patterns returned HTTP 404. Neither check alone is fully
+conclusive (the candle check used one window, not a precise boundary search; the endpoint check
+tried guessed patterns, not documentation-confirmed ones — this environment cannot reach
+Coinbase's docs either, confirmed directly this session). Together they're decisive on the
+question that actually matters: **even in the best case where an undiscovered funding-history
+endpoint exists, CDE's crypto perpetual-style contracts are themselves only ~13 months old, which
+caps how much history could ever exist regardless of endpoint availability.** This is not a
+data-access problem with a workaround. It is the real age of the product.
 
-This does not close the last open item ahead of Section 3's one-day-minimum review gate — it
-found two more.
+**This breaks the frozen Charter's multi-year assumption and the specification needs to be
+redesigned around it, not frozen as drafted.** Amendment 1 names its own remedies for exactly
+this situation ("more data, broader cross-section, fewer gates, or abandonment") — "more data" is
+foreclosed here (the instrument cannot be older than it is), leaving three live options, each a
+real design decision rather than something to resolve unilaterally in this document:
+
+1. **Broader cross-section** — relax the >$1M/day liquidity threshold to widen the universe
+   beyond 10-15 names, trading statistical power gained from breadth against the execution and
+   data-quality problems thinner names bring.
+2. **Fewer gates** — simplify §3d's discovery/confirmation structure so less power is needed to
+   clear it, at the cost of a less rigorous design.
+3. **Split source and confirmation venue** — the frozen Charter's original "why the historical
+   record can test it" section cites multi-venue funding history back to ~2019-2020 (Deribit
+   among them, per the earlier feasibility work), before the pivot to CDE-only. Amendment 5
+   already anticipates this shape: research source and execution venue may differ if the charter
+   states why the premium should transfer and the specification includes a cross-venue basis
+   check. A design that runs FDR discovery on Deribit's longer history, then confirms only on
+   CDE's ~13-month native data for the instruments actually tradeable, maps directly onto
+   Amendment 2's discovery/confirmation split and does not require abandoning the cross-sectional
+   design.
+
+None of these is chosen here. This is precisely the kind of judgment-bound decision Amendment
+3's pacing rule exists to slow down, not resolve in the same pass that found the problem.
 
 ### 3b. Horizon feasibility (Amendment 4) — carry does not fit the standard framing
 
@@ -280,11 +303,11 @@ authorized (Section 2). This section states the approach; it does not produce a 
    sample), not execution.
 
 Blocked on: data acquisition authorization, itself blocked on this specification's freeze; and,
-found on adversarial review 2026-08-14, on confirming actual history depth and historical
-funding availability for CDE specifically (§3a-i) — if history is as thin as `new_at` suggests,
-the effect-size grid and simulated power in this section may not be achievable as designed, and
-this section's approach would need to be reconsidered before, not after, that becomes a
-freeze-day surprise.
+confirmed 2026-08-14 (§3a-i), on the choice among the three redesign options history depth
+forces — broader cross-section, fewer gates, or split source/confirmation venue via Deribit
+discovery + CDE confirmation. The effect-size grid and simulation approach here were written
+assuming ample history; they need to be rewritten against whichever option is chosen, not
+patched in place.
 
 ## 5. Execution evidence
 
