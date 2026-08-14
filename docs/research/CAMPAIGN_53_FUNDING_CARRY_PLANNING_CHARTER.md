@@ -76,6 +76,19 @@ separately chartered future work, structured as a Core v1 overlay (subject to th
 same as Jump Risk was) rather than folded into Core v2's frozen specification. Section 3 below
 addresses carry capture exclusively.
 
+### Clarification — cross-sectional universe vs. the frozen Question's wording (2026-08-14)
+
+Found on adversarial review, not before: the frozen Question above asks specifically about
+"subsequent BTC and ETH returns." The resolved specification (§3) targets a 10-name
+cross-section — BTC and ETH among them, but also XRP, SOL, HYPE, XLM, LINK, DOGE, ADA, DOT. The
+Question's original wording predates the CDE feasibility work and the resulting redirect toward
+a cross-sectional design specifically because breadth is what a properly powered discovery stage
+needs (Amendment 1). The cross-sectional design is the correct one and is not being revisited
+here — but the Charter's own frozen wording no longer accurately describes what the
+specification tests, and that mismatch should have been caught when the universe was resolved,
+not left for a later review pass to find. Recorded as what it is: an oversight, corrected by
+this append, not a redesign.
+
 ## 2. Feasibility (authorized planning work)
 
 Authorized now, without generating research outcomes:
@@ -168,7 +181,41 @@ HYPE, XLM, LINK, DOGE, ADA, DOT) and are the primary universe under perp-vs-date
 asset, noted without excluding it) have no CDE dated match and are a documented future extension
 via perp-vs-spot, not part of this specification at freeze.
 
-This closes the last open item ahead of Section 3's one-day-minimum review gate.
+### 3a-i. Adversarial review, 2026-08-14 — the pivot to perp-vs-dated is not a free resolution
+
+The paragraphs above frame perp-vs-dated as strictly superior to perp-vs-spot: satisfies
+Amendment 5 by construction, no custody assumption, wider coverage than the earlier 5-name
+estimate. That framing is incomplete, found on review, not before.
+
+**This is not a pure funding-capture trade.** The frozen Charter's economic mechanism (§1)
+describes funding as a payment that "pins the perp to spot" — a perp-vs-spot claim. Perp-vs-dated
+is a hybrid: funding accrual on the perpetual-style leg, plus calendar-spread convergence as the
+dated leg approaches its own expiry. These are different return sources with different behavior,
+and the specification's target formula (§3c: "funding collected minus transaction costs minus
+basis convergence/divergence") does account for the convergence term as a cost, which is
+correct — but §3b's Amendment 4 argument ("funding is marked fresh each interval, so decision lag
+doesn't invalidate it") is only true for the funding component. Calendar-spread convergence is a
+genuinely decaying, time-bound quantity, and §3b did not say so.
+
+**Contract roll is entirely unaddressed.** Several of the matched dated contracts carry an
+`28AUG26` expiry — roughly two weeks from today. A live position needs a defined roll policy
+(when, to which successor contract, at what cost) that does not exist anywhere in this
+specification. This is not a reason to abandon the design; it is a real gap that needs its own
+subsection before Section 3 freezes, not an implicit assumption.
+
+**Two feasibility questions, treated as resolved above, remain genuinely unverified.**
+`scripts/probe_cde_history_depth.py` (2026-08-14, not yet run) checks both directly: whether real
+CDE trading history reaches back further than the `new_at: 2025-07-18` field the original product
+probe returned (if not, this campaign has roughly 13 months of history, not the multi-year depth
+the frozen Charter's "why the historical record can test it" section assumes for CDE
+specifically), and whether any historical funding-rate endpoint exists at all — every probe run
+so far checked only the current/snapshot `funding_rate` value, never a time series. Neither
+question can be checked from this environment (network egress is blocked here, confirmed
+directly this session); both need a real run on the operator's machine before this section is
+genuinely ready to freeze.
+
+This does not close the last open item ahead of Section 3's one-day-minimum review gate — it
+found two more.
 
 ### 3b. Horizon feasibility (Amendment 4) — carry does not fit the standard framing
 
@@ -232,8 +279,12 @@ authorized (Section 2). This section states the approach; it does not produce a 
    does not proceed as specified — the fix is redesign (broader universe, fewer gates, longer
    sample), not execution.
 
-Blocked on: data acquisition authorization, itself blocked on this specification's freeze
-(earliest 2026-08-14 per this section's own pacing rule). Universe is resolved (N=10 primary).
+Blocked on: data acquisition authorization, itself blocked on this specification's freeze; and,
+found on adversarial review 2026-08-14, on confirming actual history depth and historical
+funding availability for CDE specifically (§3a-i) — if history is as thin as `new_at` suggests,
+the effect-size grid and simulated power in this section may not be achievable as designed, and
+this section's approach would need to be reconsidered before, not after, that becomes a
+freeze-day surprise.
 
 ## 5. Execution evidence
 

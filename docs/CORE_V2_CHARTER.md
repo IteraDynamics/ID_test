@@ -61,10 +61,14 @@ repo touches that deficiency; it remains the most novel and most expensive avenu
   interval across the full liquid cross-section.
 - **Cross-section:** 19 liquid (>$1M/day) instruments as of 2026-08-12, spanning BTC and ETH
   down to smaller liquid names — real breadth for Amendment 1 power, not a handful of majors.
-- **Status:** feasibility and the frozen specification (Section 3) are both drafted with no open
-  items remaining. Not yet frozen — earliest possible freeze is 2026-08-14 per the campaign
-  document's own one-day-minimum review rule. Derivatives eligibility on CDE remains an
-  outstanding account-status item, blocking eventual execution but not specification work.
+- **Status:** feasibility and the frozen specification (Section 3) are drafted, but an adversarial
+  review pass (2026-08-14) found two genuinely open, unverified items: whether CDE's own
+  perpetual-style contracts have more than ~13 months of real history, and whether any historical
+  funding-rate data exists at all on that venue (every check so far confirmed only the *current*
+  rate). Both are load-bearing for the temporal architecture and neither is resolved. Not frozen,
+  and not ready to freeze until they are — see the campaign document's own §3a-i.
+  Derivatives eligibility on CDE remains an outstanding account-status item, blocking eventual
+  execution but not specification work.
 
 **Campaign #54 — macro-confirmed crash-short hedge sleeve.**
 
@@ -73,11 +77,15 @@ repo touches that deficiency; it remains the most novel and most expensive avenu
 - **Mechanism:** `crash_short_v6` exactly as coded, no perturbation — a seven-gate entry
   including cross-asset confirmation (SPY also below its own 175-day SMA) that distinguishes a
   macro bear from a crypto-only correction.
-- **Status:** feasibility resolved; economic materiality measured directly (roughly -$2,000/yr
-  expected return for roughly $2,000 shallower drawdown at $100k, one tested weight). Section 3
-  (frozen specification) is drafted but explicitly incomplete — see its own document for why
-  this family's power analysis is genuinely, honestly constrained by having effectively one
-  historical crisis observation (2022), unlike Campaign #53's cross-sectional breadth.
+- **Status:** feasibility resolved; economic materiality measured (roughly -$2,000/yr expected
+  return for roughly $2,000 shallower drawdown at $100k, one tested weight — flagged 2026-08-14
+  as directionally right but not a reliable point estimate). Section 3 is drafted but explicitly
+  incomplete: an adversarial review found the strategy's own cross-asset gate was very plausibly
+  hand-built by examining the same 2021/2022 episodes now cited as evidence it works, downgrading
+  that evidence from independent confirmation to something closer to confirming the designer's
+  own hindsight pattern-match. 2018 is the one regime observation not implicated by that design
+  history and is now this campaign's most credible evidence. See the campaign document's own
+  §3c and §4 for the full correction.
 
 Each campaign's own living document remains the authority on its own statistical design, gates,
 and results. This charter does not duplicate or freeze either — it establishes that both are
@@ -121,19 +129,29 @@ This charter authorizes documentation and planning only. It does not authorize:
    LINK, DOGE, ADA, DOT) via perp-vs-dated, satisfying Amendment 5 by construction; 4 more
    (`TEK`, `CHN`, `AIP`, `DEF`) confirmed equity-index products, out of scope; remaining 5
    (PAXG, ZEC, NEAR, ENA, ONDO) a documented future extension, not part of this specification.
-3. Section 3 fully drafted, no open items. Earliest possible freeze 2026-08-14, per the
-   document's own one-day-minimum review rule.
-4. Power analysis plan-only pending data acquisition, itself pending the spec's freeze.
+3. **Open again as of 2026-08-14's adversarial review**, not closed: whether CDE's perpetual-style
+   contracts have meaningfully more than ~13 months of real history, and whether any historical
+   funding-rate data exists at all — `scripts/probe_cde_history_depth.py` checks both, not yet
+   run. Also open: the perp-vs-dated design is a funding+calendar-spread hybrid, not pure funding
+   capture as the frozen Charter describes, and contract roll mechanics (several matched
+   contracts expire within weeks) are entirely unaddressed in Section 3.
+4. Power analysis plan-only pending data acquisition, itself pending the spec's freeze, and now
+   also pending item 3 — the effect-size grid and simulation approach both assume more history
+   than may actually exist.
 
 **Campaign #54:**
 
-1. Section 3 drafted but explicitly incomplete: whether the 2020 COVID crash counts as a second,
-   weaker macro-bear observation is unchecked; whether a broader crypto cross-section
-   (reusing Campaign #53's already-resolved CDE universe) provides real corroboration or just
-   restates the same single 2022 event is unresolved.
-2. Power analysis cannot follow Campaign #53's cross-sectional route — this family's entire
-   claim rests on one historical crisis. The charter states this plainly rather than forcing a
-   false 50%-threshold pass; resolution is a judgment-bound decision, not a simulation output.
+1. Section 3's 2020 and cross-sectional-corroboration questions are answered: 2020 confirmed as
+   a real but unprofitable episode; 2018 (not previously considered) confirmed as a second real
+   regime with a genuine profitable payoff.
+2. **New finding, 2026-08-14 adversarial review:** the strongest-looking evidence — the SPY
+   gate's 2021 rejections and the 2022 payoff — is plausibly circular. `crash_short_v6`'s own
+   docstring shows its design was built by examining exactly these episodes. 2018 is the one
+   observation not implicated and is now the campaign's most credible evidence; the others are
+   real but weaker than previously stated. See the campaign document's own §3c.
+3. Power analysis remains judgment-bound, now on a corrected reading: one clean payoff (2018),
+   one likely-circular payoff (2022), one correctly-fired-but-unprofitable case (2020) — not the
+   "two favorable of three" framing an earlier draft used.
 
 **Shared:**
 

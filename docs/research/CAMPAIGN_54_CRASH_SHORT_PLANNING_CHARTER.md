@@ -50,6 +50,17 @@ sleeve's contribution from what a single historical crisis realization would pro
 why this is a harder standard to meet here than for a cross-sectional design, and what partial
 corroboration is available.
 
+**Appended 2026-08-14, adversarial review — the null model above is too weak.** "By chance" is
+not the only alternative explanation for this sleeve's apparent performance. `crash_short_v6` is
+the sixth of six iterations, each explicitly built to fix the previous version's failure on a
+named historical episode (its own docstring: *"What v5 taught us: 2021 Q2... this is a
+crypto-specific correction. Do NOT short. 2022... this is a macro bear market. DO short."*). The
+harder, more honest null this campaign actually needs to rule out is not "chance" but
+**hindsight fitting** — that the SPY confirmation gate was hand-built by looking at exactly the
+episodes now being cited as its validation. Section 4 addresses this directly and downgrades the
+strength of the 2021/2022 evidence accordingly. This does not retract the falsification
+statement; it corrects the standard it should have been held to from the start.
+
 ### Candidate-family sketch
 
 This is not a parameter search. `crash_short_v6` is evaluated exactly as coded — all seven entry
@@ -97,6 +108,12 @@ drawdown. Small in absolute terms, consistent with this firm's repeated finding 
 land in the hundreds-to-low-thousands per year — not a reason to stop, but not to be oversold
 either.
 
+**Appended 2026-08-14:** these figures should be read as directionally right, not precisely
+reliable. §3c's adversarial finding — that the strategy's own parameters were plausibly shaped by
+exposure to the same historical episodes producing this number — applies to the dollar estimate
+as much as to the entry-signal validation. An out-of-sample re-estimate would likely differ from
+this one; "roughly -$2,000/yr" should not be quoted as a stable expectation.
+
 ### Data availability
 
 Already resolved before this document existed: the same governed BTC/ETH/SPY sources used for
@@ -118,6 +135,13 @@ Four runs, all via `scripts/run_core_v1_sleeve_contribution_audit.py`, all 2020-
    Decisively ruled out — and instructive: it lacks `crash_short_v6`'s cross-asset SPY
    confirmation gate, and gets destroyed by crypto's characteristic V-shaped recoveries as a
    result. This is evidence the specific gating mechanism matters, not incidental design.
+   **Caveat added on adversarial review:** the comparison's cleanliness is itself worth
+   qualifying — if `crash_short_v6` received more iterative refinement against this same
+   2018-2022 history than its rival did (plausible; it is the sixth version, the other is the
+   second), part of the margin between them may reflect unequal design attention rather than a
+   pure lesson about selectivity as a principle. The magnitude of the gap (catastrophic vs.
+   modest) makes this a secondary concern, not one that overturns the conclusion — but it
+   belongs in the record alongside the primary circularity finding in §3c.
 4. **Comparative — `mean_reversion`** (`artifacts/core_v2_mr_only_probe/`): unrelated
    deficiency, ruled out separately (six-for-six losing years, Sharpe -2.001).
 
@@ -159,13 +183,25 @@ was V-shaped and fast, and a short position entered into it was likely caught by
 before exit logic responded, unlike 2022's slow multi-month grind. **2020 corroborates the
 regime-detection mechanism; it is a contrary data point for the profitability claim.**
 
-**The strongest result from this census is not the episode count — it's the SPY-gate
-validation.** The "without SPY confirmation" comparison shows the gate correctly rejecting dozens
-of windows across all of 2021, a raging equity bull market during which BTC still pulled back
-sharply several times. This is the exact failure mode the strategy's own docstring names —
-crypto-specific correction, not macro bear — caught mechanistically rather than inferred from an
-aggregate Sharpe number. This is real, direct evidence the gate does what it claims, independent
-of the profitability question above.
+**The SPY-gate result needs a significant downgrade — found on adversarial review, and this
+section originally overstated it.** The "without SPY confirmation" comparison shows the gate
+correctly rejecting dozens of windows across all of 2021. That was described above as "real,
+direct evidence the gate does what it claims, independent of the profitability question." It
+is not independent. `crash_short_v6`'s own docstring states its v5-to-v6 revision was motivated
+by looking at exactly this: *"2021 Q2: BTC -54%, SPY +15% → crypto-specific correction. Do NOT
+short."* The gate was very plausibly hand-built by examining 2021's false positives and
+patching them. A rule that correctly excludes the case it was explicitly designed to exclude is
+not confirmation of the rule; it is confirmation that the designer succeeded at the narrow task
+of hindsight pattern-matching. The same applies to 2022 to a lesser degree, cited in the same
+docstring passage as the positive case the gate should admit.
+
+**This means 2018 is the most credible of the three regime observations below, not merely a
+useful third data point.** It appears nowhere in any version's docstring as a episode any
+revision was tuned against — the only one of the three not implicated by the design history.
+Where this section previously treated 2021/2022 and 2018 as comparable-strength evidence, they
+are not: 2018 is comparatively clean, 2021/2022 are comparatively contaminated, and the
+"Updated honest count" below is restated to reflect that distinction rather than average across
+it.
 
 **Resolved 2026-08-14 — 2018 is a second genuine profitable payoff, not another mixed case.**
 `scripts/run_core_v1_sleeve_contribution_audit.py` re-run with `--oos-start 2018-01-01`
@@ -186,18 +222,18 @@ eight-year standalone annual pattern:
 Six of eight years show small, narrow losses (-0.12% to -4.80%) — the cost-of-insurance pattern.
 Exactly two years show large gains, and both land precisely on the two periods in this window
 where BTC and SPY were genuinely in confirmed macro bears together: 2018 (crypto winter into the
-Q4 2018 equity correction) and 2022. 2018's ETH return (+22.30%) is larger than 2022's. This is
-not a marginal addition to the case — it is a second clean profitable payoff, four years removed
-from the first, on top of the SPY-gate's demonstrated mechanistic correctness across 2021.
+Q4 2018 equity correction) and 2022. 2018's ETH return (+22.30%) is larger than 2022's.
 
-**Updated honest count: two profitable corroborating crisis payoffs (2018, 2022), one
-correctly-fired-but-unprofitable case (2020), across a reachable window containing three
-distinct genuine macro-bear regimes total.** That is a materially stronger position than this
-section's prior draft stated, though still not the breadth Campaign #53's cross-sectional design
-achieves — three regime observations remain a small sample by conventional statistical standards,
-and Section 4's judgment-bound framing still applies. The correction is recorded here rather than
-silently overwritten: this section previously said the profitable count was "closer to one than
-to four." It was closer to one at the time, on the evidence then available; it no longer is.
+**Updated honest count, corrected again for the contamination distinction above:** one
+genuinely clean, out-of-sample-relative-to-design-history profitable payoff (2018); one
+plausibly-contaminated profitable payoff that the gate was arguably built to produce (2022); one
+correctly-fired-but-unprofitable case (2020, not implicated in the design narrative either way).
+This is a real improvement on "rests on one draw" — 2018 alone is a genuine second data point —
+but it is a smaller improvement than this section claimed two revisions ago. Not "two clean
+payoffs plus mechanistic proof," which is what an earlier version of this section said. One
+clean payoff, one likely-circular one, and a documented failure case. Still not the breadth
+Campaign #53's cross-sectional design achieves; Section 4's judgment-bound framing still applies,
+now on a more accurate reading of what the evidence actually supports.
 
 ### 3d. Output schema
 
@@ -214,11 +250,18 @@ correctly without paying off (2020). No simulation manufactures a fourth regime;
 whatever the reachable 2018-2025 history actually contains, and that has now been fully
 enumerated rather than assumed.
 
-This must be stated plainly rather than forced into a false 50%-threshold pass. Three regime
-observations, two of them favorable, is real evidence — meaningfully better than the single-draw
-case this section originally described — but still a small sample by conventional statistical
-standards, and still not the cross-sectional breadth Campaign #53 has. The honest paths forward,
-to be resolved at review, not here:
+**Revised again, adversarial review 2026-08-14:** the three-regime count is real, but it is not
+three equally-weighted independent observations. `crash_short_v6`'s design history (§3c) means
+2022's payoff and the SPY gate's 2021 rejections are plausibly the exact pattern its rules were
+built to reproduce — evidence the designer succeeded at hindsight fitting, not clean confirmation
+the mechanism generalizes. 2020's fired-but-unprofitable case and 2018's payoff are the two
+observations not directly implicated by the docstring's own design narrative, and between them
+they say something more mixed than "two favorable, one not": the mechanism identifies real macro
+stress correctly in both, but only paid off in one. That is thinner support than this section
+stated two revisions ago, even though it is still a real improvement on n=1.
+
+This must be stated plainly rather than forced into a false 50%-threshold pass. The honest paths
+forward, to be resolved at review, not here:
 
 1. Treat this as a **judgment-bound decision** rather than a power-gated one — the economic
    mechanism (why cross-asset confirmation should generalize) is sound independent of sample
