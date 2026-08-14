@@ -134,29 +134,48 @@ design.
 
 BTC and ETH, 1H, matching the sleeve as already wired into `scripts/run_multi_strategy_fund.py`.
 
-### 3c. Open question — how to test generalization with effectively one crisis observation
+### 3c. Resolved 2026-08-13 — entry-episode census, and what it does and doesn't establish
 
-The falsification statement asks whether the 2022 result generalizes. The 2019-2025 reachable
-window contains exactly one period where BTC and SPY were both in a confirmed, sustained macro
-bear simultaneously — 2022. (The 2020 COVID crash saw both assets fall sharply together too,
-but recovered too fast to build the full gate combination — 20% drawdown from a 90-day high,
-sustained EMA spread, 720-bar macro EMA break — the same way; whether it counts as a second,
-weaker corroborating observation is worth checking directly against the sleeve's own logged
-gate state before assuming either way.) A single-instrument, single-crisis time series does not
-offer the same route to power that Campaign #53's 10-instrument cross-section does.
+`scripts/diagnose_crash_short_entry_episodes.py`, run against the full 2018-2025 reachable
+window (not just 2020, and not an approximation — the real `BaselineRegimeEngine` and the exact
+formulas from `crash_short_v6.py`), found 126 raw entry-eligible windows. **That raw count is
+not 126 independent observations and must not be read as one.** The large majority are 1-20 hour
+fragments clustered tightly within a small number of actual regimes — gates 5/6 (EMA spread
+persistence, momentum) flicker across their thresholds repeatedly inside one ongoing bear market,
+fragmenting a single regime into dozens of raw "episodes." Collapsed to distinct regimes, the
+count is roughly four: 2018 (April-January, the "crypto winter" grind), 2020 (COVID), 2022 (the
+confirmed case), and two brief, uncertain windows in 2023-03 and 2025.
 
-Two partial mitigations, neither fully resolving it, both worth developing before this section
-freezes:
+**2020 is confirmed as a genuine, sustained episode** — all seven gates aligned continuously
+from 2020-03-08 to 2020-04-13, over a month, not a blip. That resolves the literal question this
+section previously left open.
 
-1. **Check the 2020 episode directly** rather than assume it doesn't count — costs nothing,
-   uses data already on hand.
-2. **Broaden to a crypto cross-section**, reusing the CDE universe Campaign #53 already
-   surfaced (`docs/research/CAMPAIGN_53_SOURCE_FEASIBILITY_FINDING.md` §9): does the same
-   macro-bear-confirmed short mechanism, generically applied, behave consistently across more
-   instruments during the *same* 2022 event? This does not manufacture a second independent
-   crisis — everything is still correlated with one macro event — but consistency across more
-   names is real corroboration against the alternative explanation that BTC/ETH's specific 2022
-   path was idiosyncratic luck.
+**But entry-eligibility is not the same claim as profitability, and conflating them would be
+exactly the kind of check-that-cannot-fail this repo's culture exists to catch.** The standalone
+hedge probe already run for this campaign (`artifacts/core_v2_hedge_only_probe/
+scaled_sleeve_annual_returns.csv`) shows 2020 as a **losing** year for this sleeve (-1.27% BTC,
+-3.06% ETH) despite the gate firing correctly for over a month — plausibly because COVID's crash
+was V-shaped and fast, and a short position entered into it was likely caught by the reversal
+before exit logic responded, unlike 2022's slow multi-month grind. **2020 corroborates the
+regime-detection mechanism; it is a contrary data point for the profitability claim.** The
+honest count of profitable corroborating crisis payoffs remains closer to one (2022) than to
+four.
+
+**The strongest result from this census is not the episode count — it's the SPY-gate
+validation.** The "without SPY confirmation" comparison shows the gate correctly rejecting dozens
+of windows across all of 2021, a raging equity bull market during which BTC still pulled back
+sharply several times. This is the exact failure mode the strategy's own docstring names —
+crypto-specific correction, not macro bear — caught mechanistically rather than inferred from an
+aggregate Sharpe number. This is real, direct evidence the gate does what it claims, independent
+of the profitability question above.
+
+**New, unresolved finding: 2018 is a third candidate regime**, not previously considered in this
+charter, spanning April 2018 through January 2019 with real (if fragmented) gate alignment.
+Profitability is unknown — the standalone and blended tests both start their OOS window at
+2020-01-01, and the 2018 realized return has not been computed. Extending the audit harness's
+`--oos-start` back to 2018 (the source data already covers it, `data/btcusd_3600s_2018-01-01_
+to_2025-12-31.csv`) would give a third real profitability data point, resolving this rather than
+leaving it open.
 
 ### 3d. Output schema
 
@@ -167,8 +186,12 @@ Sleeve-level and blended fund-level NAV, matching the existing audit harness's o
 
 Amendment 1 requires a simulation-based power estimate before execution. This family's power is
 fundamentally limited in a way Campaign #53's is not: power there comes from breadth across 10
-simultaneous instruments; here, the entire claim rests on behavior during one historical
-regime. No simulation manufactures a second 2022.
+simultaneous instruments; here, the mechanism-detection claim now has real corroboration (§3c:
+2018, 2020, 2022 as distinct regimes, plus mechanistic validation via 2021's correct rejections),
+but the economic payoff claim this campaign actually needs to defend still rests on essentially
+one profitable historical realization, 2022, pending 2018's still-unmeasured contribution. No
+simulation manufactures a second profitable crisis; the 2018 audit extension named in §3c is the
+one concrete step available to actually test for one rather than assume its absence.
 
 This must be stated plainly rather than forced into a false 50%-threshold pass. The honest paths
 forward, to be resolved at review, not here:
