@@ -246,14 +246,33 @@ than strengthen the case. Option 3 is the only one that manufactures more of the
 ingredient (time) without weakening rigor anywhere, and it uses a mechanism Amendment 5 already
 provides for exactly this shape of problem rather than inventing an exception.
 
-**One open dependency before this is fully specifiable, not yet checked:** whether Deribit
-actually lists, and has deep history for, all 10 names in the CDE universe — confirmed so far
-only for BTC and ETH via the original venue probe. `scripts/probe_deribit_universe_coverage.py`
-(2026-08-14, not yet run) checks the remaining eight (XRP, SOL, HYPE, XLM, LINK, DOGE, ADA, DOT)
-by querying Deribit's own instrument listing directly rather than guessing its naming convention
-for smaller assets, then reusing the existing, already-validated funding-history walker. If any
-of the eight aren't listed or lack comparable depth, those specific names fall back to option 1's
-treatment (or exclusion) rather than the whole universe defaulting to a weaker design.
+**Resolved 2026-08-14 — Deribit covers 2 of 10, not the full universe.**
+`scripts/probe_deribit_universe_coverage.py`: Deribit lists perpetual futures only for BTC and
+ETH. The other eight (XRP, SOL, HYPE, XLM, LINK, DOGE, ADA, DOT) returned clean HTTP 200 empty
+results — confirmed genuine absence, not a query failure, by direct inspection of one result
+(SOL) before accepting the pattern across all eight. Option 3 as decided therefore rescues only
+BTC and ETH with real rigor; it does nothing for the other eight, which is a second decision, not
+a footnote to the first.
+
+**Decided 2026-08-14 — option C for the eight: defer, don't exclude or downgrade.** BTC/ETH
+proceed now under the Deribit-discovery / CDE-confirmation design decided above. The other eight
+are neither excluded from Core v2 permanently nor folded in as a permanently-weaker exploratory
+tier — both were live options and both were rejected. Exclusion reverses the entire rationale for
+a cross-sectional design; permanent exploratory status bakes a compromise into the specification
+forever for names that may not need one. Instead: CDE's own native history for these eight
+continues accumulating from today regardless of any decision made here, at zero cost, and they
+are revisited for inclusion once that history is long enough to support a genuine
+development/validation/holdout split without needing a proxy venue at all. **How long "long
+enough" is is not decided here** — it is itself a future judgment call, not a number to invent in
+passing, and belongs to whichever session actually revisits this.
+
+**This also resolves, by circumstance rather than correction, the frozen-Question mismatch noted
+above.** The Question asks about "BTC and ETH" specifically. At the time that clarification was
+appended, the resolved universe was a 10-name cross-section, and the mismatch was real. Now that
+execution is deferred to BTC/ETH only, the Question's original wording is accurate again — not
+because it was rewritten, but because the specification's actual scope came back around to match
+it. Worth recording plainly rather than leaving two adjacent notes that look inconsistent to a
+future reader.
 
 ### 3b. Horizon feasibility (Amendment 4) — carry does not fit the standard framing
 
@@ -273,6 +292,9 @@ so a future reader does not mistake its absence for an unconsidered gate.
 
 ### 3c. Candidates
 
+**Universe for this specification: BTC and ETH only**, per the 2026-08-14 deferral decision
+above. Not the full 10-name set — the other eight are deferred, not part of this execution scope.
+
 - **Funding level** — trailing mean funding rate over windows {24h, 72h, 168h} per instrument.
 - **Funding persistence** — fraction of periods in the trailing window with same-signed funding
   (autocorrelation proxy, directly targeting the §3b question).
@@ -280,8 +302,11 @@ so a future reader does not mistake its absence for an unconsidered gate.
 - **Open interest change** — trailing percentage change, as a crowding proxy.
 
 Targets: forward net carry P&L (funding collected minus transaction costs minus basis
-convergence/divergence) at holding horizons {24h, 72h, 168h}, cross-sectionally ranked across
-the resolved universe at each rebalance.
+convergence/divergence) at holding horizons {24h, 72h, 168h}. "Cross-sectionally ranked" now
+means ranked across two instruments (BTC, ETH) at each rebalance, not the ten originally
+scoped — worth being explicit that this is a materially narrower cross-section than the design
+that motivated moving away from a single-asset approach in the first place, accepted here as
+the honest cost of option C rather than glossed over.
 
 ### 3d. Decision rule and multiplicity (Amendment 2)
 
@@ -310,18 +335,19 @@ authorized (Section 2). This section states the approach; it does not produce a 
    competed-away at scale. The grid used here must be justified from comparable published/
    observed carry strategies, not asserted, at review time.
 2. **Simulation.** Bootstrap or block-bootstrap the acquired historical funding/basis series
-   across the resolved universe, inject a candidate effect at each grid size, and measure the
-   fraction of resamples that clear every frozen gate in §3d (FDR at discovery, strict sign and
-   decision rule at confirmation).
+   across BTC and ETH (§3c — the deferred eight are out of scope for this specification),
+   discovering on Deribit's multi-year history and confirming on CDE's native ~13-month window,
+   injecting a candidate effect at each grid size and measuring the fraction of resamples that
+   clear every frozen gate in §3d.
 3. **Threshold.** Standard: below 50% power at the central plausible effect size, the campaign
-   does not proceed as specified — the fix is redesign (broader universe, fewer gates, longer
-   sample), not execution.
+   does not proceed as specified. The usual remedies (broader universe, fewer gates, longer
+   sample) were considered directly in §3a-i for this campaign specifically and rejected or
+   deferred with reasoning recorded there — a future low-power result should not casually
+   reopen options already decided against, without at least engaging with why they were rejected.
 
-Blocked on: data acquisition authorization, itself blocked on this specification's freeze; and,
-decided 2026-08-14 (§3a-i), on confirming Deribit's coverage for the 8 non-BTC/ETH names before
-the effect-size grid and simulation approach here can be rewritten against the chosen
-discovery-on-Deribit / confirmation-on-CDE design. This section's current text still assumes a
-single-venue design and needs revision once `scripts/probe_deribit_universe_coverage.py` is run.
+Blocked on: data acquisition authorization, itself blocked on this specification's freeze. The
+history-depth and universe-scope questions that previously blocked this section are resolved —
+BTC/ETH only, two-venue design, decided 2026-08-14.
 
 ## 5. Execution evidence
 

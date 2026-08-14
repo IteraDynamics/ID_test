@@ -59,18 +59,20 @@ repo touches that deficiency; it remains the most novel and most expensive avenu
   spot (or the inverse) on whichever side collects the currently-signed funding rate. Native,
   same-venue `funding_rate` is directly observable per instrument, confirmed on an hourly
   interval across the full liquid cross-section.
-- **Cross-section:** 19 liquid (>$1M/day) instruments as of 2026-08-12, spanning BTC and ETH
-  down to smaller liquid names — real breadth for Amendment 1 power, not a handful of majors.
-- **Status:** feasibility and the frozen specification (Section 3) are drafted, but an adversarial
-  review pass (2026-08-14) plus a direct probe confirmed a real constraint: CDE's crypto
-  perpetual-style contracts are themselves only ~13 months old (zero candle history 2.5 years
-  before their listing date, plus no historical funding endpoint found), which caps available
-  history regardless of data-access workarounds. Breaks the frozen Charter's multi-year
-  assumption. **Decided 2026-08-14:** discovery runs on Deribit's multi-year funding history,
-  confirmation runs only on CDE's native ~13-month data for the instruments actually traded
-  (Amendment 5 already permits this shape). One dependency unconfirmed before this is fully
-  specifiable: whether Deribit has comparable depth for the 8 non-BTC/ETH names in the universe,
-  not just the two already known. Not frozen — see the campaign document's own §3a-i.
+- **Cross-section:** 19 liquid (>$1M/day) instruments identified 2026-08-12, spanning BTC and
+  ETH down to smaller liquid names — but see Status below: only BTC and ETH are in this
+  specification's actual execution scope as of 2026-08-14, the other 8 deferred, not part of the
+  original 10-name cross-sectional breadth this line originally described.
+- **Status:** CDE's crypto perpetual-style contracts turned out to be only ~13 months old
+  (confirmed by direct probe, not assumption), breaking the frozen Charter's multi-year history
+  assumption. **Decided 2026-08-14, in two parts:** (1) discovery runs on Deribit's multi-year
+  funding history, confirmation on CDE's native ~13-month data, per Amendment 5's explicit
+  allowance for differing source/execution venues; (2) Deribit turned out to list perpetuals for
+  only 2 of the 10 candidate names (BTC, ETH — confirmed genuine absence for the other 8, not a
+  query failure), so those two proceed under the decided design now, while the other 8 are
+  deferred — neither excluded nor downgraded to a permanent lower standard — until CDE's own
+  native history is long enough to support them without a proxy venue. How long that takes is
+  not decided; it is a future judgment call. Not frozen — see the campaign document's own §3a-i.
   Derivatives eligibility on CDE remains an outstanding account-status item, blocking eventual
   execution but not specification work.
 
@@ -129,25 +131,25 @@ This charter authorizes documentation and planning only. It does not authorize:
 1. Scoped to carry capture only (`docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`);
    directional conditioning and exposure gating, the charter's other two role hypotheses, are
    deferred as a separate future Core v1 overlay campaign, not part of Core v2.
-2. Universe resolved: 10 of 19 liquid CDE perpetual-style names (BTC, ETH, XRP, SOL, HYPE, XLM,
-   LINK, DOGE, ADA, DOT) via perp-vs-dated, satisfying Amendment 5 by construction; 4 more
-   (`TEK`, `CHN`, `AIP`, `DEF`) confirmed equity-index products, out of scope; remaining 5
-   (PAXG, ZEC, NEAR, ENA, ONDO) a documented future extension, not part of this specification.
-3. **Confirmed, not just suspected, as of 2026-08-14:** `scripts/probe_cde_history_depth.py`
-   found zero candle history 2.5 years before CDE's crypto perpetual-style contracts' listing
-   date, and no historical funding endpoint via any plausible pattern. History is capped at
-   ~13 months regardless of endpoint availability — the frozen Charter's multi-year assumption
-   is broken. **Decided: Deribit-for-discovery, CDE-for-confirmation** (Amendment 5 permits this
-   split explicitly), over broadening the universe (imports likely-even-newer names without
-   adding calendar time) or cutting gates (weakens the design to fit the data rather than adding
-   information). Pending: `scripts/probe_deribit_universe_coverage.py` (not yet run) confirms
-   whether Deribit's depth extends to the 8 non-BTC/ETH names, not just the two already known.
-   Also still open: the perp-vs-dated design is a funding+calendar-spread hybrid, not pure
-   funding capture as the frozen Charter describes, and contract roll mechanics (several matched
-   contracts expire within weeks) are entirely unaddressed in Section 3.
-4. Power analysis plan-only pending data acquisition, itself pending the spec's freeze, and now
-   also pending item 3 — the effect-size grid and simulation approach both assume more history
-   than may actually exist.
+2. Universe originally resolved at 10 of 19 liquid CDE perpetual-style names (BTC, ETH, XRP,
+   SOL, HYPE, XLM, LINK, DOGE, ADA, DOT) via perp-vs-dated; 4 more (`TEK`, `CHN`, `AIP`, `DEF`)
+   confirmed equity-index products, out of scope; 5 (PAXG, ZEC, NEAR, ENA, ONDO) a documented
+   future extension. **Narrowed again, 2026-08-14 (item 3 below): actual execution scope for
+   this specification is BTC and ETH only**, the other 8 of the 10 deferred.
+3. **Both history-depth questions resolved, decisions made, not left open.**
+   `scripts/probe_cde_history_depth.py` confirmed CDE's own contracts are ~13 months old
+   regardless of endpoint availability, breaking the frozen Charter's multi-year assumption.
+   Decided: Deribit-for-discovery, CDE-for-confirmation (Amendment 5 permits this explicitly),
+   over broadening the universe or cutting gates. Then `scripts/probe_deribit_universe_coverage.py`
+   found Deribit lists perpetuals for only 2 of the 10 names (BTC, ETH — confirmed genuine
+   absence for the other 8). Decided: BTC/ETH proceed now under the two-venue design; the other
+   8 are deferred, not excluded and not downgraded to a permanent lower standard, until CDE's own
+   native history is long enough on its own — a future judgment call, not fixed here. Still open:
+   the perp-vs-dated design is a funding+calendar-spread hybrid, not pure funding capture as the
+   frozen Charter describes, and contract roll mechanics (several matched contracts expire within
+   weeks) are entirely unaddressed in Section 3.
+4. Power analysis plan-only pending data acquisition, itself pending the spec's freeze. The
+   universe-scope and history-depth blockers that previously stood in front of it are resolved.
 
 **Campaign #54:**
 
