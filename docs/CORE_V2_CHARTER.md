@@ -66,10 +66,11 @@ repo touches that deficiency; it remains the most novel and most expensive avenu
   perpetual-style contracts are themselves only ~13 months old (zero candle history 2.5 years
   before their listing date, plus no historical funding endpoint found), which caps available
   history regardless of data-access workarounds. Breaks the frozen Charter's multi-year
-  assumption. Three redesign paths are named but not chosen — broader cross-section, fewer
-  gates, or splitting Deribit's longer history for discovery from CDE's native data for
-  confirmation (Amendment 5 already permits this shape). Not frozen, and not ready to freeze
-  until one is picked — see the campaign document's own §3a-i.
+  assumption. **Decided 2026-08-14:** discovery runs on Deribit's multi-year funding history,
+  confirmation runs only on CDE's native ~13-month data for the instruments actually traded
+  (Amendment 5 already permits this shape). One dependency unconfirmed before this is fully
+  specifiable: whether Deribit has comparable depth for the 8 non-BTC/ETH names in the universe,
+  not just the two already known. Not frozen — see the campaign document's own §3a-i.
   Derivatives eligibility on CDE remains an outstanding account-status item, blocking eventual
   execution but not specification work.
 
@@ -136,10 +137,13 @@ This charter authorizes documentation and planning only. It does not authorize:
    found zero candle history 2.5 years before CDE's crypto perpetual-style contracts' listing
    date, and no historical funding endpoint via any plausible pattern. History is capped at
    ~13 months regardless of endpoint availability — the frozen Charter's multi-year assumption
-   is broken. Three redesign paths named, none chosen: broader cross-section, fewer gates, or
-   Deribit-for-discovery/CDE-for-confirmation (Amendment 5 permits this split explicitly). Also
-   still open: the perp-vs-dated design is a funding+calendar-spread hybrid, not pure funding
-   capture as the frozen Charter describes, and contract roll mechanics (several matched
+   is broken. **Decided: Deribit-for-discovery, CDE-for-confirmation** (Amendment 5 permits this
+   split explicitly), over broadening the universe (imports likely-even-newer names without
+   adding calendar time) or cutting gates (weakens the design to fit the data rather than adding
+   information). Pending: `scripts/probe_deribit_universe_coverage.py` (not yet run) confirms
+   whether Deribit's depth extends to the 8 non-BTC/ETH names, not just the two already known.
+   Also still open: the perp-vs-dated design is a funding+calendar-spread hybrid, not pure
+   funding capture as the frozen Charter describes, and contract roll mechanics (several matched
    contracts expire within weeks) are entirely unaddressed in Section 3.
 4. Power analysis plan-only pending data acquisition, itself pending the spec's freeze, and now
    also pending item 3 — the effect-size grid and simulation approach both assume more history

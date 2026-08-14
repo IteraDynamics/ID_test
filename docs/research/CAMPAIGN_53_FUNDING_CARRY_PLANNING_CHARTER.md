@@ -237,8 +237,23 @@ real design decision rather than something to resolve unilaterally in this docum
    Amendment 2's discovery/confirmation split and does not require abandoning the cross-sectional
    design.
 
-None of these is chosen here. This is precisely the kind of judgment-bound decision Amendment
-3's pacing rule exists to slow down, not resolve in the same pass that found the problem.
+**Decided 2026-08-14: option 3.** Discovery runs on Deribit's multi-year funding history;
+confirmation runs only on CDE's native ~13-month data for the instruments actually traded.
+Reasoning recorded here, not just the choice: options 1 and 2 were rejected because neither adds
+real information — broadening the universe imports instruments likely even newer than BTC/ETH
+PERP without lengthening the calendar, and fewer gates would lower the bar to fit the data rather
+than strengthen the case. Option 3 is the only one that manufactures more of the actually-missing
+ingredient (time) without weakening rigor anywhere, and it uses a mechanism Amendment 5 already
+provides for exactly this shape of problem rather than inventing an exception.
+
+**One open dependency before this is fully specifiable, not yet checked:** whether Deribit
+actually lists, and has deep history for, all 10 names in the CDE universe — confirmed so far
+only for BTC and ETH via the original venue probe. `scripts/probe_deribit_universe_coverage.py`
+(2026-08-14, not yet run) checks the remaining eight (XRP, SOL, HYPE, XLM, LINK, DOGE, ADA, DOT)
+by querying Deribit's own instrument listing directly rather than guessing its naming convention
+for smaller assets, then reusing the existing, already-validated funding-history walker. If any
+of the eight aren't listed or lack comparable depth, those specific names fall back to option 1's
+treatment (or exclusion) rather than the whole universe defaulting to a weaker design.
 
 ### 3b. Horizon feasibility (Amendment 4) — carry does not fit the standard framing
 
@@ -303,11 +318,10 @@ authorized (Section 2). This section states the approach; it does not produce a 
    sample), not execution.
 
 Blocked on: data acquisition authorization, itself blocked on this specification's freeze; and,
-confirmed 2026-08-14 (§3a-i), on the choice among the three redesign options history depth
-forces — broader cross-section, fewer gates, or split source/confirmation venue via Deribit
-discovery + CDE confirmation. The effect-size grid and simulation approach here were written
-assuming ample history; they need to be rewritten against whichever option is chosen, not
-patched in place.
+decided 2026-08-14 (§3a-i), on confirming Deribit's coverage for the 8 non-BTC/ETH names before
+the effect-size grid and simulation approach here can be rewritten against the chosen
+discovery-on-Deribit / confirmation-on-CDE design. This section's current text still assumes a
+single-venue design and needs revision once `scripts/probe_deribit_universe_coverage.py` is run.
 
 ## 5. Execution evidence
 
