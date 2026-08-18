@@ -344,3 +344,8 @@ asset before use.
 Campaign #53 remains **unchartered**. Funding-accrual and tradeability are both resolved.
 Derivatives eligibility remains the one outstanding account-status item, blocking execution but
 not research/specification work. No specification is frozen and no data has been acquired.
+
+**Update, 2026-08-14:** derivatives eligibility is resolved — the operator's account was
+approved for derivatives trading. This feasibility record is kept as-is above (an evidentiary
+log, not the living document); the campaign's actual current state, including this resolution,
+is tracked in `docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`.

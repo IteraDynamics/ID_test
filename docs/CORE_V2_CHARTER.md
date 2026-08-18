@@ -73,8 +73,9 @@ repo touches that deficiency; it remains the most novel and most expensive avenu
   deferred — neither excluded nor downgraded to a permanent lower standard — until CDE's own
   native history is long enough to support them without a proxy venue. How long that takes is
   not decided; it is a future judgment call. Not frozen — see the campaign document's own §3a-i.
-  Derivatives eligibility on CDE remains an outstanding account-status item, blocking eventual
-  execution but not specification work.
+  Derivatives eligibility on CDE is **resolved as of 2026-08-14** — approved. Execution still
+  requires the frozen specification and its own board transition, neither of which this
+  resolution grants on its own.
 
 **Campaign #54 — macro-confirmed crash-short hedge sleeve.**
 
@@ -167,5 +168,7 @@ This charter authorizes documentation and planning only. It does not authorize:
 
 **Shared:**
 
-Both campaigns are blocked on the same account-status item — derivatives eligibility on CDE —
-outside either charter's scope to resolve.
+Derivatives eligibility on CDE — the one account-status item both campaigns shared — is
+**resolved as of 2026-08-14**, approved for both at once as anticipated. Remaining open items are
+research/specification work only (§3a-i's two design gaps for #53; the review-and-freeze pass for
+both), not account status.

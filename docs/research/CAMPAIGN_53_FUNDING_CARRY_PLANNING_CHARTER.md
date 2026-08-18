@@ -124,8 +124,10 @@ not Coinbase International (INTX), a different product initially conflated with 
 hourly `funding_rate` (confirmed 2026-08-12; the field lives at
 `future_product_details.funding_rate`, not the empty `perpetual_details.funding_rate` the
 original probe checked). Amendment 5 (tradeability) and the funding-accrual question are both
-resolved. Derivatives eligibility on this operator's CDE account remains outstanding — an
-account-status item, not a research blocker.
+resolved. Derivatives eligibility on this operator's CDE account is **resolved as of
+2026-08-14** — approved for derivatives trading. It was always an account-status item, not a
+research blocker, and clearing it does not itself authorize execution, which still requires this
+document's own frozen specification and board transition.
 
 ## 3. Frozen specification — DRAFT, drafted 2026-08-13
 

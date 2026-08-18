@@ -84,9 +84,11 @@ Jump Risk, but it is stated here for completeness and because it passes triviall
 ### Tradeability (Amendment 5)
 
 Instrument: BTC/ETH, held short. Venue: the same execution venue as Core v1's crypto sleeves.
-Shorting requires derivatives or margin access — **this shares Campaign #53's exact same
-blocker, CDE derivatives eligibility.** That decision, still outstanding and still entirely the
-operator's account-status item, unblocks both threads at once, not just one.
+Shorting requires derivatives or margin access — **this shared Campaign #53's exact same
+blocker, CDE derivatives eligibility. Resolved 2026-08-14: the operator's account was approved
+for derivatives trading.** Both threads are unblocked on this specific dependency at once, as
+anticipated. This clears account status only — it does not itself authorize execution, which
+still requires this section's own frozen specification and its board transition.
 
 ### Economic materiality — measured, not assumed
 
