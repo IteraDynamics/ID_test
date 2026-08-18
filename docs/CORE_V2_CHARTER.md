@@ -145,12 +145,22 @@ This charter authorizes documentation and planning only. It does not authorize:
    found Deribit lists perpetuals for only 2 of the 10 names (BTC, ETH — confirmed genuine
    absence for the other 8). Decided: BTC/ETH proceed now under the two-venue design; the other
    8 are deferred, not excluded and not downgraded to a permanent lower standard, until CDE's own
-   native history is long enough on its own — a future judgment call, not fixed here. Still open:
-   the perp-vs-dated design is a funding+calendar-spread hybrid, not pure funding capture as the
-   frozen Charter describes, and contract roll mechanics (several matched contracts expire within
-   weeks) are entirely unaddressed in Section 3.
-4. Power analysis plan-only pending data acquisition, itself pending the spec's freeze. The
-   universe-scope and history-depth blockers that previously stood in front of it are resolved.
+   native history is long enough on its own — a future judgment call, not fixed here.
+5. **Both remaining design gaps closed, 2026-08-14.** Roll policy: roll N business days before
+   expiry (N calibrated against CDE's own liquidity-migration data, not invented here), roll only
+   into a confirmed successor contract (needs a live-account check before first use, not a
+   research one), roll costs treated as recurring transaction costs, and each roll is a fresh
+   entry decision rather than a mechanical continuation. Hybrid mechanism: the campaign's
+   candidates now split into a **statistical family** (funding level, persistence, open interest
+   — genuinely discovered, subject to FDR and Amendment 1 power) and a **structural family**
+   (basis/calendar-spread — a mechanically-converging, cash-and-carry-style position whose
+   validity rests on contract mechanics, evaluated against a cost threshold rather than pooled
+   into the same statistical pipeline). Section 3's decision rule and Section 4's power plan were
+   both revised to keep this split consistent throughout, not just noted in one place.
+6. Power analysis plan-only pending data acquisition, itself pending the spec's freeze, and now
+   scoped explicitly to the statistical family only. All design gaps ahead of freeze are closed;
+   what remains is the same-day-edit pacing concern noted in Section 3's own status line and the
+   review pass itself.
 
 **Campaign #54:**
 

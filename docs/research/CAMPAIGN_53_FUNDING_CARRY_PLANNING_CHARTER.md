@@ -276,6 +276,50 @@ because it was rewritten, but because the specification's actual scope came back
 it. Worth recording plainly rather than leaving two adjacent notes that look inconsistent to a
 future reader.
 
+### 3a-ii. Contract roll policy — resolved 2026-08-14
+
+Closes the gap §3a-i named: dated legs expire, and a live position needs a defined policy for
+what happens as expiry approaches. Four questions, each answered structurally rather than left
+implicit.
+
+**When to roll.** Not at expiry itself. Two things degrade as a dated contract approaches
+settlement: liquidity migrates to the next-listed contract as open interest rolls over
+market-wide, and the contract's own price mechanically converges toward spot, which is the
+return this design exists to capture in the first place — rolling too late gives back captured
+basis for no benefit, since there is nothing left to converge. The specification sets roll timing
+as **N business days before expiry, N calibrated against CDE's observed liquidity-migration
+curve for the specific contract, not assumed.** This mirrors how the FDR threshold in §3d is
+left as "to be set at review" rather than invented here — N is a number that needs the operator's
+own account access to CDE's order book depth over past roll events, which this environment cannot
+reach.
+
+**To which successor.** The next dated contract for the same underlying, if CDE has one listed
+at roll time. This is not yet verified as a standing guarantee — the expiry distribution recorded
+in the feasibility finding (65 contracts expiring in 2026, 6 in 2027, 28 in 2030) is consistent
+with an active, maintained calendar, but "consistent with" is not "confirmed." **Before this
+specification freezes, whoever executes the first roll needs to confirm directly that CDE lists
+a successor contract for BTC and ETH before the current dated legs expire** — a live-account
+check, not a research one, and cheap to do in the same session as opening the eligibility flow
+already completed.
+
+**At what cost.** Rolling means closing the expiring leg and opening the new one — a second
+round-trip transaction cost on top of entry and exit, recurring on whatever cadence the dated
+contracts actually expire at. §3c's target formula ("funding collected minus transaction costs
+minus basis convergence/divergence") already nets transaction costs; this makes explicit that
+"transaction costs" is not a one-time entry/exit figure but a recurring roll cost proportional to
+how often the specific dated contract's calendar forces a roll. A shorter-dated contract rolled
+more often costs more in aggregate fees for the same holding period than a longer-dated one —
+worth factoring into which specific dated contract is chosen at each roll, not just rolling into
+whichever one is next chronologically.
+
+**How roll interacts with the signal.** Not a mechanical continuation of the old position. Each
+roll is treated as **a fresh entry decision**: at roll time, the newly-formed pair (the same
+perpetual-style leg against the new dated contract) is evaluated against §3c's candidates exactly
+as any other prospective entry would be. If the candidate no longer clears the decision rule, the
+position is not renewed — it exits to flat rather than being carried forward on the strength of a
+signal that justified the original, now-expiring, contract pairing. This keeps every open position
+justified by current candidate values, never by inertia.
+
 ### 3b. Horizon feasibility (Amendment 4) — carry does not fit the standard framing
 
 Amendment 4's decay-horizon-vs-cadence test was built for directional signals that expire: a
@@ -292,31 +336,75 @@ testable property of the frozen candidates, not a structural feasibility gate. I
 candidate formulas below, not as a pass/fail screen before specification, and this is noted here
 so a future reader does not mistake its absence for an unconsidered gate.
 
+**Completed 2026-08-14 — the calendar-spread component needs a different argument entirely, not
+the funding argument stretched to cover it.** §3a-i named this gap directly: the above holds only
+for the funding leg. Calendar-spread convergence is not a signal that decays and goes stale the
+way a directional prediction does — it is closer to the opposite. A dated future's price is
+**mechanically required** to converge to spot by its contract's own expiry; this is a structural
+certainty of the instrument, not a statistical pattern that might or might not persist. Amendment
+4 was written to catch effects that expire before a decision can be acted on. A guaranteed
+convergence does not expire — if anything, decision lag matters less here than for funding,
+since the eventual outcome (dated price → spot at expiry) does not depend on when within the
+holding period the position was entered.
+
+**What actually needs treating carefully is not decay, but mark-to-market risk before
+convergence.** The spread can move against the position between entry and expiry even though its
+terminal value is constrained — a real risk, just a different one than Amendment 4 addresses.
+This means the calendar-spread candidate is not the same *kind* of candidate as the funding-level
+and funding-persistence candidates in §3c, which are genuinely discovered, statistical
+relationships subject to Amendment 2's FDR treatment. Basis at entry is closer to a structural,
+cash-and-carry-style position: its expected value is grounded in contract mechanics, not
+discovered by ranking candidates against history. **§3c's basis candidate should be evaluated
+and reported separately from the funding candidates, not pooled into the same FDR family** — the
+two need different decision logic (funding: does this historically predict forward returns;
+basis: does the current spread, net of transaction and roll costs from §3a-ii, exceed the minimum
+mark-to-market risk this operator is willing to carry to expiry) and conflating them would either
+overstate the funding candidates' power (borrowing basis's structural certainty) or understate
+basis's legitimacy (subjecting a mechanically-grounded position to a statistical-discovery
+standard it doesn't need).
+
 ### 3c. Candidates
 
 **Universe for this specification: BTC and ETH only**, per the 2026-08-14 deferral decision
 above. Not the full 10-name set — the other eight are deferred, not part of this execution scope.
 
+**Statistical family — subject to §3d's FDR/holdout treatment:**
+
 - **Funding level** — trailing mean funding rate over windows {24h, 72h, 168h} per instrument.
 - **Funding persistence** — fraction of periods in the trailing window with same-signed funding
   (autocorrelation proxy, directly targeting the §3b question).
-- **Basis** — (perp price − matched leg price) / matched leg price, level and trailing change.
 - **Open interest change** — trailing percentage change, as a crowding proxy.
 
-Targets: forward net carry P&L (funding collected minus transaction costs minus basis
-convergence/divergence) at holding horizons {24h, 72h, 168h}. "Cross-sectionally ranked" now
-means ranked across two instruments (BTC, ETH) at each rebalance, not the ten originally
-scoped — worth being explicit that this is a materially narrower cross-section than the design
-that motivated moving away from a single-asset approach in the first place, accepted here as
-the honest cost of option C rather than glossed over.
+**Structural family — evaluated separately, per §3b's completed reasoning, not pooled with the
+statistical family:**
+
+- **Basis** — (perp price − matched leg price) / matched leg price, level and trailing change.
+  Entry decision rule: current spread, net of transaction and roll costs (§3a-ii), must exceed
+  the minimum mark-to-market risk this operator sets as tolerable to carry to the dated leg's
+  expiry. No discovery-stage ranking, no FDR correction — the candidate's validity rests on
+  contract mechanics, not on clearing a multiplicity-adjusted statistical bar.
+
+Targets, statistical family only: forward net carry P&L (funding collected minus transaction
+costs) at holding horizons {24h, 72h, 168h}. The basis/structural family's target is the
+convergence P&L itself, realized at roll or expiry per §3a-ii, not a forward-return prediction.
+"Cross-sectionally ranked" now means ranked across two instruments (BTC, ETH) at each rebalance,
+not the ten originally scoped — worth being explicit that this is a materially narrower
+cross-section than the design that motivated moving away from a single-asset approach in the
+first place, accepted here as the honest cost of option C rather than glossed over.
 
 ### 3d. Decision rule and multiplicity (Amendment 2)
 
-Discovery: rank candidates cross-sectionally at each rebalance by expected net carry; FDR
+Applies to the statistical family only (§3c) — funding level, funding persistence, open interest
+change. Discovery: rank candidates cross-sectionally at each rebalance by expected net carry; FDR
 control (Benjamini-Hochberg, q to be set at review) across the full candidate × horizon family
 rather than familywise correction, per Amendment 2's preference for broad families under FDR.
 Confirmation: top-k shortlist from discovery, strict pre-registered decision rule and sign check
 against the untouched terminal holdout.
+
+The structural family (basis) does not enter this pipeline — per §3b, subjecting a
+mechanically-grounded convergence trade to a statistical-discovery standard would misrepresent
+what kind of claim it is. Its own decision rule is stated in full in §3c; nothing here overrides
+it.
 
 ### 3e. Output schema
 
@@ -330,17 +418,22 @@ identity).
 Amendment 1 requires a simulation-based estimate before any execution GO. That simulation needs
 realistic candidate distributions, which need acquired historical funding/basis data — not yet
 authorized (Section 2). This section states the approach; it does not produce a power number.
+**Applies to the statistical family only** (§3c: funding level, funding persistence, open
+interest change) — §3b and §3c both establish that the structural/basis family is not a
+discovered statistical claim, so Amendment 1's power framing does not apply to it the same way;
+its evidentiary standard is the mechanical convergence argument in §3b plus the cost threshold
+in §3c, not a power simulation.
 
 1. **Effect-size grid.** Realistic funding-carry Sharpe/IC has genuine academic and industry
    precedent distinct from the generic 0.02-0.05 IC range cited for price-predictive signals
    (Amendment 1's reference point) — carry premia are typically more persistent but also more
    competed-away at scale. The grid used here must be justified from comparable published/
    observed carry strategies, not asserted, at review time.
-2. **Simulation.** Bootstrap or block-bootstrap the acquired historical funding/basis series
-   across BTC and ETH (§3c — the deferred eight are out of scope for this specification),
-   discovering on Deribit's multi-year history and confirming on CDE's native ~13-month window,
-   injecting a candidate effect at each grid size and measuring the fraction of resamples that
-   clear every frozen gate in §3d.
+2. **Simulation.** Bootstrap or block-bootstrap the acquired historical funding series across BTC
+   and ETH (§3c — the deferred eight are out of scope for this specification), discovering on
+   Deribit's multi-year history and confirming on CDE's native ~13-month window, injecting a
+   candidate effect at each grid size and measuring the fraction of resamples that clear every
+   frozen gate in §3d.
 3. **Threshold.** Standard: below 50% power at the central plausible effect size, the campaign
    does not proceed as specified. The usual remedies (broader universe, fewer gates, longer
    sample) were considered directly in §3a-i for this campaign specifically and rejected or
