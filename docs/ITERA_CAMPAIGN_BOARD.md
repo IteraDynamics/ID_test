@@ -108,10 +108,14 @@ Authorized now:
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital;
-- Campaign #54 (crash-short hedge sleeve) planning charter and frozen-specification drafting
-  (`docs/research/CAMPAIGN_54_CRASH_SHORT_PLANNING_CHARTER.md`, DRAFT, opened 2026-08-13) —
-  report-only exploratory backtests already run via existing harness, no new code; not yet
-  authorized to freeze, acquire data, or execute.
+- Campaign #54 (crash-short hedge sleeve) Closure work only: a sizing sweep for
+  `crash_short_v6` within a Core v2 blended composition, using the existing
+  `scripts/run_core_v1_sleeve_contribution_audit.py` harness and already-governed BTC/ETH/SPY
+  sources — no new data acquisition, no new code. Section 3 and Section 4 of
+  `docs/research/CAMPAIGN_54_CRASH_SHORT_PLANNING_CHARTER.md` are FROZEN as of this transition
+  (frozen 2026-08-19, commit `0e415b1`); the entry-episode design and confirmation standard do
+  not change further. Still not authorized: any Core v1 change, capital allocation, or a Core v2
+  runtime/paper account.
 
 Closed:
 
@@ -120,8 +124,10 @@ Closed:
 
 Not authorized:
 
-- Campaign #53 or #54 bulk data acquisition, predictor/outcome computation, or specification
-  execution before their recorded board transitions;
+- Campaign #53 bulk data acquisition, predictor/outcome computation, or specification execution
+  before its own recorded board transition (Section 3 remains DRAFT, not frozen);
+- Campaign #54 sizing/Closure work beyond what this transition authorizes above, or any reopening
+  of its now-frozen Section 3/4 design;
 
 - opening Campaign #52 validation targets or outcomes;
 - reframing, retesting, or changing Campaign #52 after observing its result;
