@@ -4,12 +4,18 @@
 
 ### Status
 
-**PLANNING CHARTER — drafted 2026-08-13, not frozen.** Per Amendment 3's pacing rule, no
-section of this document may be frozen the same session it is first drafted. Section 3 in
-particular is explicitly a draft pending a later-day review pass.
+**PLANNING CHARTER — drafted 2026-08-13. Section 3 and Section 4 FROZEN 2026-08-19.** Amendment
+3's pacing rule required a review no earlier than one day after drafting; six real days and a
+genuine fresh-eyes review pass (2026-08-19, which also fixed a real freeze/execution wording
+conflation in the sibling Campaign #53 document and resolved this document's own deferred
+Section 4 fork) separate this freeze from the original draft.
 
-No predictor, outcome, ranking, economic result, or runtime change is authorized under this
-charter. This is Core v2's second founding thread alongside Campaign #53
+Freezing authorizes the Closure work named in §7 below — a sizing sweep for `crash_short_v6`
+within a Core v2 blended composition, using the existing audit harness and already-governed
+BTC/ETH/SPY sources, no new data acquisition. It does not authorize any Core v1 change, any
+capital allocation, or a Core v2 runtime/paper account — those remain gated exactly as stated in
+`docs/CORE_V2_CHARTER.md`'s "Not yet authorized" section. This is Core v2's second founding
+thread alongside Campaign #53
 (`docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`), addressing a different named
 deficiency: see `docs/CORE_V2_CHARTER.md`.
 
@@ -147,10 +153,12 @@ Four runs, all via `scripts/run_core_v1_sleeve_contribution_audit.py`, all 2020-
 4. **Comparative — `mean_reversion`** (`artifacts/core_v2_mr_only_probe/`): unrelated
    deficiency, ruled out separately (six-for-six losing years, Sharpe -2.001).
 
-## 3. Frozen specification — DRAFT, drafted 2026-08-13
+## 3. Frozen specification — FROZEN 2026-08-19 (drafted 2026-08-13)
 
-**Not frozen.** Section 4 explains why this section cannot yet commit to a final confirmation
-design.
+Section 4's confirmation design, previously this section's stated blocker, is resolved below —
+see its own status line. Nothing in this section changes after this freeze; §3c's entry-episode
+census and its honest count (one clean payoff, one plausibly-circular payoff, one correctly-fired
+but unprofitable case) is the record this campaign proceeds on.
 
 ### 3a. Mechanism
 
@@ -242,7 +250,7 @@ now on a more accurate reading of what the evidence actually supports.
 Sleeve-level and blended fund-level NAV, matching the existing audit harness's own conventions
 — no new schema needed.
 
-## 4. Power — PLAN ONLY, and honestly constrained
+## 4. Power and confirmation standard — FROZEN 2026-08-19
 
 Amendment 1 requires a simulation-based power estimate before execution. This family's power is
 fundamentally limited in a way Campaign #53's is not: power there comes from breadth across 10
@@ -299,4 +307,9 @@ cannot produce. Sizing itself remains deferred to Closure per §1's candidate-fa
 
 ## 7. Closure
 
-*Pending.*
+*Pending.* Authorized by the 2026-08-19 freeze: a sizing sweep for `crash_short_v6` within a
+Core v2 blended composition (existing `scripts/run_core_v1_sleeve_contribution_audit.py`
+harness, already-governed BTC/ETH/SPY sources, no new data or code). The single weight already
+probed (10%, §2) is a data point, not the sweep itself. Sizing is decided here, per §1's
+candidate-family sketch and §4's resolved judgment-bound standard — not a re-opening of §3's
+frozen entry-episode design.
