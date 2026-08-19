@@ -300,11 +300,14 @@ reach.
 **To which successor.** The next dated contract for the same underlying, if CDE has one listed
 at roll time. This is not yet verified as a standing guarantee — the expiry distribution recorded
 in the feasibility finding (65 contracts expiring in 2026, 6 in 2027, 28 in 2030) is consistent
-with an active, maintained calendar, but "consistent with" is not "confirmed." **Before this
-specification freezes, whoever executes the first roll needs to confirm directly that CDE lists
-a successor contract for BTC and ETH before the current dated legs expire** — a live-account
-check, not a research one, and cheap to do in the same session as opening the eligibility flow
-already completed.
+with an active, maintained calendar, but "consistent with" is not "confirmed." **Before the first
+roll is executed, whoever executes it needs to confirm directly that CDE lists a successor
+contract for BTC and ETH before the current dated legs expire** — a live-account check, not a
+research one, and cheap to do in the same session as opening the eligibility flow already
+completed. This is an execution-time check, not a freeze condition: the specification below
+freezes a *policy* ("roll into the next-listed same-root contract"), and a frozen policy does not
+require its future precondition to already be confirmed true today — the same distinction this
+document draws everywhere else between freezing a design and authorizing its execution.
 
 **At what cost.** Rolling means closing the expiring leg and opening the new one — a second
 round-trip transaction cost on top of entry and exit, recurring on whatever cadence the dated

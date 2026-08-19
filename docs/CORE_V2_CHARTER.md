@@ -175,6 +175,11 @@ This charter authorizes documentation and planning only. It does not authorize:
 3. Power analysis remains judgment-bound, now on a corrected reading: one clean payoff (2018),
    one likely-circular payoff (2022), one correctly-fired-but-unprofitable case (2020) — not the
    "two favorable of three" framing an earlier draft used.
+4. **Resolved at review, 2026-08-19.** The two paths §4 had left open (judgment-bound decision vs.
+   an explicitly bounded claim) were never competing options — both apply together. Governed
+   position: `crash_short_v6` may be sized into a Core v2 composition as a small, asymmetric
+   component under continuous monitoring, decided by judgment rather than a power threshold this
+   family cannot produce. See the campaign document's own §4 for the full reasoning.
 
 **Shared:**
 

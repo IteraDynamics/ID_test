@@ -263,7 +263,7 @@ stress correctly in both, but only paid off in one. That is thinner support than
 stated two revisions ago, even though it is still a real improvement on n=1.
 
 This must be stated plainly rather than forced into a false 50%-threshold pass. The honest paths
-forward, to be resolved at review, not here:
+forward, previously left as "to be resolved at review, not here":
 
 1. Treat this as a **judgment-bound decision** rather than a power-gated one — the economic
    mechanism (why cross-asset confirmation should generalize) is sound independent of sample
@@ -275,6 +275,19 @@ forward, to be resolved at review, not here:
    confirms or contradicts it" — a materially weaker and more honest claim than "validated," and
    a more defensible one than this section could support before 2018 was checked, but still not
    "validated" outright.
+
+**Resolved at this review, 2026-08-19: both, not either.** They were never actually competing
+options — (1) answers *how this campaign is decided* (a judgment call, not a numeric gate; no
+simulation manufactures a fourth crisis) and (2) answers *what claim that judgment can support*
+(the narrow one, not "validated"). Adopting (1) without (2) would leave an open-ended judgment
+call with no stated boundary — exactly the kind of discretion this repo's governance exists to
+close down. Adopting (2) without (1) would restate a scope limit while still implying some future
+power threshold might be cleared, which §4 has already shown cannot happen here. The governed
+position going forward: `crash_short_v6` may be sized into a Core v2 composition as a small,
+asymmetric component under continuous monitoring, on the strength of a judgment call grounded in
+one genuinely clean regime (2018), one plausibly-circular regime (2022), and one correctly-fired
+but unprofitable regime (2020) — not on the strength of a power analysis, which this family
+cannot produce. Sizing itself remains deferred to Closure per §1's candidate-family sketch.
 
 ## 5. Execution evidence
 
