@@ -200,10 +200,14 @@ doesn't invalidate it") is only true for the funding component. Calendar-spread 
 genuinely decaying, time-bound quantity, and §3b did not say so.
 
 **Contract roll is entirely unaddressed.** Several of the matched dated contracts carry an
-`28AUG26` expiry — roughly two weeks from today. A live position needs a defined roll policy
-(when, to which successor contract, at what cost) that does not exist anywhere in this
-specification. This is not a reason to abandon the design; it is a real gap that needs its own
-subsection before Section 3 freezes, not an implicit assumption.
+`28AUG26` expiry — roughly two weeks out when this was first written, 2026-08-14. (Update,
+2026-08-18: four real days have since passed; `28AUG26` is now roughly 10 days out. Noted here
+rather than silently changing the original figure, consistent with this document's own
+correct-in-place-don't-rewrite convention. The gap itself is closed — see §3a-ii below.) A live
+position needs a defined roll policy (when, to which successor contract, at what cost) that did
+not exist anywhere in this specification at the time. This is not a reason to abandon the design;
+it was a real gap that needed its own subsection before Section 3 freezes, not an implicit
+assumption.
 
 **Resolved 2026-08-14, and both confirmed the concern rather than dismissing it.**
 `scripts/probe_cde_history_depth.py`, run against real CDE endpoints: zero candles for either
