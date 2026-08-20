@@ -206,6 +206,12 @@ require a governed decision rather than a silent fix.
    120 hours for the extended-up model. This is standard label leakage at fold edges. It
    inflates in-sample fit and may bias the train-derived threshold. Correcting it would change
    every Jump Risk probability and threshold, and therefore every downstream result.
+   **Severity measurement added, 2026-08-20** (not a fix):
+   `scripts/diagnose_jump_risk_train_test_boundary_leakage.py` quantifies, per fold, exactly how
+   many training rows leak (provably `train.tail(horizon_bars)`, from `_future_window_stat`'s
+   purely positional label window) and whether that tail's positive-label rate differs from the
+   rest of training — the qualitative concern the row count alone can't answer. Needs the
+   operator's real canonical data to run; not yet run against it.
 2. **Overlay freshness is measured from `computed_at`, never from `source_bar_ts`.** A
    freshly-computed score over a stale bar passes the freshness gate. Bounded in practice by
    the replay provider's construction, unbounded in principle. A bar-age bound would be a
