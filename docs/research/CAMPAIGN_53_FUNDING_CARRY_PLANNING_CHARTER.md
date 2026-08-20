@@ -4,11 +4,13 @@
 
 ### Status
 
-**PLANNING CHARTER — campaign selection and source feasibility planning only.**
+**PLANNING CHARTER. Section 3 and Section 4 (methodology) FROZEN 2026-08-20.** Universe
+(BTC/ETH), venue design (Deribit discovery, CDE confirmation), roll policy, candidates, and
+decision rule (FDR q=0.10, confirmation top-3) do not change further.
 
-No Campaign #53 predictor, outcome, ranking, economic result, or runtime change is authorized
-under this charter. Data acquisition requires a separate board transition recorded on
-`docs/ITERA_CAMPAIGN_BOARD.md`.
+No Campaign #53 predictor, outcome, ranking, or economic result exists yet — freezing the
+specification is not the same as having run it. Data acquisition is authorized by the board
+transition recorded on `docs/ITERA_CAMPAIGN_BOARD.md`, alongside this freeze.
 
 Campaign #53 is the first campaign governed by
 `docs/ITERA_RESEARCH_PROCESS_AMENDMENTS.md`: it uses the single-document format, requires a
@@ -129,11 +131,13 @@ resolved. Derivatives eligibility on this operator's CDE account is **resolved a
 research blocker, and clearing it does not itself authorize execution, which still requires this
 document's own frozen specification and board transition.
 
-## 3. Frozen specification — DRAFT, drafted 2026-08-13
+## 3. Frozen specification — FROZEN 2026-08-20 (drafted 2026-08-13)
 
-**Not frozen.** Per this section's own placeholder text and Amendment 3, freezing requires a
-review pass no earlier than one day after this draft. Nothing below is authoritative until that
-pass and an explicit freeze commit.
+Six real days and a genuine fresh-eyes review pass (2026-08-20, which closed the two remaining
+decision-rule gaps in §3d — FDR q and confirmation k, both previously deferred to "review"
+without a concrete value) separate this freeze from the original draft, satisfying Amendment 3's
+pacing rule. Universe (BTC/ETH, two-venue Deribit-discovery/CDE-confirmation design), roll policy,
+candidate families, and decision rule do not change further below this point.
 
 Scope: carry capture only, per the clarification appended to Section 1. Universe, decision rule,
 and output schema below; multiplicity and holdout structure follow Amendments 1-2.
@@ -403,10 +407,16 @@ first place, accepted here as the honest cost of option C rather than glossed ov
 
 Applies to the statistical family only (§3c) — funding level, funding persistence, open interest
 change. Discovery: rank candidates cross-sectionally at each rebalance by expected net carry; FDR
-control (Benjamini-Hochberg, q to be set at review) across the full candidate × horizon family
-rather than familywise correction, per Amendment 2's preference for broad families under FDR.
-Confirmation: top-k shortlist from discovery, strict pre-registered decision rule and sign check
-against the untouched terminal holdout.
+control (Benjamini-Hochberg, **q = 0.10**) across the full candidate × horizon family rather than
+familywise correction, per Amendment 2's preference for broad families under FDR. q = 0.10 rather
+than the stricter 0.05 typically reserved for confirmation, consistent with Amendment 2's
+two-stage design (permissive at discovery, strict at the untouched holdout) — this is a
+methodology choice fixable now, unlike §3a-ii's roll-timing N or §3b's mark-to-market risk
+tolerance, which genuinely need data this specification doesn't have yet. Confirmation: **top-3**
+shortlist from discovery (the statistical family is 3 signals × 3 horizons = 9 candidate-horizon
+combinations total; top-3 tests more than a single cherry-picked winner while still being a real
+filter against a 9-member family), strict pre-registered decision rule and sign check against the
+untouched terminal holdout.
 
 The structural family (basis) does not enter this pipeline — per §3b, subjecting a
 mechanically-grounded convergence trade to a statistical-discovery standard would misrepresent
@@ -420,7 +430,7 @@ basis P&L, transaction costs, holding period. Aggregated to portfolio-level NAV 
 canonical conventions used elsewhere (LF-only artifacts, SHA-256 digests, two-pass replay
 identity).
 
-## 4. Power — PLAN ONLY, not executable yet
+## 4. Power — methodology FROZEN 2026-08-20, not executable yet
 
 Amendment 1 requires a simulation-based estimate before any execution GO. That simulation needs
 realistic candidate distributions, which need acquired historical funding/basis data — not yet
