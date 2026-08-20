@@ -16,6 +16,23 @@ From `artifacts/paper_runtime_cadence_audit` (2026-08-10, 808 cycles): the runti
 decides approximately **1.5-1.7 bar periods** after bar close, consistently across timeframes.
 For hourly-derived signals this is **~1.6 hours**.
 
+**Correction, 2026-08-20: this figure was measured by a script with a bug** (subtracted each
+bar's start label instead of its close, and separately averaged in stale re-logs of unchanged
+bars — see `docs/engineering/CORE_V1_JUMP_RISK_PAPER_CHARTER.md`'s "Correction, 2026-08-20" for
+the full finding and `tests/test_paper_runtime_cadence_audit.py` for the regression tests).
+Corrected, restricted to the first cycle each bar was ever observed: **~0.5-0.6 hours**, roughly
+constant across timeframes rather than scaling with bar size as originally stated.
+
+**The Sweep table below was scored against the old, wrong 1.5-1.7 figure and has not been
+recomputed.** At minimum, the lag/horizon ratios for the two INFEASIBLE 3h rows and the
+INFEASIBLE Jump Risk `immediate_any` row would roughly *halve to a third* at the corrected
+~0.6h lag (e.g. Trend Persistence immediate: 0.6h/3h ≈ 20% instead of 53.3% — MARGINAL, not
+INFEASIBLE outright; Jump Risk `immediate_any`: 0.6h/2h = 30% instead of 80% — still above the
+25% INFEASIBLE line but far closer to it). Whether any of these actually re-screen as MARGINAL
+or FEASIBLE requires re-running this sweep's own methodology with the corrected number, which
+this correction does not do. Treat every verdict in the table below as provisional until that
+re-run happens.
+
 ## Feasibility bands
 
 Applied to the ratio of decision lag to expected effect horizon:

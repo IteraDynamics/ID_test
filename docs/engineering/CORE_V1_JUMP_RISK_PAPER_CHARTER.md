@@ -429,6 +429,56 @@ Three paths, none yet chosen:
 
 No option is authorized by this audit.
 
+### Correction, 2026-08-20 — the audit script had a measurement bug
+
+`scripts/run_paper_runtime_cadence_audit.py` computed lag as `observed - bar_timestamp`
+directly. `bar_timestamp` is a bar's *start* label, not its close
+(`scripts/run_core_v1_paper_live.py`'s own `drop_incomplete_bars` docstring: "a bar labeled T
+covers [T, T+bar_duration)") — the script never added the bar's own duration, so every lag
+reported above was overstated by exactly that bar's period. A second, separate issue compounded
+it for anything coarser than the hourly poll: a sleeve re-logs its current, unchanged bar on
+every intervening cycle (correctly — nothing new has closed), and averaging those growing-stale
+re-logs together with genuine fresh pickups inflated the aggregate further. Both are demonstrated
+with regression tests in `tests/test_paper_runtime_cadence_audit.py`, including a canary
+reproducing the exact original (buggy) numbers from the unfixed formula.
+
+Re-run against the same underlying 808-cycle export, corrected script, two ways — "all
+decisions" (every cycle, staleness of whatever bar is actually in hand) and "fresh bar only"
+(the first cycle each bar was ever observed — true reaction speed to new information):
+
+| Asset | All decisions (median) | Fresh bar only (median) | Fresh bar only p95 | Within 1h (fresh) | Within 2h gate (fresh) |
+|---|---:|---:|---:|---:|---:|
+| BTC | 2.00h | **0.60h** | 0.96h | **99.02%** | 99.51% |
+| ETH | 0.81h | **0.59h** | 0.96h | **99.60%** | 99.90% |
+
+Per sleeve, fresh-bar-only, all four timeframes cluster near the same absolute figure rather
+than scaling with bar size — the "1.5-1.7 bar periods, consistent across timeframes" framing
+above was itself an artifact of the bug, not a real property of the runtime:
+
+| Sleeve | Bar | Fresh-pickup median | p95 | Max |
+|---|---:|---:|---:|---:|
+| ETH_1H_trend | 1h | 0.59h | 0.95h | 1.00h |
+| BTC_4H_trend | 4h | 0.60h | 0.96h | 3.46h* |
+| ETH_4H_trend | 4h | 0.60h | 0.96h | 3.46h* |
+| SPY/QQQ/GLD/BIL | 1D | 0.53h | 0.94h | 1.13h |
+
+\* the 3.46h max reflects one known ~12-hour outage gap in the underlying log, not typical
+behavior.
+
+**This does not itself overturn the Classification above or the Final Disposition below.** Two
+caveats before either can be responsibly revisited:
+
+1. BTC's figure is still a proxy through the wrong timeframe — there is no live BTC 1H sleeve
+   (0% weight, not run per `scripts/run_core_v1_paper_live.py`'s own allocation), so BTC's
+   fresh-pickup speed is measured via the 4H sleeve, not a direct hourly BTC signal. Fresh-pickup
+   speed looks timeframe-independent across every sleeve measured here, which makes it a
+   reasonable stand-in, but it is not the same as a direct measurement.
+2. The "Lag Sensitivity Result and Final Disposition" section below explicitly cites this
+   audit's old figure ("roughly 1.5-1.7 effective bars, which sits between rows 2 and 3") as
+   part of its own reasoning for retirement. That citation is now factually wrong, and re-reading
+   the lag-sensitivity table against the corrected figure is a separate, deliberate review this
+   correction does not perform. Flagged at that section below, not resolved here.
+
 ---
 
 ## Lag Sensitivity Test — pre-registration (2026-08-10)
@@ -521,6 +571,17 @@ the first hour after the source bar closes.
 The 2026-08-10 cadence audit measured live runtime cadence at roughly 1.5-1.7 effective bars,
 which sits between rows 2 and 3 of this table. There is no plausible reading of this result
 under which the approved mapping is economically positive on this infrastructure.
+
+**Correction, 2026-08-20: the "1.5-1.7 effective bars" figure this paragraph relies on was
+measured by a script with a bug** (see the "Correction, 2026-08-20" subsection under the Live
+Runtime Cadence Audit above) and has been re-measured at closer to **0.6 effective bars**
+(fresh-bar-only, hourly sleeves) — nearer row 1 (PASS) than rows 2-3 (REJECT) of the table above.
+This is not, by itself, a re-opening of this disposition: it is a correction to one input this
+paragraph's reasoning used, flagged here so a future review starts from the right number rather
+than repeating this citation. Revisiting FINAL DISPOSITION on the strength of this correction —
+including re-confirming the BTC proxy caveat noted above and re-deriving what "effective lag"
+the corrected figure actually implies for this specific lag-sensitivity table — is its own
+deliberate governance decision, not made by this correction.
 
 A secondary observation, recorded for future reference: a signal whose entire value expires
 within one hour is characteristic of a very short-lived reaction effect. If this family is ever

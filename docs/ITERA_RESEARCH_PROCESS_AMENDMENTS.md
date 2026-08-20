@@ -121,6 +121,32 @@ The runtime operates at approximately **1.5-1.7 bar periods** behind bar close, 
 across timeframes. This figure must be re-measured, not assumed, whenever it is cited; the
 runtime may change.
 
+**Correction, 2026-08-20: this figure was measured by a script with a bug.**
+`scripts/run_paper_runtime_cadence_audit.py` subtracted each bar's *start* label instead of its
+close, overstating every reported lag by exactly that bar's own duration, and separately averaged
+in cycles that re-log an unchanged coarser-timeframe bar, inflating the aggregate further. Both
+are fixed and covered by regression tests in `tests/test_paper_runtime_cadence_audit.py`. Re-run
+against the same 808-cycle export, restricted to the first cycle each bar was ever observed (true
+reaction speed to new information, the quantity this table is actually trying to measure):
+
+| Bar size | Fresh-pickup median lag | In bar periods |
+|---|---:|---:|
+| 1h | 0.59h | 0.59 |
+| 4h | 0.60h | 0.15 |
+| 1D | 0.53h | 0.022 |
+
+The corrected figure does not scale with bar size at all — it clusters at a roughly constant
+**~0.5-0.6 hours** regardless of timeframe, consistent with a single shared cause (the hourly
+poll loop's own phase drift) rather than a per-timeframe structural lag. The "1.5-1.7 bar
+periods, consistent across timeframes" framing above was itself an artifact of the bug. Full
+detail, including the caveat that BTC's figure is proxied through the 4H sleeve (no live BTC 1H
+sleeve currently runs), is in `docs/engineering/CORE_V1_JUMP_RISK_PAPER_CHARTER.md`'s own
+"Correction, 2026-08-20" subsection.
+
+This correction is not, by itself, a revision of the "Practical consequence" selection criterion
+below — that criterion was built partly on the old, wrong number and reviewing whether it still
+holds at the corrected one is a separate, deliberate step this correction does not perform.
+
 ### Practical consequence
 
 This firm's infrastructure supports **multi-day signals well and sub-daily signals badly**.

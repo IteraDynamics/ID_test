@@ -47,6 +47,17 @@ Measured, not assumed. Re-measure before citing; these can change.
 - **Runtime cadence: ~1.5–1.7 bar periods behind bar close**, consistently across timeframes
   (808 cycles, 2026-08-10). This infrastructure supports multi-day signals well and sub-daily
   signals badly. It is why Jump Risk was retired.
+  **Correction, 2026-08-20: this figure came from a buggy audit script** (subtracted a bar's
+  start label instead of its close, and separately averaged in stale re-logs of unchanged
+  bars — both fixed, `tests/test_paper_runtime_cadence_audit.py`). Re-measured, restricted to
+  the first cycle each bar was ever observed: **~0.5–0.6 effective bars**, roughly constant
+  across timeframes rather than scaling with bar size. Full finding:
+  `docs/engineering/CORE_V1_JUMP_RISK_PAPER_CHARTER.md`'s "Correction, 2026-08-20" subsection.
+  Not yet acted on: the "Retired" entry below, and the horizon-feasibility sweep's INFEASIBLE
+  verdicts for Trend Persistence's 3h candidates and Jump Risk's `immediate_any`
+  (`docs/research/CANDIDATE_HORIZON_FEASIBILITY_SWEEP.md`), were built on the old number and
+  have not been re-evaluated against the corrected one. BTC's corrected figure is still a proxy
+  through the 4H sleeve (no live BTC 1H sleeve runs); ETH's is a direct hourly measurement.
 - **Jurisdiction: US.** Binance returns HTTP 451 and Bybit 403. Reachable: Deribit (deepest
   history), OKX (~92-day cap), Hyperliquid, dYdX, Coinbase.
 - **Execution venue: Coinbase Derivatives Exchange (CDE).** Note CDE ≠ Coinbase International
@@ -73,9 +84,21 @@ Measured, not assumed. Re-measure before citing; these can change.
 - **Jump Risk Engine v0** — research validated and lookahead-free, but 98% of its edge expires
   by the second bar and the runtime is ~1.5 bars late. Reopening requires independently
   measured cadence of ≤1 effective bar.
+  **Note, 2026-08-20: the "~1.5 bars late" figure above is corrected to ~0.5-0.6 effective
+  bars** (see the Hard operating facts correction above) — on its face this now clears the
+  ≤1-effective-bar reopening bar stated here, but "independently measured" is not yet satisfied
+  (this is a fix to the existing audit's methodology, not a wholly separate re-measurement) and
+  BTC's figure is still proxied through the 4H sleeve, not measured directly. Reopening remains
+  a decision this correction does not make on its own — see
+  `docs/engineering/CORE_V1_JUMP_RISK_PAPER_CHARTER.md`'s "Correction, 2026-08-20" for the full
+  finding and open questions.
 - **Trend Persistence Engine v0** — all mappings degraded Core at research lag, and its 3h
   "central finding" candidates consume 53% of their horizon in decision lag. Any future work is
   restricted to the 60h+ candidates and must be chartered as new research.
+  **Note, 2026-08-20: the 53% figure was computed against the same buggy cadence measurement**
+  and has not been recomputed — see `docs/research/CANDIDATE_HORIZON_FEASIBILITY_SWEEP.md`'s own
+  correction note. At the corrected ~0.6h lag this would be roughly 20%, MARGINAL rather than
+  INFEASIBLE outright, but the sweep has not been formally re-run.
 
 ## Commands
 
