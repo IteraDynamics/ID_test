@@ -72,10 +72,14 @@ repo touches that deficiency; it remains the most novel and most expensive avenu
   query failure), so those two proceed under the decided design now, while the other 8 are
   deferred — neither excluded nor downgraded to a permanent lower standard — until CDE's own
   native history is long enough to support them without a proxy venue. How long that takes is
-  not decided; it is a future judgment call. Not frozen — see the campaign document's own §3a-i.
-  Derivatives eligibility on CDE is **resolved as of 2026-08-14** — approved. Execution still
-  requires the frozen specification and its own board transition, neither of which this
-  resolution grants on its own.
+  not decided; it is a future judgment call. Derivatives eligibility on CDE is resolved as of
+  2026-08-14 — approved. **Section 3 and Section 4 (methodology) FROZEN 2026-08-20** (commit
+  `1e561c3`, board transition recorded in `docs/ITERA_CAMPAIGN_BOARD.md`) — the review pass closed
+  the two remaining decision-rule gaps (FDR q=0.10, confirmation top-3), both previously deferred
+  without a concrete value. **Data acquisition (Deribit multi-year funding history, CDE native
+  ~13-month history, BTC/ETH) is now authorized.** Not yet authorized: predictor/outcome
+  computation, the power simulation's actual result, or any economic/runtime action. See the
+  campaign document's own §3a-i and §4 for the full record.
 
 **Campaign #54 — macro-confirmed crash-short hedge sleeve.**
 
@@ -163,9 +167,13 @@ This charter authorizes documentation and planning only. It does not authorize:
    into the same statistical pipeline). Section 3's decision rule and Section 4's power plan were
    both revised to keep this split consistent throughout, not just noted in one place.
 6. Power analysis plan-only pending data acquisition, itself pending the spec's freeze, and now
-   scoped explicitly to the statistical family only. All design gaps ahead of freeze are closed;
-   what remains is the same-day-edit pacing concern noted in Section 3's own status line and the
-   review pass itself.
+   scoped explicitly to the statistical family only.
+7. **FROZEN 2026-08-20.** The review pass closed the two remaining decision-rule gaps: FDR
+   q=0.10 and confirmation top-3, both previously deferred to "review" without a concrete value —
+   methodology choices fixable without data, unlike roll-timing N or the mark-to-market risk
+   tolerance, which correctly stay open pending the operator's own account access. Data
+   acquisition (Deribit multi-year funding history, CDE native ~13-month history, BTC/ETH) is
+   authorized. No open design items remain; what's next is acquisition itself, then discovery.
 
 **Campaign #54:**
 

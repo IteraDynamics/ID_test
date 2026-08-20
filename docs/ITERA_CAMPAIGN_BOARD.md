@@ -99,12 +99,15 @@ Standing governance recorded this transition:
 
 Authorized now:
 
-- Campaign #53 feasibility planning per its charter section 2 (venue/endpoint inventory,
-  coverage verification, acquisition design, temporal-architecture draft) — feasibility
-  resolved 2026-08-12, see `docs/research/CAMPAIGN_53_SOURCE_FEASIBILITY_FINDING.md`;
-- Campaign #53 frozen-specification drafting (Section 3, DRAFT, not frozen) — scoped to carry
-  capture only per the 2026-08-13 clarification appended to Section 1; not yet authorized to
-  freeze, acquire data, or execute;
+- **Campaign #53 bulk data acquisition and specification execution.** Section 3 and Section 4
+  (methodology) of `docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md` are FROZEN as of
+  this transition (frozen 2026-08-20, commit `1e561c3`) — universe (BTC/ETH), venue design
+  (Deribit discovery, CDE confirmation), roll policy, candidates, and decision rule (FDR q=0.10,
+  confirmation top-3) do not change further. Authorized: acquisition of Deribit's multi-year
+  funding history and CDE's native ~13-month funding/candle history for BTC and ETH, per the
+  governed acquisition design in the charter's own Section 2. Still not authorized: predictor or
+  outcome computation, the power simulation's actual number (needs acquired data first), any
+  economic test, or any runtime/strategy/order/execution/NAV/exposure/dashboard change;
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.
@@ -123,8 +126,8 @@ Closed:
 
 Not authorized:
 
-- Campaign #53 bulk data acquisition, predictor/outcome computation, or specification execution
-  before its own recorded board transition (Section 3 remains DRAFT, not frozen);
+- Campaign #53 predictor/outcome computation, the power simulation's actual result, or any
+  economic/runtime action beyond the data acquisition this transition authorizes above;
 
 - opening Campaign #52 validation targets or outcomes;
 - reframing, retesting, or changing Campaign #52 after observing its result;
