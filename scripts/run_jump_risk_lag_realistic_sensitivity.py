@@ -36,6 +36,14 @@ Jump Risk or overturn the FINAL DISPOSITION. It exists to tell whoever makes tha
 edge actually looks like under the corrected, realistic lag pattern instead of the uniform,
 now-known-to-be-wrong one the retired test used.
 
+A separate, independent caveat this script does NOT address: `_oos_probabilities` (reused here
+completely unchanged) has a documented, still-unresolved train/test boundary leakage issue --
+`docs/engineering/CORE_V1_JUMP_RISK_PAPER_CHARTER.md`'s "Found and deliberately NOT corrected"
+section, item 1: training rows within `horizon_bars` of a year boundary carry labels that peek
+up to 120 hours into the test year. That is a governed-decision item independent of lag, and a
+favorable result from this script does not resolve it. Both would need to be true for a
+responsible reopening case, not just one.
+
 Observation-only. No runtime, strategy, order, NAV, or production change.
 """
 
