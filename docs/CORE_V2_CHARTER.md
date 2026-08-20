@@ -84,18 +84,20 @@ repo touches that deficiency; it remains the most novel and most expensive avenu
 - **Mechanism:** `crash_short_v6` exactly as coded, no perturbation — a seven-gate entry
   including cross-asset confirmation (SPY also below its own 175-day SMA) that distinguishes a
   macro bear from a crypto-only correction.
-- **Status:** feasibility resolved; economic materiality measured (roughly -$2,000/yr expected
-  return for roughly $2,000 shallower drawdown at $100k, one tested weight — flagged 2026-08-14
-  as directionally right but not a reliable point estimate). An adversarial review (2026-08-14)
-  found the strategy's own cross-asset gate was very plausibly hand-built by examining the same
+- **Status: CLOSED 2026-08-20.** Feasibility resolved; an adversarial review (2026-08-14) found
+  the strategy's own cross-asset gate was very plausibly hand-built by examining the same
   2021/2022 episodes now cited as evidence it works, downgrading that evidence from independent
   confirmation to something closer to confirming the designer's own hindsight pattern-match. 2018
   is the one regime observation not implicated by that design history and is this campaign's most
-  credible evidence. **Section 3 and Section 4 are FROZEN as of 2026-08-19** (commit `0e415b1`,
-  board transition recorded in `docs/ITERA_CAMPAIGN_BOARD.md`), on the honest count: one clean
+  credible evidence. Section 3 and Section 4 froze 2026-08-19 on the honest count: one clean
   payoff (2018), one plausibly-circular payoff (2022), one correctly-fired but unprofitable case
-  (2020). Freezing authorized Closure only — a sizing sweep in a Core v2 blended composition,
-  no new data or code. See the campaign document's own §3c and §4 for the full record.
+  (2020). Closure (2026-08-20) ran a full sizing sweep (0-25% hedge weight, `scripts/
+  run_campaign_54_sizing_sweep.py`) — monotonic across the whole tested range, no visible peak,
+  which is itself a reason not to chase the top of the range given the thin evidentiary base.
+  **`crash_short_v6` included in Core v2's founding composition at 15% hedge weight** — the best
+  combination of risk-adjusted metrics (Sharpe 1.206, Calmar 1.094, MaxDD -15.75%) without
+  extrapolating past what one clean crisis observation actually supports. Full record: the
+  campaign document's own §5-7.
 
 Each campaign's own living document remains the authority on its own statistical design, gates,
 and results. This charter does not duplicate or freeze either — it establishes that both are
@@ -183,6 +185,10 @@ This charter authorizes documentation and planning only. It does not authorize:
    position: `crash_short_v6` may be sized into a Core v2 composition as a small, asymmetric
    component under continuous monitoring, decided by judgment rather than a power threshold this
    family cannot produce. See the campaign document's own §4 for the full reasoning.
+5. **CLOSED 2026-08-20.** Sizing sweep complete (0-25% hedge weight, monotonic, no visible peak).
+   15% hedge weight chosen — best combination of risk-adjusted metrics without chasing the
+   still-climbing curve past what the evidentiary base supports. No open items remain on this
+   campaign; see its own §5-7.
 
 **Shared:**
 

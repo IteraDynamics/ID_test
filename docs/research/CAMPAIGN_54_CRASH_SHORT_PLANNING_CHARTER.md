@@ -4,20 +4,15 @@
 
 ### Status
 
-**PLANNING CHARTER — drafted 2026-08-13. Section 3 and Section 4 FROZEN 2026-08-19.** Amendment
-3's pacing rule required a review no earlier than one day after drafting; six real days and a
-genuine fresh-eyes review pass (2026-08-19, which also fixed a real freeze/execution wording
-conflation in the sibling Campaign #53 document and resolved this document's own deferred
-Section 4 fork) separate this freeze from the original draft.
+**CLOSED 2026-08-20.** Drafted 2026-08-13; Section 3 and Section 4 frozen 2026-08-19; Closure
+(sizing sweep, §5-7) completed 2026-08-20. `crash_short_v6` included in Core v2's founding
+composition at **15% hedge weight** — see §7 for the full decision.
 
-Freezing authorizes the Closure work named in §7 below — a sizing sweep for `crash_short_v6`
-within a Core v2 blended composition, using the existing audit harness and already-governed
-BTC/ETH/SPY sources, no new data acquisition. It does not authorize any Core v1 change, any
-capital allocation, or a Core v2 runtime/paper account — those remain gated exactly as stated in
-`docs/CORE_V2_CHARTER.md`'s "Not yet authorized" section. This is Core v2's second founding
-thread alongside Campaign #53
+This is Core v2's second founding thread alongside Campaign #53
 (`docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`), addressing a different named
-deficiency: see `docs/CORE_V2_CHARTER.md`.
+deficiency: see `docs/CORE_V2_CHARTER.md`. Closing this campaign does not authorize any Core v1
+change, any capital allocation, or a Core v2 runtime/paper account — those remain gated exactly
+as stated in `docs/CORE_V2_CHARTER.md`'s "Not yet authorized" section, unchanged by this closure.
 
 ### Question
 
@@ -299,17 +294,54 @@ cannot produce. Sizing itself remains deferred to Closure per §1's candidate-fa
 
 ## 5. Execution evidence
 
-*Pending.*
+Sizing sweep run 2026-08-20 via `scripts/run_campaign_54_sizing_sweep.py` (added this session),
+which calls the existing `scripts/run_core_v1_sleeve_contribution_audit.py` harness once per
+hedge weight — no new data, no new strategy code. Trend weight reduced as hedge weight rises
+(trend + hedge = 0.50 throughout); equity (35%) and gold (15%) held fixed. 2019-2025 data,
+2020-2025 OOS, $100k capital, matching every other test in this campaign.
+
+| Hedge wt | Trend wt | CAGR% | MaxDD% | Sharpe | Calmar |
+|---:|---:|---:|---:|---:|---:|
+| 0% | 50% | 20.25 | -18.85 | 1.174 | 1.074 |
+| 5% | 45% | 19.28 | -17.91 | 1.183 | 1.076 |
+| **10%** | **40%** | **18.27** | **-16.88** | **1.194** | **1.082** |
+| **15%** | **35%** | **17.24** | **-15.75** | **1.206** | **1.094** |
+| 20% | 30% | 16.17 | -14.51 | 1.219 | 1.114 |
+| 25% | 25% | 15.07 | -13.29 | 1.232 | 1.134 |
+
+Monotonic across the full tested range — every metric moves the same direction at every step, no
+reversal, no visible peak within 0-25%. Sharpe and Calmar are still improving at 25%, the top of
+the grid; the sweep does not by itself identify where a peak would be.
 
 ## 6. Result
 
-*Pending.*
+The sweep confirms §2's single-point estimate (10%) was directionally representative and extends
+it to a full curve, but it does **not** resolve sizing on its own. Chasing the still-climbing
+Sharpe/Calmar curve toward 25% would mean optimizing a parameter against the same thin,
+judgment-bound evidentiary base §4 already named (one clean crisis, one plausibly-circular one,
+one correctly-fired-but-unprofitable case) — the retuning-on-one-historical-draw trap
+`docs/research/CORE_V1_PARAMETER_SENSITIVITY_RESULT.md` exists to guard against, not a genuine
+optimum. The curve informs the sizing decision; it does not make it.
+
+Dollar materiality at $100k, relative to 0%: 10% costs ≈-$1,980/yr for ≈-$1,970 shallower
+drawdown (the figure already in §2); 25% costs ≈-$5,180/yr for ≈-$5,560 shallower drawdown —
+larger than this firm's typical $400-1,500/yr edge, a real consideration against sizing at the
+top of the tested range regardless of the curve's shape.
 
 ## 7. Closure
 
-*Pending.* Authorized by the 2026-08-19 freeze: a sizing sweep for `crash_short_v6` within a
-Core v2 blended composition (existing `scripts/run_core_v1_sleeve_contribution_audit.py`
-harness, already-governed BTC/ETH/SPY sources, no new data or code). The single weight already
-probed (10%, §2) is a data point, not the sweep itself. Sizing is decided here, per §1's
-candidate-family sketch and §4's resolved judgment-bound standard — not a re-opening of §3's
-frozen entry-episode design.
+**Decided 2026-08-20: 15% hedge weight (35% trend, 35% equity, 15% gold, 15% hedge).** Chosen
+over 10% (Sharpe 1.194 → 1.206, Calmar 1.082 → 1.094, MaxDD -16.88% → -15.75%, all improved) and
+over 20-25% (better still on the same metrics, but sizing further up an unpeaked curve on a
+one-clean-crisis evidentiary base is exactly the judgment-call boundary §4 drew, not a numeric
+result to keep chasing). 15% is the best combination of risk-adjusted metrics available without
+extrapolating past what the evidentiary base actually supports.
+
+`crash_short_v6` is included in Core v2's founding composition at 15% weight, sized as the
+"small, asymmetric component, sized conservatively, monitored for whether the next real bear
+confirms or contradicts it" that §4 authorized — not as a validated, power-backed result.
+Monitoring this against future regime observations (the next real macro bear, whenever it
+arrives) remains the open, ongoing check on whether 2018's clean payoff generalizes.
+
+**Campaign #54: CLOSED.** Both founding threads of Core v2 (`docs/CORE_V2_CHARTER.md`) now have
+a closed or advancing status — see that document's own update for the composite picture.

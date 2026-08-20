@@ -107,27 +107,24 @@ Authorized now:
   freeze, acquire data, or execute;
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
-  or capital;
-- Campaign #54 (crash-short hedge sleeve) Closure work only: a sizing sweep for
-  `crash_short_v6` within a Core v2 blended composition, using the existing
-  `scripts/run_core_v1_sleeve_contribution_audit.py` harness and already-governed BTC/ETH/SPY
-  sources — no new data acquisition, no new code. Section 3 and Section 4 of
-  `docs/research/CAMPAIGN_54_CRASH_SHORT_PLANNING_CHARTER.md` are FROZEN as of this transition
-  (frozen 2026-08-19, commit `0e415b1`); the entry-episode design and confirmation standard do
-  not change further. Still not authorized: any Core v1 change, capital allocation, or a Core v2
-  runtime/paper account.
+  or capital.
 
 Closed:
 
 - the Core v1 frozen-parameter sensitivity pass (report-only, no retuning) — CLOSED 2026-08-12,
-  `docs/research/CORE_V1_PARAMETER_SENSITIVITY_RESULT.md`.
+  `docs/research/CORE_V1_PARAMETER_SENSITIVITY_RESULT.md`;
+- **Campaign #54 (crash-short hedge sleeve) — CLOSED 2026-08-20.** Sizing sweep run via
+  `scripts/run_campaign_54_sizing_sweep.py` (existing audit harness, already-governed BTC/ETH/SPY
+  sources, no new data). `crash_short_v6` included in Core v2's founding composition at **15%
+  hedge weight**, chosen as the best combination of risk-adjusted metrics without extrapolating
+  past the campaign's own judgment-bound evidentiary base. Full decision:
+  `docs/research/CAMPAIGN_54_CRASH_SHORT_PLANNING_CHARTER.md` §7. Closure does not authorize any
+  Core v1 change, capital allocation, or a Core v2 runtime/paper account.
 
 Not authorized:
 
 - Campaign #53 bulk data acquisition, predictor/outcome computation, or specification execution
   before its own recorded board transition (Section 3 remains DRAFT, not frozen);
-- Campaign #54 sizing/Closure work beyond what this transition authorizes above, or any reopening
-  of its now-frozen Section 3/4 design;
 
 - opening Campaign #52 validation targets or outcomes;
 - reframing, retesting, or changing Campaign #52 after observing its result;
