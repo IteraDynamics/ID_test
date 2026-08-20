@@ -16,7 +16,7 @@ writes -- no runtime change, no new instrumentation, no waiting.
 
 Measured from an existing paper export:
 
-  T1 source bar close      market_data.bar_timestamp
+  T1 source bar close      market_data.bar_timestamp + this bar's own timeframe duration
   T2 data observed         market_data.timestamp   (runtime's own data_age_hours)
   T5 portfolio decision    signals.timestamp
   T6 executable order      fills.timestamp
@@ -24,6 +24,36 @@ Measured from an existing paper export:
 T3 (model inference) and T4 (signal availability) are not separately logged because
 Jump Risk has never run live. They are bounded above by T5 and are reported as such
 rather than invented.
+
+Two corrections versus the first version of this script (2026-08-20 review):
+
+1. `market_data.bar_timestamp` is a bar's *start* label, not its close --
+   `scripts/run_core_v1_paper_live.py`'s own `drop_incomplete_bars` docstring is explicit
+   that "a bar labeled T covers [T, T+bar_duration)". The original version of this script
+   subtracted `bar_timestamp` directly, which measured "time since bar started" and silently
+   overstated every reported lag by exactly that bar's own duration (confirmed against a real
+   paper export: the discrepancy between the old and corrected ETH_1H_trend medians was exactly
+   1.00h, matching its 1-hour bar precisely -- not a coincidence).
+2. A sleeve running on a longer timeframe than the poll interval re-logs its current,
+   unchanged bar on every intervening cycle (correctly -- there is nothing new to report).
+   Averaging bar-close-to-observed age across *all* rows, as the original version did, mixes
+   genuine fresh pickups with these growing-stale re-logs and inflates the aggregate for any
+   sleeve coarser than the poll cadence. This version reports both: the all-decisions aggregate
+   (relevant to "how stale is the input this decision actually used") and a fresh-pickup-only
+   aggregate, restricted to the first cycle each bar was ever observed (relevant to "how fast
+   does the runtime react once new information exists" -- the question this audit exists to
+   answer, per the research assumption quoted above).
+
+Both corrections were found by reviewing a real 808-cycle export and are demonstrated by the
+regression tests in tests/test_paper_runtime_cadence_audit.py, including a synthetic-fixture
+canary that fails under the old (reverted) computation and passes under this one.
+
+This correction affects three governance documents that cite this script's output
+(`docs/ITERA_RESEARCH_PROCESS_AMENDMENTS.md`, `docs/engineering/CORE_V1_JUMP_RISK_PAPER_CHARTER.md`,
+`docs/research/CANDIDATE_HORIZON_FEASIBILITY_SWEEP.md`, all citing the 2026-08-10 run). Those
+citations have not been updated by this change -- doing so requires re-running this corrected
+script against the real paper export and is a separate, deliberate step, not a byproduct of
+fixing the measurement tool.
 
 Observation-only. Reads logs; changes nothing.
 """
@@ -34,7 +64,7 @@ import argparse
 import json
 import statistics
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -47,6 +77,11 @@ from runtime.core_v1.jump_risk_overlay import MAX_INPUT_AGE_SECONDS
 # Jump Risk scores BTC and ETH on hourly bars.
 JUMP_RISK_ASSETS = ("BTC", "ETH")
 RESEARCH_ASSUMPTION_HOURS = 1.0
+
+# Mirrors scripts/run_core_v1_paper_live.py's own TIMEFRAME_DURATION. Duplicated rather than
+# imported so this audit stays dependency-light (no pandas) and observation-only; kept in sync
+# by tests/test_paper_runtime_cadence_audit.py's cross-check against the live runtime's copy.
+TIMEFRAME_DURATION = {"1H": timedelta(hours=1), "4H": timedelta(hours=4), "1D": timedelta(days=1)}
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -134,36 +169,59 @@ def build_report(export_dir: Path, assumption_hours: float) -> dict[str, Any]:
             decision_at[cycle] = stamp
 
     per_sleeve: dict[str, list[float]] = {}
+    per_sleeve_first_pickup: dict[str, list[float]] = {}
     per_asset_bar_to_decision: dict[str, list[float]] = {}
+    per_asset_first_pickup_to_decision: dict[str, list[float]] = {}
+    first_seen_bar: set[tuple[str, str]] = set()
     rows: list[dict[str, Any]] = []
 
     for row in market:
         sleeve = str(row.get("sleeve", "?"))
         asset = str(row.get("asset", "?"))
+        timeframe = row.get("timeframe")
         cycle = row.get("cycle")
-        bar_ts = parse_ts(row.get("bar_timestamp"))
+        bar_start = parse_ts(row.get("bar_timestamp"))
         observed = parse_ts(row.get("timestamp"))
-        if bar_ts is None or observed is None:
+        if bar_start is None or observed is None:
             continue
 
-        observe_age = (observed - bar_ts).total_seconds() / 3600.0
+        duration = TIMEFRAME_DURATION.get(str(timeframe))
+        if duration is None:
+            raise ValueError(
+                f"Unrecognized timeframe {timeframe!r} for sleeve {sleeve!r} (cycle {cycle}) -- "
+                "cannot compute this bar's true close without a known duration. Add it to "
+                "TIMEFRAME_DURATION rather than silently assuming bar_timestamp is the close."
+            )
+        bar_close = bar_start + duration
+
+        observe_age = (observed - bar_close).total_seconds() / 3600.0
         per_sleeve.setdefault(sleeve, []).append(observe_age)
 
+        bar_key = (sleeve, bar_start.isoformat())
+        is_first_sighting = bar_key not in first_seen_bar
+        if is_first_sighting:
+            first_seen_bar.add(bar_key)
+            per_sleeve_first_pickup.setdefault(sleeve, []).append(observe_age)
+
         decision = decision_at.get(cycle) if isinstance(cycle, int) else None
-        decide_age = (decision - bar_ts).total_seconds() / 3600.0 if decision else None
+        decide_age = (decision - bar_close).total_seconds() / 3600.0 if decision else None
         if decide_age is not None:
             per_asset_bar_to_decision.setdefault(asset, []).append(decide_age)
+            if is_first_sighting:
+                per_asset_first_pickup_to_decision.setdefault(asset, []).append(decide_age)
 
         rows.append(
             {
                 "cycle": cycle,
                 "sleeve": sleeve,
                 "asset": asset,
-                "timeframe": row.get("timeframe"),
-                "bar_timestamp": bar_ts.isoformat(),
+                "timeframe": timeframe,
+                "bar_start": bar_start.isoformat(),
+                "bar_close": bar_close.isoformat(),
                 "observed_at": observed.isoformat(),
-                "bar_to_observation_hours": round(observe_age, 6),
-                "bar_to_decision_hours": round(decide_age, 6) if decide_age is not None else None,
+                "first_sighting_of_this_bar": is_first_sighting,
+                "bar_close_to_observation_hours": round(observe_age, 6),
+                "bar_close_to_decision_hours": round(decide_age, 6) if decide_age is not None else None,
                 "runtime_reported_data_age_hours": row.get("data_age_hours"),
             }
         )
@@ -189,40 +247,58 @@ def build_report(export_dir: Path, assumption_hours: float) -> dict[str, Any]:
         if nearest is not None:
             fill_lag.append(nearest)
 
-    # The decisive test, restricted to the assets Jump Risk actually scores.
+    def _pct_within(ages: list[float], threshold: float) -> float | None:
+        if not ages:
+            return None
+        return round(100.0 * sum(1 for a in ages if a <= threshold) / len(ages), 2)
+
+    overlay_gate_hours = MAX_INPUT_AGE_SECONDS / 3600.0
+
+    # The decisive test, restricted to the assets Jump Risk actually scores. Reported two ways:
+    # "all decisions" (every cycle's decision, including ones re-using an unchanged bar -- the
+    # relevant question for "how stale is the input this decision actually used") and
+    # "fresh bar only" (restricted to the cycle each bar was first observed -- the relevant
+    # question for "how fast does the runtime react once new information exists", which is what
+    # the research assumption quoted at the top of this file is actually about).
     verdict_rows: dict[str, Any] = {}
     for asset in JUMP_RISK_ASSETS:
-        ages = per_asset_bar_to_decision.get(asset, [])
-        if not ages:
+        ages_all = per_asset_bar_to_decision.get(asset, [])
+        ages_fresh = per_asset_first_pickup_to_decision.get(asset, [])
+        if not ages_all:
             verdict_rows[asset] = {"observations": 0, "verdict": "NO_DATA"}
             continue
-        within = sum(1 for a in ages if a <= assumption_hours)
-        within_overlay_gate = sum(1 for a in ages if a <= MAX_INPUT_AGE_SECONDS / 3600.0)
         verdict_rows[asset] = {
-            "observations": len(ages),
-            "bar_to_decision_hours": summarize(ages),
-            "within_research_assumption_pct": round(100.0 * within / len(ages), 2),
-            "within_overlay_freshness_gate_pct": round(100.0 * within_overlay_gate / len(ages), 2),
+            "observations_all_decisions": len(ages_all),
+            "observations_fresh_bar_only": len(ages_fresh),
+            "bar_close_to_decision_hours_all_decisions": summarize(ages_all),
+            "bar_close_to_decision_hours_fresh_bar_only": summarize(ages_fresh),
+            "within_research_assumption_pct_all_decisions": _pct_within(ages_all, assumption_hours),
+            "within_research_assumption_pct_fresh_bar_only": _pct_within(ages_fresh, assumption_hours),
+            "within_overlay_freshness_gate_pct_all_decisions": _pct_within(ages_all, overlay_gate_hours),
+            "within_overlay_freshness_gate_pct_fresh_bar_only": _pct_within(ages_fresh, overlay_gate_hours),
         }
 
     return {
-        "audit": "paper_runtime_cadence_audit_v1",
+        "audit": "paper_runtime_cadence_audit_v2",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "paper_export_dir": str(export_dir).replace("\\", "/"),
         "research_assumption_hours": assumption_hours,
-        "overlay_freshness_gate_hours": MAX_INPUT_AGE_SECONDS / 3600.0,
+        "overlay_freshness_gate_hours": overlay_gate_hours,
         "cycles_observed": len(decision_at),
         "market_data_rows": len(rows),
         "timestamps_measured": {
-            "T1_source_bar_close": "market_data.bar_timestamp",
+            "T1_source_bar_close": "market_data.bar_timestamp + this bar's timeframe duration",
             "T2_data_observed": "market_data.timestamp",
             "T5_portfolio_decision": "signals.timestamp",
             "T6_executable_order": "fills.timestamp",
             "T3_model_inference": "NOT LOGGED (Jump Risk has never run live; bounded above by T5)",
             "T4_signal_availability": "NOT LOGGED (bounded above by T5)",
         },
-        "bar_to_observation_hours_by_sleeve": {
+        "bar_close_to_observation_hours_by_sleeve_all_decisions": {
             sleeve: summarize(values) for sleeve, values in sorted(per_sleeve.items())
+        },
+        "bar_close_to_observation_hours_by_sleeve_fresh_bar_only": {
+            sleeve: summarize(values) for sleeve, values in sorted(per_sleeve_first_pickup.items())
         },
         "internal_observe_to_decision_seconds": summarize(internal),
         "fill_to_decision_seconds": summarize(fill_lag),
@@ -252,8 +328,17 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Research assumption: decision within {args.assumption_hours}h of bar close")
     print(f"Overlay freshness gate: {report['overlay_freshness_gate_hours']}h\n")
 
-    print("Bar close -> data observed, by sleeve (hours):")
-    for sleeve, stats in report["bar_to_observation_hours_by_sleeve"].items():
+    print("Bar close -> data observed, by sleeve, ALL DECISIONS (hours):")
+    print("  (includes cycles that re-log an unchanged bar while nothing new has closed yet)")
+    for sleeve, stats in report["bar_close_to_observation_hours_by_sleeve_all_decisions"].items():
+        print(
+            f"  {sleeve:<16} n={stats['count']:<5} median={stats['median']:<9} "
+            f"p95={stats['p95']:<9} max={stats['max']}"
+        )
+
+    print("\nBar close -> data observed, by sleeve, FRESH BAR ONLY (hours):")
+    print("  (first cycle each bar was ever observed -- true reaction speed to new information)")
+    for sleeve, stats in report["bar_close_to_observation_hours_by_sleeve_fresh_bar_only"].items():
         print(
             f"  {sleeve:<16} n={stats['count']:<5} median={stats['median']:<9} "
             f"p95={stats['p95']:<9} max={stats['max']}"
@@ -264,20 +349,28 @@ def main(argv: list[str] | None = None) -> int:
 
     print("\nJUMP RISK VERDICT (BTC/ETH bar close -> portfolio decision):")
     for asset, verdict in report["jump_risk_verdict"].items():
-        if verdict.get("observations", 0) == 0:
+        if verdict.get("observations_all_decisions", 0) == 0:
             print(f"  {asset}: NO DATA")
             continue
-        stats = verdict["bar_to_decision_hours"]
+        all_stats = verdict["bar_close_to_decision_hours_all_decisions"]
+        fresh_stats = verdict["bar_close_to_decision_hours_fresh_bar_only"]
         print(
-            f"  {asset}: median={stats['median']}h  p95={stats['p95']}h  max={stats['max']}h"
+            f"  {asset} [all decisions]:   median={all_stats['median']}h  "
+            f"p95={all_stats['p95']}h  max={all_stats['max']}h"
         )
         print(
             f"       within research assumption ({args.assumption_hours}h): "
-            f"{verdict['within_research_assumption_pct']}%"
+            f"{verdict['within_research_assumption_pct_all_decisions']}%   "
+            f"within overlay freshness gate: {verdict['within_overlay_freshness_gate_pct_all_decisions']}%"
         )
         print(
-            f"       within overlay freshness gate: "
-            f"{verdict['within_overlay_freshness_gate_pct']}%"
+            f"  {asset} [fresh bar only]:  median={fresh_stats['median']}h  "
+            f"p95={fresh_stats['p95']}h  max={fresh_stats['max']}h"
+        )
+        print(
+            f"       within research assumption ({args.assumption_hours}h): "
+            f"{verdict['within_research_assumption_pct_fresh_bar_only']}%   "
+            f"within overlay freshness gate: {verdict['within_overlay_freshness_gate_pct_fresh_bar_only']}%"
         )
 
     print(f"\nArtifacts: {out_dir}")
