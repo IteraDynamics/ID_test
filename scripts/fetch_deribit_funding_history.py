@@ -16,9 +16,12 @@ for the 8-hour funding rate, not "funding_rate") are all reused exactly as alrea
 Public, unauthenticated endpoint. Fetches in bounded time-window chunks (Deribit's own per-call
 record limits are undocumented from this environment; a conservative chunk size stays well under
 any plausible cap) with retries, validates the result (monotonic timestamps, no duplicates, gap
-detection against the expected 8-hour cadence), and writes a source manifest with a SHA-256
-digest of the output, per this repo's canonical-artifact convention (CLAUDE.md: "Canonical
-artifacts are LF-only with SHA-256 digests").
+detection against the real observed cadence -- hourly, confirmed by a real fetch on 2026-08-21:
+64,087 rows over ~2,670 days is almost exactly hourly, not every 8 hours as the `interest_8h`
+field name would suggest -- that name describes how the rate is normalized/expressed, not how
+often it's published), and writes a source manifest with a SHA-256 digest of the output, per
+this repo's canonical-artifact convention (CLAUDE.md: "Canonical artifacts are LF-only with
+SHA-256 digests").
 
 Writes to `data/` (gitignored, per repo convention) -- not `artifacts/`, since this is acquired
 research input, not a derived research result.
@@ -41,7 +44,12 @@ from typing import Any
 BASE_URL = "https://www.deribit.com/api/v2/public/get_funding_rate_history"
 USER_AGENT = "itera-research-fetcher/1.0"
 TIMEOUT_SECONDS = 25
-EXPECTED_CADENCE_HOURS = 8
+# Corrected 2026-08-21 after a real fetch: 64,087 rows over ~2,670 days is almost exactly hourly
+# (2,670 x 24 ~ 64,080), not every 8 hours. "interest_8h" is Deribit's name for how the rate is
+# *normalized/expressed*, not how often it's *published* -- it settles hourly. The prior value of
+# 8 here made gap detection only sensitive to gaps >12h; real gaps of 2-3h would have passed
+# silently. Does not affect data already fetched, only how sensitively future fetches are checked.
+EXPECTED_CADENCE_HOURS = 1
 
 SYMBOLS = {"BTC": "BTC-PERPETUAL", "ETH": "ETH-PERPETUAL"}
 
