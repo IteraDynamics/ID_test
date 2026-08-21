@@ -151,6 +151,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{findings_key}: HTTP {status}" + (f", {n} records" if n is not None else "") + (f"  ({error})" if error else ""))
             if isinstance(payload, list) and payload:
                 print(f"  sample record: {json.dumps(payload[0])}")
+            elif status not in (0, 200) and payload:
+                # Error response bodies often explain *why* -- invalid signature vs. invalid key
+                # vs. missing header -- which the status code alone doesn't. Print it, it's not
+                # sensitive (it's the server's own error text, not our credentials).
+                print(f"  response body: {payload}")
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
