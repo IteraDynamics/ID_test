@@ -105,9 +105,16 @@ Authorized now:
   (Deribit discovery, CDE confirmation), roll policy, candidates, and decision rule (FDR q=0.10,
   confirmation top-3) do not change further. Authorized: acquisition of Deribit's multi-year
   funding history and CDE's native ~13-month funding/candle history for BTC and ETH, per the
-  governed acquisition design in the charter's own Section 2. Still not authorized: predictor or
-  outcome computation, the power simulation's actual number (needs acquired data first), any
-  economic test, or any runtime/strategy/order/execution/NAV/exposure/dashboard change;
+  governed acquisition design in the charter's own Section 2.
+  **Correction, 2026-08-21: the line below conflated two different things.** Amendment 1's
+  power simulation (Section 4) — bootstrap real acquired data, inject a hypothetical effect,
+  measure whether the frozen gates would detect it — is methodology calibration explicitly
+  required *before* any real decision, not a real predictor/outcome computation itself; it
+  produces a probability number, not a candidate ranking or a trading signal. That is authorized
+  now that discovery-side data exists (Deribit, acquired 2026-08-21). Still not authorized: real
+  predictor/outcome computation against actual candidates for an actual discovery/confirmation
+  decision, any economic test, or any runtime/strategy/order/execution/NAV/exposure/dashboard
+  change;
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.
@@ -126,8 +133,9 @@ Closed:
 
 Not authorized:
 
-- Campaign #53 predictor/outcome computation, the power simulation's actual result, or any
-  economic/runtime action beyond the data acquisition this transition authorizes above;
+- Campaign #53 real predictor/outcome computation against actual candidates for an actual
+  discovery/confirmation decision, or any economic/runtime action beyond what this transition
+  authorizes above (data acquisition and the power simulation's methodology calibration);
 
 - opening Campaign #52 validation targets or outcomes;
 - reframing, retesting, or changing Campaign #52 after observing its result;
