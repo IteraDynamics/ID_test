@@ -331,6 +331,49 @@ position is not renewed — it exits to flat rather than being carried forward o
 signal that justified the original, now-expiring, contract pairing. This keeps every open position
 justified by current candidate values, never by inertia.
 
+### 3a-iii. CDE historical funding data — not obtainable for this account, confirmation stage redesigned (2026-08-21)
+
+§3a-i's "Decided 2026-08-14: option 3" assumed CDE's own native ~13-month funding history would
+be retrievable for confirmation. That assumption was never actually verified — the original
+four-pattern endpoint probe 404'd on all guesses and was recorded as inconclusive, not resolved,
+and the freeze on 2026-08-20 proceeded without re-checking it. This closes that gap with a real
+answer instead of an assumption.
+
+**The endpoint is real.** The operator found it directly in Coinbase's own developer
+documentation (`docs.cdp.coinbase.com`, unreachable from this research environment, which is why
+guessing never found it): `GET /rest/funding-rate` at `https://api.exchange.fairx.net` — a
+different domain entirely from every prior probe, and CDE-specific (FairX was the CFTC-regulated
+exchange Coinbase acquired to become CDE). Confirmed via direct testing: the symbol format
+(`BIPZ30`/`ETPZ30`, standard futures month-code notation matching the confirmed `20DEC30`
+expiry) is correct, and the endpoint requires authentication via the classic Coinbase
+Exchange/Pro-era scheme (`CB-ACCESS-KEY`/`SIGN`/`TIMESTAMP`/`PASSPHRASE`, HMAC-SHA256) —
+confirmed by the server's own error response, not inferred (`{"error":"missing request header:
+CB-ACCESS-PASSPHRASE"}`).
+
+**That credential type is not obtainable on this account.** Neither the Coinbase Developer
+Platform (JWT-based keys, no passphrase field) nor Advanced Trade (key + secret only) issue it.
+`exchange.coinbase.com` — the legacy portal that does issue key/secret/passphrase credentials —
+gates access behind a business-account application; this operator is retail. Coinbase support,
+escalated to a specialist team, confirmed directly: *"This falls outside of what our support team
+can provision... this is a known platform-level gap between the two systems, not something
+missing on your end."* Not a configuration error, not a missing step — a genuine platform gap for
+retail accounts, confirmed by Coinbase's own support organization.
+
+**Confirmation stage redesigned: live-forward accumulation, not backfill.** CDE's *current*
+funding rate snapshot — the same `future_product_details.funding_rate` field confirmed accessible
+in the original 2026-08-12 feasibility work, no special credential required — remains available.
+The confirmation holdout will be built by logging that field going forward from whenever
+acquisition begins, not backfilled from history. **No fixed window is assumed.** The "~13 months"
+figure was never a computed requirement — it was however much history CDE's contracts happened to
+have, not a power-derived minimum. The actual minimum confirmation sample needed comes from
+Section 4's power analysis, which requires real accumulated data to calibrate against and has not
+been run. This is expected to be materially shorter than 13 months for a persistent premium (per
+§1's own economic-mechanism argument), but that is not yet known and is not asserted here.
+
+**This does not block discovery.** Deribit's multi-year funding history is unaffected by any of
+this and remains available immediately. Discovery proceeds now; confirmation data accumulates in
+parallel starting whenever live logging begins, not as a gate in front of everything else.
+
 ### 3b. Horizon feasibility (Amendment 4) — carry does not fit the standard framing
 
 Amendment 4's decay-horizon-vs-cadence test was built for directional signals that expire: a
@@ -457,9 +500,12 @@ in §3c, not a power simulation.
    deferred with reasoning recorded there — a future low-power result should not casually
    reopen options already decided against, without at least engaging with why they were rejected.
 
-Blocked on: data acquisition authorization, itself blocked on this specification's freeze. The
-history-depth and universe-scope questions that previously blocked this section are resolved —
-BTC/ETH only, two-venue design, decided 2026-08-14.
+Blocked on: sufficient accumulated CDE confirmation data to calibrate the simulation against
+(§3a-iii — live-forward accumulation, no fixed window, not backfillable). Discovery-side
+acquisition (Deribit) is unblocked and can proceed now; this section's power number specifically
+needs real accumulated CDE data, which does not yet exist. The history-depth and universe-scope
+questions that previously blocked this section are resolved — BTC/ETH only, two-venue design,
+decided 2026-08-14.
 
 ## 5. Execution evidence
 
