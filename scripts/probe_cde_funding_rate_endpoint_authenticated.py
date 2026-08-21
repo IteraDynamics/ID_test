@@ -54,42 +54,47 @@ TIMEOUT_SECONDS = 25
 SYMBOLS = {"BTC": "BIPZ30", "ETH": "ETPZ30"}
 
 
-def load_credentials() -> tuple[str, str, str]:
+def load_credentials() -> tuple[str, str, str | None]:
     key = os.environ.get("CDE_API_KEY")
     secret = os.environ.get("CDE_API_SECRET")
-    passphrase = os.environ.get("CDE_API_PASSPHRASE")
-    missing = [name for name, val in (("CDE_API_KEY", key), ("CDE_API_SECRET", secret), ("CDE_API_PASSPHRASE", passphrase)) if not val]
+    passphrase = os.environ.get("CDE_API_PASSPHRASE") or None
+    missing = [name for name, val in (("CDE_API_KEY", key), ("CDE_API_SECRET", secret)) if not val]
     if missing:
         print(f"Missing required environment variable(s): {', '.join(missing)}", file=sys.stderr)
-        print("Set CDE_API_KEY, CDE_API_SECRET, CDE_API_PASSPHRASE before running.", file=sys.stderr)
+        print("Set CDE_API_KEY and CDE_API_SECRET before running. CDE_API_PASSPHRASE is optional --", file=sys.stderr)
+        print("omit it if your key was issued as key+secret only, with no passphrase.", file=sys.stderr)
         sys.exit(2)
+    if passphrase is None:
+        print("CDE_API_PASSPHRASE not set -- proceeding without it (key+secret-only credential).\n", file=sys.stderr)
     return key, secret, passphrase  # type: ignore[return-value]
 
 
-def sign_request(secret_b64: str, timestamp: str, method: str, request_path: str, body: str) -> str:
+def sign_request(secret_raw: str, timestamp: str, method: str, request_path: str, body: str) -> tuple[str, str]:
+    """Returns (signature, mode) -- mode records whether the secret was interpreted as base64
+    or raw bytes, since that's unconfirmed for this key type and worth reporting."""
     try:
-        secret_bytes = base64.b64decode(secret_b64)
-    except Exception as exc:  # noqa: BLE001
-        raise ValueError(
-            "CDE_API_SECRET did not decode as base64 -- double-check it was copied exactly as "
-            "issued, with no extra whitespace."
-        ) from exc
+        secret_bytes = base64.b64decode(secret_raw, validate=True)
+        mode = "base64-decoded"
+    except Exception:  # noqa: BLE001 -- not valid base64, fall back rather than crash
+        secret_bytes = secret_raw.encode("utf-8")
+        mode = "raw-utf8 (secret was not valid base64)"
     message = f"{timestamp}{method}{request_path}{body}".encode("utf-8")
     signature = hmac.new(secret_bytes, message, hashlib.sha256).digest()
-    return base64.b64encode(signature).decode("utf-8")
+    return base64.b64encode(signature).decode("utf-8"), mode
 
 
-def signed_get(request_path_with_query: str, key: str, secret: str, passphrase: str) -> tuple[int, Any, str | None]:
+def signed_get(request_path_with_query: str, key: str, secret: str, passphrase: str | None) -> tuple[int, Any, str | None]:
     timestamp = str(int(time.time()))
-    signature = sign_request(secret, timestamp, "GET", request_path_with_query, "")
+    signature, secret_mode = sign_request(secret, timestamp, "GET", request_path_with_query, "")
     headers = {
         "User-Agent": USER_AGENT,
         "Accept": "application/json",
         "CB-ACCESS-KEY": key,
         "CB-ACCESS-SIGN": signature,
         "CB-ACCESS-TIMESTAMP": timestamp,
-        "CB-ACCESS-PASSPHRASE": passphrase,
     }
+    if passphrase is not None:
+        headers["CB-ACCESS-PASSPHRASE"] = passphrase
     url = f"{BASE_HOST}{request_path_with_query}"
     request = urllib.request.Request(url, headers=headers)
     try:
@@ -128,7 +133,11 @@ def main(argv: list[str] | None = None) -> int:
         "2025-07-15",
     ]
 
-    findings: dict[str, Any] = {"probe": "cde_funding_rate_endpoint_authenticated_v1", "calls": {}}
+    _, secret_mode = sign_request(secret, "0", "GET", "/", "")
+    print(f"Secret interpreted as: {secret_mode}")
+    print(f"Passphrase header: {'included' if passphrase is not None else 'omitted (none provided)'}\n")
+
+    findings: dict[str, Any] = {"probe": "cde_funding_rate_endpoint_authenticated_v1", "secret_mode": secret_mode, "passphrase_included": passphrase is not None, "calls": {}}
 
     print("=== Authenticated calls ===\n")
     for asset, symbol in SYMBOLS.items():
@@ -148,15 +157,21 @@ def main(argv: list[str] | None = None) -> int:
     out_path = out_dir / "cde_funding_rate_endpoint_authenticated_probe_findings.json"
     out_path.write_text(json.dumps(findings, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
 
+    all_statuses = [v["http_status"] for v in findings["calls"].values()]
     any_200_with_data = any(
         v["http_status"] == 200 and isinstance(v["payload"], list) and len(v["payload"]) > 0
         for v in findings["calls"].values()
     )
-    still_401 = any(v["http_status"] in (401, 403) for v in findings["calls"].values())
+    still_401 = any(status in (401, 403) for status in all_statuses)
+    all_unreachable = all(status == 0 for status in all_statuses)
 
     print(f"\nFindings: {out_path}")
     print("\n=== Verdict ===")
-    if any_200_with_data:
+    if all_unreachable:
+        print("Every call failed at the network level (HTTP 0) -- this didn't reach the endpoint "
+              "at all, so it says nothing about credentials or symbol format. Check your network "
+              "connection and that api.exchange.fairx.net is reachable, then try again.")
+    elif any_200_with_data:
         print("Authenticated calls returned real records. The endpoint, symbol format, and auth "
               "scheme are all confirmed. Next step: build the real day-by-day acquisition script.")
     elif still_401:
