@@ -115,6 +115,18 @@ Authorized now:
   predictor/outcome computation against actual candidates for an actual discovery/confirmation
   decision, any economic test, or any runtime/strategy/order/execution/NAV/exposure/dashboard
   change;
+  **Correction, 2026-08-21 (second): the power simulation ran** — real result, average power at
+  the central IC = 45.4%, below the 50% floor as originally specified (six-hypothesis family,
+  top-3 confirmation). A block-width diagnostic confirmed the simulation code itself is correct
+  (null width scales with measured autocorrelation as expected); the FAIL is real, not an
+  artifact. The charter's §3c/§3d are corrected in place (dated appends, not rewrites): window
+  set narrowed `{24h,72h,168h}` → `{24h,72h}` on a mechanistic, effect-independent basis (168h
+  windows resampled daily collapse effective sample size regardless of true effect), and
+  confirmation narrowed top-3 → top-2 to preserve the original ~33% selectivity ratio against the
+  now-6-member (was 9) full family. Full reasoning, including explicit engagement with §4's own
+  caution against reopening rejected remedies, is in the charter. **The corrected family has not
+  yet been re-run** — still authorized: re-running the power simulation against the same acquired
+  Deribit data under the corrected spec. Still not authorized: anything beyond that (see above);
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.

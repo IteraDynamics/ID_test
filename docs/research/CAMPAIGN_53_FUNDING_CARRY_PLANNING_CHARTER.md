@@ -459,6 +459,44 @@ dimension (daily rebalances across multiple years) rather than genuine cross-sec
 — the same honest cost of option C already named above, worth restating precisely now that a
 power simulation is being built around it.
 
+**Window narrowing — corrected 2026-08-21, after the first real power-analysis run.** The
+frozen `{24h, 72h, 168h}` window set above ran against real acquired Deribit data
+(`scripts/run_campaign53_power_analysis.py`) with correctly-fixed block-bootstrap machinery
+(see the 2026-08-21 `inject_ic` bug fix in the script's own history) and a new diagnostic
+printing each hypothesis's real lag-1 autocorrelation alongside its null-reference width. Real
+result: **average power at the central IC estimate (0.065) = 45.4%**, below Amendment 1's 50%
+floor — an underpowered null under the frozen six-hypothesis (funding level × funding
+persistence, three windows each) family actually tested. The diagnostic confirmed the fix
+itself is correct (null width scales with measured autocorrelation exactly as expected —
+BTC/ETH funding_level candidate/target lag-1 autocorrelation measured 0.71/0.71 at 24h,
+0.92/0.92 at 72h, 0.98/0.98 at 168h, and the null widened in step: 0.018 → 0.027 → 0.034), but
+it also showed the family average is dragged down by a structural, predictable-in-advance
+mechanism, not genuine uncertainty about the effect: a 168h trailing/forward window resampled
+at the daily rebalance cadence shares roughly 86% of its underlying data with the immediately
+preceding day's window, collapsing effective independent sample size and power regardless of
+the true effect size (`funding_level_168h` measured 15-25% power even out to IC=0.08;
+`funding_level_72h` similarly weak at 14-43%). `funding_persistence_24h`, by contrast, is
+well-powered on the same data (64-95% power across the plausible IC range) because its
+candidate has much lower autocorrelation (0.29) than the level candidates.
+
+This is a design correction made on the family's own sensitivity characteristics — window
+overlap, autocorrelation, effective sample size — established before looking at any real
+candidate-target correlation, not a selection made on which candidate happened to look
+promising. It is therefore consistent with Amendment 1's power-analysis-before-execution
+requirement rather than a violation of it. **The window set for the statistical family (§3c) is
+corrected from `{24h, 72h, 168h}` to `{24h, 72h}`**, dropping the 168h horizon across every
+signal in the statistical family (funding level, funding persistence, open interest change).
+The full statistical family accordingly shrinks from 3 signals × 3 windows = 9 candidate-horizon
+combinations to 3 signals × 2 windows = **6**. (The power analysis script itself currently
+implements only 2 of the 3 signals — funding level and funding persistence; open interest is
+not yet acquired, per the pending `scripts/probe_deribit_open_interest_history.py` result — so
+its own family is a further, data-availability-driven subset of 2 signals × 2 windows = 4, the
+same kind of deliberate, documented approximation already accepted for the CDE-confirmation
+gap below.)
+
+The corrected family has not yet been re-run against real data; §4 below records that this is
+still pending, not settled. Nothing else in §3c or §3d changes.
+
 ### 3d. Decision rule and multiplicity (Amendment 2)
 
 Applies to the statistical family only (§3c) — funding level, funding persistence, open interest
@@ -478,6 +516,15 @@ The structural family (basis) does not enter this pipeline — per §3b, subject
 mechanically-grounded convergence trade to a statistical-discovery standard would misrepresent
 what kind of claim it is. Its own decision rule is stated in full in §3c; nothing here overrides
 it.
+
+**Confirmation-k corrected 2026-08-21, alongside §3c's window narrowing.** Top-3 was sized
+explicitly against the 9-member family ("top-3 tests more than a single cherry-picked winner
+while still being a real filter against a 9-member family" — a stated ~33% selectivity ratio).
+§3c's window correction shrinks the full statistical family from 9 to 6 candidate-horizon
+combinations; leaving top-3 unchanged would silently loosen the filter to 50% selectivity
+without that ever being a deliberate decision. **Confirmation is corrected from top-3 to
+top-2** (2/6 ≈ 33%, preserving the originally-reasoned ratio rather than the raw count). FDR
+q=0.10 at discovery is unaffected by this change and remains as frozen above.
 
 ### 3e. Output schema
 
@@ -522,6 +569,24 @@ in §3c, not a power simulation.
    sample) were considered directly in §3a-i for this campaign specifically and rejected or
    deferred with reasoning recorded there — a future low-power result should not casually
    reopen options already decided against, without at least engaging with why they were rejected.
+
+**Real result and correction, 2026-08-21.** The simulation ran against real acquired Deribit
+data (discovery-side, per §2's authorization) with a correctly-fixed `inject_ic` — average power
+at the central IC = **45.4%, below the 50% threshold in item 3 above.** Per item 3's own
+instruction, this result should not casually reopen options already rejected in §3a-i without
+engaging why. It does not: §3a-i's "broader cross-section" and "fewer gates" remedies were
+rejected for a different problem (CDE's categorically insufficient contract age, where no design
+choice manufactures more calendar time except changing venue split) and specifically warned
+against loosening the decision rule to opportunistically fit the data. §3c's window-narrowing
+correction above is not that — it removes one candidate-horizon combination identified by a
+mechanistic, effect-independent property (168h windows resampled daily share ~86% of their
+underlying data with the prior day's window, collapsing effective sample size regardless of
+whether a true effect exists) established from autocorrelation diagnostics, not from which
+candidate happened to show a stronger correlation. §3d's confirmation-k correction (top-3 →
+top-2) preserves rather than loosens the original ~33% selectivity ratio. Net effect on rigor:
+neutral to slightly stricter, not weaker. The corrected {24h, 72h}-only, top-2 family has **not
+yet been re-run** — this section will be updated again once it has, with the real result stated
+plainly regardless of outcome.
 
 Blocked on: sufficient accumulated CDE confirmation data to calibrate the simulation against
 (§3a-iii — live-forward accumulation, no fixed window, not backfillable). Discovery-side

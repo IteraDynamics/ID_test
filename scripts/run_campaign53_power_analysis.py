@@ -20,20 +20,26 @@ Two things this script is honest about rather than glossing over, per the charte
 Method (non-parametric, bootstrap-based, no distributional assumptions):
 
 - Candidates: funding level (trailing mean) and funding persistence (fraction of trailing
-  periods same-signed as the current one), each at three windows {24h, 72h, 168h}, each paired
-  with the matching target horizon -- six (candidate, horizon) hypotheses total, per
-  Charter section 3c's 2026-08-21 rebalance-frequency resolution.
+  periods same-signed as the current one), each at two windows {24h, 72h}, each paired
+  with the matching target horizon -- four (candidate, horizon) hypotheses total, per
+  Charter section 3c's 2026-08-21 rebalance-frequency resolution AND its window-narrowing
+  correction (168h dropped 2026-08-21 after a real run showed it structurally underpowered --
+  daily-resampled 168h windows share ~86% of their data with the prior day's window, collapsing
+  effective sample size regardless of true effect size; see the charter for the full record,
+  including the FAIL result that motivated this correction).
 - Targets: forward net carry (sum of funding over the horizon, minus a transaction-cost
   assumption), at daily rebalance points, pooled across BTC and ETH.
 - For each hypothesis, build a null reference distribution of block-bootstrapped correlations
   (zero injected effect) -- this is the yardstick empirical p-values are measured against,
   avoiding a parametric independence assumption block-bootstrap data doesn't satisfy.
-- For power at a given IC: inject that correlation into ONE hypothesis at a time (the other five
+- For power at a given IC: inject that correlation into ONE hypothesis at a time (the others
   stay null, matching the real FDR environment where most candidates are null), resample, derive
   each hypothesis's empirical p-value against its own null reference distribution, apply
-  Benjamini-Hochberg at q=0.10 across all six, and check whether the effect-bearing hypothesis
-  both clears FDR discovery AND survives a held-out confirmation split with the correct sign.
-  The fraction of resamples where it does, at that IC, is that hypothesis's power.
+  Benjamini-Hochberg at q=0.10 across all hypotheses, and check whether the effect-bearing
+  hypothesis both clears FDR discovery AND survives a held-out confirmation split (top-2 shortlist,
+  corrected 2026-08-21 from top-3 to preserve the original ~33% selectivity ratio against the
+  narrowed family) with the correct sign. The fraction of resamples where it does, at that IC, is
+  that hypothesis's power.
 
 Observation/simulation only. Reads acquired data; computes no real candidate ranking, makes no
 economic claim, and produces no trading signal.
@@ -50,11 +56,12 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-WINDOWS_HOURS = (24, 72, 168)
+WINDOWS_HOURS = (24, 72)  # 168h dropped 2026-08-21 -- see charter §3c "Window narrowing"
 REBALANCE = "1D"
 TRANSACTION_COST = 0.0006  # round-trip cost assumption, matching this repo's crypto fee convention elsewhere
 FDR_Q = 0.10
-CONFIRMATION_TOP_K = 3
+CONFIRMATION_TOP_K = 2  # was 3 (sized for a 9-member family); corrected 2026-08-21 for the
+                         # narrowed 6-member family -- see charter §3d "Confirmation-k corrected"
 IC_GRID = (0.02, 0.05, 0.08, 0.12)
 CENTRAL_IC = 0.065  # midpoint of the stated 0.05-0.08 central range
 
@@ -228,7 +235,7 @@ def simulate_power_for_ic(
             if not rejected[target_idx]:
                 continue
 
-            # top-3 confirmation shortlist by |correlation| among rejected hypotheses
+            # top-2 confirmation shortlist by |correlation| among rejected hypotheses
             rejected_idx = np.where(rejected)[0]
             ranked = rejected_idx[np.argsort(-np.abs(corrs[rejected_idx]))]
             shortlist = set(ranked[:CONFIRMATION_TOP_K])
