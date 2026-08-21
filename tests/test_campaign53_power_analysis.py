@@ -19,6 +19,7 @@ from scripts.run_campaign53_power_analysis import (
     funding_level,
     funding_persistence,
     inject_ic,
+    lag1_autocorr,
     standardize,
 )
 
@@ -163,6 +164,20 @@ def test_draw_independent_pair_preserves_autocorrelation_and_decorrelates() -> N
     # and not artificially collapsed to near-zero either.
     cross_r = abs(float(np.corrcoef(resampled_a, resampled_b)[0, 1]))
     assert cross_r < 0.5, f"independent block draws should not be strongly correlated, got {cross_r}"
+
+
+# ------------------------------------------------------- lag1_autocorr
+
+
+def test_lag1_autocorr_near_one_for_smooth_series() -> None:
+    x = np.sin(np.arange(200) / 20.0)
+    assert lag1_autocorr(x) > 0.9
+
+
+def test_lag1_autocorr_near_zero_for_iid_noise() -> None:
+    rng = np.random.default_rng(9)
+    x = rng.normal(size=20000)
+    assert abs(lag1_autocorr(x)) < 0.05
 
 
 # ------------------------------------------------------- benjamini_hochberg

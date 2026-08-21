@@ -120,6 +120,13 @@ def block_bootstrap_resample(n: int, block_size: int, rng: np.random.Generator) 
     return np.concatenate(indices)[:n]
 
 
+def lag1_autocorr(x: np.ndarray) -> float:
+    """Lag-1 autocorrelation, for diagnosing whether a series is meaningfully autocorrelated
+    (and therefore whether block bootstrapping it should widen a null distribution relative to
+    naive IID) -- see the "block width sanity check" printed in main()."""
+    return float(np.corrcoef(x[:-1], x[1:])[0, 1])
+
+
 def standardize(x: np.ndarray) -> np.ndarray:
     std = x.std()
     if std == 0:
@@ -274,6 +281,14 @@ def main(argv: list[str] | None = None) -> int:
                 "target": pooled["target"].to_numpy(),
             })
 
+    print("\nBlock-width sanity check (lag-1 autocorrelation of each pooled series; if these are")
+    print("near zero, a tight null distribution is a correct reflection of the data, not a bug --")
+    print("if they are meaningfully positive, the null distribution below should be visibly wider")
+    print("than naive IID (~%.4f for n~%d)):" % (0.674 / np.sqrt(np.mean([len(h["candidate"]) for h in hypotheses])), int(np.mean([len(h["candidate"]) for h in hypotheses]))))
+    for hyp in hypotheses:
+        print(f"  {hyp['name']}: candidate lag-1 r={lag1_autocorr(hyp['candidate']):.4f}, "
+              f"target lag-1 r={lag1_autocorr(hyp['target']):.4f}")
+
     block_size = min(args.block_days, min(len(h["candidate"]) for h in hypotheses) - 1)
     print(f"\nBuilding null reference distributions ({args.n_null} resamples each, block size {block_size})...")
     for hyp in hypotheses:
@@ -316,6 +331,14 @@ def main(argv: list[str] | None = None) -> int:
         "central_ic": CENTRAL_IC,
         "rebalance": REBALANCE,
         "block_size_days": block_size,
+        "block_width_sanity_check": {
+            hyp["name"]: {
+                "candidate_lag1_autocorr": lag1_autocorr(hyp["candidate"]),
+                "target_lag1_autocorr": lag1_autocorr(hyp["target"]),
+                "null_reference_median_abs_r": float(np.median(hyp["null_reference"])),
+            }
+            for hyp in hypotheses
+        },
         "fdr_q": FDR_Q,
         "confirmation_top_k": CONFIRMATION_TOP_K,
         "power_by_ic": {str(ic): res for ic, res in results.items()},
