@@ -76,7 +76,7 @@ def test_inject_ic_zero_gives_near_zero_correlation() -> None:
     n = 5000
     candidate = rng.normal(size=n)
     real_target = rng.normal(size=n)
-    synthetic = inject_ic(candidate, real_target, 0.0, rng)
+    synthetic = inject_ic(candidate, real_target, 0.0)
     r = np.corrcoef(candidate, synthetic)[0, 1]
     assert abs(r) < 0.05, f"expected near-zero correlation at IC=0, got {r}"
 
@@ -89,7 +89,7 @@ def test_inject_ic_recovers_target_correlation_approximately() -> None:
     candidate = rng.normal(size=n)
     real_target = rng.normal(size=n)
     for target_ic in (0.05, 0.2, 0.5, 0.8):
-        synthetic = inject_ic(candidate, real_target, target_ic, rng)
+        synthetic = inject_ic(candidate, real_target, target_ic)
         observed_r = np.corrcoef(candidate, synthetic)[0, 1]
         assert abs(observed_r - target_ic) < 0.03, (
             f"target IC {target_ic} produced observed correlation {observed_r} -- "
@@ -102,10 +102,67 @@ def test_inject_ic_sign_is_respected() -> None:
     n = 10000
     candidate = rng.normal(size=n)
     real_target = rng.normal(size=n)
-    synthetic_pos = inject_ic(candidate, real_target, 0.6, rng)
-    synthetic_neg = inject_ic(candidate, real_target, -0.6, rng)
+    synthetic_pos = inject_ic(candidate, real_target, 0.6)
+    synthetic_neg = inject_ic(candidate, real_target, -0.6)
     assert np.corrcoef(candidate, synthetic_pos)[0, 1] > 0
     assert np.corrcoef(candidate, synthetic_neg)[0, 1] < 0
+
+
+def test_inject_ic_does_not_destroy_autocorrelation_of_inputs() -> None:
+    """Regression test for the original bug: inject_ic used to do an internal
+    `real_target[rng.permutation(n)]` shuffle on its second argument, which silently destroyed
+    any autocorrelation the caller had deliberately preserved (e.g. via block bootstrap). A
+    caller-supplied autocorrelated series must come through with its autocorrelation intact,
+    not collapse to near-white-noise."""
+    n = 5000
+    t = np.arange(n)
+    # AR(1)-like strongly autocorrelated series (not something a full permutation would preserve).
+    autocorrelated = np.sin(t / 50.0) + np.random.default_rng(21).normal(scale=0.05, size=n)
+    candidate = np.random.default_rng(22).normal(size=n)
+
+    def lag1_autocorr(x: np.ndarray) -> float:
+        return float(np.corrcoef(x[:-1], x[1:])[0, 1])
+
+    input_autocorr = lag1_autocorr(autocorrelated)
+    synthetic = inject_ic(candidate, autocorrelated, 0.0)
+    output_autocorr = lag1_autocorr(synthetic)
+
+    assert input_autocorr > 0.9, "fixture is not actually autocorrelated -- test is meaningless"
+    assert output_autocorr > 0.8, (
+        f"inject_ic destroyed input autocorrelation (input lag-1 r={input_autocorr:.3f}, "
+        f"output lag-1 r={output_autocorr:.3f}) -- it must not internally reshuffle its inputs"
+    )
+
+
+def test_draw_independent_pair_preserves_autocorrelation_and_decorrelates() -> None:
+    """The replacement for the old internal shuffle: draw_independent_pair must hand back two
+    series that (a) each retain real autocorrelation (via block bootstrap, not i.i.d. resampling)
+    and (b) are mutually independent of each other. A null reference built from this should be
+    noticeably wider than the artificially tight ~0.01 the old buggy inject_ic produced."""
+    from scripts.run_campaign53_power_analysis import block_bootstrap_resample
+
+    n = 6000
+    block_size = 30
+    t = np.arange(n)
+    autocorrelated_series = np.sin(t / 40.0) + np.random.default_rng(31).normal(scale=0.1, size=n)
+
+    rng = np.random.default_rng(32)
+    idx_a = block_bootstrap_resample(n, block_size, rng)
+    idx_b = block_bootstrap_resample(n, block_size, rng)
+    resampled_a = autocorrelated_series[idx_a]
+    resampled_b = autocorrelated_series[idx_b]
+
+    def lag1_autocorr(x: np.ndarray) -> float:
+        return float(np.corrcoef(x[:-1], x[1:])[0, 1])
+
+    assert lag1_autocorr(resampled_a) > 0.7
+    assert lag1_autocorr(resampled_b) > 0.7
+
+    # Two independently-drawn block resamples of the SAME series should be only weakly
+    # correlated with each other -- not the near-1.0 they'd show if drawn with the same index,
+    # and not artificially collapsed to near-zero either.
+    cross_r = abs(float(np.corrcoef(resampled_a, resampled_b)[0, 1]))
+    assert cross_r < 0.5, f"independent block draws should not be strongly correlated, got {cross_r}"
 
 
 # ------------------------------------------------------- benjamini_hochberg

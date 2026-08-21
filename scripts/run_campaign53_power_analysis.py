@@ -127,16 +127,20 @@ def standardize(x: np.ndarray) -> np.ndarray:
     return (x - x.mean()) / std
 
 
-def inject_ic(candidate: np.ndarray, real_target: np.ndarray, ic: float, rng: np.random.Generator) -> np.ndarray:
-    """Synthetic target with controlled correlation `ic` to `candidate`, built from real target
-    noise (block-bootstrapped separately from candidate to destroy any real relationship first)
-    so the injected effect is the ONLY relationship present, at a known strength."""
-    n = len(candidate)
-    shuffled_noise = real_target[rng.permutation(n)]  # destroys real candidate-target relationship
+def inject_ic(candidate: np.ndarray, independent_noise: np.ndarray, ic: float) -> np.ndarray:
+    """Synthetic target with controlled correlation `ic` to `candidate`.
+
+    `independent_noise` must already be decorrelated from `candidate` -- the caller's
+    responsibility, via an INDEPENDENT block-bootstrap draw (different random block positions),
+    not a full IID permutation. A full permutation would destroy the noise's own autocorrelation
+    along with the candidate relationship, understating the true sampling variability of a
+    correlation estimate under block-dependent data and making the null distribution built from
+    this function artificially tight -- which was a real bug here until 2026-08-21 (see
+    tests/test_campaign53_power_analysis.py's regression test for the exact failure mode).
+    """
     c = standardize(candidate)
-    z = standardize(shuffled_noise)
-    synthetic = ic * c + np.sqrt(max(0.0, 1 - ic ** 2)) * z
-    return synthetic
+    z = standardize(independent_noise)
+    return ic * c + np.sqrt(max(0.0, 1 - ic ** 2)) * z
 
 
 # ------------------------------------------------------- FDR
@@ -162,14 +166,25 @@ def benjamini_hochberg(pvalues: np.ndarray, q: float) -> np.ndarray:
 # ------------------------------------------------------- power simulation
 
 
+def draw_independent_pair(candidate: np.ndarray, real_target: np.ndarray, block_size: int, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+    """Two SEPARATELY block-bootstrapped arrays -- different random block positions for each,
+    so they're independent of each other (no real relationship) while each retains its own
+    genuine within-series autocorrelation. This is what makes the null distribution and the
+    injected-effect construction reflect real block-dependent sampling variability instead of
+    an artificially tight IID-like one."""
+    n = len(candidate)
+    idx_candidate = block_bootstrap_resample(n, block_size, rng)
+    idx_noise = block_bootstrap_resample(n, block_size, rng)
+    return candidate[idx_candidate], real_target[idx_noise]
+
+
 def build_null_reference(candidate: np.ndarray, real_target: np.ndarray, block_size: int, n_null: int, rng: np.random.Generator) -> np.ndarray:
     """Empirical distribution of |correlation| under IC=0, for p-value lookup."""
-    n = len(candidate)
     correlations = np.empty(n_null)
     for i in range(n_null):
-        idx = block_bootstrap_resample(n, block_size, rng)
-        synthetic = inject_ic(candidate[idx], real_target[idx], 0.0, rng)
-        correlations[i] = abs(np.corrcoef(candidate[idx], synthetic)[0, 1])
+        candidate_sample, noise_sample = draw_independent_pair(candidate, real_target, block_size, rng)
+        synthetic = inject_ic(candidate_sample, noise_sample, 0.0)
+        correlations[i] = abs(np.corrcoef(candidate_sample, synthetic)[0, 1])
     return correlations
 
 
@@ -193,13 +208,10 @@ def simulate_power_for_ic(
         for _ in range(n_resamples):
             corrs = np.empty(n_hyp)
             for h_idx, hyp in enumerate(hypotheses):
-                candidate = hyp["candidate"]
-                real_target = hyp["target"]
-                n = len(candidate)
-                idx = block_bootstrap_resample(n, block_size, rng)
+                candidate_sample, noise_sample = draw_independent_pair(hyp["candidate"], hyp["target"], block_size, rng)
                 effect = ic if h_idx == target_idx else 0.0
-                synthetic = inject_ic(candidate[idx], real_target[idx], effect, rng)
-                corrs[h_idx] = np.corrcoef(candidate[idx], synthetic)[0, 1]
+                synthetic = inject_ic(candidate_sample, noise_sample, effect)
+                corrs[h_idx] = np.corrcoef(candidate_sample, synthetic)[0, 1]
 
             pvals = np.array([
                 empirical_pvalue(abs(corrs[h]), hypotheses[h]["null_reference"])
@@ -218,12 +230,9 @@ def simulate_power_for_ic(
 
             # confirmation: independent resample, same injected IC on target_idx, sign check
             hyp = hypotheses[target_idx]
-            candidate = hyp["candidate"]
-            real_target = hyp["target"]
-            n = len(candidate)
-            confirm_idx = block_bootstrap_resample(n, block_size, rng)
-            confirm_synthetic = inject_ic(candidate[confirm_idx], real_target[confirm_idx], ic, rng)
-            confirm_corr = np.corrcoef(candidate[confirm_idx], confirm_synthetic)[0, 1]
+            confirm_candidate, confirm_noise = draw_independent_pair(hyp["candidate"], hyp["target"], block_size, rng)
+            confirm_synthetic = inject_ic(confirm_candidate, confirm_noise, ic)
+            confirm_corr = np.corrcoef(confirm_candidate, confirm_synthetic)[0, 1]
             if np.sign(confirm_corr) == np.sign(ic) and abs(confirm_corr) > 0:
                 wins[target_idx] += 1
 
