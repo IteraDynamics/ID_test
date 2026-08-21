@@ -446,6 +446,19 @@ not the ten originally scoped — worth being explicit that this is a materially
 cross-section than the design that motivated moving away from a single-asset approach in the
 first place, accepted here as the honest cost of option C rather than glossed over.
 
+**Rebalance frequency — resolved 2026-08-21, another gap the freeze review missed.** §3c never
+actually stated how often positions rebalance; "at each rebalance" was left undefined. **Set to
+daily (24h)** — matches the shortest of the three {24h, 72h, 168h} horizons, and keeps the
+family's overlapping-window autocorrelation burden bounded rather than compounding it with
+hourly rebalancing against multi-day horizons. Each candidate's own lookback window is paired
+with the matching target horizon (24h window → 24h horizon, 72h → 72h, 168h → 168h) rather than
+crossed against all three — the simpler, more defensible reading of "candidate × horizon family"
+in §3d below, avoiding a 3x larger multiplicity family than what the FDR budget was actually
+sized for. With only two instruments, statistical power here comes mostly from the time
+dimension (daily rebalances across multiple years) rather than genuine cross-sectional breadth
+— the same honest cost of option C already named above, worth restating precisely now that a
+power simulation is being built around it.
+
 ### 3d. Decision rule and multiplicity (Amendment 2)
 
 Applies to the statistical family only (§3c) — funding level, funding persistence, open interest
@@ -484,16 +497,26 @@ discovered statistical claim, so Amendment 1's power framing does not apply to i
 its evidentiary standard is the mechanical convergence argument in §3b plus the cost threshold
 in §3c, not a power simulation.
 
-1. **Effect-size grid.** Realistic funding-carry Sharpe/IC has genuine academic and industry
-   precedent distinct from the generic 0.02-0.05 IC range cited for price-predictive signals
-   (Amendment 1's reference point) — carry premia are typically more persistent but also more
-   competed-away at scale. The grid used here must be justified from comparable published/
-   observed carry strategies, not asserted, at review time.
+1. **Effect-size grid — set 2026-08-21, reasoned estimate, not literature-cited.** This research
+   environment has no live internet access, so the grid below could not be built from actual
+   published carry-strategy figures as this item originally called for. Set instead from general
+   reasoning stated explicitly, not asserted as fact: IC = {0.02, 0.05, 0.08, 0.12}, with 0.05-0.08
+   treated as the central plausible estimate. 0.02 anchors to Amendment 1's own generic
+   price-signal reference point as a floor; 0.12 anchors to the upper end of what a
+   less-competed, genuinely persistent premium might plausibly show in a two-instrument crypto
+   sample, not a generic liquid-market factor. **This grid should be replaced with real citations
+   before being treated as final** — flagged here rather than silently presented as sourced.
 2. **Simulation.** Bootstrap or block-bootstrap the acquired historical funding series across BTC
    and ETH (§3c — the deferred eight are out of scope for this specification), discovering on
    Deribit's multi-year history and confirming on CDE's native ~13-month window, injecting a
    candidate effect at each grid size and measuring the fraction of resamples that clear every
    frozen gate in §3d.
+   **Interim methodology note, 2026-08-21:** real CDE confirmation data does not exist yet
+   (§3a-iii — live-forward accumulation, not backfilled). Until it does, the simulation
+   approximates confirmation with a held-out chronological split of the same Deribit series
+   rather than genuinely separate venues — a real limitation, not the frozen design, and stated
+   as such in the simulation's own output rather than presented as equivalent to true CDE
+   confirmation.
 3. **Threshold.** Standard: below 50% power at the central plausible effect size, the campaign
    does not proceed as specified. The usual remedies (broader universe, fewer gates, longer
    sample) were considered directly in §3a-i for this campaign specifically and rejected or
