@@ -428,6 +428,29 @@ above. Not the full 10-name set — the other eight are deferred, not part of th
 - **Funding persistence** — fraction of periods in the trailing window with same-signed funding
   (autocorrelation proxy, directly targeting the §3b question).
 - **Open interest change** — trailing percentage change, as a crowding proxy.
+  **Closed 2026-08-24 — not pursued further, negative finding.**
+  `scripts/probe_deribit_open_interest_history.py` was run against real Deribit endpoints for
+  BTC/ETH. Its own printed "verdict" was misleading: its success check
+  (`v.get("has_result") and "current_snapshot" not in k`) only tests whether a call returned
+  *some* non-empty result under a name that isn't literally "current_snapshot" — it never
+  checks that the result is actually open interest. Two calls returned HTTP 200 this way
+  (`get_historical_volatility`, returning volatility data, and `get_trade_volumes`, returning
+  cross-currency trade volume) — neither is open interest. The two endpoints actually named for
+  open interest, `get_open_interest_history` and `get_open_interest`, both returned HTTP 400.
+  External documentation could not be independently checked — this environment's egress proxy
+  blocks every Deribit/third-party doc site tried (`docs.deribit.com` and others), the same
+  limitation already recorded for Coinbase's docs elsewhere in this charter. Circumstantial but
+  suggestive: dedicated third-party vendors (Amberdata, Laevitas, Tardis.dev) all sell
+  historical Deribit open interest specifically, which is usually a sign an exchange's own API
+  doesn't expose it natively and vendors are reconstructing it from repeated snapshots — the
+  same pattern this campaign already used for CDE's funding rate. Given every edge this program
+  has examined lands around $400-1,500/yr (`CLAUDE.md`), pursuing a third candidate signal via a
+  paid vendor or a from-scratch forward-accumulation project is not justified before the two
+  already-discovered candidates (`funding_level_72h`, `funding_persistence_72h`/`_24h`) have
+  even cleared confirmation. **Decision: not pursued further.** The statistical family stands at
+  its current three candidate-horizon hypotheses (§3c above); "open interest" references
+  elsewhere in this document describing the full frozen family as five members are now
+  historical context, not a live open item.
 
 **Structural family — evaluated separately, per §3b's completed reasoning, not pooled with the
 statistical family:**

@@ -167,7 +167,15 @@ Authorized now:
   2026-08-24T14:56Z. The holdout's true accumulation start is 2026-08-24, not 2026-08-21 — three
   days later than every prior reference in this document implied. Nothing built on the discovery
   side depended on the wrong date; this only affects how much confirmation data exists when it's
-  eventually checked;
+  eventually checked.
+  **Correction, 2026-08-24 (sixth): open interest, the campaign's third planned signal, closed
+  as a negative finding — not pursued further.** The probe's own success check couldn't actually
+  fail (any non-empty result counted as a "win" regardless of whether it was open interest); the
+  two endpoints actually named for it returned HTTP 400; external docs are unreachable from this
+  environment. Circumstantial evidence (dedicated paid vendors exist specifically to sell this
+  data) suggests it isn't natively available. Not economically justified to chase further given
+  the campaign's two already-discovered candidates haven't even cleared confirmation yet. Full
+  record: charter §3c, "Open interest change... Closed 2026-08-24";
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.
