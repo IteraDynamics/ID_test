@@ -157,7 +157,17 @@ Authorized now:
   re-checked against the same artifact-detection method that caught the 24h defect and did not
   reproduce it. This is a real discovery result, still not a confirmed finding or a trading
   signal — confirmation against the CDE live-forward holdout remains blocked on accumulated data
-  (see above). Full record: charter §3c "Corrected discovery re-run, 2026-08-24";
+  (see above). Full record: charter §3c "Corrected discovery re-run, 2026-08-24".
+  **Correction, 2026-08-24 (fifth): the "logged only since ... deployed (2026-08-21)" line above
+  overstated the holdout's actual status.** `scripts/log_cde_live_funding_rate.py` was written
+  2026-08-21 but never scheduled — confirmed not running as of this correction. It was actually
+  scheduled via cron on the operator's droplet for the first time on 2026-08-24 (root crontab,
+  `5 * * * *`, alongside `scripts/log_cde_live_funding_rate_cron.sh`, added without disturbing the
+  droplet's existing unrelated cron job for a separate system). First real snapshot logged
+  2026-08-24T14:56Z. The holdout's true accumulation start is 2026-08-24, not 2026-08-21 — three
+  days later than every prior reference in this document implied. Nothing built on the discovery
+  side depended on the wrong date; this only affects how much confirmation data exists when it's
+  eventually checked;
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.

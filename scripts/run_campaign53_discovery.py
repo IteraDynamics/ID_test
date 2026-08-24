@@ -35,9 +35,10 @@ a real candidate should occupy.
 What this script deliberately does NOT do:
 
 - It does not compute confirmation. Per charter §3a-iii, confirmation is against CDE's
-  live-forward-accumulated funding rate -- a holdout that is not backfillable and, as of this
-  script's authorization, holds at most a few days of data (logging began 2026-08-21 via
-  scripts/log_cde_live_funding_rate.py). A discovery result from this script is not a trading
+  live-forward-accumulated funding rate -- a holdout that is not backfillable. The logging script
+  (scripts/log_cde_live_funding_rate.py) was written 2026-08-21 but not actually scheduled until
+  2026-08-24 (root crontab, hourly) -- the holdout's true accumulation start is 2026-08-24, not
+  the 2026-08-21 authorship date. A discovery result from this script is not a trading
   decision, authorizes no economic or runtime action, and must not be treated as validated until
   it separately clears that untouched holdout.
 - It does not implement §3d's "rank candidates cross-sectionally at each rebalance by expected
@@ -190,8 +191,9 @@ def main(argv: list[str] | None = None) -> int:
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "caveats": [
             "DISCOVERY ONLY. No confirmation was run or is possible yet: the untouched CDE "
-            "live-forward holdout (charter §3a-iii) is not backfillable and holds only a few "
-            "days of data as of this script's authorization (logging began 2026-08-21).",
+            "live-forward holdout (charter §3a-iii) is not backfillable, and accumulation only "
+            "actually started 2026-08-24 when the logging script was scheduled via cron -- it "
+            "was written 2026-08-21 but not running until then.",
             "A shortlisted hypothesis here is not a validated finding and is not a trading "
             "signal -- it is a candidate that has cleared FDR discovery and is eligible for "
             "confirmation once the holdout has enough accumulated data to test against.",

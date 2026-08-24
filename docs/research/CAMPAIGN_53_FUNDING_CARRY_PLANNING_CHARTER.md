@@ -558,9 +558,14 @@ was, confirming this candidate's real correlation is not a repeat of the same ar
 
 This is a real discovery result under the frozen (as corrected) decision rule — **not a
 confirmed finding and not a trading signal.** Per §3a-iii, confirmation is against CDE's
-live-forward-accumulated funding rate, which holds at most a few days of data as of this result
-and cannot be exercised yet. This section will be updated again once that holdout has enough
-accumulated history to actually confirm or reject the shortlist.
+live-forward-accumulated funding rate. **Correction, 2026-08-24 (later same day): the holdout
+held zero data at the time this discovery result was computed** — `scripts/log_cde_live_
+funding_rate.py` had been written 2026-08-21 but was never actually scheduled, confirmed not
+running when checked. It was scheduled via cron for the first time later this same day
+(2026-08-24, first real snapshot logged 14:56Z); prior references in this document to data
+"since 2026-08-21" or "a few days" overstated actual accumulation, which was zero until this
+point. Cannot be exercised yet regardless. This section will be updated again once the holdout
+has enough accumulated history to actually confirm or reject the shortlist.
 
 ### 3d. Decision rule and multiplicity (Amendment 2)
 
