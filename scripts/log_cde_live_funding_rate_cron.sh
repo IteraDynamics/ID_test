@@ -10,11 +10,12 @@
 #   funding_rate.py already exits cleanly with a RuntimeError message on an HTTP failure; this
 #   wrapper just makes sure that message lands somewhere durable.
 #
-# Install (edit REPO_DIR below to match this droplet's actual checkout path first):
+# Install:
 #   chmod +x scripts/log_cde_live_funding_rate_cron.sh
 #   crontab -e
-#   # add this line (fires 5 minutes past every hour, matching CDE's own hourly funding cadence):
-#   5 * * * * /path/to/ID_test/scripts/log_cde_live_funding_rate_cron.sh
+#   # ADD this line below whatever is already there -- don't replace the file's existing
+#   # contents (this box already runs at least one other cron job under root):
+#   5 * * * * /root/ID_test/scripts/log_cde_live_funding_rate_cron.sh
 #
 # Verify:
 #   ./scripts/log_cde_live_funding_rate_cron.sh          # run once by hand
@@ -24,7 +25,7 @@
 
 set -uo pipefail
 
-REPO_DIR="/opt/itera/ID_test"   # <-- EDIT to this droplet's actual checkout path
+REPO_DIR="/root/ID_test"
 LOG_FILE="$REPO_DIR/data/cde_live_funding_rate_cron.log"
 LOCK_FILE="$REPO_DIR/data/.cde_live_funding_rate.lock"
 
@@ -39,7 +40,9 @@ fi
 
 {
     echo "$(date -u +%FT%TZ) START"
-    if uv run python scripts/log_cde_live_funding_rate.py; then
+    # Pure stdlib script (argparse/csv/json/urllib only) -- plain python3 is sufficient, no
+    # venv needed. This box's /opt/itera/venv is for Core v1's own runtime, unrelated to this.
+    if python3 scripts/log_cde_live_funding_rate.py; then
         echo "$(date -u +%FT%TZ) OK"
     else
         echo "$(date -u +%FT%TZ) FAILED (exit $?) -- see output above; will retry next hour"
