@@ -149,7 +149,15 @@ Authorized now:
   autocorrelation regardless of any real relationship (proven independent of this data — see
   charter §3c). `("funding_level", 24)` is now excluded from the statistical family
   (`EXCLUDED_HYPOTHESES`); the currently-implemented family is three hypotheses, not four. The
-  prior discovery result is superseded, not archived as valid-with-caveats — re-run required;
+  prior discovery result is superseded, not archived as valid-with-caveats.
+  **Correction, 2026-08-24 (fourth): re-run on the corrected 3-hypothesis family — all three
+  cleared FDR discovery** (q=0.10); top-2 shortlist is `funding_level_72h` (r=0.6347) and
+  `funding_persistence_72h` (r=0.1922), with `funding_persistence_24h` (r=0.1586) clearing
+  discovery but narrowly missing the shortlist. `funding_level_72h`'s strength was independently
+  re-checked against the same artifact-detection method that caught the 24h defect and did not
+  reproduce it. This is a real discovery result, still not a confirmed finding or a trading
+  signal — confirmation against the CDE live-forward holdout remains blocked on accumulated data
+  (see above). Full record: charter §3c "Corrected discovery re-run, 2026-08-24";
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.

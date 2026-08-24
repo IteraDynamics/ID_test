@@ -545,6 +545,23 @@ temporary.
 This does not reopen the discovery result computed before this correction — that result is
 superseded, not archived as valid-with-caveats. Re-run required.
 
+**Corrected discovery re-run, 2026-08-24.** All three remaining hypotheses cleared FDR discovery
+at q=0.10: `funding_level_72h` (r=0.6347), `funding_persistence_72h` (r=0.1922),
+`funding_persistence_24h` (r=0.1586, weakest of the three, p-values all effectively 0 within the
+300-null-resample resolution). Top-2 shortlist by |correlation|: **`funding_level_72h` and
+`funding_persistence_72h`**; `funding_persistence_24h` clears discovery but narrowly misses the
+shortlist. `funding_level_72h`'s strength was independently re-checked (not just accepted because
+it's the highest number) against the same null-under-shared-process construction that caught the
+24h defect, at higher persistence levels (φ up to 0.9) than the earlier control — the null stayed
+near zero throughout (−0.04 to +0.03) regardless of how autocorrelated the underlying candidate
+was, confirming this candidate's real correlation is not a repeat of the same artifact.
+
+This is a real discovery result under the frozen (as corrected) decision rule — **not a
+confirmed finding and not a trading signal.** Per §3a-iii, confirmation is against CDE's
+live-forward-accumulated funding rate, which holds at most a few days of data as of this result
+and cannot be exercised yet. This section will be updated again once that holdout has enough
+accumulated history to actually confirm or reject the shortlist.
+
 ### 3d. Decision rule and multiplicity (Amendment 2)
 
 Applies to the statistical family only (§3c) — funding level, funding persistence, open interest
