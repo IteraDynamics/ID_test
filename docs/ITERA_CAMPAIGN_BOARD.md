@@ -130,10 +130,18 @@ Authorized now:
   ~84%, `funding_level_72h` weak ~34%; margin above floor is real but thin at 6 points; effect-size
   grid still uncited and confirmation still approximated against a Deribit split, not real CDE
   data — see charter §4 for the full record). This is Amendment 1's pre-execution gate clearing,
-  not execution itself. **Not yet authorized by this transition:** real predictor/outcome
-  computation against actual candidates for an actual discovery/confirmation decision — that is
-  the next real step this PASS opens up, and it is a decision for the campaign's operator to make
-  explicitly, not something this correction grants on its own;
+  not execution itself.
+  **Correction, 2026-08-24 (second): the operator explicitly authorized real predictor/outcome
+  computation** against the four discovered-family candidates on real acquired Deribit data —
+  the discovery half of §3d's frozen decision rule (real observed correlation, real empirical
+  p-value against the block-bootstrapped null, real BH FDR at q=0.10, real top-2 shortlist by
+  |correlation|). This does NOT authorize confirmation against the untouched holdout: per §3a-iii,
+  the holdout is CDE's live-forward-accumulated funding rate, logged only since
+  `scripts/log_cde_live_funding_rate.py` was deployed (2026-08-21) — a few days of data, nowhere
+  near enough to confirm anything, and not backfillable. A discovery result without a confirmed
+  holdout is not a trading decision and authorizes no economic/runtime/execution action of any
+  kind — still not authorized: any of those, or treating an FDR-discovered candidate as validated
+  before it clears the untouched holdout;
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.
