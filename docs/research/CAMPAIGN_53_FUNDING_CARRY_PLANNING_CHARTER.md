@@ -495,7 +495,55 @@ same kind of deliberate, documented approximation already accepted for the CDE-c
 gap below.)
 
 **Re-run 2026-08-24: PASS at 56.0% average power** — see §4's "Corrected family re-run" for the
-full result and breakdown. Nothing else in §3c or §3d changes.
+full result and breakdown.
+
+**`funding_level_24h` excluded 2026-08-24 — found by the first real discovery run, not by
+inspection.** The operator authorized real predictor/outcome computation on the discovery half of
+§3d (below); the first run of `scripts/run_campaign53_discovery.py` against real acquired Deribit
+data put `funding_level_24h` at the top of the shortlist (r=0.7075). That result does not survive
+scrutiny: funding_level's 24h candidate window, 24h target horizon, and the 24h daily rebalance
+interval (set above) are all numerically identical. A candidate's trailing-mean window at day
+t+1 is therefore EXACTLY the target's forward-sum window at day t — `target_t ≈ 24 ×
+candidate_{t+1} − cost`, a near-deterministic linear identity, not an approximation. Pearson
+correlation is invariant to positive linear rescaling, so `corr(candidate, target)` for this one
+hypothesis collapses to `candidate`'s own lag-1 autocorrelation regardless of whether funding
+level has any real predictive relationship to forward carry distinct from mere day-to-day
+persistence — which the charter's §3b already assumes and cites, so this is not a new finding
+about the world, it is a restatement of an existing assumption dressed up as a discovery.
+
+Proven independent of the real data, not just observed on it: synthetic series (pure white
+noise, and AR(1) processes at multiple persistence levels) were fed through the identical
+candidate/target construction. For the 24h window, `corr(candidate, target)` matched
+`candidate`'s own lag-1 autocorrelation to within 0.001–0.0006 at every tested sample size and
+every tested autocorrelation level — including pure noise, where a genuine predictive
+relationship is impossible by construction. The 72h window, tested as a control under the same
+procedure, showed no such identity (differences of 0.68–0.85, i.e., the two quantities are
+unrelated) — confirming the defect is specific to the 24h/24h/24h coincidence (window = horizon =
+rebalance interval), not a general property of funding_level or of the 1:1 window/horizon
+pairing convention. `funding_persistence` at 24h is unaffected for a different, also-verified
+reason: its sign-matching transform is nonlinear, so the same algebraic collapse does not apply
+(its null correlation shrinks toward zero with sample size, the way a real null should, rather
+than pinning to a fixed nonzero value). Regression tests for both the defect and its scope (the
+72h control) are in `tests/test_campaign53_power_analysis.py`.
+
+**`("funding_level", 24)` is added to `EXCLUDED_HYPOTHESES`** in
+`scripts/run_campaign53_power_analysis.py`, imported directly by the discovery script rather than
+reimplemented. The statistical family (as currently implemented — funding level and funding
+persistence, pending open interest change per §3c above) is now **three** candidate-horizon
+hypotheses, not four: `funding_level_72h`, `funding_persistence_24h`, `funding_persistence_72h`.
+Confirmation stays at top-2 (§3d below) rather than being re-derived to a new ratio against this
+temporary, data-availability-limited subset — top-2 of 3 (67% selectivity) looks looser than the
+originally-reasoned ~33%, but the subset itself is already an accepted approximation (2 of the
+full family's 3 planned signal types are implemented; open interest is pending), and the *full*
+frozen family once open interest is added would be five members (funding_level_72h,
+funding_persistence at both windows, open_interest_change at both windows — open interest is
+built from a different underlying series than the funding-based target, so it does not inherit
+this exclusion), putting top-2 back near 40%, closer to the original ratio than the current
+subset's 67%. Not worth inventing a new precise ratio against a denominator that is itself
+temporary.
+
+This does not reopen the discovery result computed before this correction — that result is
+superseded, not archived as valid-with-caveats. Re-run required.
 
 ### 3d. Decision rule and multiplicity (Amendment 2)
 

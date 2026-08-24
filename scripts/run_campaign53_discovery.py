@@ -1,5 +1,5 @@
-"""Campaign #53 real discovery-stage computation -- FDR-controlled ranking of the four
-funding-carry candidates against real acquired Deribit data.
+"""Campaign #53 real discovery-stage computation -- FDR-controlled ranking of the funding-carry
+candidates against real acquired Deribit data.
 
 Authorized 2026-08-24 (docs/ITERA_CAMPAIGN_BOARD.md correction): the operator explicitly
 authorized real predictor/outcome computation for Campaign #53's discovery/confirmation decision,
@@ -14,10 +14,23 @@ This computes the DISCOVERY half of the charter's frozen §3d decision rule for 
 - an empirical p-value for each, measured against a block-bootstrapped null reference
   distribution built with the same, already-tested machinery the power analysis validated
   (build_null_reference, imported directly rather than reimplemented);
-- Benjamini-Hochberg FDR control at q=0.10 across the four-hypothesis family (§3c's 2026-08-21
-  window-narrowing correction: funding level and funding persistence, each at {24h, 72h});
+- Benjamini-Hochberg FDR control at q=0.10 across the three-hypothesis family (§3c's
+  2026-08-21 window-narrowing correction -- funding level and funding persistence, each at
+  {24h, 72h} -- AND its 2026-08-24 exclusion of funding_level_24h, EXCLUDED_HYPOTHESES,
+  imported directly rather than reimplemented);
 - a top-2 shortlist by |correlation| among FDR-discovered hypotheses (§3d's 2026-08-21
   confirmation-k correction).
+
+**2026-08-24 correction, found by this script's own first real run:** the initial four-hypothesis
+version of this script put `funding_level_24h` (r=0.7075) at the top of the shortlist. That
+result is a near-tautology, not a discovery: funding_level's 24h window, 24h target horizon, and
+the 24h daily rebalance interval are all numerically identical, so a candidate's trailing-mean
+window at day t+1 is EXACTLY the target's forward-sum window at day t -- corr(candidate,target)
+is pinned to candidate's own lag-1 autocorrelation regardless of any real relationship (proven
+under synthetic noise and AR(1) input independent of this script, real-data r matched candidate's
+own real lag-1 autocorrelation to 4 decimals). funding_level_24h is now excluded
+(EXCLUDED_HYPOTHESES in the power analysis module) rather than silently left in a shortlist slot
+a real candidate should occupy.
 
 What this script deliberately does NOT do:
 
@@ -54,6 +67,7 @@ if __package__ in (None, ""):
 
 from scripts.run_campaign53_power_analysis import (
     CONFIRMATION_TOP_K,
+    EXCLUDED_HYPOTHESES,
     FDR_Q,
     REBALANCE,
     WINDOWS_HOURS,
@@ -138,6 +152,10 @@ def main(argv: list[str] | None = None) -> int:
     hypotheses: list[dict[str, Any]] = []
     for cand_name, cand_fn in candidate_fns.items():
         for window in WINDOWS_HOURS:
+            if (cand_name, window) in EXCLUDED_HYPOTHESES:
+                print(f"  {cand_name}_{window}h: excluded -- see EXCLUDED_HYPOTHESES "
+                      f"(near-tautological candidate/target identity, 2026-08-24)")
+                continue
             btc_frame = build_hypothesis_frame(btc, cand_fn, window, REBALANCE)
             eth_frame = build_hypothesis_frame(eth, cand_fn, window, REBALANCE)
             pooled = pd.concat([btc_frame, eth_frame], ignore_index=True)
@@ -181,6 +199,11 @@ def main(argv: list[str] | None = None) -> int:
             "literature-cited; this discovery step does not depend on that grid (it measures the "
             "real correlation directly), but the campaign's overall evidentiary standard still "
             "carries that caveat.",
+            "funding_level_24h is excluded from this family (EXCLUDED_HYPOTHESES, 2026-08-24): "
+            "its 24h candidate window, 24h target horizon, and 24h daily rebalance interval are "
+            "numerically identical, making corr(candidate,target) a near-tautological restatement "
+            "of the candidate's own lag-1 autocorrelation rather than a distinct predictive "
+            "relationship. Proven independent of this script's data; see charter §3c.",
         ],
         "block_size_days": block_size,
         "discovery": discovery,

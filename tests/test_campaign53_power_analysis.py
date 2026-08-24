@@ -12,8 +12,10 @@ import pandas as pd
 import pytest
 
 from scripts.run_campaign53_power_analysis import (
+    EXCLUDED_HYPOTHESES,
     benjamini_hochberg,
     block_bootstrap_resample,
+    build_hypothesis_frame,
     empirical_pvalue,
     forward_net_carry,
     funding_level,
@@ -285,3 +287,63 @@ def test_funding_persistence_mixed_signs_is_partial() -> None:
     # last value's sign is negative (-0.1); count how many of the 5 match
     matching = sum(1 for v in [0.1, 0.1, -0.1, 0.1, -0.1] if np.sign(v) == np.sign(-0.1))
     assert persistence.iloc[-1] == pytest.approx(matching / 5)
+
+
+# ------------------------------------------------------- funding_level_24h exclusion (2026-08-24)
+
+
+def _lag1(x: np.ndarray) -> float:
+    return float(np.corrcoef(x[:-1], x[1:])[0, 1])
+
+
+@pytest.mark.parametrize("n_hours,phi", [(20000, 0.0), (20000, 0.7), (60000, 0.0), (60000, 0.7)])
+def test_funding_level_24h_is_near_tautological(n_hours: int, phi: float) -> None:
+    """Regression test for the bug found 2026-08-24: because funding_level's 24h window, 24h
+    target horizon, and 24h daily rebalance interval are all equal, a candidate's trailing-mean
+    window at day t+1 is EXACTLY the target's forward-sum window at day t. This pins
+    corr(candidate, target) to candidate's own lag-1 autocorrelation regardless of any real
+    relationship -- independent of the underlying process's autocorrelation (phi) or sample size
+    (n_hours). This is why ("funding_level", 24) is in EXCLUDED_HYPOTHESES."""
+    rng = np.random.default_rng(5)
+    x = np.zeros(n_hours)
+    shocks = rng.normal(scale=0.0005, size=n_hours)
+    for i in range(1, n_hours):
+        x[i] = phi * x[i - 1] + shocks[i]
+    hourly = pd.Series(x, index=pd.date_range("2020-01-01", periods=n_hours, freq="1h"))
+
+    frame = build_hypothesis_frame(hourly, funding_level, 24, "1D")
+    observed_r = np.corrcoef(frame["candidate"], frame["target"])[0, 1]
+    candidate_lag1 = _lag1(frame["candidate"].to_numpy())
+
+    assert abs(observed_r - candidate_lag1) < 0.01, (
+        f"expected corr(candidate,target) to track candidate's own lag-1 autocorrelation "
+        f"almost exactly (the tautology this test guards), got r={observed_r:.4f} vs "
+        f"lag1={candidate_lag1:.4f}"
+    )
+
+
+@pytest.mark.parametrize("n_hours,phi", [(20000, 0.0), (20000, 0.7)])
+def test_funding_level_72h_is_not_tautological(n_hours: int, phi: float) -> None:
+    """Control for the test above: the 72h window does NOT coincide with the 24h rebalance
+    interval, so this identity must NOT appear -- confirming the exclusion is specific to the
+    24h/24h/24h coincidence, not a general property of funding_level."""
+    rng = np.random.default_rng(5)
+    x = np.zeros(n_hours)
+    shocks = rng.normal(scale=0.0005, size=n_hours)
+    for i in range(1, n_hours):
+        x[i] = phi * x[i - 1] + shocks[i]
+    hourly = pd.Series(x, index=pd.date_range("2020-01-01", periods=n_hours, freq="1h"))
+
+    frame = build_hypothesis_frame(hourly, funding_level, 72, "1D")
+    observed_r = np.corrcoef(frame["candidate"], frame["target"])[0, 1]
+    candidate_lag1 = _lag1(frame["candidate"].to_numpy())
+
+    assert abs(observed_r - candidate_lag1) > 0.2, (
+        "expected the 72h window to NOT reproduce the 24h tautology, but corr(candidate,target) "
+        f"tracked candidate's own lag-1 autocorrelation anyway (r={observed_r:.4f} vs "
+        f"lag1={candidate_lag1:.4f}) -- the exclusion's scope may be wrong"
+    )
+
+
+def test_excluded_hypotheses_contains_only_funding_level_24h() -> None:
+    assert EXCLUDED_HYPOTHESES == frozenset({("funding_level", 24)})

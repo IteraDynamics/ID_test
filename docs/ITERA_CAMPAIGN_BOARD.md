@@ -141,7 +141,15 @@ Authorized now:
   near enough to confirm anything, and not backfillable. A discovery result without a confirmed
   holdout is not a trading decision and authorizes no economic/runtime/execution action of any
   kind — still not authorized: any of those, or treating an FDR-discovered candidate as validated
-  before it clears the untouched holdout;
+  before it clears the untouched holdout.
+  **Correction, 2026-08-24 (third): the first real discovery run put `funding_level_24h`
+  (r=0.7075) at the top of the shortlist, and it turned out to be a near-tautology, not a
+  discovery** — its 24h candidate window, 24h target horizon, and 24h rebalance interval are
+  numerically identical, so its "predictive" correlation collapses to the candidate's own lag-1
+  autocorrelation regardless of any real relationship (proven independent of this data — see
+  charter §3c). `("funding_level", 24)` is now excluded from the statistical family
+  (`EXCLUDED_HYPOTHESES`); the currently-implemented family is three hypotheses, not four. The
+  prior discovery result is superseded, not archived as valid-with-caveats — re-run required;
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.

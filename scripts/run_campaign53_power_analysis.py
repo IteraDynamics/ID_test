@@ -21,12 +21,15 @@ Method (non-parametric, bootstrap-based, no distributional assumptions):
 
 - Candidates: funding level (trailing mean) and funding persistence (fraction of trailing
   periods same-signed as the current one), each at two windows {24h, 72h}, each paired
-  with the matching target horizon -- four (candidate, horizon) hypotheses total, per
-  Charter section 3c's 2026-08-21 rebalance-frequency resolution AND its window-narrowing
-  correction (168h dropped 2026-08-21 after a real run showed it structurally underpowered --
-  daily-resampled 168h windows share ~86% of their data with the prior day's window, collapsing
-  effective sample size regardless of true effect size; see the charter for the full record,
-  including the FAIL result that motivated this correction).
+  with the matching target horizon -- three (candidate, horizon) hypotheses (not four: see
+  EXCLUDED_HYPOTHESES below), per Charter section 3c's 2026-08-21 rebalance-frequency
+  resolution, its window-narrowing correction (168h dropped 2026-08-21 after a real run
+  showed it structurally underpowered -- daily-resampled 168h windows share ~86% of their
+  data with the prior day's window, collapsing effective sample size regardless of true
+  effect size), AND its 2026-08-24 exclusion of funding_level_24h (a near-tautological
+  candidate/target identity when window==horizon==rebalance-interval, proven independent of
+  this power simulation and detailed on EXCLUDED_HYPOTHESES). See the charter for the full
+  record of all three corrections.
 - Targets: forward net carry (sum of funding over the horizon, minus a transaction-cost
   assumption), at daily rebalance points, pooled across BTC and ETH.
 - For each hypothesis, build a null reference distribution of block-bootstrapped correlations
@@ -64,6 +67,19 @@ CONFIRMATION_TOP_K = 2  # was 3 (sized for a 9-member family); corrected 2026-08
                          # narrowed 6-member family -- see charter §3d "Confirmation-k corrected"
 IC_GRID = (0.02, 0.05, 0.08, 0.12)
 CENTRAL_IC = 0.065  # midpoint of the stated 0.05-0.08 central range
+
+# Excluded 2026-08-24: funding_level's 24h window coincides exactly with its own 24h horizon
+# AND the 24h daily rebalance interval, so a candidate's trailing-mean window at day t+1 is
+# EXACTLY the target's forward-sum window at day t -- target_t ~= 24*candidate_{t+1} - cost, a
+# near-deterministic linear identity, not an approximation. This pins corr(candidate,target) to
+# candidate's own lag-1 autocorrelation regardless of any real relationship, proven under both
+# pure white noise and AR(1) synthetic input (see tests/test_campaign53_power_analysis.py's
+# regression test) and confirmed on real data (observed r=0.7075 matched candidate's own lag-1
+# autocorrelation of 0.7075 to 4 decimals). No other (candidate, window) pair in the grid shows
+# this: funding_level_72h's window != the rebalance interval, and funding_persistence's
+# sign-matching transform isn't a linear rescaling, so neither collapses the same way. See
+# charter §3c "funding_level_24h excluded" for the full record.
+EXCLUDED_HYPOTHESES = frozenset({("funding_level", 24)})
 
 
 # ------------------------------------------------------- data loading and candidate construction
@@ -277,6 +293,9 @@ def main(argv: list[str] | None = None) -> int:
     hypotheses: list[dict[str, Any]] = []
     for cand_name, cand_fn in candidate_fns.items():
         for window in WINDOWS_HOURS:
+            if (cand_name, window) in EXCLUDED_HYPOTHESES:
+                print(f"  {cand_name}_{window}h: excluded -- see EXCLUDED_HYPOTHESES")
+                continue
             btc_frame = build_hypothesis_frame(btc, cand_fn, window, REBALANCE)
             eth_frame = build_hypothesis_frame(eth, cand_fn, window, REBALANCE)
             pooled = pd.concat([btc_frame, eth_frame], ignore_index=True)
