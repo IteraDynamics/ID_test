@@ -124,9 +124,16 @@ Authorized now:
   windows resampled daily collapse effective sample size regardless of true effect), and
   confirmation narrowed top-3 → top-2 to preserve the original ~33% selectivity ratio against the
   now-6-member (was 9) full family. Full reasoning, including explicit engagement with §4's own
-  caution against reopening rejected remedies, is in the charter. **The corrected family has not
-  yet been re-run** — still authorized: re-running the power simulation against the same acquired
-  Deribit data under the corrected spec. Still not authorized: anything beyond that (see above);
+  caution against reopening rejected remedies, is in the charter.
+  **Correction, 2026-08-24: the corrected family was re-run — PASS, 56.0% average power** at the
+  central IC, clearing the 50% floor (uneven across hypotheses: `funding_persistence_24h` strong
+  ~84%, `funding_level_72h` weak ~34%; margin above floor is real but thin at 6 points; effect-size
+  grid still uncited and confirmation still approximated against a Deribit split, not real CDE
+  data — see charter §4 for the full record). This is Amendment 1's pre-execution gate clearing,
+  not execution itself. **Not yet authorized by this transition:** real predictor/outcome
+  computation against actual candidates for an actual discovery/confirmation decision — that is
+  the next real step this PASS opens up, and it is a decision for the campaign's operator to make
+  explicitly, not something this correction grants on its own;
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.

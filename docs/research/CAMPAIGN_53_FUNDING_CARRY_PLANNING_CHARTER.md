@@ -494,8 +494,8 @@ its own family is a further, data-availability-driven subset of 2 signals × 2 w
 same kind of deliberate, documented approximation already accepted for the CDE-confirmation
 gap below.)
 
-The corrected family has not yet been re-run against real data; §4 below records that this is
-still pending, not settled. Nothing else in §3c or §3d changes.
+**Re-run 2026-08-24: PASS at 56.0% average power** — see §4's "Corrected family re-run" for the
+full result and breakdown. Nothing else in §3c or §3d changes.
 
 ### 3d. Decision rule and multiplicity (Amendment 2)
 
@@ -584,9 +584,20 @@ underlying data with the prior day's window, collapsing effective sample size re
 whether a true effect exists) established from autocorrelation diagnostics, not from which
 candidate happened to show a stronger correlation. §3d's confirmation-k correction (top-3 →
 top-2) preserves rather than loosens the original ~33% selectivity ratio. Net effect on rigor:
-neutral to slightly stricter, not weaker. The corrected {24h, 72h}-only, top-2 family has **not
-yet been re-run** — this section will be updated again once it has, with the real result stated
-plainly regardless of outcome.
+neutral to slightly stricter, not weaker.
+
+**Corrected family re-run, 2026-08-24 — PASS.** Average power at the central IC (0.065) =
+**56.0%**, clearing the 50% floor. Per-hypothesis breakdown at IC=0.065 (interpolated):
+`funding_persistence_24h` strong (~84%), `funding_persistence_72h` moderate (~62%),
+`funding_level_24h` moderate (~45%), `funding_level_72h` weak (~34%) — uneven, carried
+disproportionately by the two persistence candidates and especially the 24h one, consistent with
+its markedly lower candidate autocorrelation (0.29 vs 0.71-0.92 for the others) giving it a
+tighter, more sensitive null. The margin above the 50% floor is real but not wide (6 points),
+and rests on an uncited effect-size grid (§4 item 1) and a confirmation stage still approximated
+against a held-out Deribit split rather than real CDE data (§4 item 2) — both flagged, neither
+resolved by this PASS. This result authorizes moving toward real discovery/confirmation
+execution under Amendment 1; it is a campaign-board decision, not something this document
+grants on its own (see `docs/ITERA_CAMPAIGN_BOARD.md`).
 
 Blocked on: sufficient accumulated CDE confirmation data to calibrate the simulation against
 (§3a-iii — live-forward accumulation, no fixed window, not backfillable). Discovery-side
