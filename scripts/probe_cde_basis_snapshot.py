@@ -35,7 +35,9 @@ BASE = "https://api.coinbase.com/api/v3/brokerage/market"
 USER_AGENT = "itera-research-feasibility-probe/2.5"
 TIMEOUT_SECONDS = 25
 PERPETUAL_STYLE_YEAR = 2029
-ROOTS = ("BIP", "ETP")  # BTC, ETH -- the only roots this specification (§3c) is frozen to
+ROOTS = ("BTC", "ETH")  # the only roots this specification (§3c) is frozen to. Confirmed
+                        # 2026-08-25 against real CDE data that contract_root_unit holds the
+                        # plain ticker, not the product-ID prefix (BIP/ETP) -- the original guess.
 
 
 def http(url: str) -> tuple[int, Any, str | None]:
