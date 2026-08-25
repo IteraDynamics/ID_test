@@ -15,10 +15,21 @@ This script shifts every report's usable date forward by that lag before compari
 forward GLD return -- using the Tuesday date directly would be lookahead, the same mistake
 this program's own governance exists to catch elsewhere (Campaign #52's whole premise).
 
-Percentile ranking is computed EXPANDING (causal) -- at each report date, the percentile is
-computed only against reports strictly before it, never using future data to rank a past
-observation. This is slower to warm up than a fixed rolling window but has no lookahead risk
-at all, which matters more for a first real look than convenience.
+Percentile ranking is computed against a TRAILING ROLLING window (causal) -- at each report
+date, the percentile is computed only against reports strictly before it and within the
+trailing window, never using future data to rank a past observation.
+
+Correction, 2026-08-25: the first real run used an EXPANDING (since-1986) window instead of a
+rolling one, and it was wrong. Gold's speculative open interest has grown roughly monotonically
+as the market matured over 40 years, so ranking a recent reading against mostly-thin, mostly-
+smaller early-history data mechanically inflates recent percentiles regardless of whether
+positioning is actually extreme for the market's current scale. This showed up as a real,
+checkable failure: the "top quintile" (percentile >= 0.80) held 864 of 1866 observations (46%,
+not the ~20% a real quintile split implies) -- the percentile was not behaving like a percentile.
+Fixed by bounding the ranking window to ROLLING_PERCENTILE_WINDOW_WEEKS trailing reports, which
+adapts to the market's current scale instead of comparing across eras. A quintile-balance
+canary (see main()) now prints a warning if any quintile still deviates far from ~20%, so this
+failure mode cannot silently recur.
 
 Observation/analysis only. Computes no trading signal, makes no economic claim -- this is
 discovery-stage exploration of whether the premise is worth pursuing further, not a backtest
@@ -37,7 +48,14 @@ import pandas as pd
 GOLD_MARKET_NAME = "GOLD - COMMODITY EXCHANGE INC."
 REPORT_RELEASE_LAG_DAYS = 3  # Tuesday "as of" -> Friday publication, CFTC's standing schedule
 MIN_HISTORY_FOR_PERCENTILE = 52  # ~1 year of weekly reports before trusting a percentile rank
+# Trailing window for the percentile rank, in weekly reports. 156 = 3 years: long enough for a
+# stable rank distribution, short enough to adapt to the market's current scale rather than
+# comparing today's positioning against 1986-era open interest (see the 2026-08-25 correction
+# above -- the expanding-window version this replaced was demonstrably not producing a uniform
+# percentile). Chosen once and documented, not tuned against the correlation result.
+ROLLING_PERCENTILE_WINDOW_WEEKS = 156
 FORWARD_HORIZONS_WEEKS = (4, 12, 26)
+QUINTILE_BALANCE_WARN_THRESHOLD = 0.10  # warn if any quintile's share is off ~20% by more than this
 
 
 def load_cot_gold(cot_csv_path: str) -> pd.DataFrame:
@@ -62,14 +80,22 @@ def load_cot_gold(cot_csv_path: str) -> pd.DataFrame:
     return gold[["report_date", "usable_date", "noncomm_net", "open_interest", "noncomm_net_pct_oi"]].reset_index(drop=True)
 
 
-def expanding_percentile(series: pd.Series, min_periods: int) -> pd.Series:
-    """Causal percentile rank: at position i, ranks value[i] against value[0:i] only (strictly
-    prior history, never including itself or the future). Returns NaN before min_periods."""
+def rolling_percentile(series: pd.Series, window: int, min_periods: int) -> pd.Series:
+    """Causal percentile rank: at position i, ranks value[i] against value[max(0,i-window):i]
+    only (strictly prior history, bounded to the trailing window, never including itself or the
+    future). Returns NaN before min_periods.
+
+    Bounding the window (rather than using all prior history back to 1986) matters for a series
+    like gold's speculative open interest that has grown roughly monotonically as the market
+    matured -- an unbounded expanding window ranks recent readings against a mostly thinner,
+    smaller-market past, inflating recent percentiles independent of whether positioning is
+    actually extreme for the market's current scale. See the 2026-08-25 correction note at the
+    top of this file for the real, checkable failure this produced (a 46%-vs-20% quintile)."""
     values = series.to_numpy()
     n = len(values)
     out = np.full(n, np.nan)
     for i in range(min_periods, n):
-        prior = values[:i]
+        prior = values[max(0, i - window):i]
         out[i] = (prior < values[i]).mean()
     return pd.Series(out, index=series.index)
 
@@ -113,10 +139,13 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Loaded {len(gold)} weekly Gold COT reports, {gold['report_date'].min().date()} -> "
           f"{gold['report_date'].max().date()}")
 
-    gold["percentile"] = expanding_percentile(gold["noncomm_net_pct_oi"], MIN_HISTORY_FOR_PERCENTILE)
+    gold["percentile"] = rolling_percentile(
+        gold["noncomm_net_pct_oi"], ROLLING_PERCENTILE_WINDOW_WEEKS, MIN_HISTORY_FOR_PERCENTILE
+    )
     gold = gold.dropna(subset=["percentile"]).reset_index(drop=True)
     print(f"{len(gold)} reports have enough trailing history for a percentile rank "
-          f"(first {MIN_HISTORY_FOR_PERCENTILE} dropped as warmup)")
+          f"(first {MIN_HISTORY_FOR_PERCENTILE} dropped as warmup, "
+          f"{ROLLING_PERCENTILE_WINDOW_WEEKS}-week trailing window)")
 
     gld_close = load_gld(args.gld_csv)
     print(f"GLD price data: {gld_close.index.min().date()} -> {gld_close.index.max().date()}")
@@ -151,11 +180,24 @@ def main(argv: list[str] | None = None) -> int:
         for label, subset in (("Top quintile (crowded long)", top_quintile),
                                ("Bottom quintile (crowded short)", bottom_quintile),
                                ("Middle 60%", middle)):
+            share = len(subset) / len(valid) if len(valid) else 0.0
             if len(subset) == 0:
                 print(f"  {label}: no observations")
                 continue
-            print(f"  {label}: n={len(subset)}  mean fwd 12w return={subset[col].mean()*100:+.2f}%  "
+            print(f"  {label}: n={len(subset)} ({share*100:.1f}% of sample)  "
+                  f"mean fwd 12w return={subset[col].mean()*100:+.2f}%  "
                   f"median={subset[col].median()*100:+.2f}%")
+        # Canary: a real quintile split should land near 20%/20%/60%. If the rolling window is
+        # still not producing a roughly uniform percentile (the exact failure the expanding-
+        # window version had), say so loudly instead of letting a skewed split pass unnoticed.
+        top_share = len(top_quintile) / len(valid) if len(valid) else 0.0
+        bottom_share = len(bottom_quintile) / len(valid) if len(valid) else 0.0
+        if abs(top_share - 0.20) > QUINTILE_BALANCE_WARN_THRESHOLD or \
+           abs(bottom_share - 0.20) > QUINTILE_BALANCE_WARN_THRESHOLD:
+            print(f"  WARNING: quintile shares are skewed (top={top_share*100:.1f}%, "
+                  f"bottom={bottom_share*100:.1f}%, expected ~20% each) -- the percentile is "
+                  f"still not behaving like a percentile. Do not trust the comparison above "
+                  f"until this is understood.")
     else:
         print("  Too few valid observations for the 12w horizon.")
 
