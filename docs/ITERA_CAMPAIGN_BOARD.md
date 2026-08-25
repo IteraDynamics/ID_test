@@ -218,6 +218,32 @@ Closed:
   account (a real capital/operational commitment, not a research decision, and not made here),
   or accept undefined-risk premium selling with its tail-risk cost fully priced in. Neither
   decided; campaign closed at the gate, not chartered further.
+- **CFTC COT gold speculative-positioning contrarian signal (GLD) — CLOSED 2026-08-25, clean
+  discovery-stage null, never chartered as a numbered campaign.** Candidate: Non-Commercial net
+  position as a percentage of open interest, CFTC Legacy Futures-Only report for "GOLD -
+  COMMODITY EXCHANGE INC.", ranked as a causal percentile against forward GLD returns at
+  4/12/26-week horizons (report-release lag of 3 days applied throughout to avoid lookahead;
+  full data acquisition via `scripts/fetch_cot_legacy_futures_history.py`, analysis via
+  `scripts/analyze_cot_gold_positioning.py`). First real run used an EXPANDING (since-1986)
+  percentile and looked promising (corr +0.15/+0.29/+0.28 across the three horizons) — but the
+  quintile split it produced was 46% top / 12.6% bottom, not the ~20% a real quintile split
+  implies, exposing a real methodological bug: ranking recent readings against 40 years of a
+  structurally growing market mechanically inflates recent percentiles regardless of whether
+  positioning is actually extreme for the market's current scale. Fixed by bounding the rank to
+  a 156-week trailing rolling window (still strictly causal) with a runtime canary that would
+  warn if quintile shares stayed skewed. Re-run: quintile shares recovered to 26.6%/24.5%/48.8%
+  (canary did not fire), and the correlations collapsed to +0.016/+0.045/+0.067 — an order of
+  magnitude smaller, with quintile mean forward returns (-0.42%, -0.98%, -0.82%) bunched within
+  a fraction of a standard deviation of the full-sample mean (-0.76%, std ~7.5% at 12 weeks). A
+  coincidental-looking repeated median (-5.93%) across both extreme quintiles and across the two
+  runs was checked directly (1125/1866 distinct forward-return values — normal for heavily
+  overlapping weekly windows) and traced to the sample's own right-skew (median -4.78% vs. mean
+  -0.76%), not a bug. No formal significance test was needed to reach this verdict: the spread
+  between quintiles is too small, relative to the return distribution's own noise, for any test
+  to plausibly rescue it. The promising first read was entirely the expanding-percentile
+  artifact; the corrected result is a clean null. Not pursued further. The percentile-computation
+  fix itself (rolling-window bias correction, quintile-balance canary) is retained in the script
+  as a real, reusable methodological lesson independent of this specific idea's outcome.
 
 Not authorized:
 
