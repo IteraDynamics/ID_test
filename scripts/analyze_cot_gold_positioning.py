@@ -76,6 +76,11 @@ def expanding_percentile(series: pd.Series, min_periods: int) -> pd.Series:
 
 def load_gld(gld_csv_path: str) -> pd.Series:
     df = pd.read_csv(gld_csv_path, index_col="timestamp", parse_dates=True)
+    # download_equity_data.py writes UTC-aware timestamps; the COT side (plain "YYYY-MM-DD"
+    # strings, no offset) parses tz-naive. Normalize to naive here rather than duplicate
+    # research/harness/data_loader.py's own tz handling for a single price column.
+    if df.index.tz is not None:
+        df.index = df.index.tz_convert(None)
     return df["close"]
 
 
