@@ -120,6 +120,19 @@ def main(argv: list[str] | None = None) -> int:
     cde = [p for p in products
            if str((p.get("future_product_details") or {}).get("venue", "")).lower() == "cde"]
 
+    distinct_roots = sorted({root(p) for p in cde})
+    print(f"Universe fetch: HTTP {status}, {len(products)} total products, {len(cde)} CDE products.")
+    print(f"Distinct contract_root_unit values seen among CDE products: {distinct_roots}")
+    if not distinct_roots:
+        print("No CDE products found at all -- the venue filter, product_type, or "
+              "contract_expiry_type query params may no longer match the live API. "
+              "Dumping the first 3 raw products for inspection:")
+        for p in products[:3]:
+            print(json.dumps(p, indent=2, sort_keys=True))
+    elif not any(r in distinct_roots for r in ROOTS):
+        print(f"None of the assumed roots {ROOTS} appear in the real data -- ROOTS was a guess, "
+              f"not confirmed. Use the real values printed above instead.")
+
     results: dict[str, Any] = {}
     for r in ROOTS:
         perp, dated = find_current_pair(cde, r)
