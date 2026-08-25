@@ -74,6 +74,17 @@ def root(p: dict) -> str:
     return str((p.get("future_product_details") or {}).get("contract_root_unit", ""))
 
 
+def dated_ladder(cde_products: list[dict], target_root: str) -> list[dict]:
+    """Every dated (non-perpetual-style) contract for one root, sorted nearest-expiry first --
+    not just the highest-volume one. "Highest volume" is the right criterion for confirming a
+    matched pair exists at all, but the wrong one for picking a fresh-entry trading candidate:
+    near-expiry contracts are often the most liquid precisely because everyone is closing or
+    rolling out of them, not because they're a good new position to open."""
+    same_root = [p for p in cde_products
+                 if root(p) == target_root and (expiry_year(str(p.get("product_id", ""))) or 0) < PERPETUAL_STYLE_YEAR]
+    return sorted(same_root, key=lambda p: (p.get("future_product_details") or {}).get("contract_expiry", ""))
+
+
 def find_current_pair(cde_products: list[dict], target_root: str) -> tuple[dict | None, dict | None]:
     """Highest-volume perp-style and highest-volume dated product for one root, right now."""
     same_root = [p for p in cde_products if root(p) == target_root]
@@ -137,6 +148,20 @@ def main(argv: list[str] | None = None) -> int:
 
     results: dict[str, Any] = {}
     for r in ROOTS:
+        ladder = dated_ladder(cde, r)
+        print(f"\n=== {r} dated-contract ladder (nearest expiry first) ===")
+        if not ladder:
+            print("  (none)")
+        for p in ladder:
+            fpd = p.get("future_product_details") or {}
+            days_to_expiry = None
+            tte_ms = to_float(fpd.get("time_to_expiry_ms"))
+            if tte_ms is not None:
+                days_to_expiry = tte_ms / 1000 / 86400
+            print(f"  {str(p.get('product_id')):<18} expiry={fpd.get('contract_expiry','')!s:<24}"
+                  f"days_to_expiry={days_to_expiry if days_to_expiry is not None else '?':<8}"
+                  f"vol_24h=${volume(p):,.0f}")
+
         perp, dated = find_current_pair(cde, r)
         print(f"\n=== {r} ===")
         if not perp or not dated:
