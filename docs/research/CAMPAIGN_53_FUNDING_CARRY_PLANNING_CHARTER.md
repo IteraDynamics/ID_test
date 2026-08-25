@@ -357,6 +357,13 @@ expires 2026-08-28, next at `25SEP26`) before either parameter is set. Both open
 (mark-to-market risk tolerance, roll-timing N) remain unset; this section will be updated once
 enough of that cycle has accumulated to say something real.
 
+**Deployment confirmed, 2026-08-25T13:19:40Z.** First real run logged 10 rows (both legs × 5
+listed contracts across BTC/ETH) to `data/cde_basis_ladder_log.csv` on the operator's droplet,
+scheduled via root crontab alongside the existing funding logger and argus jobs. The two
+furthest-out contracts (`30OCT26`, `27NOV26`) logged `price=None` — confirms they have no
+active quote right now, consistent with their $0/day volume in the initial snapshot, not a
+fetch error.
+
 ### 3a-iii. CDE historical funding data — not obtainable for this account, confirmation stage redesigned (2026-08-21)
 
 §3a-i's "Decided 2026-08-14: option 3" assumed CDE's own native ~13-month funding history would
