@@ -199,6 +199,25 @@ Closed:
   past the campaign's own judgment-bound evidentiary base. Full decision:
   `docs/research/CAMPAIGN_54_CRASH_SHORT_PLANNING_CHARTER.md` §7. Closure does not authorize any
   Core v1 change, capital allocation, or a Core v2 runtime/paper account.
+- **Defined-risk equity volatility risk premium (SPY/QQQ credit spreads / iron condors) —
+  CLOSED 2026-08-25, Gate 2 (tradeability) failure, never chartered as a numbered campaign.**
+  Named deficiency (single return source) and horizon feasibility (Gate 0/1) passed. Real
+  evidence gathered before the stop: VIX vs. trailing realized SPY volatility, 2014-2026 (3,178
+  trading days) — mean VRP +3.53 points, positive 85.1% of days, consistent with published
+  estimates; a real-fund proxy (JEPI, options-overlay income ETF) showed Sharpe statistically
+  identical to SPY buy-and-hold (1.073 vs 1.072) with max drawdown 44% shallower, concentrated
+  specifically in the 2022 bear year (JEPI -3.06% vs SPY -18.65%), not diffused across calm
+  years. Stopped at Gate 2: the operator's brokerage does not support multi-leg options spread
+  orders — confirmed directly by the operator, not assumed — a capability essentially exclusive
+  to Interactive-Brokers-tier accounts among US retail brokers, not a gap specific to this
+  account. Per the charter-campaign skill's own rule, this is reported as a clean gate failure,
+  not routed around with a workaround (e.g. undefined-risk single-leg premium selling, which
+  most brokers do allow at a lower approval tier, but which reopens the exact tail-risk problem
+  -- one -47.73-point single-day VRP reading in the same dataset -- that defined-risk structuring
+  existed to solve). Two legitimate paths exist if revisited: open a spread-capable brokerage
+  account (a real capital/operational commitment, not a research decision, and not made here),
+  or accept undefined-risk premium selling with its tail-risk cost fully priced in. Neither
+  decided; campaign closed at the gate, not chartered further.
 
 Not authorized:
 
