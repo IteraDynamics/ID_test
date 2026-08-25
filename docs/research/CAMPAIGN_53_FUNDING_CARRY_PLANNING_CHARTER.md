@@ -331,6 +331,32 @@ position is not renewed — it exits to flat rather than being carried forward o
 signal that justified the original, now-expiring, contract pairing. This keeps every open position
 justified by current candidate values, never by inertia.
 
+**First real look, 2026-08-25 — not yet ripe, structural liquidity finding, live logger
+started.** `scripts/probe_cde_basis_snapshot.py` pulled real CDE data for both roots. Two
+findings, neither favorable in this snapshot, both needing more than one observation to
+interpret:
+
+1. **Basis magnitude is tiny.** BTC ≈ −3.2bps, ETH ≈ −10bps (perp leg trading at a slight
+   discount to the near-dated future) — plausibly smaller than round-trip transaction costs
+   over the front contract's remaining life.
+2. **Liquidity is concentrated almost entirely in the front-month contract, and falls to zero
+   beyond the second.** BTC dated ladder: `28AUG26` ($254.6M/day, 3 days to expiry) →
+   `25SEP26` ($3.6M/day, 31 days) → `30OCT26` ($0/day) → `27NOV26` ($0/day). Same shape for
+   ETH. The only genuinely liquid dated contract is also the one with almost no runway left —
+   exactly what §3a-ii above warns is a bad fresh-entry candidate, and the two further-out
+   contracts currently have no real market to trade into at all.
+
+Neither finding is treated as a verdict on the strategy — it's one snapshot of one contract's
+life cycle, and setting the mark-to-market risk tolerance or roll-timing N from a single
+observation would repeat the mistake this program corrected elsewhere (treating one result as
+settled before more than one data point exists). `scripts/log_cde_basis_ladder.py` was built and
+started (root crontab, `10 * * * *`, alongside the funding logger) to watch this properly:
+logs the full ladder plus the perp leg every hour, not backfillable (same reason as CDE funding
+confirmation), with the explicit goal of observing at least one full roll cycle (front contract
+expires 2026-08-28, next at `25SEP26`) before either parameter is set. Both open items
+(mark-to-market risk tolerance, roll-timing N) remain unset; this section will be updated once
+enough of that cycle has accumulated to say something real.
+
 ### 3a-iii. CDE historical funding data — not obtainable for this account, confirmation stage redesigned (2026-08-21)
 
 §3a-i's "Decided 2026-08-14: option 3" assumed CDE's own native ~13-month funding history would

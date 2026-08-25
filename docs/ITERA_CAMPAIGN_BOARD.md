@@ -175,7 +175,15 @@ Authorized now:
   environment. Circumstantial evidence (dedicated paid vendors exist specifically to sell this
   data) suggests it isn't natively available. Not economically justified to chase further given
   the campaign's two already-discovered candidates haven't even cleared confirmation yet. Full
-  record: charter §3c, "Open interest change... Closed 2026-08-24";
+  record: charter §3c, "Open interest change... Closed 2026-08-24".
+  **Correction, 2026-08-25: first real look at the structural (basis) family** — already fully
+  specified since 2026-08-14, never touched. Real CDE data shows tiny basis magnitude (BTC
+  ≈−3.2bps, ETH ≈−10bps) and liquidity concentrated almost entirely in the front-month dated
+  contract (falls to $0/day beyond the second listed contract). Not favorable in this one
+  snapshot, but not yet a verdict — a live ladder logger (`scripts/log_cde_basis_ladder.py`,
+  root crontab `10 * * * *`, running alongside the funding logger) now watches this hourly;
+  the mark-to-market risk tolerance and roll-timing N stay unset until at least one full roll
+  cycle (~1 month) has accumulated. Full record: charter §3a-ii, "First real look, 2026-08-25";
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.
