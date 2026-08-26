@@ -156,11 +156,20 @@ def eligible_mask(panel: pd.DataFrame, as_of: pd.Timestamp) -> pd.Series:
 
 
 def compute_spread_series(
-    panel: pd.DataFrame, dates: list[pd.Timestamp], formation_days: int, holding_days: int
+    panel: pd.DataFrame, dates: list[pd.Timestamp], formation_days: int, holding_days: int,
+    agg: str = "mean",
 ) -> pd.Series:
     """Date-indexed top-minus-bottom spread per rebalance, for one formation/holding combo. Same
     computation run_analysis aggregates inline -- factored out so a diagnostic dump can inspect
-    the raw per-date series instead of only ever seeing the mean."""
+    the raw per-date series instead of only ever seeing the mean.
+
+    agg="median" instead of "mean" (2026-08-26 correction): --explain-date on 2025-08-18 showed
+    ZEC-USD alone (a real +1377.59% 84-day speculative move) contributing ~98 of the bottom leg's
+    +73.39-percentage-point mean, in a 14-coin leg -- MIN_ELIGIBLE_UNIVERSE fixes a too-small
+    LEG (too few names), but crypto return distributions are fat-tailed enough that a single coin
+    can still dominate a MEAN regardless of leg size. The median doesn't have this failure mode;
+    run_analysis reports both so the two can be compared directly rather than trusting either one
+    blind."""
     out: dict[pd.Timestamp, float] = {}
     for d in dates:
         elig = eligible_mask(panel, d)
@@ -175,7 +184,9 @@ def compute_spread_series(
         n_leg = max(1, int(len(tr) * TOP_BOTTOM_FRACTION))
         ranked = tr.sort_values(ascending=False)
         top_names, bottom_names = ranked.index[:n_leg], ranked.index[-n_leg:]
-        out[d] = fr[top_names].mean() - fr[bottom_names].mean()
+        top_stat = fr[top_names].median() if agg == "median" else fr[top_names].mean()
+        bottom_stat = fr[bottom_names].median() if agg == "median" else fr[bottom_names].mean()
+        out[d] = top_stat - bottom_stat
     return pd.Series(out)
 
 
@@ -234,9 +245,12 @@ def explain_date(panel: pd.DataFrame, as_of: pd.Timestamp, formation_days: int, 
     print(f"bottom leg (lowest {formation_days}d trailing return):")
     for name in bottom_names:
         print(f"  {name}: trailing={tr[name]*100:+.2f}%  forward_{holding_days}d={fr[name]*100:+.2f}%")
-    print(f"top leg mean forward: {fr[top_names].mean()*100:+.2f}%   "
-          f"bottom leg mean forward: {fr[bottom_names].mean()*100:+.2f}%   "
+    print(f"top leg MEAN forward: {fr[top_names].mean()*100:+.2f}%   "
+          f"bottom leg MEAN forward: {fr[bottom_names].mean()*100:+.2f}%   "
           f"spread: {(fr[top_names].mean() - fr[bottom_names].mean())*100:+.2f}%")
+    print(f"top leg MEDIAN forward: {fr[top_names].median()*100:+.2f}%   "
+          f"bottom leg MEDIAN forward: {fr[bottom_names].median()*100:+.2f}%   "
+          f"spread: {(fr[top_names].median() - fr[bottom_names].median())*100:+.2f}%")
 
 
 def run_analysis(panel: pd.DataFrame, dump_formation_days: int | None = None, dump_holding_days: int | None = None) -> None:
@@ -275,6 +289,27 @@ def run_analysis(panel: pd.DataFrame, dump_formation_days: int | None = None, du
             pct_positive = (series > 0).mean()
             print(f"  formation={formation_days:>3}d holding={holding_days:>3}d: "
                   f"n={len(series):>4}  mean top-minus-bottom spread={mean_spread*100:+.2f}%  "
+                  f"positive in {pct_positive*100:.1f}% of rebalances")
+
+    print(f"\n{'='*70}")
+    print("Same grid, MEDIAN instead of mean within each leg (2026-08-26 correction: a single")
+    print("outlier coin -- e.g. ZEC-USD's real +1377.59% 84-day move on 2025-08-18 -- can still")
+    print("dominate a leg's MEAN regardless of leg size, since crypto return distributions are")
+    print("fat-tailed enough for one coin to multi-bag in weeks. Median doesn't have that failure")
+    print("mode. Compare this grid to the one above rather than trusting either alone.)")
+    print(f"{'='*70}")
+
+    for formation_days in FORMATION_WINDOWS_DAYS:
+        for holding_days in HOLDING_HORIZONS_DAYS:
+            series = compute_spread_series(panel, dates, formation_days, holding_days, agg="median")
+            if len(series) < 10:
+                print(f"  formation={formation_days}d holding={holding_days}d: only "
+                      f"{len(series)} usable rebalances, too few to report")
+                continue
+            mean_spread = series.mean()
+            pct_positive = (series > 0).mean()
+            print(f"  formation={formation_days:>3}d holding={holding_days:>3}d: "
+                  f"n={len(series):>4}  mean of (median top - median bottom)={mean_spread*100:+.2f}%  "
                   f"positive in {pct_positive*100:.1f}% of rebalances")
 
     print("\nThis is discovery-stage only. No execution costs modeled, no significance/power test")
