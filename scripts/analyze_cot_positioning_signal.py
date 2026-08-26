@@ -132,13 +132,19 @@ def dump_extreme_observations(valid: pd.DataFrame, col: str, label: str, weeks: 
     print(f"skew: {valid[col].skew():.3f}")
 
     full_corr = valid["percentile"].corr(valid[col])
+    full_spearman = valid["percentile"].corr(valid[col], method="spearman")
     most_extreme_idx = valid[col].abs().idxmax()
     without_extreme = valid.drop(most_extreme_idx)
     corr_excl = without_extreme["percentile"].corr(without_extreme[col])
-    print(f"\nfull corr: {full_corr:+.4f}   "
-          f"corr excluding single most extreme observation "
+    spearman_excl = without_extreme["percentile"].corr(without_extreme[col], method="spearman")
+    print(f"\nfull pearson: {full_corr:+.4f}   full spearman: {full_spearman:+.4f}")
+    print(f"excluding single most extreme observation "
           f"({valid.loc[most_extreme_idx, 'usable_date'].date()}, "
-          f"fwd_ret={valid.loc[most_extreme_idx, col]*100:+.2f}%): {corr_excl:+.4f}")
+          f"fwd_ret={valid.loc[most_extreme_idx, col]*100:+.2f}%): "
+          f"pearson={corr_excl:+.4f}  spearman={spearman_excl:+.4f}")
+    print("(pearson can be inflated by a few extreme-MAGNITUDE returns even without one single")
+    print("point dominating; spearman only uses rank, so it isn't -- if pearson stays negative")
+    print("but spearman is much weaker, the relationship is more magnitude-driven than broad.)")
 
     print(f"\nTop {top_n} most extreme observations by |{col}|:")
     top = valid.reindex(valid[col].abs().sort_values(ascending=False).index[:top_n])
@@ -175,6 +181,13 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\n{'='*70}")
     print(f"Correlation: percentile rank of speculative net positioning ({label}) vs forward return")
     print("(negative correlation = contrarian signal working: high positioning -> lower forward return)")
+    print("Pearson alongside Spearman (rank-based): a real S&P 500/Nasdaq-100 --dump-weeks run")
+    print("(2026-08-26) found a handful of forward-return observations clustered in the 2020")
+    print("COVID crash driving several of the largest |return| values, without any SINGLE point")
+    print("dominating the way a spurious-correlation artifact would. Spearman is structurally")
+    print("robust to that -- it only uses rank, not magnitude, so a few extreme-magnitude points")
+    print("can't inflate it the way they can inflate Pearson. Compare the two rather than trust")
+    print("Pearson alone.")
     print(f"{'='*70}")
     for weeks in FORWARD_HORIZONS_WEEKS:
         col = f"fwd_ret_{weeks}w"
@@ -183,7 +196,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {weeks}w horizon: only {len(valid)} valid observations, too few to report")
             continue
         corr = valid["percentile"].corr(valid[col])
-        print(f"  {weeks}w horizon: n={len(valid)}  corr(percentile, fwd_ret)={corr:+.4f}")
+        corr_spearman = valid["percentile"].corr(valid[col], method="spearman")
+        print(f"  {weeks}w horizon: n={len(valid)}  pearson={corr:+.4f}  spearman={corr_spearman:+.4f}")
 
     print(f"\n{'='*70}")
     print("Extreme-quintile comparison, 12-week horizon (most standard COT contrarian framing)")
