@@ -241,6 +241,42 @@ Closed:
   account (a real capital/operational commitment, not a research decision, and not made here),
   or accept undefined-risk premium selling with its tail-risk cost fully priced in. Neither
   decided; campaign closed at the gate, not chartered further.
+  **Correction, 2026-08-26: Gate 2 status has changed and real Gate 3/4 evidence now exists.**
+  The operator is opening an Interactive Brokers account (supports multi-leg spreads) — Gate 2
+  is PENDING an external, clock-bound approval, not failed, so build-bound research resumed per
+  the destination charter's own build-bound/clock-bound distinction. A real options-payoff
+  backtest (`scripts/analyze_vrp_defined_risk_backtest.py`) priced a SPY iron condor (16-delta
+  short strikes, 2% wings, 35 DTE, held to expiration) via Black-Scholes using VIX as the
+  implied-vol input, against 12.7 years of real SPY closes (2013-2026, 127 non-overlapping
+  cycles — genuinely independent, unlike every other time-series test this session, so a plain
+  one-sample t-test is legitimate here). Fair-value result: 88.2% win rate, mean $103.52/cycle,
+  t=6.07, p<0.000001. Losing cycles spread across nearly every year (2015-2025), not clustered
+  in one event; excluding the single worst cycle barely moves the mean ($103.52→$111.16);
+  VIX-at-entry correlates positively with cycle P&L (+0.18, the theoretically expected
+  direction); the backtest independently recovers the real Feb 2018 "Volmageddon" VIX spike
+  exactly where and how it should appear (entered at an extremely complacent VIX=9.2). A cost
+  sensitivity sweep (three explicitly labeled, honestly-uncertain spread assumptions — no
+  verified historical SPY-options bid-ask dataset exists here — plus a commission assumption
+  flagged as recalled with moderate, not certain, confidence) found the result survives tight
+  ($88.92/cycle net, p<0.00001) and moderate ($68.92/cycle net, p=0.00009) cost assumptions
+  comfortably, and only fails significance under a genuinely pessimistic wide/crisis-period
+  assumption ($20.92/cycle net, p=0.22) — informative, not a failure, since SPY options are
+  among the most liquid options products that exist and "wide" is a stress scenario, not the
+  everyday case. Caught and fixed one real bug along the way: an early version multiplied
+  commission by the per-contract share multiplier on top of spread cost, silently inflating
+  $0.65/contract into $65 — not caught by the first unit test (its own expected value mirrored
+  the same wrong formula), only by reading the actual output and independently re-deriving the
+  expected cost by hand. This is the strongest single-candidate result of the entire session:
+  a well-documented effect (the volatility risk premium; CBOE's own PUT/BXM benchmark indices
+  exist because of it), not a lone anomaly, showing up correctly in an independently-built,
+  first-principles backtest, surviving realistic cost assumptions where every other idea today
+  either had the wrong sign, collapsed under an outlier-robustness check, or was underpowered.
+  Still open before this goes near Gate 5: volatility skew is unmodeled (flat-vol pricing likely
+  misprices both legs, direction of net effect unknown without real skew data — the single
+  biggest remaining unknown); only one structure/parameter choice has been tested, no robustness
+  sweep across nearby DTE/delta/wing-width choices yet; and Gate 2 itself is still pending the
+  actual IBKR account. Not frozen, not re-chartered as a numbered campaign yet — recorded here
+  as real, load-bearing progress on an idea previously closed at the gate.
 - **CFTC COT gold speculative-positioning contrarian signal (GLD) — CLOSED 2026-08-25, clean
   discovery-stage null, never chartered as a numbered campaign.** Candidate: Non-Commercial net
   position as a percentage of open interest, CFTC Legacy Futures-Only report for "GOLD -
