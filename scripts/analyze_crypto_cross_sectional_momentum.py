@@ -53,9 +53,17 @@ FORMATION_WINDOWS_DAYS = (14, 28, 84)  # 2w / 4w / 12w trailing return as the ra
 HOLDING_HORIZONS_DAYS = (7, 28, 84)  # 1w / 4w / 12w forward return, measured from each rebalance
 MIN_ELIGIBILITY_HISTORY_DAYS = 84  # a coin needs at least the longest formation window of real
                                     # history before it's ranked at all
-MIN_ELIGIBLE_UNIVERSE = 10  # rebalance dates with fewer eligible coins than this are dropped --
-                             # an early 2-name "cross-section" is not a cross-section
-TOP_BOTTOM_FRACTION = 0.30  # top/bottom 30% by rank, consistent with a workable panel size early
+TOP_BOTTOM_FRACTION = 0.30  # top/bottom 30% by rank
+# Correction, 2026-08-26: was 10. The first real run's 84d-formation/84d-holding "central
+# finding" (-5.69% spread) turned out to be almost entirely an artifact of Dec 2020 - Mar 2021
+# (the well-known crypto alt-season), when the eligible universe was near this old threshold --
+# a 30% tercile of 10 names is only 3 coins, and a single coin's few-hundred-percent alt-season
+# move dominates a 3-name average outright (individual coin spreads of -313%, -287%, -256% showed
+# up in the per-rebalance dump, only possible with that few names per leg). Raised so a tercile
+# has at least 7 names (25 * 0.30 = 7) before a rebalance date counts at all -- a structural fix
+# to what counts as a "cross-section," decided before re-examining how the headline numbers move,
+# the same discipline as the COT gold percentile-window fix.
+MIN_ELIGIBLE_UNIVERSE = 25
 
 
 def discover_price_files(data_dir: Path) -> dict[str, Path]:
