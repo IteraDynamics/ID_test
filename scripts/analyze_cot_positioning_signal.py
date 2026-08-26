@@ -111,7 +111,40 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         "Do not guess this from memory.")
     p.add_argument("--price-csv", required=True, help="e.g. data/SPY_1D.csv")
     p.add_argument("--label", default=None, help="Display label, defaults to --market-name.")
+    p.add_argument("--dump-weeks", type=int, default=None,
+                   help="Print distribution detail, extreme-observation dates, and the "
+                        "correlation with/without the single most extreme forward-return "
+                        "observation for this horizon (e.g. 12) -- the same outlier-robustness "
+                        "check the crypto momentum analysis needed before trusting an aggregate "
+                        "number.")
     return p.parse_args(argv)
+
+
+def dump_extreme_observations(valid: pd.DataFrame, col: str, label: str, weeks: int, top_n: int = 8) -> None:
+    """Distribution detail and extreme-date breakdown for one forward-return horizon -- checks
+    whether an aggregate correlation is a broad relationship or a few macro episodes (2018 Q4,
+    2020 COVID, 2022 bear) doing most of the work, the same category of check that unraveled the
+    crypto cross-sectional momentum "reversal" finding on 2026-08-26."""
+    print(f"\n{'='*70}")
+    print(f"Diagnostic dump: {label}, {weeks}w forward return ({len(valid)} observations)")
+    print(f"{'='*70}")
+    print(valid[col].describe().to_string())
+    print(f"skew: {valid[col].skew():.3f}")
+
+    full_corr = valid["percentile"].corr(valid[col])
+    most_extreme_idx = valid[col].abs().idxmax()
+    without_extreme = valid.drop(most_extreme_idx)
+    corr_excl = without_extreme["percentile"].corr(without_extreme[col])
+    print(f"\nfull corr: {full_corr:+.4f}   "
+          f"corr excluding single most extreme observation "
+          f"({valid.loc[most_extreme_idx, 'usable_date'].date()}, "
+          f"fwd_ret={valid.loc[most_extreme_idx, col]*100:+.2f}%): {corr_excl:+.4f}")
+
+    print(f"\nTop {top_n} most extreme observations by |{col}|:")
+    top = valid.reindex(valid[col].abs().sort_values(ascending=False).index[:top_n])
+    for _, row in top.iterrows():
+        print(f"  {row['usable_date'].date()}: percentile={row['percentile']:.2f}  "
+              f"{col}={row[col]*100:+.2f}%")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -181,6 +214,18 @@ def main(argv: list[str] | None = None) -> int:
                   f"this is understood.")
     else:
         print("  Too few valid observations for the 12w horizon.")
+
+    if args.dump_weeks is not None:
+        dump_col = f"fwd_ret_{args.dump_weeks}w"
+        if dump_col not in market.columns:
+            print(f"\n--dump-weeks {args.dump_weeks}: not one of {FORWARD_HORIZONS_WEEKS}")
+        else:
+            dump_valid = market.dropna(subset=[dump_col])
+            if len(dump_valid) < 30:
+                print(f"\n--dump-weeks {args.dump_weeks}: only {len(dump_valid)} valid "
+                      f"observations, too few to dump")
+            else:
+                dump_extreme_observations(dump_valid, dump_col, label, args.dump_weeks)
 
     print("\nThis is discovery-stage only. No trading signal, no economic claim -- next step if")
     print("this looks real is proper causal-only power/significance testing, not eyeballing a")
