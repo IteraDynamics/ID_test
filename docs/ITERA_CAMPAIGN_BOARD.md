@@ -244,6 +244,44 @@ Closed:
   artifact; the corrected result is a clean null. Not pursued further. The percentile-computation
   fix itself (rolling-window bias correction, quintile-balance canary) is retained in the script
   as a real, reusable methodological lesson independent of this specific idea's outcome.
+- **Cross-sectional crypto momentum (Coinbase spot) — CLOSED 2026-08-26, clean discovery-stage
+  null, never chartered as a numbered campaign.** Named deficiency: "single-name crypto" (Core
+  v1's only crypto exposure is BTC 4H / ETH 1H+4H, both single-name trend-following). Gate 0/1
+  passed cleanly (multi-week horizon, wide feasibility margin against measured runtime cadence).
+  Gate 2 cleared on real evidence: the operator confirmed broad, current Coinbase spot access
+  (50+ names, screenshots), and `scripts/probe_coinbase_spot_momentum_universe.py` measured real
+  per-coin history depth (0.8y-11.1y, 0 failures). Point-in-time eligible-universe design (a coin
+  only ranks once it has real trailing history after its OWN listing date) via
+  `scripts/analyze_crypto_cross_sectional_momentum.py`, formation/holding horizon grid (2w/4w/12w
+  x 1w/4w/12w) declared before any result was seen.
+  First real run showed a striking shape — small positive spread at short formation, sharply
+  negative at 84d formation/84d holding (-5.69%) — that turned out to be almost entirely an
+  artifact: individual per-rebalance spreads of -313%/-287%/-256% (only possible with a 3-name
+  tercile) all clustered in Dec 2020-Mar 2021 (the crypto alt-season), exactly when the eligible
+  universe was near the too-low `MIN_ELIGIBLE_UNIVERSE=10` threshold. Fixed by raising the
+  threshold to 25 (7-name minimum tercile) — decided on its own structural merits before
+  re-examining results, same discipline as the COT gold percentile-window fix. The reversal
+  story vanished entirely on the corrected data; a smaller, mostly-positive pattern remained
+  (+0.15% to +2.02% across cells, 50-60% win rates).
+  A second, distinct artifact surfaced next: `--explain-date` on 2025-08-18 showed a real
+  ZEC-USD move (+1377.59% over 84 days, an actual 2025 privacy-coin speculative rally) alone
+  contributing ~98 of a 14-coin leg's +73.39-percentage-point mean — proof that MIN_ELIGIBLE_
+  UNIVERSE (a breadth fix) doesn't protect against one coin dominating a MEAN once crypto's
+  fat-tailed return distribution puts a 10-15x move on the table, essentially impossible in
+  equities. Added median-based leg aggregation alongside mean, verified on synthetic data to be
+  immune to exactly this failure mode while still recovering a real planted effect. Under
+  median aggregation, **6 of 9 grid cells flipped negative and every win rate collapsed to
+  46.4%-51.8%** — a coin flip. The three cells that stayed positive (all 84-day holding) were
+  weak (+0.32% to +1.97%) at win rates indistinguishable from chance.
+  Verdict: the mean-based "momentum" pattern was not a broad, repeatable cross-sectional
+  tendency — it was a small number of extreme, idiosyncratic single-coin events landing in one
+  leg or the other by chance, amplified by averaging. No execution-cost modeling was run: there
+  is no point checking whether a pattern survives trading costs when it does not survive basic
+  outlier-robustness. Not pursued further. The fixes made along the way (point-in-time
+  eligibility design, the `MIN_ELIGIBLE_UNIVERSE` breadth correction, median-vs-mean leg
+  aggregation, and the `--explain-date`/`--dump-*` diagnostics) are retained in the scripts as
+  reusable methodology, independent of this idea's outcome — the same pattern as the COT gold
+  percentile fix.
 
 Not authorized:
 
