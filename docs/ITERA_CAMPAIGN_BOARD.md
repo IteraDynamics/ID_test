@@ -187,6 +187,29 @@ Authorized now:
 - implementation of the registered Core v1 benchmark series (report-only);
 - Core v2 charter drafting (`docs/CORE_V2_CHARTER.md`, DRAFT) — documentation only, no runtime
   or capital.
+- **Campaign #55 (COT speculative positioning as a contrarian timing signal, S&P 500/Nasdaq-100
+  → SPY/QQQ) — PLANNING CHARTER, 2026-08-26, gates 0-2 pass, gate 4 underpowered as narrowly
+  tested.** Named deficiency: "single return source" (a sentiment/positioning signal, not a
+  retune of Core v1's trend rule); would be a Core v2 sleeve/overlay on existing SPY/QQQ
+  exposure, never a Core v1 change. Gate 0/1 pass cleanly (multi-week horizon vs. sub-1-bar
+  measured runtime cadence, ~140x margin). Gate 2 passes cleanly — the strongest tradeability
+  result of any idea this session: SPY/QQQ are already-held Core v1 instruments, same brokerage,
+  no new venue/account/approval needed, and the COT-futures-data-vs-ETF-execution mismatch needs
+  no cross-venue basis check since both track the same underlying index. Gate 3 materiality: a
+  rough IC-based heuristic gives ≈$607/yr at full $100k notional, ≈$202/yr at a more realistic
+  ~1/3 allocation — the same modest range every edge this session has landed in. Gate 4 (power),
+  the substantive finding: today's informal 2-market × 3-horizon × 2-statistic look was
+  Bonferroni-corrected (only S&P 500 26w survives, p≈0.0004 at raw n) and then autocorrelation-
+  adjusted (effective n ≈ raw n / holding-period-in-weeks, the same category of correction
+  Campaign #53's own `inject_ic` bug exists to enforce) — the sole survivor collapses to p≈0.51,
+  indistinguishable from noise. No combination tested today would survive a properly-powered
+  confirmatory test. Not closed as a null (the earlier structural robustness checks — no
+  single-point domination, Spearman not collapsing relative to Pearson — rule out the specific
+  artifact mechanisms that killed COT gold and crypto momentum); closed as **underpowered given
+  the current design**, with Amendment 1's own prescribed remedy identified: a cross-sectional
+  design across the broad universe of liquid CFTC-tracked futures markets, not more calendar
+  time on the same two weekly-cadence time series. No specification frozen (pacing rule; also
+  moot given gate 4). Full record: `docs/research/CAMPAIGN_55_COT_INDEX_POSITIONING_CONTRARIAN_CHARTER.md`.
 
 Closed:
 
