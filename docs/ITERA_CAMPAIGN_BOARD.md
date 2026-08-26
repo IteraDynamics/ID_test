@@ -277,6 +277,26 @@ Closed:
   sweep across nearby DTE/delta/wing-width choices yet; and Gate 2 itself is still pending the
   actual IBKR account. Not frozen, not re-chartered as a numbered campaign yet — recorded here
   as real, load-bearing progress on an idea previously closed at the gate.
+  **Correction, 2026-08-26 (second): skew's direction resolved — it REDUCES the edge, not an
+  unknown-direction risk.** Added an illustrative skew-steepness sweep (linear-in-log-moneyness,
+  no verified historical per-strike SPY skew dataset exists, same discipline as the cost sweep)
+  to `analyze_vrp_defined_risk_backtest.py`, re-running the full 127-cycle backtest under each
+  assumption. Moderate skew: mean $103.52→$94.33/cycle (still p<0.000001). Steep skew: mean
+  →$73.82/cycle (still p=0.000078 — highly significant even in the worst tested skew case).
+  Mechanism: skew pushes the delta-targeted put strike further OTM to hold the same 16-delta
+  target under locally elevated vol, costing more credit than the corresponding call-side
+  reduction gives back — verified directly (the found strike's local, skew-adjusted delta
+  matches the target exactly, and moves further OTM than the flat-vol strike, as expected).
+  Combining (approximately — skew and cost were swept independently, not jointly simulated)
+  the more representative assumptions (moderate skew + tight/moderate costs, since SPY is
+  about as liquid as options get and steep skew is more a crisis-specific regime than a
+  persistent baseline) leaves the edge comfortably positive, ~$60-80/cycle net. The genuinely
+  pessimistic tail combination (steep skew + wide costs) flips it negative
+  (~$73.82-$82.60≈-$8.78/cycle) — a normal, healthy shape for a real edge (robust to realistic
+  conditions, not bulletproof against the worst case on every axis simultaneously), not a red
+  flag. Remaining before Gate 5: a joint skew+cost simulation rather than an additive
+  approximation, a robustness sweep across nearby DTE/delta/wing-width structure choices, and
+  the IBKR account itself.
 - **CFTC COT gold speculative-positioning contrarian signal (GLD) — CLOSED 2026-08-25, clean
   discovery-stage null, never chartered as a numbered campaign.** Candidate: Non-Commercial net
   position as a percentage of open interest, CFTC Legacy Futures-Only report for "GOLD -
