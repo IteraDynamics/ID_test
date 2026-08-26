@@ -219,6 +219,29 @@ def main(argv: list[str] | None = None) -> int:
     print(f"annualized pnl (1 contract, mean-per-cycle x cycles/year): "
           f"${df['pnl_dollars'].mean() * cycles_per_year:.2f}")
 
+    print(f"\n{'='*70}")
+    print("Diagnostic: are losing cycles clustered in known vol events, or spread out?")
+    print(f"{'='*70}")
+    losers = df[df["pnl_dollars"] < 0].sort_values("pnl_dollars")
+    print(f"{len(losers)}/{len(df)} losing cycles:")
+    for _, row in losers.iterrows():
+        print(f"  {row['entry_date'].date()} -> {row['expiry_date'].date()}  "
+              f"vix_entry={row['vix_entry']:.1f}  pnl=${row['pnl_dollars']:.2f}")
+
+    full_mean = df["pnl_dollars"].mean()
+    worst_idx = df["pnl_dollars"].idxmin()
+    without_worst = df.drop(worst_idx)
+    print(f"\nfull mean: ${full_mean:.2f}   "
+          f"mean excluding single worst cycle ({df.loc[worst_idx, 'entry_date'].date()}, "
+          f"${df.loc[worst_idx, 'pnl_dollars']:.2f}): ${without_worst['pnl_dollars'].mean():.2f}")
+
+    corr_vix_pnl = df["vix_entry"].corr(df["pnl_dollars"])
+    print(f"\ncorr(VIX at entry, cycle pnl): {corr_vix_pnl:+.4f}")
+    print("(a real premium-harvesting structure entered at higher VIX should collect more credit")
+    print("for the same risk, i.e. a positive relationship here is expected and reassuring; a")
+    print("strongly negative one would suggest the flat-vol model is most wrong exactly where it")
+    print("matters most -- high-vol entries.)")
+
     print("\nThis is a fair-value, held-to-expiration, flat-vol first pass. See this script's")
     print("docstring for the five explicit modeling limitations before treating any number here")
     print("as an economic claim -- especially the missing volatility skew and execution costs.")
