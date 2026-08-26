@@ -50,7 +50,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.optimize import brentq
-from scipy.stats import norm
+from scipy.stats import norm, t as t_dist
 
 RISK_FREE_RATE = 0.04  # fixed approximation, not a real historical short-rate series
 DAYS_TO_EXPIRY = 35  # calendar days; a common 30-45 DTE convention for this kind of structure
@@ -58,6 +58,28 @@ TARGET_SHORT_DELTA = 0.16  # standard "16-delta" short strike convention for iro
 WING_WIDTH_PCT = 0.02  # long wing strikes this far further OTM than the short strikes, as a
                         # fraction of spot -- scale-invariant across SPY's 2014-2026 price range
 CONTRACT_MULTIPLIER = 100  # SPY options are on 100 shares
+LEG_COUNT = 4  # short put, long put, short call, long call
+
+# Cost overlay (2026-08-26 addition): no verified historical SPY-options bid-ask dataset is
+# available here. Rather than assert one "true" spread number from memory -- the exact mistake
+# that has cost real time this session (a CSV field name, a venue root filter, an ETF ticker,
+# a market name) -- this sweeps a few explicitly labeled, honestly-uncertain assumptions and
+# shows how much the result actually depends on the number that can't be verified, instead of
+# hiding that uncertainty behind a single figure. Each scenario charges one full bid-ask width
+# per leg (approximating a half-spread crossed on entry plus an equivalent-cost exit/assignment
+# friction), on all 4 legs, once per cycle -- a simplification, not a mechanically exact model
+# of real fills.
+SPREAD_COST_SCENARIOS = [
+    ("tight (calm, highly liquid strike)", 0.03),
+    ("moderate (typical, some far-OTM widening)", 0.08),
+    ("wide (crisis period / thin strike)", 0.20),
+]
+# Commission assumption -- recalled with moderate, not certain, confidence from general
+# knowledge of IBKR's typical per-contract US options rate; verify against IBKR's actual current
+# rate sheet before this goes anywhere near a frozen specification. Charged once per leg
+# (entry only) -- likely understates real total commission if any position is ever closed early
+# or incurs an assignment fee.
+COMMISSION_PER_CONTRACT_LEG = 0.65
 
 
 def bs_price(spot: float, strike: float, t_years: float, sigma: float, r: float, is_call: bool) -> float:
@@ -126,6 +148,30 @@ def iron_condor_expiration_pnl(entry: dict, spot_at_expiry: float) -> float:
         -max(0.0, spot_at_expiry - entry["k_short_call"]) + max(0.0, spot_at_expiry - entry["k_long_call"])
     )
     return entry["net_credit"] + put_spread_settlement + call_spread_settlement
+
+
+def cost_per_cycle(spread_cost_per_leg: float, commission_per_leg: float) -> float:
+    """Total assumed cost for one 4-leg cycle. spread_cost_per_leg is quoted PER SHARE (like a
+    real option's bid-ask width, e.g. "$0.03 wide") and needs CONTRACT_MULTIPLIER to become a
+    per-contract dollar cost -- commission_per_leg is already quoted PER CONTRACT and must NOT
+    be multiplied again, or it silently becomes 100x too large."""
+    return LEG_COUNT * (spread_cost_per_leg * CONTRACT_MULTIPLIER + commission_per_leg)
+
+
+def one_sample_t_test(values: pd.Series) -> tuple[float, float]:
+    """Standard one-sample t-test against zero. Legitimate here (unlike every overlapping-
+    window time-series test elsewhere this session) because run_backtest's cycles are
+    genuinely non-overlapping by construction -- see run_backtest's own docstring."""
+    n = len(values)
+    if n < 2:
+        return float("nan"), float("nan")
+    mean = values.mean()
+    se = values.std(ddof=1) / math.sqrt(n)
+    if se == 0:
+        return float("inf") if mean != 0 else 0.0, 0.0 if mean != 0 else 1.0
+    stat = mean / se
+    p = 2 * t_dist.sf(abs(stat), df=n - 1)
+    return stat, p
 
 
 def load_close_series(csv_path: str) -> pd.Series:
@@ -241,6 +287,30 @@ def main(argv: list[str] | None = None) -> int:
     print("for the same risk, i.e. a positive relationship here is expected and reassuring; a")
     print("strongly negative one would suggest the flat-vol model is most wrong exactly where it")
     print("matters most -- high-vol entries.)")
+
+    t_gross, p_gross = one_sample_t_test(df["pnl_dollars"])
+    print(f"\n{'='*70}")
+    print("Significance (legitimate here: cycles are genuinely non-overlapping, unlike every")
+    print("other time-series test this session)")
+    print(f"{'='*70}")
+    print(f"fair-value (no costs): t={t_gross:.3f}  df={len(df)-1}  two-tailed p={p_gross:.6f}")
+
+    print(f"\n{'='*70}")
+    print("Cost sensitivity: NO verified historical SPY-options bid-ask dataset exists here.")
+    print(f"Sweeping stated, honestly-uncertain spread assumptions instead of asserting one")
+    print(f"'true' number. Commission assumption (${COMMISSION_PER_CONTRACT_LEG:.2f}/contract/leg,")
+    print(f"entry only) recalled with moderate confidence -- verify against IBKR's real current")
+    print(f"rate sheet before this goes near a frozen spec.")
+    print(f"{'='*70}")
+    for label, spread_cost in SPREAD_COST_SCENARIOS:
+        cost = cost_per_cycle(spread_cost, COMMISSION_PER_CONTRACT_LEG)
+        net = df["pnl_dollars"] - cost
+        t_net, p_net = one_sample_t_test(net)
+        print(f"\n{label}  (${spread_cost:.2f}/contract/leg spread, ${cost:.2f}/cycle total cost)")
+        print(f"  net mean/cycle: ${net.mean():.2f}  median: ${net.median():.2f}  "
+              f"win rate: {(net > 0).mean()*100:.1f}%")
+        print(f"  annualized (1 contract): ${net.mean() * (365/DAYS_TO_EXPIRY):.2f}")
+        print(f"  t={t_net:.3f}  p={p_net:.5f}")
 
     print("\nThis is a fair-value, held-to-expiration, flat-vol first pass. See this script's")
     print("docstring for the five explicit modeling limitations before treating any number here")
