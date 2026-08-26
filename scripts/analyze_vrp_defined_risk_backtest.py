@@ -16,14 +16,17 @@ Black-Scholes using VIX as the implied-volatility input, held to expiration, aga
 historical SPY closes.
 
 Explicit model limitations, stated up front rather than discovered later:
-1. VIX (a single at-the-money-ish 30-day implied vol figure) is used as the IV input for ALL
-   four legs, including far-OTM strikes. Real option markets price volatility SKEW -- OTM puts
-   trade at meaningfully higher IV than ATM (crash insurance premium), OTM calls often trade
-   lower. A flat-vol model therefore likely UNDERSTATES the true put-side credit and OVERSTATES
-   the call-side credit relative to real market pricing. Net effect on total credit is not
-   obviously biased in one direction without real skew data, but the STRUCTURE'S true risk
-   profile (skewed, not symmetric) is not captured here.
-2. No bid-ask spread or execution cost is modeled. This is a fair-value backtest. Real fills
+1. VIX (a single at-the-money-ish 30-day implied vol figure) is the baseline IV input; real
+   option markets price volatility SKEW on top of that -- OTM puts trade at meaningfully higher
+   IV than ATM (crash insurance premium), OTM calls often trade lower. Updated 2026-08-26: no
+   verified historical per-strike SPY skew dataset exists here, so this is modeled as an
+   illustrative sensitivity sweep (SKEW_SLOPE_SCENARIOS, a simple linear-in-log-moneyness
+   adjustment) rather than left out entirely -- but it is still NOT a real historical skew
+   curve, and real skew varies substantially over time (steeper after crashes) in ways this
+   fixed-per-scenario slope can't capture.
+2. No bid-ask spread or execution cost is modeled by default (see SPREAD_COST_SCENARIOS for the
+   separate cost sensitivity sweep, applied independently of skew). This is otherwise a fair-
+   value backtest. Real fills
    are worse -- this session's own TLT lesson (crypto-calibrated spread costs massively
    overstating a liquid instrument's real cost) does NOT apply here in the same direction; if
    anything options spreads are typically wider relative to fair value than most equity/ETF
@@ -81,6 +84,32 @@ SPREAD_COST_SCENARIOS = [
 # or incurs an assignment fee.
 COMMISSION_PER_CONTRACT_LEG = 0.65
 
+# Volatility skew (2026-08-26 addition): the flat-vol model above prices all four legs off a
+# single VIX-derived sigma, but real equity index options price OTM puts richer than ATM (crash-
+# insurance demand) and typically OTM calls a bit cheaper -- the "skew"/"smirk" well documented
+# in equity derivatives (e.g. CBOE's own literature on SPX skew since 1987). No verified
+# historical per-strike SPY skew dataset exists here, so -- same discipline as the cost sweep --
+# this sweeps clearly labeled, illustrative skew-steepness assumptions instead of asserting one
+# real historical skew curve. Parametrization: a simple, standard linear-in-log-moneyness
+# adjustment, sigma(K) = base_sigma - SKEW_SLOPE * ln(K/spot), so K < spot (puts) get higher
+# local vol and K > spot (calls) get lower local vol, in vol-point terms per unit of log-
+# moneyness. Real skew is also known to vary substantially over time (steeper after crashes,
+# flatter in complacent periods) and is not perfectly linear or perfectly antisymmetric between
+# puts and calls -- this is a first-order approximation only.
+SKEW_SLOPE_SCENARIOS = [
+    ("flat (current baseline, no skew)", 0.0),
+    ("moderate skew", 0.30),
+    ("steep skew", 0.60),
+]
+MIN_SIGMA = 0.01  # floor to avoid a nonsensical non-positive vol far along a steep skew
+
+
+def skewed_sigma(spot: float, strike: float, base_sigma: float, skew_slope: float) -> float:
+    if skew_slope == 0.0:
+        return base_sigma
+    log_moneyness = math.log(strike / spot)
+    return max(MIN_SIGMA, base_sigma - skew_slope * log_moneyness)
+
 
 def bs_price(spot: float, strike: float, t_years: float, sigma: float, r: float, is_call: bool) -> float:
     if t_years <= 0 or sigma <= 0:
@@ -103,32 +132,46 @@ def bs_delta(spot: float, strike: float, t_years: float, sigma: float, r: float,
 
 
 def find_strike_for_delta(
-    spot: float, t_years: float, sigma: float, r: float, is_call: bool, target_abs_delta: float
+    spot: float, t_years: float, sigma: float, r: float, is_call: bool, target_abs_delta: float,
+    skew_slope: float = 0.0,
 ) -> float:
     """Finds the strike whose Black-Scholes delta magnitude matches target_abs_delta, via
     root-finding -- delta is monotonic in strike for fixed spot/T/sigma/r, so this is
-    well-posed. Searches a wide bracket around spot to stay robust across vol regimes."""
+    well-posed. Searches a wide bracket around spot to stay robust across vol regimes.
+
+    With skew_slope != 0, sigma is itself a function of the candidate strike (skewed_sigma),
+    so this solves the self-consistent problem "find K such that delta(K, sigma(K)) = target" --
+    still well-posed via the same root-find, just recomputing local vol at each trial K."""
     target = target_abs_delta if is_call else -target_abs_delta
 
     def f(k: float) -> float:
-        return bs_delta(spot, k, t_years, sigma, r, is_call) - target
+        local_sigma = skewed_sigma(spot, k, sigma, skew_slope)
+        return bs_delta(spot, k, t_years, local_sigma, r, is_call) - target
 
     lo, hi = spot * 0.3, spot * 3.0
     return brentq(f, lo, hi, xtol=1e-6)
 
 
-def iron_condor_entry(spot: float, t_years: float, sigma: float, r: float) -> dict:
+def iron_condor_entry(spot: float, t_years: float, sigma: float, r: float, skew_slope: float = 0.0) -> dict:
     """Prices one iron condor entry: short strikes at TARGET_SHORT_DELTA, long wings
-    WING_WIDTH_PCT of spot further out. Returns strikes and the net credit received."""
-    k_short_put = find_strike_for_delta(spot, t_years, sigma, r, is_call=False, target_abs_delta=TARGET_SHORT_DELTA)
-    k_short_call = find_strike_for_delta(spot, t_years, sigma, r, is_call=True, target_abs_delta=TARGET_SHORT_DELTA)
+    WING_WIDTH_PCT of spot further out. Returns strikes and the net credit received.
+
+    skew_slope=0.0 (default) reproduces the original flat-vol behavior exactly -- every already-
+    verified test of this function's output is unaffected by this parameter's addition."""
+    k_short_put = find_strike_for_delta(spot, t_years, sigma, r, is_call=False, target_abs_delta=TARGET_SHORT_DELTA, skew_slope=skew_slope)
+    k_short_call = find_strike_for_delta(spot, t_years, sigma, r, is_call=True, target_abs_delta=TARGET_SHORT_DELTA, skew_slope=skew_slope)
     k_long_put = k_short_put * (1 - WING_WIDTH_PCT)
     k_long_call = k_short_call * (1 + WING_WIDTH_PCT)
 
-    short_put_price = bs_price(spot, k_short_put, t_years, sigma, r, is_call=False)
-    long_put_price = bs_price(spot, k_long_put, t_years, sigma, r, is_call=False)
-    short_call_price = bs_price(spot, k_short_call, t_years, sigma, r, is_call=True)
-    long_call_price = bs_price(spot, k_long_call, t_years, sigma, r, is_call=True)
+    sigma_short_put = skewed_sigma(spot, k_short_put, sigma, skew_slope)
+    sigma_long_put = skewed_sigma(spot, k_long_put, sigma, skew_slope)
+    sigma_short_call = skewed_sigma(spot, k_short_call, sigma, skew_slope)
+    sigma_long_call = skewed_sigma(spot, k_long_call, sigma, skew_slope)
+
+    short_put_price = bs_price(spot, k_short_put, t_years, sigma_short_put, r, is_call=False)
+    long_put_price = bs_price(spot, k_long_put, t_years, sigma_long_put, r, is_call=False)
+    short_call_price = bs_price(spot, k_short_call, t_years, sigma_short_call, r, is_call=True)
+    long_call_price = bs_price(spot, k_long_call, t_years, sigma_long_call, r, is_call=True)
 
     net_credit = (short_put_price - long_put_price) + (short_call_price - long_call_price)
     return {
@@ -181,13 +224,15 @@ def load_close_series(csv_path: str) -> pd.Series:
     return df["close"].sort_index()
 
 
-def run_backtest(spy_close: pd.Series, vix_close: pd.Series) -> pd.DataFrame:
+def run_backtest(spy_close: pd.Series, vix_close: pd.Series, skew_slope: float = 0.0) -> pd.DataFrame:
     """Non-overlapping DAYS_TO_EXPIRY-day cycles across the full history both series cover.
     Non-overlapping (rather than weekly-rolled, like every other analysis this session) is a
     deliberate choice here: it keeps this first pass free of the overlapping-window
     effective-sample-size problem that has recurred all day (COT gold, crypto momentum, COT
     index), at the cost of a smaller raw n -- the right tradeoff for a first honest look, not a
-    frozen specification."""
+    frozen specification.
+
+    skew_slope=0.0 (default) reproduces the original flat-vol backtest exactly."""
     common_dates = spy_close.index.intersection(vix_close.index)
     spy_close = spy_close.loc[common_dates].sort_index()
     vix_close = vix_close.loc[common_dates].sort_index()
@@ -210,7 +255,7 @@ def run_backtest(spy_close: pd.Series, vix_close: pd.Series) -> pd.DataFrame:
 
         spot = float(spy_close.loc[entry_date])
         sigma = float(vix_close.loc[entry_date]) / 100.0
-        entry = iron_condor_entry(spot, t_years, sigma, RISK_FREE_RATE)
+        entry = iron_condor_entry(spot, t_years, sigma, RISK_FREE_RATE, skew_slope=skew_slope)
         spot_at_expiry = float(spy_close.loc[expiry_date])
         pnl_per_share = iron_condor_expiration_pnl(entry, spot_at_expiry)
         rows.append({
@@ -296,6 +341,21 @@ def main(argv: list[str] | None = None) -> int:
     print(f"fair-value (no costs): t={t_gross:.3f}  df={len(df)-1}  two-tailed p={p_gross:.6f}")
 
     print(f"\n{'='*70}")
+    print("Skew sensitivity: NO verified historical per-strike SPY skew dataset exists here.")
+    print("Sweeping illustrative skew-steepness assumptions (linear-in-log-moneyness, OTM puts")
+    print("get higher local vol, OTM calls lower) instead of asserting one real historical skew")
+    print("curve. Re-runs the FULL backtest under each assumption -- fair value, no execution")
+    print("costs yet, isolating skew's effect before combining it with the cost sweep above.")
+    print(f"{'='*70}")
+    for label, slope in SKEW_SLOPE_SCENARIOS:
+        skew_df = run_backtest(spy_close, vix_close, skew_slope=slope) if slope != 0.0 else df
+        t_skew, p_skew = one_sample_t_test(skew_df["pnl_dollars"])
+        print(f"\n{label} (slope={slope}): n={len(skew_df)}  "
+              f"mean=${skew_df['pnl_dollars'].mean():.2f}  median=${skew_df['pnl_dollars'].median():.2f}  "
+              f"win rate={(skew_df['pnl_dollars'] > 0).mean()*100:.1f}%")
+        print(f"  t={t_skew:.3f}  p={p_skew:.6f}")
+
+    print(f"\n{'='*70}")
     print("Cost sensitivity: NO verified historical SPY-options bid-ask dataset exists here.")
     print(f"Sweeping stated, honestly-uncertain spread assumptions instead of asserting one")
     print(f"'true' number. Commission assumption (${COMMISSION_PER_CONTRACT_LEG:.2f}/contract/leg,")
@@ -312,9 +372,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  annualized (1 contract): ${net.mean() * (365/DAYS_TO_EXPIRY):.2f}")
         print(f"  t={t_net:.3f}  p={p_net:.5f}")
 
-    print("\nThis is a fair-value, held-to-expiration, flat-vol first pass. See this script's")
-    print("docstring for the five explicit modeling limitations before treating any number here")
-    print("as an economic claim -- especially the missing volatility skew and execution costs.")
+    print("\nThis is a first-principles backtest with illustrative skew and cost sensitivity")
+    print("sweeps, not a calibration against real historical options-market data. See this")
+    print("script's docstring for the full list of modeling limitations before treating any")
+    print("number here as an economic claim.")
     return 0
 
 
