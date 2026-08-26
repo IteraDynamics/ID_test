@@ -147,7 +147,62 @@ def eligible_mask(panel: pd.DataFrame, as_of: pd.Timestamp) -> pd.Series:
     return has_old & has_now
 
 
-def run_analysis(panel: pd.DataFrame) -> None:
+def compute_spread_series(
+    panel: pd.DataFrame, dates: list[pd.Timestamp], formation_days: int, holding_days: int
+) -> pd.Series:
+    """Date-indexed top-minus-bottom spread per rebalance, for one formation/holding combo. Same
+    computation run_analysis aggregates inline -- factored out so a diagnostic dump can inspect
+    the raw per-date series instead of only ever seeing the mean."""
+    out: dict[pd.Timestamp, float] = {}
+    for d in dates:
+        elig = eligible_mask(panel, d)
+        if int(elig.sum()) < MIN_ELIGIBLE_UNIVERSE:
+            continue
+        tr = trailing_return(panel, d, formation_days)[elig]
+        fr = forward_return(panel, d, holding_days)[elig]
+        valid = tr.notna() & fr.notna()
+        tr, fr = tr[valid], fr[valid]
+        if len(tr) < MIN_ELIGIBLE_UNIVERSE:
+            continue
+        n_leg = max(1, int(len(tr) * TOP_BOTTOM_FRACTION))
+        ranked = tr.sort_values(ascending=False)
+        top_names, bottom_names = ranked.index[:n_leg], ranked.index[-n_leg:]
+        out[d] = fr[top_names].mean() - fr[bottom_names].mean()
+    return pd.Series(out)
+
+
+def dump_spread_diagnostic(panel: pd.DataFrame, dates: list[pd.Timestamp], formation_days: int, holding_days: int) -> None:
+    """Prints distributional detail (not just the mean) for one formation/holding combo, and the
+    most extreme individual rebalances -- the direct check for whether a small number of events
+    are driving an otherwise-unremarkable average, the same category of check that caught the
+    COT gold quintile-median coincidence."""
+    series = compute_spread_series(panel, dates, formation_days, holding_days)
+    print(f"\n{'='*70}")
+    print(f"Diagnostic dump: formation={formation_days}d holding={holding_days}d "
+          f"({len(series)} rebalances)")
+    print(f"{'='*70}")
+    print(series.describe().to_string())
+    print(f"skew: {series.skew():.3f}")
+    print(f"|spread| > 10%: {(series.abs() > 0.10).sum()} rebalances")
+    print(f"|spread| > 20%: {(series.abs() > 0.20).sum()} rebalances")
+
+    # Effect of dropping the single most extreme rebalance on the overall mean -- if the mean
+    # swings by more than a small fraction from removing ONE date, the average is not a stable
+    # summary of a broad effect.
+    full_mean = series.mean()
+    most_extreme_date = series.abs().idxmax()
+    without_extreme = series.drop(most_extreme_date)
+    print(f"\nfull mean: {full_mean*100:+.2f}%   "
+          f"mean excluding single most extreme rebalance ({most_extreme_date.date()}, "
+          f"spread={series[most_extreme_date]*100:+.2f}%): {without_extreme.mean()*100:+.2f}%")
+
+    print("\nTop 8 most extreme rebalances by |spread|:")
+    top8 = series.reindex(series.abs().sort_values(ascending=False).index[:8])
+    for d, v in top8.items():
+        print(f"  {d.date()}: {v*100:+.2f}%")
+
+
+def run_analysis(panel: pd.DataFrame, dump_formation_days: int | None = None, dump_holding_days: int | None = None) -> None:
     dates = rebalance_dates(panel)
     print(f"{len(dates)} rebalance dates from {dates[0].date()} to {dates[-1].date()} "
           f"(weekly, {REBALANCE_FREQ_DAYS}-day spacing)")
@@ -174,33 +229,15 @@ def run_analysis(panel: pd.DataFrame) -> None:
 
     for formation_days in FORMATION_WINDOWS_DAYS:
         for holding_days in HOLDING_HORIZONS_DAYS:
-            spreads = []
-            for d in dates:
-                elig = eligible_mask(panel, d)
-                n_elig = int(elig.sum())
-                if n_elig < MIN_ELIGIBLE_UNIVERSE:
-                    continue
-                tr = trailing_return(panel, d, formation_days)[elig]
-                fr = forward_return(panel, d, holding_days)[elig]
-                valid = tr.notna() & fr.notna()
-                tr, fr = tr[valid], fr[valid]
-                if len(tr) < MIN_ELIGIBLE_UNIVERSE:
-                    continue
-                n_leg = max(1, int(len(tr) * TOP_BOTTOM_FRACTION))
-                ranked = tr.sort_values(ascending=False)
-                top_names = ranked.index[:n_leg]
-                bottom_names = ranked.index[-n_leg:]
-                spread = fr[top_names].mean() - fr[bottom_names].mean()
-                spreads.append(spread)
-            if len(spreads) < 10:
+            series = compute_spread_series(panel, dates, formation_days, holding_days)
+            if len(series) < 10:
                 print(f"  formation={formation_days}d holding={holding_days}d: only "
-                      f"{len(spreads)} usable rebalances, too few to report")
+                      f"{len(series)} usable rebalances, too few to report")
                 continue
-            spreads_arr = np.array(spreads)
-            mean_spread = spreads_arr.mean()
-            pct_positive = (spreads_arr > 0).mean()
+            mean_spread = series.mean()
+            pct_positive = (series > 0).mean()
             print(f"  formation={formation_days:>3}d holding={holding_days:>3}d: "
-                  f"n={len(spreads_arr):>4}  mean top-minus-bottom spread={mean_spread*100:+.2f}%  "
+                  f"n={len(series):>4}  mean top-minus-bottom spread={mean_spread*100:+.2f}%  "
                   f"positive in {pct_positive*100:.1f}% of rebalances")
 
     print("\nThis is discovery-stage only. No execution costs modeled, no significance/power test")
@@ -208,10 +245,18 @@ def run_analysis(panel: pd.DataFrame) -> None:
     print("cell above looks real: check it survives realistic altcoin spread/slippage costs before")
     print("anything else -- this venue's cost structure for smaller-cap names has not been checked.")
 
+    if dump_formation_days is not None and dump_holding_days is not None:
+        dump_spread_diagnostic(panel, dates, dump_formation_days, dump_holding_days)
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("--data-dir", default="data")
+    p.add_argument("--dump-formation-days", type=int, default=None,
+                   help="Print the raw per-rebalance spread series (distribution, skew, extreme "
+                        "dates) for this formation window, instead of only the grid summary. "
+                        "Requires --dump-holding-days too.")
+    p.add_argument("--dump-holding-days", type=int, default=None)
     return p.parse_args(argv)
 
 
@@ -227,7 +272,7 @@ def main(argv: list[str] | None = None) -> int:
     panel = build_panel(price_files)
     print(f"Panel: {panel.shape[0]} calendar days x {panel.shape[1]} products, "
           f"{panel.index.min().date()} -> {panel.index.max().date()}")
-    run_analysis(panel)
+    run_analysis(panel, args.dump_formation_days, args.dump_holding_days)
     return 0
 
 
