@@ -210,6 +210,35 @@ def dump_spread_diagnostic(panel: pd.DataFrame, dates: list[pd.Timestamp], forma
         print(f"  {d.date()}: {v*100:+.2f}%")
 
 
+def explain_date(panel: pd.DataFrame, as_of: pd.Timestamp, formation_days: int, holding_days: int) -> None:
+    """Shows exactly which coins are in the top/bottom legs at one rebalance date and each one's
+    individual trailing/forward return -- the direct check for whether an extreme aggregate
+    number is a broad basket effect or one or two individual coins' data, and for whether two
+    dates that coincidentally report the same aggregate value share a suspicious cause."""
+    elig = eligible_mask(panel, as_of)
+    tr = trailing_return(panel, as_of, formation_days)[elig]
+    fr = forward_return(panel, as_of, holding_days)[elig]
+    valid = tr.notna() & fr.notna()
+    tr, fr = tr[valid], fr[valid]
+    n_leg = max(1, int(len(tr) * TOP_BOTTOM_FRACTION))
+    ranked = tr.sort_values(ascending=False)
+    top_names, bottom_names = ranked.index[:n_leg], ranked.index[-n_leg:]
+
+    print(f"\n{'='*70}")
+    print(f"Explain: {as_of.date()}  formation={formation_days}d holding={holding_days}d  "
+          f"({len(tr)} eligible coins, {n_leg} per leg)")
+    print(f"{'='*70}")
+    print(f"top leg (highest {formation_days}d trailing return):")
+    for name in top_names:
+        print(f"  {name}: trailing={tr[name]*100:+.2f}%  forward_{holding_days}d={fr[name]*100:+.2f}%")
+    print(f"bottom leg (lowest {formation_days}d trailing return):")
+    for name in bottom_names:
+        print(f"  {name}: trailing={tr[name]*100:+.2f}%  forward_{holding_days}d={fr[name]*100:+.2f}%")
+    print(f"top leg mean forward: {fr[top_names].mean()*100:+.2f}%   "
+          f"bottom leg mean forward: {fr[bottom_names].mean()*100:+.2f}%   "
+          f"spread: {(fr[top_names].mean() - fr[bottom_names].mean())*100:+.2f}%")
+
+
 def run_analysis(panel: pd.DataFrame, dump_formation_days: int | None = None, dump_holding_days: int | None = None) -> None:
     dates = rebalance_dates(panel)
     print(f"{len(dates)} rebalance dates from {dates[0].date()} to {dates[-1].date()} "
@@ -265,6 +294,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         "dates) for this formation window, instead of only the grid summary. "
                         "Requires --dump-holding-days too.")
     p.add_argument("--dump-holding-days", type=int, default=None)
+    p.add_argument("--explain-date", default=None,
+                   help="YYYY-MM-DD rebalance date to show the actual top/bottom coin legs and "
+                        "each one's individual return for. Requires --dump-formation-days and "
+                        "--dump-holding-days too (uses those as the formation/holding window).")
     return p.parse_args(argv)
 
 
@@ -281,6 +314,14 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Panel: {panel.shape[0]} calendar days x {panel.shape[1]} products, "
           f"{panel.index.min().date()} -> {panel.index.max().date()}")
     run_analysis(panel, args.dump_formation_days, args.dump_holding_days)
+
+    if args.explain_date and args.dump_formation_days is not None and args.dump_holding_days is not None:
+        target = pd.Timestamp(args.explain_date)
+        candidates = panel.index[panel.index >= target]
+        if len(candidates) == 0:
+            print(f"\n--explain-date {args.explain_date}: no panel date on/after it")
+        else:
+            explain_date(panel, candidates[0], args.dump_formation_days, args.dump_holding_days)
     return 0
 
 
