@@ -210,6 +210,35 @@ Authorized now:
   design across the broad universe of liquid CFTC-tracked futures markets, not more calendar
   time on the same two weekly-cadence time series. No specification frozen (pacing rule; also
   moot given gate 4). Full record: `docs/research/CAMPAIGN_55_COT_INDEX_POSITIONING_CONTRARIAN_CHARTER.md`.
+  **Correction, 2026-08-27: the prescribed cross-sectional remedy was built and run — CLOSED as a
+  clean null, not underpowered.** `scripts/probe_cot_cross_sectional_universe.py` enumerated the
+  live CFTC universe directly (`scripts/list_cot_market_names.py`, no names assumed from memory)
+  and resolved markets by exact name after catching a real mismatch bug (a substring match had
+  paired British Pound positioning with a EUR/GBP cross-rate price series). Two genuine, permanent
+  gaps surfaced in the process: British Pound and Copper have no live COT name (both, along with
+  the entire Treasury complex, were retired by a CFTC mass-renaming on 2022-02-01 with no
+  successor under any name) — the Treasury gap means this design still cannot address the "no
+  rates or fixed income" deficiency. 35 of 37 candidate markets cleared both gates. A
+  pre-registered design (`scripts/run_cot_cross_sectional_discovery.py`, committed before any
+  result: primary horizon 12w, primary statistic Spearman, contrarian direction negative, BH-FDR
+  q=0.10, 40% holdout held out by fixed seed `20260826`, staged discovery/confirmation execution
+  verified to never let discovery touch holdout markets) tested 21 discovery-stage markets. Real
+  result: mean rho +0.0116 (wrong sign for the contrarian hypothesis), negative in only 8/21
+  markets, t-test p=0.582, Wilcoxon p=0.517 — no signal at the primary horizon, and the 4w/26w
+  secondary horizons were no better (p=0.691, p=0.443). Effective breadth came back at only 5.1
+  independent markets out of 21 (mean pairwise forward-return correlation +0.155) — a real,
+  measured number, not assumed, and itself an explanation for why the original 2-market version
+  could never have carried power. 10/21 markets nominally survived FDR at q=0.10, but 6 of the 10
+  had the WRONG sign (Euro FX, Cotton, Sugar, Brazilian Real, Coffee, Wheat HRW — a
+  softs/grains-heavy cluster consistent with momentum/CTA-trend dominance rather than contrarian
+  positioning extremes), leaving only 4 correct-sign survivors (VIX, Canadian Dollar, Natural Gas,
+  S&P 500); reading "10 survive FDR" without the sign split would have been misleading. This is a
+  clean null on its own pre-registered terms, not an underpowered one: the design achieved real,
+  measured cross-sectional breadth (5.1 effective markets, a genuine improvement over the original
+  2) and still failed. The 40%, 14-market holdout stays untouched — there is no confirmatory value
+  in spending a one-shot strict-standard test on a discovery result that already failed. COT
+  speculative-positioning-as-contrarian-timing is closed as a line of research; reopening it would
+  need a different signal construction, not another pass at this one.
 
 Closed:
 
