@@ -337,6 +337,23 @@ Closed:
   authorized. Remaining before any Gate 5 work: real IBKR commission/fill verification against
   their actual rate sheet (the $0.65/contract/leg assumption is still recalled, not verified),
   and the account itself.
+  **Correction, 2026-08-26 (fifth): the "essentially exclusive to Interactive-Brokers-tier
+  accounts" claim recorded above (2026-08-25) is almost certainly WRONG and should not be relied
+  on.** It originated in an operator remark ("almost no one has that except for interactive
+  brokers") that was written into this record as established fact without being challenged —
+  exactly the failure mode the append-only convention exists to catch. Multi-leg defined-risk
+  spreads are a mainstream retail options capability, not an IBKR-specific one: tastytrade (built
+  by the thinkorswim founders specifically around premium-selling strategies of this kind),
+  Schwab/thinkorswim, E*TRADE, Fidelity and TradeStation are all believed to support them. The
+  actual gate is the options APPROVAL LEVEL (spreads sit above covered calls / long options in
+  most brokers' tiering) and that tier is applied for at any broker. What the operator hit on
+  Coinbase was that Coinbase does not offer that tier at all — a Coinbase fact, not an industry
+  fact. Stated from general knowledge, NOT verified this session; treat as strongly believed and
+  worth a short check, not settled. Practical consequence: the campaign is not IBKR-dependent,
+  and since fill quality is the binding constraint (see correction (c) above), broker choice
+  bears directly on the make-or-break variable — order routing and the ability to work a 4-leg
+  order near mid vary by platform, so the broker decision should be made on execution quality
+  rather than on an assumed monopoly.
   **Correction, 2026-08-26 (fourth): Gate 3 materiality re-sized on the measured representative
   case — this is the first candidate that is not marginal.** Using the real moderate-skew,
   moderate-cost figures ($59.73 net/cycle/contract, 10.4 cycles/yr, $553 hard-bounded max loss
