@@ -354,6 +354,33 @@ Closed:
   bears directly on the make-or-break variable — order routing and the ability to work a 4-leg
   order near mid vary by platform, so the broker decision should be made on execution quality
   rather than on an assumed monopoly.
+  **Correction, 2026-08-26 (sixth): the lower-approval-tier fallback was tested and FAILS. There
+  is no viable substitute for the defined-risk structure, which makes the options-approval
+  question load-bearing rather than a formality.** Motivated by the operator's concern that
+  spread-level approval might not be granted, `scripts/analyze_vrp_cash_secured_put.py` tested
+  cash-secured SPY put selling — the LOWEST options approval tier, and positioned on the put
+  side where the VRP is richest. Real result over the same 127 non-overlapping cycles, same data,
+  same period, net of the same moderate execution cost (and charged only 1 leg rather than 4):
+  **not one delta in the 0.10/0.16/0.20/0.30 grid reaches significance** (p = 0.92, 0.61, 0.40,
+  0.12 respectively), against the condor's p<0.000001 on identical cycles. Like-for-like at
+  0.16 delta: the CSP earns 48% of the condor's mean per cycle, with **8.6x the worst-case loss**
+  (-$7,642 vs -$894) and **58x the capital committed** ($32,047 collateral vs $553 at risk). At
+  realistic full size on a $100k book a single bad cycle costs **-22.9% with no floor**, versus
+  the condor's hard-capped -5.0%. Median far exceeds mean at every delta (e.g. $115 vs $33 at
+  0.16), i.e. the same right-skew found in the premium itself — but here the rare disasters are
+  large enough to swamp the mean entirely rather than merely drag it.
+  This is not a result discarded because it was unwelcome: the falsifiable skew prediction
+  registered in the script BEFORE running held exactly (credit $1.636 -> $1.790 -> $1.976 across
+  flat/moderate/steep skew, net P&L rising with it, and both the fixed-strike and fixed-delta
+  framings checked in advance to disentangle a real confound). The machinery is correct; the
+  structure is simply inferior.
+  It also converts a prudential judgment into a measurement. The 2026-08-25 entry rejected
+  undefined-risk premium selling because it "reopens the exact tail-risk problem that
+  defined-risk structuring existed to solve." That was reasoning at the time; it is now
+  quantified. The long wing is not a refinement of this candidate — it is what makes it work.
+  Strategic consequence: spread-level approval is now a genuine gate on this entire line of
+  work, with no lower-tier path around it. If approval is unavailable, VRP is blocked rather
+  than degraded, and that should inform how the broker/approval question is prioritized.
   **Correction, 2026-08-26 (fourth): Gate 3 materiality re-sized on the measured representative
   case — this is the first candidate that is not marginal.** Using the real moderate-skew,
   moderate-cost figures ($59.73 net/cycle/contract, 10.4 cycles/yr, $553 hard-bounded max loss
