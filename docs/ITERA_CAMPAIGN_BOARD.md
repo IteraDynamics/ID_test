@@ -297,6 +297,46 @@ Closed:
   flag. Remaining before Gate 5: a joint skew+cost simulation rather than an additive
   approximation, a robustness sweep across nearby DTE/delta/wing-width structure choices, and
   the IBKR account itself.
+  **Correction, 2026-08-26 (third): both remaining research gaps closed. The premium is now
+  UNDERSTOOD, and the binding constraint is execution quality, not signal.**
+  (a) *Tension resolved.* The structure sweep's dose-response control showed a constant-vol
+  break-even near +3 to +4 vol points, awkwardly close to the +3.53pt mean real-world VRP, which
+  left the strongly profitable backtest unexplained. `scripts/analyze_vrp_premium_distribution.py`
+  (no options pricing involved, so independent of every backtest modeling assumption; forward
+  realized vol, not trailing) resolved it: over the same 127 non-overlapping windows, mean
+  premium +3.15pt but MEDIAN +4.59pt (gap +1.44), premium skew -4.395, positive in 80.3% of
+  windows, p10 only -3.05. The typical window pays well above break-even; the mean is dragged
+  down by rare catastrophes (worst: 2020-02-12, VIX 13.7 vs 76.0 realized, -62.2pt). A
+  held-to-expiry seller collects the typical case, not the average case. The hypothesis was
+  pre-registered with an explicit falsification and all three verdict branches were proven
+  reachable on synthetic data before the real run. This also confirms the risk is real and
+  concentrated in the tail — and that the defined-risk cap works as intended: that COVID cycle
+  lost $455 against ~$553 max risk, where an undefined-risk seller would have been destroyed.
+  (b) *Structure robustness.* `scripts/run_vrp_structure_robustness_sweep.py`, 60 structures
+  (5 DTE x 4 delta x 3 wing) under joint skew+cost application, comparability handled via
+  annualized return on max risk. Under representative assumptions (moderate skew, moderate
+  cost): 52/60 cells (87%) positive, median return-on-risk +64.9%/yr, and the originally-chosen
+  35d/0.16delta/2% structure sits at the 77th percentile — no cherry-pick warning fired, so the
+  headline reflects the structure family rather than a lucky point. Honest qualifier: 77th is
+  upper-middle and the original's +112.6%/yr is ~1.7x the family median, so the headline is
+  somewhat flattering even though it is not an outlier. Face-validity patterns emerged that were
+  not designed in: 1% wings consistently poor (the fixed per-cycle cost is constant regardless
+  of wing width, so it consumes a small credit), and shorter DTE beats 60-day (faster theta
+  capture per unit time).
+  (c) *The binding constraint, and the most important finding of the day.* Under pessimistic
+  assumptions (steep skew + wide/crisis cost applied to every cycle): **0 of 60 cells are
+  significant and positive** — not the original cell failing, the entire family. That scenario
+  is a stress test rather than a base case (it charges crisis-level spreads across all 12.7
+  years), but the implication is real and actionable: **this edge lives or dies on execution
+  quality, not on signal.** Obtaining fills near mid on 4-leg spreads is the make-or-break
+  variable, which is an operational question about the pending IBKR account, not a research one.
+  Caveat recorded: the "25/60 significant at p<0.05" figure under representative assumptions is
+  NOT 25 independent confirmations — the cells share underlying data and overlapping structures,
+  so no clean multiplicity story applies.
+  Status unchanged: not frozen, not re-chartered as a numbered campaign, no capital or runtime
+  authorized. Remaining before any Gate 5 work: real IBKR commission/fill verification against
+  their actual rate sheet (the $0.65/contract/leg assumption is still recalled, not verified),
+  and the account itself.
 - **CFTC COT gold speculative-positioning contrarian signal (GLD) — CLOSED 2026-08-25, clean
   discovery-stage null, never chartered as a numbered campaign.** Candidate: Non-Commercial net
   position as a percentage of open interest, CFTC Legacy Futures-Only report for "GOLD -
