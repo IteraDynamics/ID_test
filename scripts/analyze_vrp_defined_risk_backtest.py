@@ -391,6 +391,36 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  annualized (1 contract): ${net.mean() * (365/DAYS_TO_EXPIRY):.2f}")
         print(f"  t={t_net:.3f}  p={p_net:.5f}")
 
+    print(f"\n{'='*70}")
+    print("BREAK-EVEN EXECUTION QUALITY -- the actionable threshold")
+    print("The structure sweep (2026-08-26) found this edge lives or dies on execution quality,")
+    print("not on signal. These are the per-leg bid-ask costs at which it stops working, so real")
+    print("quotes can be checked against a number rather than a qualitative warning. Both are")
+    print("solvable exactly: cost is a per-cycle constant, so it shifts the mean and leaves the")
+    print("standard deviation untouched.")
+    print(f"{'='*70}")
+    t_crit = t_dist.ppf(0.975, df=len(df) - 1)
+    for label, slope in SKEW_SLOPE_SCENARIOS:
+        skew_df = run_backtest(spy_close, vix_close, skew_slope=slope) if slope != 0.0 else df
+        mean_pnl = skew_df["pnl_dollars"].mean()
+        std_pnl = skew_df["pnl_dollars"].std(ddof=1)
+        n_cycles = len(skew_df)
+
+        cost_breakeven = mean_pnl
+        cost_significant = mean_pnl - t_crit * std_pnl / math.sqrt(n_cycles)
+        spread_breakeven = (cost_breakeven / LEG_COUNT - COMMISSION_PER_CONTRACT_LEG) / CONTRACT_MULTIPLIER
+        spread_significant = (cost_significant / LEG_COUNT - COMMISSION_PER_CONTRACT_LEG) / CONTRACT_MULTIPLIER
+
+        print(f"\n{label}:")
+        print(f"  break-even (mean P&L hits zero):     ${spread_breakeven:.3f}/contract/leg of spread")
+        if spread_significant > 0:
+            print(f"  still significant at p<0.05 up to:    ${spread_significant:.3f}/contract/leg")
+        else:
+            print(f"  still significant at p<0.05 up to:    (already insignificant at zero spread)")
+    print("\nCheck these against real quoted markets before committing capital: if realistic fills")
+    print("on a 4-leg SPY condor are worse than the significance threshold above, this candidate")
+    print("does not clear on execution grounds regardless of how good the signal looks.")
+
     print("\nThis is a first-principles backtest with illustrative skew and cost sensitivity")
     print("sweeps, not a calibration against real historical options-market data. See this")
     print("script's docstring for the full list of modeling limitations before treating any")
