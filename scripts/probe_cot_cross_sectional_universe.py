@@ -17,11 +17,12 @@ already redirected or killed real work here).
 So this probe answers one question and builds nothing else: for how many markets can we obtain
 BOTH long COT history AND a usable price series?
 
-The candidate COT-market -> ticker mapping below is RECOLLECTION, not verified fact. This session
-has been wrong from memory repeatedly (an ETF ticker, a CFTC market name, a venue root filter,
-a broker-capability claim), so nothing here is asserted: every COT name is resolved against the
-real dataset (by row count and recency, never by guessing which naming variant is current), and
-every ticker is validated by actually fetching it. Pairs that fail are reported as failures.
+COT market names in the mapping below are copied VERBATIM from a real enumeration of the live
+universe, not written from memory -- an earlier substring-based version paired sterling's ticker
+with a EUR/GBP cross-rate contract and reported it as INCLUDED, so matching is now exact (see
+the CANDIDATES comment for the full account). Tickers remain recollection and are validated by
+actually fetching them. Pairs that fail on either side are reported as failures, never dropped
+silently.
 
 Inclusion criteria, fixed BEFORE running so the universe is not selected on outcomes:
   - at least MIN_COT_REPORTS weekly reports for the market;
@@ -48,78 +49,112 @@ MAX_COT_STALENESS_DAYS = 90    # market must still be actively reported
 MIN_PRICE_ROWS = 2000          # ~8 years of daily closes
 PRICE_START = "2005-01-01"     # generous; actual coverage is measured, not assumed
 
-# Candidate mapping: (search substring for the COT market name, candidate ticker, label).
-# BOTH halves are unverified recollection. The COT substring is resolved against the real
-# dataset and the ticker is fetched for real; failures on either side are reported, not hidden.
+# Candidate mapping: (EXACT COT market name, candidate ticker, label).
+#
+# Rebuilt 2026-08-26 from a real enumeration of the live universe
+# (`list_cot_market_names.py --current-within-days 90 --min-reports 500`), replacing an earlier
+# substring-based list written from memory. Two things forced the rewrite:
+#
+#   1. Substring matching produced a silently WRONG pair. "BRITISH POUND" matched
+#      'EURO FX/BRITISH POUND XRATE' -- a cross-rate contract -- which was then paired with
+#      6B=F, the actual sterling future. Positioning in one instrument tested against prices of
+#      another, and it cleared both gates reporting INCLUDED. Exact names make that class of
+#      error impossible, which is why matching is now exact rather than substring.
+#   2. CFTC retired a large batch of market names on 2022-02-01. Names written from memory
+#      matched the RETIRED variants, wrongly excluding live markets.
+#
+# Names below are copied verbatim from the real enumeration. Tickers remain recollection and are
+# still validated by actually fetching them; failures are reported rather than hidden.
+#
+# NOT AVAILABLE, confirmed by direct search rather than assumed: the entire Treasury complex
+# (10Y/5Y/2Y notes, bonds, Ultra) ends 2022-02-01 with no successor under any Treasury name, so
+# the Legacy Futures-Only report cannot supply rates at all. Recovering them needs a different
+# CFTC report series and is out of scope here. Consequence recorded in the campaign board: this
+# cross-section cannot address the "no rates or fixed income" named deficiency.
 CANDIDATES = [
-    ("GOLD - COMMODITY EXCHANGE", "GC=F", "Gold"),
-    ("SILVER - COMMODITY EXCHANGE", "SI=F", "Silver"),
-    ("COPPER", "HG=F", "Copper"),
-    ("PLATINUM", "PL=F", "Platinum"),
-    ("CRUDE OIL, LIGHT SWEET", "CL=F", "WTI Crude"),
-    ("NATURAL GAS", "NG=F", "Natural Gas"),
-    ("GASOLINE", "RB=F", "Gasoline"),
-    ("CORN", "ZC=F", "Corn"),
-    ("SOYBEANS", "ZS=F", "Soybeans"),
-    ("SOYBEAN OIL", "ZL=F", "Soybean Oil"),
-    ("WHEAT-SRW", "ZW=F", "Wheat SRW"),
-    ("SUGAR NO. 11", "SB=F", "Sugar"),
-    ("COFFEE C", "KC=F", "Coffee"),
-    ("COCOA", "CC=F", "Cocoa"),
-    ("COTTON NO. 2", "CT=F", "Cotton"),
-    ("LIVE CATTLE", "LE=F", "Live Cattle"),
-    ("LEAN HOGS", "HE=F", "Lean Hogs"),
-    ("EURO FX", "6E=F", "Euro FX"),
-    ("JAPANESE YEN", "6J=F", "Japanese Yen"),
-    ("BRITISH POUND", "6B=F", "British Pound"),
-    ("CANADIAN DOLLAR", "6C=F", "Canadian Dollar"),
-    ("AUSTRALIAN DOLLAR", "6A=F", "Australian Dollar"),
-    ("SWISS FRANC", "6S=F", "Swiss Franc"),
-    ("MEXICAN PESO", "6M=F", "Mexican Peso"),
-    ("U.S. DOLLAR INDEX", "DX=F", "US Dollar Index"),
-    ("10-YEAR U.S. TREASURY NOTES", "ZN=F", "10Y T-Note"),
-    ("ULTRA U.S. TREASURY BONDS", "UB=F", "Ultra T-Bond"),
-    ("5-YEAR U.S. TREASURY NOTES", "ZF=F", "5Y T-Note"),
-    ("2-YEAR U.S. TREASURY NOTES", "ZT=F", "2Y T-Note"),
-    ("S&P 500 Consolidated", "ES=F", "S&P 500"),
-    ("NASDAQ-100 Consolidated", "NQ=F", "Nasdaq-100"),
-    ("DOW JONES INDUSTRIAL AVG", "YM=F", "Dow"),
-    ("RUSSELL 2000", "RTY=F", "Russell 2000"),
+    # Metals
+    ("GOLD - COMMODITY EXCHANGE INC.", "GC=F", "Gold"),
+    ("SILVER - COMMODITY EXCHANGE INC.", "SI=F", "Silver"),
+    ("PLATINUM - NEW YORK MERCANTILE EXCHANGE", "PL=F", "Platinum"),
+    ("PALLADIUM - NEW YORK MERCANTILE EXCHANGE", "PA=F", "Palladium"),
+    # Energy -- NYMEX WTI retired 2022-02-01; the live ICE WTI contract tracks the same
+    # underlying, so pairing it with CL=F is defensible but is a cross-venue link, weaker than
+    # same-contract. Flagged rather than hidden.
+    ("CRUDE OIL, LIGHT SWEET-WTI - ICE FUTURES EUROPE", "CL=F", "WTI Crude (ICE)"),
+    ("HENRY HUB LAST DAY FIN - NEW YORK MERCANTILE EXCHANGE", "NG=F", "Natural Gas"),
+    # Grains and oilseeds
+    ("CORN - CHICAGO BOARD OF TRADE", "ZC=F", "Corn"),
+    ("SOYBEANS - CHICAGO BOARD OF TRADE", "ZS=F", "Soybeans"),
+    ("SOYBEAN OIL - CHICAGO BOARD OF TRADE", "ZL=F", "Soybean Oil"),
+    ("SOYBEAN MEAL - CHICAGO BOARD OF TRADE", "ZM=F", "Soybean Meal"),
+    ("WHEAT-SRW - CHICAGO BOARD OF TRADE", "ZW=F", "Wheat SRW"),
+    ("WHEAT-HRW - CHICAGO BOARD OF TRADE", "KE=F", "Wheat HRW"),
+    ("OATS - CHICAGO BOARD OF TRADE", "ZO=F", "Oats"),
+    ("ROUGH RICE - CHICAGO BOARD OF TRADE", "ZR=F", "Rough Rice"),
+    # Livestock
+    ("LIVE CATTLE - CHICAGO MERCANTILE EXCHANGE", "LE=F", "Live Cattle"),
+    ("FEEDER CATTLE - CHICAGO MERCANTILE EXCHANGE", "GF=F", "Feeder Cattle"),
+    ("LEAN HOGS - CHICAGO MERCANTILE EXCHANGE", "HE=F", "Lean Hogs"),
+    # Softs
+    ("SUGAR NO. 11 - ICE FUTURES U.S.", "SB=F", "Sugar"),
+    ("COFFEE C - ICE FUTURES U.S.", "KC=F", "Coffee"),
+    ("COCOA - ICE FUTURES U.S.", "CC=F", "Cocoa"),
+    ("COTTON NO. 2 - ICE FUTURES U.S.", "CT=F", "Cotton"),
+    ("FRZN CONCENTRATED ORANGE JUICE - ICE FUTURES U.S.", "OJ=F", "Orange Juice"),
+    # FX
+    ("EURO FX - CHICAGO MERCANTILE EXCHANGE", "6E=F", "Euro FX"),
+    ("JAPANESE YEN - CHICAGO MERCANTILE EXCHANGE", "6J=F", "Japanese Yen"),
+    ("CANADIAN DOLLAR - CHICAGO MERCANTILE EXCHANGE", "6C=F", "Canadian Dollar"),
+    ("AUSTRALIAN DOLLAR - CHICAGO MERCANTILE EXCHANGE", "6A=F", "Australian Dollar"),
+    ("SWISS FRANC - CHICAGO MERCANTILE EXCHANGE", "6S=F", "Swiss Franc"),
+    ("MEXICAN PESO - CHICAGO MERCANTILE EXCHANGE", "6M=F", "Mexican Peso"),
+    ("BRAZILIAN REAL - CHICAGO MERCANTILE EXCHANGE", "6L=F", "Brazilian Real"),
+    # Equity indices and volatility
+    ("S&P 500 Consolidated - CHICAGO MERCANTILE EXCHANGE", "ES=F", "S&P 500"),
+    ("NASDAQ-100 Consolidated - CHICAGO MERCANTILE EXCHANGE", "NQ=F", "Nasdaq-100"),
+    ("DJIA Consolidated - CHICAGO BOARD OF TRADE", "YM=F", "Dow"),
+    ("E-MINI S&P 400 STOCK INDEX - CHICAGO MERCANTILE EXCHANGE", "^SP400", "S&P 400 Midcap"),
+    ("NIKKEI STOCK AVERAGE YEN DENOM - CHICAGO MERCANTILE EXCHANGE", "^N225", "Nikkei 225"),
+    # VIX futures positioning against the VIX index itself -- correlated but NOT the same
+    # instrument (futures carry a term structure the spot index does not). Included because it
+    # is directly relevant to the VRP work, flagged because the pairing is approximate.
+    ("VIX FUTURES - CBOE FUTURES EXCHANGE", "^VIX", "VIX (approximate pairing)"),
+    # Unverified names -- included so the probe reports whether they exist rather than being
+    # dropped on an assumption. Sterling and copper did not appear in the live enumeration.
+    ("BRITISH POUND STERLING - CHICAGO MERCANTILE EXCHANGE", "6B=F", "British Pound"),
+    ("COPPER-GRADE #1 - COMMODITY EXCHANGE INC.", "HG=F", "Copper"),
 ]
 
 
 def resolve_cot_market(
-    names_df: pd.DataFrame, substring: str, dataset_end: pd.Timestamp | None = None
+    names_df: pd.DataFrame, exact_name: str, dataset_end: pd.Timestamp | None = None
 ) -> dict | None:
-    """Pick the real, currently-reported market name matching a substring, by row count and
-    recency -- never by guessing which naming variant is current. The S&P 500 / Nasdaq-100
-    lookups on 2026-08-26 found 15 and 6 competing variants respectively, several long
-    discontinued, so this resolution step is doing real work rather than formality.
+    """Look up one market by its EXACT name and report its span and staleness.
 
-    dataset_end is the reference point staleness is measured against. It defaults to the passed
+    Matching is exact, not substring, deliberately. The substring version of this probe paired
+    'EURO FX/BRITISH POUND XRATE' (a cross-rate contract) with 6B=F (the sterling future) and
+    reported it as INCLUDED -- positioning in one instrument tested against prices of another,
+    with nothing flagging it. Exact names make that class of error impossible. Substrings also
+    silently matched names retired in CFTC's 2022-02-01 renaming. Names in CANDIDATES are now
+    copied verbatim from a real enumeration of the live universe.
+
+    dataset_end is the reference staleness is measured against. It defaults to the passed
     frame's own maximum, which is correct when the FULL dataset is passed (as main() does) but
-    silently wrong if a pre-filtered frame is passed -- an already-discontinued market looks
-    perfectly current relative to itself. Made explicit rather than left implicit after that
-    exact trap caught a test on 2026-08-26."""
-    matches = names_df[names_df["Market and Exchange Names"].str.contains(substring, case=False, na=False, regex=False)]
+    silently wrong for a pre-filtered frame -- a discontinued market looks current relative to
+    itself. Made explicit after that trap caught a test on 2026-08-26."""
+    matches = names_df[names_df["Market and Exchange Names"] == exact_name]
     if matches.empty:
         return None
     if dataset_end is None:
         dataset_end = names_df["report_date"].max()
-    best = None
-    for name, grp in matches.groupby("Market and Exchange Names"):
-        end = grp["report_date"].max()
-        staleness = (dataset_end - end).days
-        cand = {
-            "market_name": name, "reports": len(grp),
-            "start": str(grp["report_date"].min().date()), "end": str(end.date()),
-            "staleness_days": staleness,
-        }
-        # Prefer current markets; among those, the one with the most reports.
-        key = (staleness <= MAX_COT_STALENESS_DAYS, len(grp))
-        if best is None or key > best[0]:
-            best = (key, cand)
-    return best[1] if best else None
+    end = matches["report_date"].max()
+    return {
+        "market_name": exact_name,
+        "reports": len(matches),
+        "start": str(matches["report_date"].min().date()),
+        "end": str(end.date()),
+        "staleness_days": (dataset_end - end).days,
+    }
 
 
 def probe_ticker(ticker: str, start: str) -> dict:
@@ -167,16 +202,16 @@ def main(argv: list[str] | None = None) -> int:
 
     dataset_end = df["report_date"].max()
     results = []
-    print(f"\n{'label':<18} {'COT reports':>11} {'COT end':>12} {'ticker':>7} {'price rows':>11}  verdict")
+    print(f"\n{'label':<22} {'COT reports':>11} {'COT end':>12} {'ticker':>7} {'price rows':>11}  verdict")
     print("-" * 84)
-    for substring, ticker, label in CANDIDATES:
-        cot = resolve_cot_market(df, substring, dataset_end)
-        row = {"label": label, "cot_substring": substring, "ticker": ticker, "cot": cot}
+    for exact_name, ticker, label in CANDIDATES:
+        cot = resolve_cot_market(df, exact_name, dataset_end)
+        row = {"label": label, "cot_market_name": exact_name, "ticker": ticker, "cot": cot}
 
         if cot is None:
             row["included"] = False
-            row["reason"] = "no COT market matched the substring"
-            print(f"{label:<18} {'-':>11} {'-':>12} {ticker:>7} {'-':>11}  EXCLUDED (no COT match)")
+            row["reason"] = "no COT market with that exact name"
+            print(f"{label:<22} {'-':>11} {'-':>12} {ticker:>7} {'-':>11}  EXCLUDED (no exact COT name)")
             results.append(row)
             continue
 
@@ -184,7 +219,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.skip_prices:
             row["included"] = cot_ok
             row["reason"] = "" if cot_ok else "COT history too short or stale"
-            print(f"{label:<18} {cot['reports']:>11} {cot['end']:>12} {ticker:>7} {'skipped':>11}  "
+            print(f"{label:<22} {cot['reports']:>11} {cot['end']:>12} {ticker:>7} {'skipped':>11}  "
                   f"{'cot-ok' if cot_ok else 'EXCLUDED (cot)'}")
             results.append(row)
             continue
@@ -202,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
             row["reason"] = ""
 
         verdict = "INCLUDED" if included else f"EXCLUDED ({row['reason']})"
-        print(f"{label:<18} {cot['reports']:>11} {cot['end']:>12} {ticker:>7} "
+        print(f"{label:<22} {cot['reports']:>11} {cot['end']:>12} {ticker:>7} "
               f"{price.get('rows', 0) if price.get('ok') else 0:>11}  {verdict}")
         results.append(row)
 
