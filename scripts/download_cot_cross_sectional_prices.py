@@ -78,21 +78,47 @@ def main(argv: list[str] | None = None) -> int:
         print("Everything already downloaded. Nothing to do.")
         return 0
 
+    def build_cmd(ticker: str) -> list[str]:
+        cmd = [sys.executable, str(DOWNLOADER), "--asset", ticker,
+               "--start", args.start, "--end", end, "--output-dir", str(out_dir)]
+        if args.overwrite:
+            cmd.append("--overwrite")
+        return cmd
+
+    # Pre-flight: confirm the downloader actually accepts these flags BEFORE looping. An earlier
+    # version passed --out-dir (the real flag is --output-dir) and failed 34 times identically
+    # before the operator interrupted it. A wrong invocation should fail once, not once per
+    # ticker, and the argparse error is a usage bug in this script rather than a data problem --
+    # worth separating loudly.
+    help_proc = subprocess.run([sys.executable, str(DOWNLOADER), "--help"],
+                               capture_output=True, text=True, cwd=str(REPO_ROOT))
+    if help_proc.returncode != 0:
+        print(f"Could not run {DOWNLOADER.name} --help; aborting before fetching anything.")
+        return 1
+    for flag in ("--asset", "--start", "--end", "--output-dir"):
+        if flag not in help_proc.stdout:
+            print(f"{DOWNLOADER.name} does not accept {flag} -- this script's invocation is wrong.")
+            print("Aborting before the fetch loop rather than failing once per ticker.")
+            return 1
+
     ok, failed = [], []
     for i, (r, _path) in enumerate(todo, 1):
         ticker, label = r["ticker"], r["label"]
         print(f"[{i}/{len(todo)}] {ticker} ({label}) ...", flush=True)
-        cmd = [sys.executable, str(DOWNLOADER), "--asset", ticker,
-               "--start", args.start, "--end", end, "--out-dir", str(out_dir)]
-        if args.overwrite:
-            cmd.append("--overwrite")
-        proc = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO_ROOT))
+        proc = subprocess.run(build_cmd(ticker), capture_output=True, text=True, cwd=str(REPO_ROOT))
         if proc.returncode == 0:
             ok.append(ticker)
         else:
             tail = (proc.stderr or proc.stdout).strip().splitlines()
-            failed.append((ticker, label, tail[-1] if tail else "unknown error"))
-            print(f"    FAILED: {failed[-1][2][:110]}")
+            message = tail[-1] if tail else "unknown error"
+            failed.append((ticker, label, message))
+            print(f"    FAILED: {message[:110]}")
+            # An argparse usage error is this script's fault and will repeat for every ticker;
+            # stop rather than burning through the rest of the universe producing the same line.
+            if "unrecognized arguments" in message or "error: argument" in message:
+                print("\nThat is a usage error in this script, not a data problem -- it will repeat")
+                print("for every remaining ticker. Stopping now.")
+                break
 
     print(f"\n{'='*70}")
     print(f"{len(ok)} downloaded, {len(already)} already present, {len(failed)} failed "
