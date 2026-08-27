@@ -29,17 +29,28 @@ import pandas as pd
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("--cot-csv", default="data/cot_legacy_futures_only_1986_present.csv")
-    p.add_argument("pattern", help='Case-insensitive substring to search for, e.g. "S&P" or "NASDAQ"')
+    p.add_argument("pattern", nargs="?", default="",
+                   help='Case-insensitive substring, e.g. "S&P" or "NASDAQ". Omit to match ALL '
+                        "markets, which combined with --min-reports/--current-within-days "
+                        "enumerates the real investable universe instead of guessing at it.")
     p.add_argument("--detail", action="store_true",
                    help="Also print row count and date range per match, to disambiguate "
                         "near-identical contract-naming variants instead of guessing.")
+    p.add_argument("--min-reports", type=int, default=0,
+                   help="Only show markets with at least this many weekly reports. Implies --detail.")
+    p.add_argument("--current-within-days", type=int, default=None,
+                   help="Only show markets still reported within this many days of the dataset's "
+                        "own end. Implies --detail. Use this to find which naming variant of a "
+                        "market is the LIVE one -- CFTC renamed a large batch of markets on "
+                        "2026-08-26's evidence around 2022-02-01, retiring the old names.")
     return p.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    detail = args.detail or args.min_reports > 0 or args.current_within_days is not None
     cols = ["Market and Exchange Names"]
-    if args.detail:
+    if detail:
         cols.append("As of Date in Form YYYY-MM-DD")
     df = pd.read_csv(args.cot_csv, usecols=cols, low_memory=False)
     distinct = df["Market and Exchange Names"].drop_duplicates().sort_values()
@@ -47,20 +58,35 @@ def main(argv: list[str] | None = None) -> int:
     if matches.empty:
         print(f"No distinct market names contain {args.pattern!r}.")
         return 1
+    args.detail = detail
     print(f"{len(matches)} distinct market name(s) contain {args.pattern!r}:")
     if not args.detail:
         for name in matches:
             print(f"  {name!r}")
         return 0
 
+    all_dates = pd.to_datetime(df["As of Date in Form YYYY-MM-DD"])
+    dataset_end = all_dates.max()
+
     rows = []
     for name in matches:
         subset = df[df["Market and Exchange Names"] == name]
         dates = pd.to_datetime(subset["As of Date in Form YYYY-MM-DD"])
-        rows.append((name, len(subset), dates.min().date(), dates.max().date()))
-    rows.sort(key=lambda r: r[1], reverse=True)
-    for name, n_rows, min_date, max_date in rows:
-        print(f"  {n_rows:>5} rows  {min_date} -> {max_date}  {name!r}")
+        staleness = (dataset_end - dates.max()).days
+        rows.append((name, len(subset), dates.min().date(), dates.max().date(), staleness))
+
+    kept = [r for r in rows
+            if r[1] >= args.min_reports
+            and (args.current_within_days is None or r[4] <= args.current_within_days)]
+    kept.sort(key=lambda r: r[1], reverse=True)
+
+    if args.min_reports > 0 or args.current_within_days is not None:
+        print(f"  (filtered to {len(kept)} of {len(rows)}: "
+              f">= {args.min_reports} reports"
+              + (f", reported within {args.current_within_days}d of {dataset_end.date()}"
+                 if args.current_within_days is not None else "") + ")")
+    for name, n_rows, min_date, max_date, staleness in kept:
+        print(f"  {n_rows:>5} rows  {min_date} -> {max_date}  (stale {staleness:>5}d)  {name!r}")
     return 0
 
 
