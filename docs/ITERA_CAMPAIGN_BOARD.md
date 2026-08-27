@@ -337,6 +337,24 @@ Closed:
   authorized. Remaining before any Gate 5 work: real IBKR commission/fill verification against
   their actual rate sheet (the $0.65/contract/leg assumption is still recalled, not verified),
   and the account itself.
+  **Correction, 2026-08-26 (fourth): Gate 3 materiality re-sized on the measured representative
+  case — this is the first candidate that is not marginal.** Using the real moderate-skew,
+  moderate-cost figures ($59.73 net/cycle/contract, 10.4 cycles/yr, $553 hard-bounded max loss
+  per contract per cycle): at a 2% risk budget ≈ $1,869/yr (1.9% of book); at 5% ≈ $5,606/yr
+  (5.6%); at 10% ≈ $11,212/yr (11.2%). Against CLAUDE.md's own standing note that every edge
+  examined here lands at ~$400-1,500/yr, and against Campaign #55's $202-607/yr, this is an
+  order of magnitude more material — which is what justifies paper infrastructure rather than
+  filing it as merely statistically interesting.
+  Two caveats recorded with it. (i) The bound is per CYCLE, not per year: 15 of 127 cycles lost,
+  so a bad year can stack several losers; the defined-risk cap bounds each cycle independently,
+  not the annual outcome. (ii) **Tail correlation with existing Core v1 sleeves, raised here for
+  the first time:** short-vol and long-equity lose together. The 2020-02-12 cycle lost precisely
+  while equities collapsed — the same moment Core v1's SPY/QQQ trend sleeves would have been
+  hurting. So while this genuinely addresses the named "single return source" deficiency
+  (premium harvesting, not trend), it does NOT supply crash diversification and arguably
+  concentrates it. Not disqualifying (Campaign #54's crash-short sleeve partly covers that
+  role), but it belongs in any Core v2 composition/weighting decision from the start rather
+  than being discovered afterwards.
 - **CFTC COT gold speculative-positioning contrarian signal (GLD) — CLOSED 2026-08-25, clean
   discovery-stage null, never chartered as a numbered campaign.** Candidate: Non-Commercial net
   position as a percentage of open interest, CFTC Legacy Futures-Only report for "GOLD -
