@@ -2,205 +2,179 @@
 
 ## Status
 
-**Draft, not frozen.** Per this repo's judgment-bound pacing convention — a specification may
-not be frozen the same session it is first drafted (`docs/ITERA_RESEARCH_PROCESS_AMENDMENTS.md`
-Amendment 3) — this charter is written today and should not be treated as final until reviewed
-on a later day. Nothing here authorizes data acquisition, runtime construction, capital
-allocation, or any production behavior.
+**Draft, not frozen.** This document reconciles the Core v2 concept to the actual research state as of 2026-08-27. It authorizes no data acquisition, runtime construction, paper account, inception date, capital allocation, production behavior, or Core v1 change.
+
+Detailed historical drafts and their decision trail remain preserved in Git. Current campaign truth is governed by `docs/ITERA_CAMPAIGN_BOARD.md` and each campaign's own document.
 
 ## Purpose
 
-This is Core v2's own governing document, required by the successor clarification in
-`docs/ITERA_DESTINATION_CHARTER.md` (2026-08-11): *"A Core v2 developed as a separate strategy,
-with its own charter, its own paper runtime, and its own inception date, costs Core v1
-nothing."* Core v1 remains frozen and untouched. This charter creates a second, independent
-track — its own governance home, not a subsection of Campaign #53 or of Core v1's documents.
+Core v2 is a separate successor strategy, not a retune or mutation of Core v1.
+
+Core v1 remains the frozen floor with its own permanent inception, paper record, benchmark series, and governance lineage. Core v2, if eventually launched, will have its own specification, paper runtime, inception date, benchmarks, record, and capital decision.
+
+The purpose of Core v2 is to address named architectural deficiencies that cannot be solved honestly by re-optimizing Core v1's constants on the same history.
 
 ## Relationship to Core v1
 
-Parallel, never replacing. The One Rule applies to Core v2's development exactly as it applies
-to everything else at this firm:
+1. **Parallel, never replacing by default.** Core v1 continues untouched while Core v2 research proceeds.
+2. **No inherited track record.** Core v2 begins at its own future inception; no Core v1 history is restated as Core v2 history.
+3. **No parameter laundering.** Changing a Core v1 parameter and calling the result v2 is not a successor thesis.
+4. **Same research standards.** Horizon feasibility, tradeability, materiality, power, pre-registration, deterministic replay, and holdout discipline apply.
+5. **Any future capital transition is separate.** A later move from v1 to v2 would require its own governed decision after substantial prospective evidence.
 
-- Core v1's parameters, weights, and logic are not touched by anything in this charter or by
-  Core v2's development.
-- Core v2 is funded with research hours and overlay-sized risk only, never the floor's capital
-  or risk budget.
-- A transition of capital from Core v1 to Core v2, if ever considered, is a separate governed
-  decision requiring its own multi-year record — not in scope here and not anticipated for a
-  long time.
+## Why a successor is legitimate
 
-## Named structural deficiency addressed
+The Core v1 parameter-sensitivity pass found no knife edge on the six constants the historical harness actually exercised: nearby perturbations produced only small Sharpe changes. The current evidence therefore does not support a tuning-led successor.
 
-Per the destination charter's recorded list, Core v2's founding work now addresses three of
-Core v1's four named deficiencies, across two parallel campaigns:
+A legitimate successor must address structural deficiencies instead.
 
-1. **A single return source** (Campaign #53). Every Core v1 sleeve harvests trend. Campaign #53
-   harvests a funding/carry premium — a structurally different return source, uncorrelated with
-   directional price trend by construction.
-2. **Single-name crypto** (Campaign #53). Core v1 trades BTC and ETH specifically. Campaign #53
-   is cross-sectional across up to 19 liquid CDE perpetual-style instruments (confirmed
-   2026-08-12, `docs/research/CAMPAIGN_53_SOURCE_FEASIBILITY_FINDING.md` §9).
-3. **Structurally long-only** (Campaign #54, opened 2026-08-13). Core v1's six sleeves are all
-   long-with-filter — able to step aside from a decline but never profit from one. Campaign #54
-   evaluates `crash_short_v6`, an existing, unused, cross-asset-confirmed short sleeve, as a
-   genuine diversifying return source rather than a defensive filter.
+## Named structural deficiencies
 
-Not addressed by either founding campaign, and recorded here as an open avenue for later,
-separate work: the absence of any rates/fixed-income sleeve. Zero existing raw material in this
-repo touches that deficiency; it remains the most novel and most expensive avenue available.
+### 1. Single return source
 
-## Founding campaigns
+Core v1's sleeves are diversified primarily across assets, while the dominant economic source remains trend/price persistence.
 
-**Campaign #53 — cross-sectional funding carry on Coinbase Derivatives Exchange.**
+Potential independent sources under research include:
 
-- **Instrument and venue** (Amendment 5, resolved): CDE perpetual-style futures, the same venue
-  this operator executes on. No cross-venue basis risk between research source and execution.
-- **Mechanism:** delta-neutral funding harvesting — short the perpetual-style contract against
-  spot (or the inverse) on whichever side collects the currently-signed funding rate. Native,
-  same-venue `funding_rate` is directly observable per instrument, confirmed on an hourly
-  interval across the full liquid cross-section.
-- **Cross-section:** 19 liquid (>$1M/day) instruments identified 2026-08-12, spanning BTC and
-  ETH down to smaller liquid names — but see Status below: only BTC and ETH are in this
-  specification's actual execution scope as of 2026-08-14, the other 8 deferred, not part of the
-  original 10-name cross-sectional breadth this line originally described.
-- **Status:** CDE's crypto perpetual-style contracts turned out to be only ~13 months old
-  (confirmed by direct probe, not assumption), breaking the frozen Charter's multi-year history
-  assumption. **Decided 2026-08-14, in two parts:** (1) discovery runs on Deribit's multi-year
-  funding history, confirmation on CDE's native ~13-month data, per Amendment 5's explicit
-  allowance for differing source/execution venues; (2) Deribit turned out to list perpetuals for
-  only 2 of the 10 candidate names (BTC, ETH — confirmed genuine absence for the other 8, not a
-  query failure), so those two proceed under the decided design now, while the other 8 are
-  deferred — neither excluded nor downgraded to a permanent lower standard — until CDE's own
-  native history is long enough to support them without a proxy venue. How long that takes is
-  not decided; it is a future judgment call. Derivatives eligibility on CDE is resolved as of
-  2026-08-14 — approved. **Section 3 and Section 4 (methodology) FROZEN 2026-08-20** (commit
-  `1e561c3`, board transition recorded in `docs/ITERA_CAMPAIGN_BOARD.md`) — the review pass closed
-  the two remaining decision-rule gaps (FDR q=0.10, confirmation top-3), both previously deferred
-  without a concrete value. **Data acquisition (Deribit multi-year funding history, CDE native
-  ~13-month history, BTC/ETH) is now authorized.** Not yet authorized: predictor/outcome
-  computation, the power simulation's actual result, or any economic/runtime action. See the
-  campaign document's own §3a-i and §4 for the full record.
+- funding/carry;
+- volatility risk premium;
+- other future non-trend families that survive the standing research process.
 
-**Campaign #54 — macro-confirmed crash-short hedge sleeve.**
+### 2. Structurally long-biased opportunity set
 
-- **Instrument and venue:** BTC/ETH, short, same execution venue as Core v1's crypto sleeves.
-  Shares Campaign #53's exact same derivatives-eligibility blocker.
-- **Mechanism:** `crash_short_v6` exactly as coded, no perturbation — a seven-gate entry
-  including cross-asset confirmation (SPY also below its own 175-day SMA) that distinguishes a
-  macro bear from a crypto-only correction.
-- **Status: CLOSED 2026-08-20.** Feasibility resolved; an adversarial review (2026-08-14) found
-  the strategy's own cross-asset gate was very plausibly hand-built by examining the same
-  2021/2022 episodes now cited as evidence it works, downgrading that evidence from independent
-  confirmation to something closer to confirming the designer's own hindsight pattern-match. 2018
-  is the one regime observation not implicated by that design history and is this campaign's most
-  credible evidence. Section 3 and Section 4 froze 2026-08-19 on the honest count: one clean
-  payoff (2018), one plausibly-circular payoff (2022), one correctly-fired but unprofitable case
-  (2020). Closure (2026-08-20) ran a full sizing sweep (0-25% hedge weight, `scripts/
-  run_campaign_54_sizing_sweep.py`) — monotonic across the whole tested range, no visible peak,
-  which is itself a reason not to chase the top of the range given the thin evidentiary base.
-  **`crash_short_v6` included in Core v2's founding composition at 15% hedge weight** — the best
-  combination of risk-adjusted metrics (Sharpe 1.206, Calmar 1.094, MaxDD -15.75%) without
-  extrapolating past what one clean crisis observation actually supports. Full record: the
-  campaign document's own §5-7.
+Core v1 can reduce or exit long exposure during adverse conditions but has limited ability to earn directly from sustained declines.
 
-Each campaign's own living document remains the authority on its own statistical design, gates,
-and results. This charter does not duplicate or freeze either — it establishes that both are
-Core v2 founding threads, developed in parallel, each addressing its own named deficiency, and
-that Core v2 exists as a governed identity independent of any one campaign's result.
+`crash_short_v6` is a candidate asymmetric hedge mechanism, but current evidence is too thin to call its sizing statistically validated.
 
-## Conditions this charter must keep satisfying
+### 3. Single-name crypto concentration
 
-Per the destination charter's conditions on any successor, for both campaigns:
+Core v1's crypto exposure is centered on BTC and ETH.
 
-1. **Additive, not re-parameterised** — satisfied. Funding carry is a new return source, not a
-   retuned Core v1 parameter; Campaign #54 evaluates inclusion of an existing fixed mechanism,
-   explicitly not a parameter search (its own charter names this distinction directly, given the
-   parameter-sensitivity pass's own findings about what a search looks like).
-2. **Parallel, never replacing** — satisfied by this section.
-3. **Same standards** — horizon feasibility, tradeability, and power analysis apply to both
-   campaigns exactly as they would to any other; nothing about Core v2's status exempts either.
-   Campaign #54's power constraint is a harder, more honestly-stated case, not an exemption.
-4. **Floor risk unchanged** — satisfied by the funding boundary above.
+**This deficiency is currently unresolved.** Campaign #53's actual frozen/statistical execution scope is BTC and ETH only. The earlier broad-CDE cross-sectional concept does not currently solve this item.
 
-## Not yet authorized
+### 4. No rates / fixed-income return source
 
-This charter authorizes documentation and planning only. It does not authorize:
+Core v1's defensive endpoint is effectively cash rather than a dedicated rates/fixed-income return sleeve.
 
-- either campaign's specification execution, data acquisition beyond feasibility probing, or
-  any frozen statistical design (both remain gated by `charter-campaign`'s own sequence and
-  Amendment 3's one-document-per-campaign rule);
-- a Core v2 runtime, paper account, or inception date — none is set; inception begins only once
-  a specification exists and its own board transition authorizes it;
-- any capital allocation, live or paper, to Core v2;
-- any change to Core v1.
+**This deficiency is unresolved.** Recent COT work did not establish a usable rates signal and does not count as progress toward solving it.
 
-## Open items
+## Candidate component status
 
-**Campaign #53:**
+### Core-v1-style trend component
 
-1. Scoped to carry capture only (`docs/research/CAMPAIGN_53_FUNDING_CARRY_PLANNING_CHARTER.md`);
-   directional conditioning and exposure gating, the charter's other two role hypotheses, are
-   deferred as a separate future Core v1 overlay campaign, not part of Core v2.
-2. Universe originally resolved at 10 of 19 liquid CDE perpetual-style names (BTC, ETH, XRP,
-   SOL, HYPE, XLM, LINK, DOGE, ADA, DOT) via perp-vs-dated; 4 more (`TEK`, `CHN`, `AIP`, `DEF`)
-   confirmed equity-index products, out of scope; 5 (PAXG, ZEC, NEAR, ENA, ONDO) a documented
-   future extension. **Narrowed again, 2026-08-14 (item 3 below): actual execution scope for
-   this specification is BTC and ETH only**, the other 8 of the 10 deferred.
-3. **Both history-depth questions resolved, decisions made, not left open.**
-   `scripts/probe_cde_history_depth.py` confirmed CDE's own contracts are ~13 months old
-   regardless of endpoint availability, breaking the frozen Charter's multi-year assumption.
-   Decided: Deribit-for-discovery, CDE-for-confirmation (Amendment 5 permits this explicitly),
-   over broadening the universe or cutting gates. Then `scripts/probe_deribit_universe_coverage.py`
-   found Deribit lists perpetuals for only 2 of the 10 names (BTC, ETH — confirmed genuine
-   absence for the other 8). Decided: BTC/ETH proceed now under the two-venue design; the other
-   8 are deferred, not excluded and not downgraded to a permanent lower standard, until CDE's own
-   native history is long enough on its own — a future judgment call, not fixed here.
-5. **Both remaining design gaps closed, 2026-08-14.** Roll policy: roll N business days before
-   expiry (N calibrated against CDE's own liquidity-migration data, not invented here), roll only
-   into a confirmed successor contract (needs a live-account check before first use, not a
-   research one), roll costs treated as recurring transaction costs, and each roll is a fresh
-   entry decision rather than a mechanical continuation. Hybrid mechanism: the campaign's
-   candidates now split into a **statistical family** (funding level, persistence, open interest
-   — genuinely discovered, subject to FDR and Amendment 1 power) and a **structural family**
-   (basis/calendar-spread — a mechanically-converging, cash-and-carry-style position whose
-   validity rests on contract mechanics, evaluated against a cost threshold rather than pooled
-   into the same statistical pipeline). Section 3's decision rule and Section 4's power plan were
-   both revised to keep this split consistent throughout, not just noted in one place.
-6. Power analysis plan-only pending data acquisition, itself pending the spec's freeze, and now
-   scoped explicitly to the statistical family only.
-7. **FROZEN 2026-08-20.** The review pass closed the two remaining decision-rule gaps: FDR
-   q=0.10 and confirmation top-3, both previously deferred to "review" without a concrete value —
-   methodology choices fixable without data, unlike roll-timing N or the mark-to-market risk
-   tolerance, which correctly stay open pending the operator's own account access. Data
-   acquisition (Deribit multi-year funding history, CDE native ~13-month history, BTC/ETH) is
-   authorized. No open design items remain; what's next is acquisition itself, then discovery.
+**Status: architectural inheritance candidate, not frozen.**
 
-**Campaign #54:**
+A successor may retain a trend allocation because the purpose of v2 is additive diversification, not rejection of a robust existing premium. Exact v2 trend construction and weight are not set here.
 
-1. Section 3's 2020 and cross-sectional-corroboration questions are answered: 2020 confirmed as
-   a real but unprofitable episode; 2018 (not previously considered) confirmed as a second real
-   regime with a genuine profitable payoff.
-2. **New finding, 2026-08-14 adversarial review:** the strongest-looking evidence — the SPY
-   gate's 2021 rejections and the 2022 payoff — is plausibly circular. `crash_short_v6`'s own
-   docstring shows its design was built by examining exactly these episodes. 2018 is the one
-   observation not implicated and is now the campaign's most credible evidence; the others are
-   real but weaker than previously stated. See the campaign document's own §3c.
-3. Power analysis remains judgment-bound, now on a corrected reading: one clean payoff (2018),
-   one likely-circular payoff (2022), one correctly-fired-but-unprofitable case (2020) — not the
-   "two favorable of three" framing an earlier draft used.
-4. **Resolved at review, 2026-08-19.** The two paths §4 had left open (judgment-bound decision vs.
-   an explicitly bounded claim) were never competing options — both apply together. Governed
-   position: `crash_short_v6` may be sized into a Core v2 composition as a small, asymmetric
-   component under continuous monitoring, decided by judgment rather than a power threshold this
-   family cannot produce. See the campaign document's own §4 for the full reasoning.
-5. **CLOSED 2026-08-20.** Sizing sweep complete (0-25% hedge weight, monotonic, no visible peak).
-   15% hedge weight chosen — best combination of risk-adjusted metrics without chasing the
-   still-climbing curve past what the evidentiary base supports. No open items remain on this
-   campaign; see its own §5-7.
+### Campaign #53 — funding/carry
 
-**Shared:**
+**Status: discovery positive / confirmation pending.**
 
-Derivatives eligibility on CDE — the one account-status item both campaigns shared — is
-**resolved as of 2026-08-14**, approved for both at once as anticipated. Remaining open items are
-research/specification work only (§3a-i's two design gaps for #53; the review-and-freeze pass for
-both), not account status.
+Current reality:
+
+- statistical scope: BTC and ETH only;
+- discovery source: Deribit multi-year funding history;
+- confirmation source: CDE live-forward funding accumulation;
+- corrected family excludes the invalid `funding_level_24h` construction;
+- all three remaining discovery hypotheses cleared BH-FDR q=0.10;
+- top-2 confirmation shortlist: `funding_level_72h` and `funding_persistence_72h`;
+- confirmation logger's real accumulation began 2026-08-24;
+- no confirmation result exists yet.
+
+Core v2 treatment:
+
+- funding/carry is a **candidate return source**, not a founding admitted sleeve;
+- it does not solve broad cross-sectional crypto under the current BTC/ETH scope;
+- no v2 weight is assigned until confirmation clears and economic implementation is separately specified.
+
+### Campaign #54 — crash-short hedge
+
+**Status: provisional shadow candidate.**
+
+Evidence:
+
+- 2018: comparatively clean profitable crisis observation;
+- 2022: profitable but plausibly contaminated by design history;
+- 2020: clean regime firing but unprofitable;
+- historical blend improves drawdown/Sharpe as hedge weight rises across the tested 0%-25% range, while CAGR falls;
+- the tested range contains no interior optimum.
+
+Core v2 treatment:
+
+- 15% is retained only as a **provisional shadow-composition reference**, not a validated optimum;
+- it must not be represented as permanent founding sizing;
+- future prospective macro-bear behavior is the primary clean evidence still needed.
+
+### Defined-risk equity volatility risk premium
+
+**Status: promising / unnumbered / execution-gated.**
+
+Current evidence suggests the premium is broad enough to survive nearby structure variation under representative modeled skew and costs, and potentially material at realistic risk budgets.
+
+However:
+
+- results depend materially on multi-leg execution quality;
+- pessimistic crisis-level execution costs eliminate the apparent edge across the tested family;
+- tail losses are positively related to the same equity-stress periods that hurt long-equity exposure;
+- broker approval, verified commissions, routing, and achievable fill versus mid/NBBO remain load-bearing unknowns.
+
+Core v2 treatment:
+
+- not admitted;
+- first require real execution-quality evidence under a pre-registered acceptance band;
+- if execution is viable, charter it as a numbered campaign before any v2 inclusion or paper allocation.
+
+## What is explicitly not part of Core v2 today
+
+- Campaign #55 COT contrarian signal — closed clean null;
+- COT gold positioning — closed clean null;
+- cross-sectional crypto momentum — closed clean null;
+- Jump Risk — retired because the edge is not reachable at measured runtime cadence;
+- any Core v1 parameter retune;
+- any unconfirmed Campaign #53 discovery candidate.
+
+## Portfolio-level integration requirements before freeze
+
+A future frozen Core v2 specification must answer, before a runtime exists:
+
+1. Which components are actually admitted based on their own evidence?
+2. What economic source of return does each component add?
+3. What are the component correlations in normal periods and stress periods?
+4. What tail risks stack rather than diversify?
+5. How are weights determined without retrospective optimization against one historical sample?
+6. Which components are statistically confirmed versus explicitly provisional/prospective?
+7. What benchmark set will judge v2 prospectively?
+8. What is the v2 paper inception rule, with no backfill or inherited record?
+
+## Current blockers before Core v2 can freeze
+
+1. Quantify the Core-v1 historical-harness equity de-risk semantic mismatch so historical v1-v2 comparisons use a correctly understood baseline.
+2. Let Campaign #53 accumulate enough untouched CDE confirmation data and complete its governed confirmation decision.
+3. Resolve whether the VRP family is execution-viable with real brokerage approval, commissions, and four-leg fill evidence.
+4. Decide whether `crash_short_v6` remains a provisional shadow component, is removed, or earns stronger standing through future prospective evidence.
+5. Leave the unresolved cross-sectional-crypto and rates/fixed-income deficiencies explicit rather than claiming they are solved.
+
+## Research philosophy for Core v2
+
+Core v2 is an **integration destination**, not a license to bundle every promising idea into one backtest.
+
+Candidate families should earn admission independently. The final portfolio-level specification comes only after the component evidence exists, so success or failure can be attributed rather than hidden inside a giant combined architecture.
+
+A component does not have to increase raw CAGR to improve Core v2. A lower-return component may be valuable if it materially improves drawdown, Sharpe, regime robustness, or independence of return source at a reasonable economic cost.
+
+## Not authorized
+
+This draft does not authorize:
+
+- any Core v2 runtime or paper account;
+- any Core v2 inception date;
+- any capital allocation;
+- any Core v1 change;
+- treating Campaign #53 discovery as confirmation;
+- treating the Campaign #54 15% reference weight as validated sizing;
+- treating VRP modeled expectancy as executable expectancy without fill evidence;
+- parameter optimization of Core v1 under a successor label.
+
+## Next review
+
+Core v2 should not be frozen until the ranked baseline actions in `docs/ITERA_RESEARCH_STATE_OF_UNION_2026-08-27.md` have materially advanced. The next charter review should use those results to decide whether enough independently supported components exist to justify a v2 specification at all.
