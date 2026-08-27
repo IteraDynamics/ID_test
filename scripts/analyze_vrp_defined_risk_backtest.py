@@ -203,12 +203,17 @@ def iron_condor_expiration_pnl(entry: dict, spot_at_expiry: float) -> float:
     return entry["net_credit"] + put_spread_settlement + call_spread_settlement
 
 
-def cost_per_cycle(spread_cost_per_leg: float, commission_per_leg: float) -> float:
-    """Total assumed cost for one 4-leg cycle. spread_cost_per_leg is quoted PER SHARE (like a
-    real option's bid-ask width, e.g. "$0.03 wide") and needs CONTRACT_MULTIPLIER to become a
-    per-contract dollar cost -- commission_per_leg is already quoted PER CONTRACT and must NOT
-    be multiplied again, or it silently becomes 100x too large."""
-    return LEG_COUNT * (spread_cost_per_leg * CONTRACT_MULTIPLIER + commission_per_leg)
+def cost_per_cycle(spread_cost_per_leg: float, commission_per_leg: float, n_legs: int = LEG_COUNT) -> float:
+    """Total assumed cost for one cycle of an n_legs structure (default LEG_COUNT = the iron
+    condor's 4). spread_cost_per_leg is quoted PER SHARE (like a real option's bid-ask width,
+    e.g. "$0.03 wide") and needs CONTRACT_MULTIPLIER to become a per-contract dollar cost --
+    commission_per_leg is already quoted PER CONTRACT and must NOT be multiplied again, or it
+    silently becomes 100x too large (a real bug caught here on 2026-08-26).
+
+    n_legs is parametrized so the single-leg cash-secured-put comparison
+    (scripts/analyze_vrp_cash_secured_put.py) charges 1 leg rather than 4, without duplicating
+    this logic. Default preserves every previously verified result exactly."""
+    return n_legs * (spread_cost_per_leg * CONTRACT_MULTIPLIER + commission_per_leg)
 
 
 def one_sample_t_test(values: pd.Series) -> tuple[float, float]:
