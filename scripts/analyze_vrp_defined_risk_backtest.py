@@ -152,16 +152,26 @@ def find_strike_for_delta(
     return brentq(f, lo, hi, xtol=1e-6)
 
 
-def iron_condor_entry(spot: float, t_years: float, sigma: float, r: float, skew_slope: float = 0.0) -> dict:
-    """Prices one iron condor entry: short strikes at TARGET_SHORT_DELTA, long wings
-    WING_WIDTH_PCT of spot further out. Returns strikes and the net credit received.
+def iron_condor_entry(
+    spot: float, t_years: float, sigma: float, r: float, skew_slope: float = 0.0,
+    target_short_delta: float | None = None, wing_width_pct: float | None = None,
+) -> dict:
+    """Prices one iron condor entry: short strikes at target_short_delta (default
+    TARGET_SHORT_DELTA), long wings wing_width_pct (default WING_WIDTH_PCT) of spot further out.
+    Returns strikes and the net credit received.
 
-    skew_slope=0.0 (default) reproduces the original flat-vol behavior exactly -- every already-
-    verified test of this function's output is unaffected by this parameter's addition."""
-    k_short_put = find_strike_for_delta(spot, t_years, sigma, r, is_call=False, target_abs_delta=TARGET_SHORT_DELTA, skew_slope=skew_slope)
-    k_short_call = find_strike_for_delta(spot, t_years, sigma, r, is_call=True, target_abs_delta=TARGET_SHORT_DELTA, skew_slope=skew_slope)
-    k_long_put = k_short_put * (1 - WING_WIDTH_PCT)
-    k_long_call = k_short_call * (1 + WING_WIDTH_PCT)
+    All optional parameters default to the module constants, so every already-verified test of
+    this function's output is unaffected by their addition. They exist so the structure
+    robustness sweep (scripts/run_vrp_structure_robustness_sweep.py) can vary the structure
+    without duplicating this pricing logic -- the "is the edge only at one lucky parameter
+    point?" check."""
+    target_short_delta = TARGET_SHORT_DELTA if target_short_delta is None else target_short_delta
+    wing_width_pct = WING_WIDTH_PCT if wing_width_pct is None else wing_width_pct
+
+    k_short_put = find_strike_for_delta(spot, t_years, sigma, r, is_call=False, target_abs_delta=target_short_delta, skew_slope=skew_slope)
+    k_short_call = find_strike_for_delta(spot, t_years, sigma, r, is_call=True, target_abs_delta=target_short_delta, skew_slope=skew_slope)
+    k_long_put = k_short_put * (1 - wing_width_pct)
+    k_long_call = k_short_call * (1 + wing_width_pct)
 
     sigma_short_put = skewed_sigma(spot, k_short_put, sigma, skew_slope)
     sigma_long_put = skewed_sigma(spot, k_long_put, sigma, skew_slope)
@@ -224,15 +234,21 @@ def load_close_series(csv_path: str) -> pd.Series:
     return df["close"].sort_index()
 
 
-def run_backtest(spy_close: pd.Series, vix_close: pd.Series, skew_slope: float = 0.0) -> pd.DataFrame:
-    """Non-overlapping DAYS_TO_EXPIRY-day cycles across the full history both series cover.
+def run_backtest(
+    spy_close: pd.Series, vix_close: pd.Series, skew_slope: float = 0.0,
+    days_to_expiry: int | None = None, target_short_delta: float | None = None,
+    wing_width_pct: float | None = None,
+) -> pd.DataFrame:
+    """Non-overlapping days_to_expiry-day cycles across the full history both series cover.
     Non-overlapping (rather than weekly-rolled, like every other analysis this session) is a
     deliberate choice here: it keeps this first pass free of the overlapping-window
     effective-sample-size problem that has recurred all day (COT gold, crypto momentum, COT
     index), at the cost of a smaller raw n -- the right tradeoff for a first honest look, not a
     frozen specification.
 
-    skew_slope=0.0 (default) reproduces the original flat-vol backtest exactly."""
+    All optional parameters default to the module constants, so omitting them reproduces the
+    original backtest exactly."""
+    days_to_expiry = DAYS_TO_EXPIRY if days_to_expiry is None else days_to_expiry
     common_dates = spy_close.index.intersection(vix_close.index)
     spy_close = spy_close.loc[common_dates].sort_index()
     vix_close = vix_close.loc[common_dates].sort_index()
@@ -240,14 +256,14 @@ def run_backtest(spy_close: pd.Series, vix_close: pd.Series, skew_slope: float =
     rows = []
     cursor = spy_close.index.min()
     end = spy_close.index.max()
-    t_years = DAYS_TO_EXPIRY / 365.0
+    t_years = days_to_expiry / 365.0
 
     while True:
         entry_candidates = spy_close.index[spy_close.index >= cursor]
         if len(entry_candidates) == 0:
             break
         entry_date = entry_candidates[0]
-        expiry_target = entry_date + timedelta(days=DAYS_TO_EXPIRY)
+        expiry_target = entry_date + timedelta(days=days_to_expiry)
         expiry_candidates = spy_close.index[spy_close.index >= expiry_target]
         if len(expiry_candidates) == 0:
             break
@@ -255,7 +271,10 @@ def run_backtest(spy_close: pd.Series, vix_close: pd.Series, skew_slope: float =
 
         spot = float(spy_close.loc[entry_date])
         sigma = float(vix_close.loc[entry_date]) / 100.0
-        entry = iron_condor_entry(spot, t_years, sigma, RISK_FREE_RATE, skew_slope=skew_slope)
+        entry = iron_condor_entry(
+            spot, t_years, sigma, RISK_FREE_RATE, skew_slope=skew_slope,
+            target_short_delta=target_short_delta, wing_width_pct=wing_width_pct,
+        )
         spot_at_expiry = float(spy_close.loc[expiry_date])
         pnl_per_share = iron_condor_expiration_pnl(entry, spot_at_expiry)
         rows.append({
