@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Council — Core v2 direction</title>
+<style>
+  :root{
+    --ink:#1a2238; --muted:#5b6479; --line:#e4e7ee; --bg:#faf9f6;
+    --accent:#e8531f; --accent-soft:#fff1ea; --card:#ffffff;
+    --good:#1f8a4c; --warn:#b8860b; --bad:#c0392b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;}
+  .wrap{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+  header h1{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+  header .q{font-size:24px;font-weight:700;line-height:1.3;margin:0 0 4px}
+  header .meta{color:var(--muted);font-size:13px;margin-bottom:28px}
+
+  .verdict{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:8px 24px 20px;margin-bottom:36px;box-shadow:0 1px 3px rgba(20,30,60,.05)}
+  .vblock{padding:18px 0;border-bottom:1px solid var(--line)}
+  .vblock:last-child{border-bottom:0}
+  .vblock h3{margin:0 0 6px;font-size:15px}
+  .vblock p{margin:0;color:var(--ink)}
+  .vblock.step{background:var(--accent-soft);border-radius:10px;padding:18px;border-bottom:0;margin-top:6px}
+  .fork{background:#f4f5f8;border-radius:10px;padding:14px 16px;margin-top:10px;font-size:14.5px}
+  .fork b{color:var(--accent)}
+
+  h2.section{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    margin:40px 0 16px;border-top:1px solid var(--line);padding-top:24px}
+
+  .advisor{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px}
+  .advisor .role{font-weight:700;font-size:16px;margin:0}
+  .advisor .lens{color:var(--accent);font-size:13px;margin:2px 0 12px}
+  .advisor .field{margin:8px 0}
+  .advisor .label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .conf{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:20px}
+  .conf.High{background:#e6f5ec;color:var(--good)}
+  .conf.Medium{background:#fdf3df;color:var(--warn)}
+  .conf.Low{background:#fbe9e7;color:var(--bad)}
+
+  table.review{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  table.review th,table.review td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top}
+  table.review th{background:#f4f5f8;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  table.review tr:last-child td{border-bottom:0}
+  .tally{color:var(--muted);font-size:13px;margin-top:10px}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 18px;margin-top:14px}
+  details summary{cursor:pointer;font-weight:600;padding:12px 0}
+  details pre{white-space:pre-wrap;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink)}
+  footer{color:var(--muted);font-size:12px;text-align:center;margin-top:48px}
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#e8eaf2; --muted:#9aa1b5; --line:#2b3050; --bg:#12142a;
+      --accent:#ff7a45; --accent-soft:#2a1c16; --card:#191c38;
+      --good:#3ecb7a; --warn:#e0b84c; --bad:#ef6a63;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e8eaf2; --muted:#9aa1b5; --line:#2b3050; --bg:#12142a;
+    --accent:#ff7a45; --accent-soft:#2a1c16; --card:#191c38;
+    --good:#3ecb7a; --warn:#e0b84c; --bad:#ef6a63;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>⚖︎ The Council</h1>
+    <p class="q">Core v2, holistically: what's next?</p>
+    <p class="meta">2026-08-28 · 5 advisors · 3 reviewers · Itera Dynamics</p>
+  </header>
+
+  <section class="verdict">
+    <div class="vblock">
+      <h3>🏆 Best recommendation</h3>
+      <p>Charter the VRP (equity volatility risk premium / SPY&ndash;QQQ iron condor) result now,
+      in parallel with &mdash; not instead of &mdash; letting Campaign #53's confirmation holdout
+      accumulate untouched. Four of five advisors converged on this independently, and two of
+      three peer reviewers ranked the response that operationalized it (separating
+      <i>clock-blocked</i> from <i>hours-blocked</i> work) as the strongest single answer. VRP is
+      the most economically material finding of the entire three-week research window &mdash; an
+      order of magnitude above every other candidate &mdash; and its remaining blocker (brokerage
+      options approval) costs zero research hours to start; every day it sits unsubmitted is pure
+      lost time. Concretely: today, verify the CDE funding-rate holdout cron logger is actually
+      running (it silently broke once already) and check/submit the brokerage approval application
+      if that hasn't happened; this week, draft &mdash; but do not freeze &mdash; a VRP planning
+      charter. Do not spend further research hours on Campaign #54 or the unaddressed 4th
+      deficiency (rates/fixed income) this cycle; there is no idle capacity for either while #53
+      and VRP are both mid-flight.</p>
+      <div class="fork"><b>The fork:</b> one advisor (the Contrarian) dissented sharply &mdash;
+      freeze all new campaign activity, including VRP, and spend the cycle on a pre-mortem of
+      Campaign #54's crash-hedge sizing instead. All three reviewers flagged this response's
+      weakness: it conflates <i>starting an administrative clock</i> (near-zero cost, asymmetric
+      upside) with <i>committing research hours or capital</i> (real cost). That makes the majority
+      position the better default &mdash; but the dissent isn't noise: if "charter VRP" drifts from
+      paperwork-plus-clock-start into treating the existing backtest as already-confirmed and
+      sizing real risk into it, the Contrarian's concern becomes exactly right. The deciding
+      condition is discipline in <i>how</i> "charter" gets executed, not whether to do it.</div>
+    </div>
+    <div class="vblock">
+      <h3>🔍 Biggest blind spot</h3>
+      <p>The four advisors recommending "charter VRP now" under-scrutinize whether VRP's own
+      result has actually been through Itera's own required discovery/confirmation discipline. It
+      hasn't. The 127-cycle options backtest ran against the <i>full</i> 12.7-year historical
+      sample &mdash; no holdout was reserved, unlike every campaign that reached a governed
+      decision this session. Every closed-null this window looked strong on a first pass and only
+      turned out to be an artifact under adversarial scrutiny or a corrected re-run. Chartering VRP
+      as a numbered campaign with a reserved forward or held-out confirmation sample &mdash; not as
+      an already-validated result ready to size into a paper account &mdash; is the difference
+      between applying the firm's own standard consistently and quietly relaxing it for the result
+      the operator likes best.</p>
+    </div>
+    <div class="vblock">
+      <h3>⚠️ What everyone missed</h3>
+      <p>None of the five advisors asked who or what is actually deciding Core v2's
+      <i>composition</i> &mdash; the weights, correlations, and interactions across its sleeves
+      &mdash; as opposed to each sleeve's individual evidence quality. Campaign #54 was folded into
+      "founding composition" at 15% the moment it closed; VRP sits outside the founding pair
+      because it doesn't map to the four-deficiency taxonomy; funding carry's eventual weight has
+      never been discussed. Nobody has run the same adversarial, can-this-check-fail scrutiny on
+      the <i>portfolio-level</i> assembly of Core v2 that individual campaigns get. Core v2 is
+      accreting sleeve-by-sleeve with no single governed document yet deciding what the assembled
+      thing is supposed to look like, or how large it's allowed to get, before any of it goes
+      live.</p>
+    </div>
+    <div class="vblock step">
+      <h3>✅ One concrete next step</h3>
+      <p>Today, the operator personally does two ~30-minute checks: (1) confirm the CDE
+      funding-rate holdout cron job is currently running &mdash; it was silently unscheduled once
+      before and nobody caught it for three days &mdash; and (2) check the status of the brokerage
+      options-approval application and submit it now if it hasn't been. Both cost minutes, not
+      days, and both are pure calendar-clock accelerants nothing else in this plan can
+      substitute for.</p>
+    </div>
+  </section>
+
+  <h2 class="section">The five advisors weighed in</h2>
+
+  <div class="advisor">
+    <p class="role">The Contrarian</p>
+    <p class="lens">"What could fail?"</p>
+    <div class="field"><span class="label">Position</span><div>Do not charter, staff, or
+    paper-launch anything new right now. Freeze new campaign starts; spend the cycle letting the
+    funding-carry holdout accumulate untouched, and running a pre-mortem on Campaign #54's hedge
+    sizing &mdash; the piece most likely to already be silently wrong inside "Core v2."</div></div>
+    <div class="field"><span class="label">Reasoning</span><div>#54's evidence is a live liability
+    dressed as a closed decision: its own adversarial review called the best evidence plausibly
+    hindsight-fit, and the sizing sweep never peaked, so 15% is a guess. The #53 holdout's 3-day
+    cron gap is a monitoring blind spot exactly where it matters. VRP is the trap, not the prize:
+    gated by an external approval, and it duplicates rather than diversifies Core v1's equity-crash
+    exposure.</div></div>
+    <div class="field"><span class="label">Sharpest insight</span><div>Every closed-null this
+    window was caught by finding a real bug after someone believed the result &mdash; #54 got the
+    same adversarial pass and still got folded in. The bar for "good enough to go live" is lower
+    for whatever arrived first and has momentum, not whatever earned it.</div></div>
+    <div class="field"><span class="conf Medium">Medium</span></div>
+  </div>
+
+  <div class="advisor">
+    <p class="role">The First-Principles Thinker</p>
+    <p class="lens">"What problem are we really solving?"</p>
+    <div class="field"><span class="label">Position</span><div>Stop treating "maps to one of Core
+    v1's four named deficiencies" as the entry ticket to Core v2. Redefine Core v2 as the
+    best-evidenced, most-material, tradeable-when-cleared return streams the operator has actually
+    produced &mdash; not a forced quadrant-fill. Charter VRP now.</div></div>
+    <div class="field"><span class="label">Reasoning</span><div>Campaign velocity is being mistaken
+    for progress. The four-deficiency framing quietly became the selection criterion, displacing
+    "is this actually strong evidence." Locking a 15%-weighted hedge into founding composition on a
+    sizing sweep with no visible peak is a placeholder dressed as a decision.</div></div>
+    <div class="field"><span class="label">Sharpest insight</span><div>The taxonomy is now actively
+    excluding the best evidence (VRP) while including the worst (crash-hedge) &mdash; the tell that
+    the process has become the goal.</div></div>
+    <div class="field"><span class="conf Medium">Medium</span></div>
+  </div>
+
+  <div class="advisor">
+    <p class="role">The Expansionist</p>
+    <p class="lens">"What upside are we missing?"</p>
+    <div class="field"><span class="label">Position</span><div>Charter VRP this week and treat
+    brokerage approval as the critical-path item to accelerate, not a passive blocker, while
+    letting #53's holdout and 4th-deficiency scoping run unattended in parallel. VRP is 5&ndash;10x
+    more material than anything else Core v2 has touched.</div></div>
+    <div class="field"><span class="label">Reasoning</span><div>Materiality dominance changes the
+    math: $1,869&ndash;$11,212/yr isn't incremental, it's the difference between a governance
+    exercise and a business. The brokerage approval is the one blocker the operator can actually
+    compress. VRP not fitting the four deficiencies is a technicality &mdash; Gate 4 governs
+    retuning Core v1, not chartering an unrelated new sleeve.</div></div>
+    <div class="field"><span class="label">Sharpest insight</span><div>Attention is being allocated
+    by which campaign happens to be numbered and in-flight, not by expected value &mdash; and VRP,
+    the biggest number in the record, is invisible to that process because it isn't
+    chartered.</div></div>
+    <div class="field"><span class="conf Medium">Medium</span></div>
+  </div>
+
+  <div class="advisor">
+    <p class="role">The Outsider</p>
+    <p class="lens">"Does this make sense to someone new?"</p>
+    <div class="field"><span class="label">Position</span><div>22 days after the two-path
+    commitment, the moonshot has zero runtime, zero paper capital, and its best-supported idea is
+    sitting in a drawer for reasons unrelated to its quality. Charter VRP now &mdash; the
+    approval-tier wait is a queueing problem, not a research one &mdash; and stop calling #53/#54
+    "founding" campaigns as if they're proven pillars.</div></div>
+    <div class="field"><span class="label">Reasoning</span><div>"Two paths since 2026-08-06"
+    implies parallel progress; the actual state is one path frozen-and-running, the other
+    undefined-and-idle. "Blocked at Gate 2" sounds rigorous but the blocker is a form that should
+    have been submitted the day the backtest cleared. "Founding campaign" does unearned rhetorical
+    work for a two-asset carry study at 56% power and a hedge sleeve whose own review calls its
+    best evidence likely hindsight bias.</div></div>
+    <div class="field"><span class="label">Sharpest insight</span><div>The word "moonshot" is doing
+    damage &mdash; it implies boldness and motion, but three weeks of actual behavior has been
+    narrow, cautious research plus one great idea shelved for paperwork reasons.</div></div>
+    <div class="field"><span class="conf Medium">Medium</span></div>
+  </div>
+
+  <div class="advisor">
+    <p class="role">The Executor</p>
+    <p class="lens">"What would you actually do Monday morning?"</p>
+    <div class="field"><span class="label">Position</span><div>Monday: charter VRP as a numbered
+    campaign (2&ndash;3 hours &mdash; the analysis is done, this is paperwork) and
+    open/escalate the brokerage approval application. Everything else this week is a five-minute
+    check, not research hours: confirm the holdout logger is running, and do nothing else to #53.
+    The 4th deficiency does not start this month &mdash; no idle capacity.</div></div>
+    <div class="field"><span class="label">Reasoning</span><div>Distinguish clock-blocked from
+    hours-blocked: both #53 confirmation and VRP approval progress on wall-clock time the operator
+    doesn't control, so the only lever is starting them earlier. VRP is chartering-ready today with
+    zero additional research needed. Don't let #53's "current campaign" status create false urgency
+    &mdash; a near-empty holdout can't be rushed by attention.</div></div>
+    <div class="field"><span class="label">Sharpest insight</span><div>The real bottleneck isn't
+    research hours &mdash; it's whether the brokerage application has actually been submitted yet,
+    which is unstated in the record and is itself the first thing to check.</div></div>
+    <div class="field"><span class="conf Medium">Medium</span></div>
+  </div>
+
+  <h2 class="section">They peer-reviewed each other (anonymized)</h2>
+  <table class="review">
+    <tr><th>Reviewer</th><th>Strongest</th><th>Biggest blind spot</th><th>What all 5 missed</th></tr>
+    <tr class="review-row">
+      <td>1</td>
+      <td><b>Executor</b> &mdash; cleanly separates clock- from hours-blocked work into a concrete
+      task list; honest about the one fact that would flip its own call.</td>
+      <td><b>Contrarian</b> &mdash; conflates "don't rush VRP into live capital" with "don't even
+      start the brokerage clock," which costs nothing and forecloses nothing.</td>
+      <td>Whether VRP itself will need its own live confirmation holdout once chartered &mdash; it
+      could hit the exact "empty holdout" wall #53 just hit.</td>
+    </tr>
+    <tr class="review-row">
+      <td>2</td>
+      <td><b>Executor</b> &mdash; same reasoning, plus the only one to price solo-operator capacity
+      explicitly.</td>
+      <td><b>Contrarian</b> &mdash; same conflation: lumps "submit a form" with "commit research
+      hours."</td>
+      <td>Whether Core v2's composition itself is being deliberately governed, or accreting ad hoc
+      with no document owning that decision.</td>
+    </tr>
+    <tr class="review-row">
+      <td>3</td>
+      <td><b>Expansionist</b> &mdash; directly resolves the taxonomy tension: Gate 4 governs
+      retuning Core v1, not chartering an unrelated new sleeve.</td>
+      <td><b>Contrarian</b> &mdash; same conflation, driving its costliest recommendation.</td>
+      <td>Whether "charter VRP now" is procedurally legal under the firm's own gate sequencing
+      &mdash; tradeability precedes specification, and VRP is still pending that gate.</td>
+    </tr>
+  </table>
+  <p class="tally">Tally &mdash; Strongest: Executor 2, Expansionist 1. Biggest blind spot:
+  Contrarian, 3/3 unanimous.</p>
+
+  <details>
+    <summary>Full transcript (raw advisor + reviewer output)</summary>
+    <pre>See companion file: council-2026-08-28-core-v2-direction.md</pre>
+  </details>
+
+  <footer>Generated by the Claude Council skill · disagreement is the signal</footer>
+</div>
+</body>
+</html>
