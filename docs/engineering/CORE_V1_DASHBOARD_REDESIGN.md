@@ -1,7 +1,9 @@
 # Core v1 Dashboard Redesign — Staff Review and Build Plan
 
-**Status:** Phase 0 built (2026-08-28, branch `claude/research-assessment-feedback-4auusg`;
-see "Phase 0 — build record" at the end of this file). Phases 1-2 sequenced, not yet started.
+**Status:** Phase 0 **built and deployed** (2026-08-28) — merged to `main` in
+PR #45 (`298ab63`), `dashboard.iteradynamics.com` live on it. See "Phase 0 —
+build record" and "Deployment, 2026-08-28" at the end of this file. Phases 1-2
+sequenced, not yet started.
 **Constraint (non-negotiable, confirmed by the CEO):** the dashboard
 (`scripts/core_v1_dashboard.py`) must remain a **strictly read-only** layer over
 already-logged data (`state.json`, the signals/fills/market-data logs,
@@ -54,7 +56,7 @@ them naively would directly fight the CEO's own stated goal (b) — efficient
 to read. The build plan below resolves that tension by sequencing: fix
 correctness first, cut noise second, add net-new by value/cost third.
 
-## Needs-CEO item (separate from this build)
+## Needs-CEO item (separate from this build) — RESOLVED 2026-08-28
 
 Ops/Compliance explicitly escalated this beyond "add a UI element": the live
 paper runtime running off a branch nobody in this research thread has
@@ -62,6 +64,17 @@ reviewed is a fact for the CEO's decision, not staff's to quietly patch.
 Phase 0 item 1 below fixes the *symptom* (you'll be able to see which branch
 produced what you're looking at) — it does not resolve whether that branch
 should be reviewed or reconciled. That's a separate, still-open decision.
+
+**Resolved 2026-08-28 (CEO: "option 1").** The deployed checkout
+`/opt/itera/app` ran `gpt/core-v1-paper-runtime` — a one-commit-off-mainline
+side branch, ~5 weeks stale. A file-by-file diff of every path the Core v1
+paper runner imports showed `runtime/core_v1/allocation.py` (frozen params)
+and `research/strategies|regimes`, `resampler.py` byte-identical; the entire
+9.9k-line delta was additive research modules the runner never imports plus
+the +64-line identity sidecar (commit `f75f111`). `main` was fast-forwarded
+current (PR #45), and `/opt/itera/app` repointed to `main`. Prod now tracks
+the reviewed mainline. Running-behavior delta at deploy = the sidecar only,
+proven byte-neutral by the parity / shadow-runtime gates.
 
 ## Build plan
 
@@ -252,7 +265,36 @@ benchmark overlay, Sharpe/Calmar, the −26%/−35% band as drawn reference
 lines. Logged as a candidate panel, not folded in: per-sleeve equity
 curves.
 
-Tests: `test_core_v1_dashboard_health.py` now 23 (adds the health-bar
-layout order, the clean-identity path, `nav_history` unit coverage, and
-the NAV section render); `test_core_v1_runtime_identity.py` 2. Full suite
-re-run green after each change.
+Tests: `test_core_v1_dashboard_health.py` now 24 (adds the health-bar
+layout order, the clean-identity path, `nav_history` unit coverage, the
+NAV section render, and the drawdown caption); `test_core_v1_runtime_identity.py`
+2. Full suite re-run green after each change.
+
+Also added after preview review: the drawdown panel caption
+(`current / worst / -26%/-35% planning band, quoted from
+CORE_V1_LIVE_EXPECTATION_AND_DEGRADATION_BAND.md`) — staff-approved
+(Risk/PM + Performance + Red Team consensus), folded into the fix-3 line
+of the 2026-08-28 `ops/decisions.md` entry.
+
+## Deployment, 2026-08-28
+
+- Commits `2e0a129` (dashboard) + `f75f111` (runtime sidecar) merged to
+  `main` via **PR #45** (`298ab63`); CI green (Test 3.11, Test 3.12, Smoke
+  Backtest, all twice).
+- `/opt/itera/app` repointed from `gpt/core-v1-paper-runtime` to `main`,
+  fast-forwarded, working tree clean. Temp `research` remote and the
+  `dashboard-preview.moonwire.app` preview (`itera-dash-preview.service`,
+  cloudflared route) torn down.
+- `itera-core-v1-paper.service` restarted 2026-08-28 19:37 UTC — one
+  off-cadence cycle **1234** (NAV `$108,168.09`, identical to cycle 1233,
+  0 fills), then resumes hourly on a new phase. `runtime_identity` did not
+  enter `state.json`; the `core_v1_runtime_identity.json` sidecar now
+  reads `main @ 298ab63`, clean tree. Every cycle from 1234 forward carries
+  its git identity.
+- `itera-core-v1-dashboard.service` now serves commit `2e0a129` off `main`
+  (restarted for a clean load). Live dashboard shows `main @ 298ab63` in the
+  header identity, "Runtime Identity — REPORTED" chip, plain "System
+  Healthy" banner.
+- Paper record integrity: unaffected. The only running-behavior change is
+  the sidecar write (parity / shadow-runtime gates: byte-identical
+  `state.json` and `fills.jsonl`, identical NAV and fill count).
