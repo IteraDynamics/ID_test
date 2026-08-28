@@ -9,6 +9,18 @@ unfilled and need historical backfill from docs/research/ and
 docs/ITERA_CAMPAIGN_BOARD.md — not done in this pass)
 
 ## 🔴 Needs CEO decision
+- [ ] **Re-review Campaign #54's 15% crash-hedge weight before any further
+      Core v2 composition work.** Red Team stress-test (2026-08-28) of a
+      "has the fund lost its way" concern found the sharper live problem
+      is here, not in queue prioritization: the weight rests on n=3
+      historical episodes (one clean — 2018; one plausibly circular, since
+      the strategy's own entry gate was very plausibly built by examining
+      that exact episode — 2022; one correctly-fired-but-unprofitable —
+      2020), chosen judgmentally off a peakless sizing sweep. That's too
+      thin a base for power or multiplicity control by construction, and
+      it is already locked into Core v2's founding composition — i.e. it
+      already touches Core v2 weights, CEO-gated territory. Raised by:
+      Red Team, independent of CIO/Risk-PM.
 - [ ] Broker choice for options-spread approval (VRP candidate): continue
       the in-flight IBKR application, or apply elsewhere (tastytrade,
       Schwab, etc.) if execution/fill quality on 4-leg spreads looks
@@ -17,13 +29,22 @@ docs/ITERA_CAMPAIGN_BOARD.md — not done in this pass)
 - [ ] Sign off on drafting a combined Core v1+v2 Portfolio Construction
       Policy (drawdown ceiling for the combined book + a rule for when a
       candidate's tail-correlation with an existing sleeve disqualifies
-      it or caps it) before Campaign #54's 15% hedge weight is treated as
-      final and before VRP is ever sized. Raised by: Risk/PM.
+      it or caps it) before Campaign #54's weight is treated as final and
+      before VRP is ever sized. Raised by: Risk/PM.
 - [ ] Approve formally chartering the defined-risk equity VRP candidate
-      (SPY iron condors) as a numbered campaign — it's the most material
-      candidate found this session (~$1,869-$11,212/yr vs. $400-1,500/yr
-      for everything else) but has never been run through the standing
-      gate process as a numbered campaign. Raised by: CIO.
+      (SPY iron condors) as a numbered campaign, independent of the
+      options-approval ETA — cheap to do now, lets Red Team/Risk-PM
+      pre-clear it. Raised by: CIO. **Correction, 2026-08-28: an earlier
+      framing here implied VRP had been neglected by queue-order
+      prioritization; CIO's direct response showed this is wrong — VRP
+      was discovered 2026-08-25 and received the most active work of any
+      single candidate in the days after (a real options-payoff backtest,
+      skew resolution, a structure robustness sweep, and a cash-secured-
+      put fallback test that confirmed the earlier gate decision was
+      correct, not overcautious). Its remaining blocker is external
+      (Ops/options-approval), not an internal prioritization failure.
+      Chartering it formally is still worth doing, just not for the
+      reason first stated.**
 
 ## 🟡 Blocked (no action available from CEO)
 - Campaign #53 funding-carry confirmation — blocked on the CDE live-forward
