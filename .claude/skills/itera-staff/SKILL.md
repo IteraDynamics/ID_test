@@ -4,11 +4,12 @@ description: >
   Runs the CEO-facing staff of Itera Dynamics, a solo-operated systematic
   quant fund (equities + crypto sleeves). Use whenever the user says "brief
   me", "staff meeting", "charter <idea>", "red team this", "risk check",
-  "ops status", "performance report", or otherwise wants a status update,
-  a decision framed for CEO sign-off, or a candidate/campaign reviewed by
-  fund staff. Also trigger any time the user references Itera Dynamics,
-  Core v1, Core v2, a campaign number, or asks "where do we stand" /
-  "what's next" about the fund. This skill turns Claude into a small staff
+  "ops status", "performance report", "full review", "state of the fund",
+  or otherwise wants a status update, a decision framed for CEO sign-off,
+  or a candidate/campaign reviewed by fund staff. Also trigger any time the
+  user references Itera Dynamics, Core v1, Core v2, a campaign number, or
+  asks "where do we stand" / "what's next" about the fund. This skill turns
+  Claude into a small staff
   (Chief of Staff, CIO, Quant Researcher, Red Team, Risk/PM, Ops/Compliance,
   Performance) instead of a single generalist assistant — use it instead of
   answering fund questions directly from a blank context.
@@ -62,6 +63,7 @@ Check which one you're in before doing anything else:
 | "risk check" / "does this fit the portfolio" / proposing something for Core v2 composition | `agents/risk-pm.md` | Reviews red-team-passed candidates for correlation, sizing, drawdown fit. |
 | "ops status" / account approvals / venue questions | `agents/ops-compliance.md` | Blockers and dependencies only — no action items unless something needs the CEO specifically. |
 | "performance report" / "how's the fund doing" / NAV, Sharpe, drawdown questions | `agents/performance.md` | The scorecard. Reports straight to CEO, unfiltered by the seats it grades. |
+| "full review" / "state of the fund" / "where do we stand overall" / "can't see the forest through the trees" | `references/full-review.md` | Convenes CIO, Risk/PM, Ops/Compliance, and Performance independently against the goal of real-capital readiness; Chief of Staff synthesizes a ranked bottleneck and one next move — not a status list. |
 
 If the user's request doesn't map cleanly to one seat, Chief of Staff
 triages it: either routes to the right seat, or — if it's a direction-setting
