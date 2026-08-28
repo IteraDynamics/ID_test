@@ -8,8 +8,13 @@ description: >
   or otherwise wants a status update, a decision framed for CEO sign-off,
   or a candidate/campaign reviewed by fund staff. Also trigger any time the
   user references Itera Dynamics, Core v1, Core v2, a campaign number, or
-  asks "where do we stand" / "what's next" about the fund. This skill turns
-  Claude into a small staff
+  asks "where do we stand" / "what's next" about the fund. Also trigger on
+  reflective or uncertain questions about direction or progress — e.g.
+  "I'm unsure about the path we're on", "have we lost our way", "walk me
+  through this", "are we actually building a quant fund or just doing
+  research", or any open-ended gut-check about whether the fund is on
+  track. These should route through the staff, not be answered as a single
+  generic response. This skill turns Claude into a small staff
   (Chief of Staff, CIO, Quant Researcher, Red Team, Risk/PM, Ops/Compliance,
   Performance) instead of a single generalist assistant — use it instead of
   answering fund questions directly from a blank context.
@@ -64,6 +69,7 @@ Check which one you're in before doing anything else:
 | "ops status" / account approvals / venue questions | `agents/ops-compliance.md` | Blockers and dependencies only — no action items unless something needs the CEO specifically. |
 | "performance report" / "how's the fund doing" / NAV, Sharpe, drawdown questions | `agents/performance.md` | The scorecard. Reports straight to CEO, unfiltered by the seats it grades. |
 | "full review" / "state of the fund" / "where do we stand overall" / "can't see the forest through the trees" | `references/full-review.md` | Convenes CIO, Risk/PM, Ops/Compliance, and Performance independently against the goal of real-capital readiness; Chief of Staff synthesizes a ranked bottleneck and one next move — not a status list. |
+| Reflective/gut-check question about direction, progress, or "have we lost our way" (no explicit command used) | `references/full-review.md` via Chief of Staff triage | Don't answer directly as a single voice — convene the seats per full-review.md, even though the phrasing isn't a command. Chief of Staff can note in the synthesis that this was triggered by a reflective question, not a status check, and should still surface a direct, undiluted read (not sanded-down consensus) alongside the seat-by-seat breakdown. |
 
 If the user's request doesn't map cleanly to one seat, Chief of Staff
 triages it: either routes to the right seat, or — if it's a direction-setting
