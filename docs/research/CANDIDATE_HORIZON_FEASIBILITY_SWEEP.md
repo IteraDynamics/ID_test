@@ -112,6 +112,66 @@ The 24h and 72h horizons clear the screen. A-001's binding constraint remains wh
 recorded — only five independent event families in the severe subset — which is a support
 problem, not a latency problem. Unchanged by this sweep.
 
+## Re-run, 2026-08-28 — real corrected-cadence measurement, not a projection
+
+The 2026-08-20 correction above estimated what re-scoring would look like ("~0.6h lag") without
+actually re-running this sweep's own methodology. This section does that re-run, against a fresh
+live measurement, not the projection.
+
+**Source:** `scripts/run_paper_runtime_cadence_audit.py` (the corrected v2 script, fresh-bar-only
+methodology) against paper export `/opt/itera/app/artifacts/core_v1_paper_export/20260828T131010Z`
+(cycle 1227, i.e. 2026-08-28 — a new export, not a re-analysis of the old 808-cycle run). Measured
+fresh-bar-only medians: BTC_4H_trend/ETH_4H_trend 0.5682h, ETH_1H_trend 0.5646h — consistent with
+the ~0.5-0.6h range already cited, now with an exact, dated, sourced figure rather than a range.
+A representative lag of **0.5682h** (the higher, more conservative of the two, both crypto assets
+Jump Risk/Trend Persistence's immediate-horizon candidates depend on) is used below, matching this
+sweep's own original convention of applying one lag figure uniformly rather than per-asset.
+
+| Candidate | Horizon | Lag / horizon (corrected) | Screen (corrected) | Screen (original, 1.6h) |
+|---|---:|---:|---|---|
+| Trend Persistence — BTC immediate | 3h | 18.94% | **MARGINAL** | INFEASIBLE |
+| Trend Persistence — ETH immediate | 3h | 18.94% | **MARGINAL** | INFEASIBLE |
+| Trend Persistence — BTC medium | 60h | 0.95% | FEASIBLE | FEASIBLE |
+| Trend Persistence — BTC long | 120h | 0.47% | FEASIBLE | FEASIBLE |
+| Jump Risk — immediate_any *(retired)* | 2h | 28.41% | **INFEASIBLE** (unchanged, but 80.0%→28.4%) | INFEASIBLE |
+| Jump Risk — medium_up *(retired)* | 18h | 3.16% | FEASIBLE | FEASIBLE |
+| Campaign #43 A-001 — primary | 24h | 2.37% | FEASIBLE | FEASIBLE |
+| Campaign #43 A-001 — secondary | 72h | 0.79% | FEASIBLE | FEASIBLE |
+| Campaign #53 funding carry — estimated | ~7d | 0.34% | FEASIBLE | FEASIBLE |
+
+**What actually changed:** Trend Persistence's two 3h "central finding" candidates cross the
+MARGINAL/INFEASIBLE boundary (53.3%→18.94%, under the 25% line). Jump Risk's `immediate_any`
+narrows sharply (80.0%→28.4%) but does **not** cross the INFEASIBLE line — it remains just above
+the 25% threshold, close enough that a small further reduction in measured lag (or a genuinely
+independent re-measurement landing lower than 0.5682h) could flip it, but this re-run does not
+flip it on its own.
+
+**What this does NOT resolve, per the 2026-08-28 Red Team review of the same source data:**
+
+1. This is fresh data through the *same* audit script as the 2026-08-20 correction — a second
+   latent bug in that script would reproduce identically here. It closes the "stale data" gap,
+   not the "independent methodology" gap the reopening conditions below still require.
+2. BTC has no direct 1H measurement anywhere in this export — its figure remains a proxy through
+   the BTC_4H_trend sleeve, unchanged from every prior citation.
+3. The fresh-bar-only max for BTC_4H_trend/ETH_4H_trend (3.6747h) does not match the previously
+   documented ~12-hour-outage max (3.46h) from the earlier export/window. Red Team flagged this
+   as **unverified** — it may be the same known outage recurring in overlapping data, or a new,
+   undiagnosed gap — and this has not been checked against the raw `cadence_rows.csv` timestamps.
+   Treat the medians above as solid; treat the tails as unconfirmed pending that check.
+4. Jump Risk's own model-inference latency has never been logged, because it has never run live
+   (T3/T4 in the audit script's own output are explicitly "NOT LOGGED... bounded above by T5, not
+   invented"). Even a fully cleared cadence number is silent on whether inference time alone
+   would re-consume the narrowing buffer above.
+
+**Disposition:** this re-run does not reopen Trend Persistence or Jump Risk by itself, and does
+not authorize any campaign, runtime, or strategy change (see Authorization boundary below,
+unchanged). It resolves the "hasn't this sweep been re-run against a stale placeholder" question
+with a sourced, dated answer: Trend Persistence's 3h family screens MARGINAL, not INFEASIBLE, as
+of this measurement; Jump Risk's `immediate_any` remains screened INFEASIBLE, materially closer
+to the line than previously stated. Whether either candidate is worth a real reopening campaign —
+including the independence, BTC-proxy, and inference-latency gaps above, none of which this
+re-run closes — is a separate, deliberate decision, not a consequence of this arithmetic.
+
 ## Authorization boundary
 
 Observation-only. This sweep revises no statistical result, authorizes no campaign, and changes

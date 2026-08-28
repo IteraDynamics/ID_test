@@ -68,6 +68,24 @@ docs/ITERA_CAMPAIGN_BOARD.md — not done in this pass)
   (direct BTC 1H, not proxied through 4H) needed before Jump Risk /
   Trend Persistence reopening can be formally decided — flagged by
   Ops/Compliance, not yet a CEO decision point.
+- **2026-08-28: fresh live cadence audit pulled (export 20260828T131010Z,
+  cycle 1227) and Red Team-reviewed.** Confirms ~0.56-0.57h fresh-bar-only
+  median cadence, consistent with the 2026-08-20 correction. Two follow-
+  ups actioned: (1) `docs/research/CANDIDATE_HORIZON_FEASIBILITY_SWEEP.md`
+  re-run against this real number — Trend Persistence's 3h family now
+  screens MARGINAL (was INFEASIBLE); Jump Risk `immediate_any` stays
+  INFEASIBLE but narrows sharply (80%→28.4%). Observation-only, no
+  campaign/runtime change authorized. (2) The fresh-bar-only max for
+  BTC_4H/ETH_4H (3.6747h) doesn't match the previously-documented ~12h
+  outage's max (3.46h) — Red Team flagged this unverified, not waved off.
+  Outlier-verification command handed to the operator to run against
+  `cadence_rows.csv` on their own machine (this session has no access to
+  it); result still pending. Neither Jump Risk nor Trend Persistence is
+  reopened by any of this — reopening either is a separate CEO decision,
+  and Jump Risk specifically still needs a genuinely independent
+  measurement (not just fresh data through the same script) and its own
+  model-inference latency instrumented (never logged, since it's never
+  run live) before that decision is even ripe.
 
 ## Fund constraints (keep current)
 - Jurisdiction: US — Binance (451) and Bybit (403) unreachable. Reachable:
