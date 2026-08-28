@@ -1,6 +1,7 @@
 # Core v1 Dashboard Redesign — Staff Review and Build Plan
 
-**Status:** Phase 0 authorized to start. Phases 1-2 sequenced, not yet started.
+**Status:** Phase 0 built (2026-08-28, branch `claude/research-assessment-feedback-4auusg`;
+see "Phase 0 — build record" at the end of this file). Phases 1-2 sequenced, not yet started.
 **Constraint (non-negotiable, confirmed by the CEO):** the dashboard
 (`scripts/core_v1_dashboard.py`) must remain a **strictly read-only** layer over
 already-logged data (`state.json`, the signals/fills/market-data logs,
@@ -138,3 +139,120 @@ vs. the governed backtest figure.
 - Have Red Team re-check the shipped Phase 0 specifically: does
   `audit_available == False` or a stale audit ever render inside a state
   that reads as "healthy" to a operator skimming the page in five seconds?
+
+## Phase 0 — build record (2026-08-28)
+
+Built on branch `claude/research-assessment-feedback-4auusg`. Not deployed —
+deployment and the branch-reconciliation question remain the CEO's call (see
+"Needs-CEO item" above).
+
+**New file — `scripts/core_v1_dashboard_health.py`.** Stdlib-only,
+side-effect-free trust/provenance logic pulled out of the dashboard so it is
+unit-testable (the dashboard module runs Streamlit at import and cannot be
+imported in a test). Holds `derive_audit_trust`, `audit_failure_lines`,
+`runtime_identity_view`, and the `LARGEST_DRIFT_CAVEAT` string.
+
+**`scripts/run_core_v1_paper_live.py`** — `build_runtime_identity()` records
+git branch / commit / short SHA / dirty flag / hostname / entrypoint /
+runtime version / process-start time once at process start; `run_cycle`
+writes it (plus resolved `state_path` and `recorded_at`) to a **sidecar
+file** `core_v1_runtime_identity.json` alongside `state.json`, every cycle.
+
+*Deviation from the plan, and why:* the plan said "a field the runtime
+writes into `state.json`". It cannot go in `state.json` — that file is
+compared byte-for-byte by the replay / parity gates
+(`test_core_v1_jump_risk_parity`, `test_core_v1_jump_risk_shadow_runtime`),
+and identity content is inherently environment-specific (the resolved
+`state_path` alone differs by run directory). A sidecar keeps `state.json`
+deterministic while serving item 1's actual intent. `CORE_V1_RUNTIME_IDENTITY_PATH`
+overrides the location; the dashboard also still reads a legacy
+`state["runtime_identity"]` block if one is ever present.
+
+Observability only — no market-data, signal, fill, NAV or exposure path
+reads it. `test_core_v1_runtime_identity.py` asserts the key never lands in
+`state.json` and that two cycles at different paths still yield identical
+`state.json` bytes. The deployed runtime (`gpt/core-v1-paper-runtime`) does
+not write this sidecar yet, so against the current live state the dashboard
+shows the "Provenance UNKNOWN" strip — which is itself the intended signal.
+
+**`scripts/core_v1_dashboard.py`:**
+
+1. Header runtime-identity strip (reads `core_v1_runtime_identity.json`);
+   amber "Provenance UNKNOWN" variant + a warning line when the sidecar is
+   absent or its `state_path` disagrees with what the dashboard read
+   (path comparison tolerates `.resolve()` vs raw). Also added as a
+   "Runtime Identity" tile in the System Health grid.
+2. New render order below the brand row: identity strip → trust banner →
+   **System Health section** → command deck → market-regime hero → NAV
+   chart. `render_system_health()` always runs and now sits above the deck.
+   The old System Health section near the bottom of the page is gone.
+3. `audit_available == False` → dedicated amber **"Numbers Unverified"**
+   banner and a `PRICING UNVERIFIED` badge (`unverified` CSS class, distinct
+   from `warn`). It can no longer fall through to `health_status == "ok"` or
+   the green banner.
+4. A stale **or** unavailable **or** failing audit stamps a
+   `.deck-flag` ribbon ("NUMBERS UNVERIFIED — …") directly on top of the
+   command deck. Driven by `audit_trust.numbers_trustworthy`, which is
+   `True` only for a fresh passing audit.
+5. "Largest Drift" carries an explicit "informational context, not a
+   pass/fail check" caveat row in the Price Audit card (all audit states).
+6. The issues banner and the Price Audit card list **every** failure string
+   (`audit_failure_lines`), not just `failures[0]`.
+
+**Tests.** `tests/test_core_v1_dashboard_health.py` (16): pure-logic canaries
+on the health module (each asserts a property and its negation, so it can
+fail), plus `streamlit.testing.v1.AppTest` smoke tests over the real
+dashboard covering: no-audit never renders "System Healthy"; stale audit
+flags the deck and blocks the green banner; a failing audit surfaces all
+failures; a fresh pass renders green with no deck flag and shows the drift
+caveat; the identity strip renders "UNKNOWN" when absent and branch/commit
+when present; and the render writes none of the files it reads.
+`tests/test_core_v1_runtime_identity.py` (2): the sidecar is written, the
+key stays out of `state.json`, and `state.json` bytes are path-invariant.
+
+Verification run: no `sharpe|calmar|cagr|1.34|20%` strings in either script;
+no write/`json.dump`/`mkdir` call anywhere in the dashboard;
+`test_dashboard_writes_nothing` asserts byte-identical inputs before/after
+render.
+
+### Follow-on: compact health bar + "Portfolio NAV" section (2026-08-28)
+
+Two CEO-approved refinements after reviewing the built Phase 0 on the
+`dashboard-preview.moonwire.app` preview:
+
+**Compact health bar (Option B).** The 8-card System Health grid above the
+command deck was mostly dead space and pushed the NAV/PnL numbers two
+screens down. Replaced *above the deck* with a one-row chip bar
+(`render_health_bar`, `HEALTH_BAR_CHECKS`) — Runtime Identity / Runtime /
+Market Data / Price Audit / Errors / State Persistence, each with a hover
+tooltip. The full grid (`render_system_health`, now fed by
+`compute_health_checks`) moved back down to just above Portfolio Thesis,
+with `align-items:start` + a fixed 4-column layout so cards no longer
+stretch. The loud amber provenance strip now renders **only** when
+provenance is unknown or mismatched; a clean known identity is just a chip
++ a grid tile. The green "System Healthy" banner now reads
+`System Healthy · provenance unverified` (and swaps its 4th bullet) when
+the identity sidecar is absent — health and provenance are separate axes.
+
+**"Portfolio NAV" section** — staff design review (Performance / CIO /
+Risk/PM / Red Team), decision logged in `ops/decisions.md` 2026-08-28:
+1. equity curve reframed as **% return vs. the $100k inception baseline**,
+   fill anchored at 0 (was `fill="tozeroy"` on raw NAV, which pinned the
+   axis to 0 and rendered +8.9% as a flat line);
+2. **full since-inception record, daily-resampled** (was the last ~800
+   hourly cycles ≈ 33 of 52 live days, silently truncated) — new pure
+   `nav_history()` in `core_v1_dashboard_health.py`, fed by a dedicated
+   `nav_events = read_jsonl(SIGNALS_LOG, n=200_000)` read;
+3. **drawdown panel on a fixed −40%…+2% scale** so today's calm and a
+   future real drawdown both render truthfully;
+4. `LIVE · PAPER` pill + inception date on the section header.
+
+Deferred to Phase 2 item 11 (governed artifacts only, never raw logs):
+benchmark overlay, Sharpe/Calmar, the −26%/−35% band as drawn reference
+lines. Logged as a candidate panel, not folded in: per-sleeve equity
+curves.
+
+Tests: `test_core_v1_dashboard_health.py` now 23 (adds the health-bar
+layout order, the clean-identity path, `nav_history` unit coverage, and
+the NAV section render); `test_core_v1_runtime_identity.py` 2. Full suite
+re-run green after each change.
