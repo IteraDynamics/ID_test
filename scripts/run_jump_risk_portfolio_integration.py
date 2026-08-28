@@ -171,7 +171,7 @@ def _build_frame(ohlcv: pd.DataFrame, cfg: JumpRiskConfig) -> pd.DataFrame:
     return frame.sort_index()
 
 
-def _oos_probabilities(
+def _oos_probabilities_unshifted(
     ohlcv: pd.DataFrame,
     asset: str,
     candidate_name: str,
@@ -181,6 +181,13 @@ def _oos_probabilities(
     absolute_jump: float,
     risk_quantile: float,
 ) -> pd.DataFrame:
+    """Out-of-sample probabilities indexed by the bar whose features produced them.
+
+    This is the pre-shift frame: row ``T`` holds the probability computed from
+    bar ``T``'s own features, which is NOT actionable at ``T``. ``_oos_probabilities``
+    applies the one-row shift that makes the series actionable. The two are kept
+    separately so the timing audit can verify the shift rather than assume it.
+    """
     spec = LOCKED_MODELS[candidate_name]
     cfg = JumpRiskConfig(
         asset=asset,
@@ -231,7 +238,34 @@ def _oos_probabilities(
     out.index = _utc_naive_index(out.index)
     start_ts = pd.Timestamp(oos_start)
     end_ts = pd.Timestamp(oos_end)
-    out = out.loc[(out.index >= start_ts) & (out.index <= end_ts)]
+    return out.loc[(out.index >= start_ts) & (out.index <= end_ts)]
+
+
+def _oos_probabilities(
+    ohlcv: pd.DataFrame,
+    asset: str,
+    candidate_name: str,
+    oos_start: str,
+    oos_end: str,
+    jump_z: float,
+    absolute_jump: float,
+    risk_quantile: float,
+) -> pd.DataFrame:
+    """Actionable out-of-sample probabilities indexed by the bar they may act on.
+
+    Row ``T`` holds the probability computed from the immediately preceding row's
+    features, so nothing at or after ``T`` informs the value served at ``T``.
+    """
+    out = _oos_probabilities_unshifted(
+        ohlcv,
+        asset,
+        candidate_name,
+        oos_start,
+        oos_end,
+        jump_z,
+        absolute_jump,
+        risk_quantile,
+    ).copy()
     out["probability"] = out["probability"].shift(1)
     out["train_threshold"] = out["train_threshold"].shift(1)
     return out.dropna(subset=["probability", "train_threshold"])

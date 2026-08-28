@@ -6,6 +6,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -147,6 +148,49 @@ audit.run_audit(args)
     return year, fold_dir
 
 
+def reconcile_fold_matrix(
+    matrix: pd.DataFrame,
+    fold_nav: pd.Series,
+    year: str,
+    *,
+    tolerance: float = 1e-6,
+) -> pd.DataFrame:
+    """Rebase a captured sleeve matrix onto the fund NAV's basis and verify it.
+
+    The captured matrix is the *unscaled* alignment produced inside
+    ``run_core_v1_sleeve_contribution_audit`` (sleeves start at their allocated
+    capital and include the pre-OOS warm-up). The fund NAV written alongside it
+    has already been rebased to starting capital. Differencing the two directly
+    compares different units and fails by a constant factor even when the data
+    is perfectly sound.
+
+    Rebasing first does not weaken the guard. The sleeve set, index, and
+    composition must still agree exactly: any real divergence makes the
+    matrix-to-NAV ratio non-constant, which this check rejects. Only a single
+    global scale factor is forgiven.
+    """
+    totals = matrix.sum(axis=1)
+    if totals.empty:
+        raise RuntimeError(f"Fold {year} matrix has no rows in common with fund NAV")
+    first_total = float(totals.iloc[0])
+    if not np.isfinite(first_total) or first_total <= 0:
+        raise RuntimeError(f"Fold {year} matrix sum is non-positive at the first common timestamp")
+
+    rebase = float(fold_nav.iloc[0]) / first_total
+    rebased = matrix * rebase
+    delta = (rebased.sum(axis=1) - fold_nav).abs().max()
+    if delta > tolerance:
+        ratio = fold_nav / totals
+        raise RuntimeError(
+            f"Fold {year} matrix does not reconcile to fund NAV after rebasing; "
+            f"max delta={delta} (rebase factor {rebase:.12f}, "
+            f"ratio spread {float(ratio.max() - ratio.min()):.3e}). "
+            "A non-constant ratio means the sleeve set, index, or composition "
+            "genuinely differs — do not widen this tolerance."
+        )
+    return rebased
+
+
 def main() -> None:
     args = parse_args()
     folds = years(args.oos_start, args.oos_end)
@@ -174,9 +218,7 @@ def main() -> None:
         common = matrix.index.intersection(fold_nav.index)
         matrix = matrix.loc[common]
         fold_nav = fold_nav.loc[common]
-        raw_delta = (matrix.sum(axis=1) - fold_nav).abs().max()
-        if raw_delta > 1e-6:
-            raise RuntimeError(f"Fold {year} matrix does not reconcile to fund NAV; max delta={raw_delta}")
+        matrix = reconcile_fold_matrix(matrix, fold_nav, year)
         scale = running_nav / float(fold_nav.iloc[0])
         scaled_matrix = matrix * scale
         scaled_nav = fold_nav * scale

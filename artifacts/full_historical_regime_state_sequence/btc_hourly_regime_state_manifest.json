@@ -1,0 +1,50 @@
+{
+  "aggregate_payload_digest": "89e39529287de5cffb07b362df1f0fecbaaa3690e1c5f79b5f4d077065fcf702",
+  "counts": {
+    "eligible_transitions": 2788,
+    "folds": [
+      81,
+      81,
+      80
+    ],
+    "purged_transitions": 242,
+    "runs": 2790,
+    "states": 70069,
+    "transitions": 2789
+  },
+  "dashboard_mutation_allowed": false,
+  "experiment": "campaign_46_full_historical_regime_state_sequence",
+  "exposure_mutation_allowed": false,
+  "feasibility_status": "CAMPAIGN_45_SOURCE_FEASIBLE",
+  "files": {
+    "btc_hourly_regime_state_report.md": "32c624c0ed010e0bca2ddcfb63a9f4de0815d0a48fc4c777f59c6ffe9eb7efa1",
+    "btc_hourly_regime_state_runs.csv": "d0cf6e80914813d5cedc029bc9516d7036104b181f70f96d0afa2fb767c7867e",
+    "btc_hourly_regime_state_sequence.csv": "194ff434206599878bdc29c6c5605577f2f518d9cb992cd97eaa79fbe7e26575",
+    "btc_hourly_regime_state_sequence.json": "5597bc4e90654dbde97483db62825e6d1d88ce63cae4e4e4abc931c9a804d7f0",
+    "btc_hourly_regime_support_feasibility.json": "a16416a1ee79ec6846e7383577560d714d89698b9536bd600c1853118d28ff72",
+    "btc_hourly_regime_transitions.csv": "2257e176296511a171129594744705c3e2698a083cee505151cc517267740c7a",
+    "btc_hourly_regime_transitions.json": "c7e73c8dd510feecde6bbafae47d9aff95c6b139c5c8f5a186e51a2c5d887259"
+  },
+  "nav_mutation_allowed": false,
+  "observation_only": true,
+  "order_mutation_allowed": false,
+  "portfolio_mutation_allowed": false,
+  "predictive_outcomes_generated": false,
+  "runtime_mutation_allowed": false,
+  "signal_mutation_allowed": false,
+  "source": {
+    "byte_count": 4792028,
+    "discontinuity_count": 14,
+    "first_timestamp": "2018-01-01 00:00:00",
+    "largest_elapsed_hours": 16,
+    "largest_missing_timestamp_count": 15,
+    "last_timestamp": "2025-12-31 00:00:00",
+    "missing_timestamp_count": 36,
+    "path": "data/btcusd_3600s_2018-01-01_to_2025-12-31.csv",
+    "row_count": 70069,
+    "sha256": "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079"
+  },
+  "source_only": true,
+  "strategy_mutation_allowed": false,
+  "threshold_mutation_allowed": false
+}

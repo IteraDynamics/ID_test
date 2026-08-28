@@ -1,0 +1,28 @@
+{
+  "experiment": "core_v1_event_robustness",
+  "exposure_mutation_allowed": false,
+  "observation_only": true,
+  "outputs": {
+    "btc_extended_up_event_robustness.json": {
+      "sha256": "578d8e7c0176489ff5b67761b48ece8bac3285ba06b70ae6ee5d8fe93abb0dc7"
+    },
+    "btc_extended_up_event_robustness_labels.csv": {
+      "sha256": "106a792f6dd822a4d2419c53f6296d1c9c80e7504ec4199d74b3afde5bbcb4cd"
+    },
+    "btc_extended_up_event_robustness_report.md": {
+      "sha256": "26c556b70b4d4f1d52903ff93cf5fc6e4a1f2ab27358670fca15ccb085080ec3"
+    }
+  },
+  "research_only": true,
+  "runtime_integration_allowed": false,
+  "source_artifacts": {
+    "event_families": {
+      "artifact": "artifacts/core_v1_historical_event_families/btc_extended_up_event_families.json",
+      "sha256": "be4fc3e45f8728313a714cd5f4ea932e6822dcea138f145126f9b0392756e584"
+    },
+    "event_family_membership": {
+      "artifact": "artifacts/core_v1_historical_event_families/btc_extended_up_event_family_membership.csv",
+      "sha256": "6bba0128dac682194da20126e1c36c81a38e809c8f8867e1a5946747e692f744"
+    }
+  }
+}

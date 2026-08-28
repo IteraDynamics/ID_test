@@ -20,6 +20,7 @@ from scripts.run_jump_risk_portfolio_integration import (  # noqa: E402
     _canonical_path,
     _load_matrix,
     _oos_probabilities,
+    _oos_probabilities_unshifted,
     read_ohlcv,
 )
 
@@ -71,22 +72,84 @@ def _candidate_predictions(
     return shifted
 
 
+def _unshifted_predictions(
+    source: pd.DataFrame,
+    asset: str,
+    candidate: str,
+    args: argparse.Namespace,
+) -> pd.DataFrame:
+    """Pre-shift pipeline output, indexed by the bar that produced each value."""
+    raw = _oos_probabilities_unshifted(
+        source,
+        asset,
+        candidate,
+        args.oos_start,
+        args.oos_end,
+        args.jump_z,
+        args.absolute_jump,
+        args.risk_quantile,
+    ).copy()
+    raw.index.name = "source_bar_close"
+    return raw
+
+
+def verify_shift_provenance(
+    served: pd.DataFrame,
+    unshifted: pd.DataFrame,
+) -> tuple[pd.Series, int]:
+    """Prove each served probability came from a strictly earlier source bar.
+
+    ``unshifted`` is indexed by the bar whose own features produced each value;
+    ``served`` is what the strategy consumes. For every served row at bar ``T``
+    the value must equal the unshifted value at the immediately preceding row.
+    A removed, doubled, reversed, or misaligned shift fails this comparison, as
+    does any series whose values do not originate from the model pipeline at all.
+
+    Returns the per-row source-bar timestamps (NaT where provenance failed) and
+    the failure count.
+    """
+    expected = unshifted["probability"].shift(1)
+    expected_source = pd.Series(unshifted.index, index=unshifted.index).shift(1)
+
+    aligned_expected = expected.reindex(served.index)
+    aligned_source = expected_source.reindex(served.index)
+
+    served_values = served["probability"].astype(float).to_numpy()
+    expected_values = aligned_expected.astype(float).to_numpy()
+    matches = np.isclose(served_values, expected_values, rtol=0.0, atol=1e-12, equal_nan=False)
+
+    source_bars = pd.Series(
+        np.where(matches, aligned_source.to_numpy(), np.datetime64("NaT")),
+        index=served.index,
+    )
+    return source_bars, int((~matches).sum())
+
+
 def _audit_prediction_frame(
     frame: pd.DataFrame,
     asset: str,
     candidate: str,
     bar_delta: pd.Timedelta,
+    unshifted: pd.DataFrame,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     out = frame.reset_index().copy()
     out["asset"] = asset
     out["candidate"] = candidate
-    out["source_bar_close"] = out["action_bar_end"] - bar_delta
+
+    # Source bars are established by provenance against the pre-shift pipeline
+    # output, never derived from the action timestamp. Deriving both sides of a
+    # timing comparison from the same value makes the comparison vacuous.
+    source_bars, provenance_failures = verify_shift_provenance(frame, unshifted)
+    out["source_bar_close"] = source_bars.to_numpy()
     out["pnl_interval_start"] = out["action_bar_end"] - bar_delta
     out["pnl_interval_end"] = out["action_bar_end"]
+    out["provenance_verified"] = out["source_bar_close"].notna()
     out["probability_available_before_pnl"] = (
-        out["source_bar_close"] <= out["pnl_interval_start"]
+        out["provenance_verified"] & (out["source_bar_close"] <= out["pnl_interval_start"])
     )
-    out["strictly_no_same_bar_source"] = out["source_bar_close"] < out["action_bar_end"]
+    out["strictly_no_same_bar_source"] = (
+        out["provenance_verified"] & (out["source_bar_close"] < out["action_bar_end"])
+    )
     out["threshold_finite"] = np.isfinite(out["train_threshold"].astype(float))
     out["probability_finite"] = np.isfinite(out["probability"].astype(float))
     out["high_risk"] = out["probability"] >= out["train_threshold"]
@@ -104,6 +167,7 @@ def _audit_prediction_frame(
         "last_action_bar_end": str(index.max()),
         "backwards_or_duplicate_timestamps": backwards,
         "gaps_shorter_than_expected_bar": subhour_gaps,
+        "shift_provenance_failures": provenance_failures,
         "availability_failures": int((~out["probability_available_before_pnl"]).sum()),
         "same_bar_source_failures": int((~out["strictly_no_same_bar_source"]).sum()),
         "nonfinite_probability_rows": int((~out["probability_finite"]).sum()),
@@ -115,6 +179,7 @@ def _audit_prediction_frame(
         for key in (
             "backwards_or_duplicate_timestamps",
             "gaps_shorter_than_expected_bar",
+            "shift_provenance_failures",
             "availability_failures",
             "same_bar_source_failures",
             "nonfinite_probability_rows",
@@ -122,6 +187,25 @@ def _audit_prediction_frame(
         )
     ) else "FAIL"
     return out, checks
+
+
+def lookahead_canary(unshifted: pd.DataFrame) -> dict[str, Any]:
+    """Prove the detector can fail, by running it against known lookahead.
+
+    A forward-shifted series serves bar ``T`` a probability computed from a
+    later bar. The audit's own provenance check must reject it. An audit that
+    never demonstrates a detected failure is not evidence.
+    """
+    leaked = unshifted.copy()
+    leaked["probability"] = leaked["probability"].shift(-1)
+    leaked["train_threshold"] = leaked["train_threshold"].shift(-1)
+    leaked = leaked.dropna(subset=["probability", "train_threshold"])
+    _, failures = verify_shift_provenance(leaked, unshifted)
+    return {
+        "rows_tested": int(len(leaked)),
+        "detected_failures": failures,
+        "status": "PASS" if failures > 0 else "FAIL",
+    }
 
 
 def _aligned_scale(
@@ -178,17 +262,23 @@ def main() -> None:
     predictions: dict[tuple[str, str], pd.DataFrame] = {}
     audit_frames: list[pd.DataFrame] = []
     check_rows: list[dict[str, Any]] = []
+    canary_rows: list[dict[str, Any]] = []
 
     for asset, source in (("BTC", btc), ("ETH", eth)):
         for candidate in LOCKED_MODELS:
             print(f"Auditing timing: {asset} {candidate}")
             pred = _candidate_predictions(source, asset, candidate, args)
+            unshifted = _unshifted_predictions(source, asset, candidate, args)
             predictions[(asset, candidate)] = pred
             details, checks = _audit_prediction_frame(
-                pred, asset, candidate, bar_delta
+                pred, asset, candidate, bar_delta, unshifted
             )
             audit_frames.append(details)
             check_rows.append(checks)
+
+            canary = lookahead_canary(unshifted)
+            canary.update({"asset": asset, "candidate": candidate})
+            canary_rows.append(canary)
 
     event_frames: list[pd.DataFrame] = []
     overlay_checks: list[dict[str, Any]] = []
@@ -198,17 +288,34 @@ def main() -> None:
         active.index.name = "action_bar_end"
         active = active.reset_index()
         active["asset"] = asset
-        active["source_bar_close"] = active["action_bar_end"] - bar_delta
+        # Source bars come from the verified per-candidate provenance map, not
+        # from arithmetic on the action timestamp.
+        verified_sources = pd.concat(
+            [
+                frame.loc[frame["asset"] == asset, ["action_bar_end", "source_bar_close"]]
+                for frame in audit_frames
+            ]
+        )
+        source_by_action = (
+            verified_sources.dropna(subset=["source_bar_close"])
+            .groupby("action_bar_end")["source_bar_close"]
+            .max()
+        )
+        active["source_bar_close"] = active["action_bar_end"].map(source_by_action)
         active["pnl_interval_start"] = active["action_bar_end"] - bar_delta
         active["pnl_interval_end"] = active["action_bar_end"]
+        active["provenance_verified"] = active["source_bar_close"].notna()
         active["timing_valid"] = (
-            active["source_bar_close"] <= active["pnl_interval_start"]
-        ) & (active["source_bar_close"] < active["pnl_interval_end"])
+            active["provenance_verified"]
+            & (active["source_bar_close"] <= active["pnl_interval_start"])
+            & (active["source_bar_close"] < active["pnl_interval_end"])
+        )
         event_frames.append(active)
         overlay_checks.append(
             {
                 "asset": asset,
                 "active_rows": int(len(active)),
+                "unverified_source_rows": int((~active["provenance_verified"]).sum()),
                 "timing_failures": int((~active["timing_valid"]).sum()),
                 "status": "PASS" if bool(active["timing_valid"].all()) else "FAIL",
             }
@@ -224,15 +331,25 @@ def main() -> None:
     overlay_events.to_csv(run_dir / "jump_risk_overlay_activation_timing.csv", index=False)
     overlay_summary.to_csv(run_dir / "jump_risk_overlay_timing_summary.csv", index=False)
 
-    structural_pass = bool((checks["status"] == "PASS").all()) and bool(
-        (overlay_summary["status"] == "PASS").all()
+    canary_summary = pd.DataFrame(canary_rows)
+    canary_summary.to_csv(run_dir / "jump_risk_lookahead_canary.csv", index=False)
+
+    # The canary must FAIL on injected lookahead. If the detector cannot detect,
+    # the whole audit is void regardless of what the other checks report.
+    canary_pass = bool((canary_summary["status"] == "PASS").all())
+    structural_pass = (
+        bool((checks["status"] == "PASS").all())
+        and bool((overlay_summary["status"] == "PASS").all())
+        and canary_pass
     )
     report = {
-        "audit": "jump_risk_timing_audit_v0",
+        "audit": "jump_risk_timing_audit_v1",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "STRUCTURAL_PASS_RUNTIME_CADENCE_PENDING" if structural_pass else "FAIL",
         "expected_bar_hours": args.expected_bar_hours,
         "structural_checks_passed": structural_pass,
+        "lookahead_canary_passed": canary_pass,
+        "lookahead_canary": canary_rows,
         "interpretation": {
             "source_bar_close": "Timestamp of the fully closed bar whose features produce the probability.",
             "action_bar_end": "End of the subsequent return interval receiving the overlay scale.",

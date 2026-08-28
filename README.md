@@ -1,18 +1,28 @@
 # IteraDynamics
 
-> A deterministic, research-to-runtime systematic trading platform.
+> Institutional-grade quantitative investment research and execution infrastructure.
 
-IteraDynamics is a Python monorepo for building, testing, and operating quantitative
-trading strategies with a hard architectural separation between research and execution.
-It is built for correctness, auditability, and modular extensibility — not for speed
-or complexity for its own sake.
+Itera Dynamics is building a quantitative investment firm through deterministic research,
+reproducible validation, disciplined portfolio construction, explicit risk governance,
+controlled execution, and auditable operations.
 
-## Active research handoff
+This repository contains the research-to-runtime platform that supports that objective. The
+platform is foundational infrastructure for the firm, not the terminal objective. It maintains
+a hard architectural separation between research and execution and is built for correctness,
+auditability, and modular extensibility — not for speed or complexity for its own sake.
 
+## Institutional direction and active handoff
+
+- Long-term firm thesis: [`docs/ITERA_FIRM_THESIS.md`](docs/ITERA_FIRM_THESIS.md)
 - Authoritative campaign state: [`docs/ITERA_CAMPAIGN_BOARD.md`](docs/ITERA_CAMPAIGN_BOARD.md)
-- Core v1 Historical Regime Taxonomy specification and reproduction runbook: [`docs/research/CORE_V1_HISTORICAL_REGIME_TAXONOMY.md`](docs/research/CORE_V1_HISTORICAL_REGIME_TAXONOMY.md)
+- Research roadmap: [`docs/ITERA_RESEARCH_ROADMAP.md`](docs/ITERA_RESEARCH_ROADMAP.md)
 
-The campaign board is descriptive only. It does not authorize production, threshold, order, NAV, exposure, or runtime changes.
+The firm thesis is directional context and does not authorize implementation. The campaign board
+is the current project-state and authorization record. Neither document independently authorizes
+production, threshold, signal, order, portfolio, NAV, exposure, or runtime changes.
+
+Campaign #43-R1 remains governed exactly by its frozen specification, R1 amendment, and board
+acceptance gates. The firm-thesis clarification does not alter Campaign #43 scope or methodology.
 
 ---
 
@@ -93,6 +103,7 @@ Components:
 - **Fail-closed governance**: uncertain regimes block new buys; sell/exit always passes through.
 - **Every decision is auditable**: regime signals, intents, allocations, and fills are all logged.
 - **Determinism**: same data + parameters → byte-identical results every time.
+- **Investment relevance**: research rigor exists to improve long-term investment reliability, not to maximize novelty or activity.
 
 ---
 
@@ -256,7 +267,7 @@ IteraDynamics/
 │
 ├── tests/
 │   ├── unit/                    # Fast, isolated unit tests
-│   ├── integration/             # End-to-end pipeline tests
+│   ├── integration/            # End-to-end pipeline tests
 │   └── fixtures/                # Synthetic data factory
 │
 ├── .github/workflows/ci.yml     # GitHub Actions CI

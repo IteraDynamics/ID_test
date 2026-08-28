@@ -1,0 +1,22 @@
+{
+  "anchor_count": 403,
+  "partition_counts": [
+    135,
+    134,
+    134
+  ],
+  "partitions": [
+    {
+      "count": 135,
+      "partition": 1
+    },
+    {
+      "count": 134,
+      "partition": 2
+    },
+    {
+      "count": 134,
+      "partition": 3
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "aggregate_payload_digest": "dddf216281ce2fa88ed59d52ab309eabd757736bc983672adcffea3d2d1c43eb",
+  "counts": {
+    "anchors": 403,
+    "candidates": 72,
+    "partitions": [
+      135,
+      134,
+      134
+    ],
+    "rankable_candidates": 0,
+    "supported_associations": 0
+  },
+  "experiment": "campaign_47_historical_regime_structure_discovery",
+  "files": {
+    "regime_structure_anchor_inventory.csv": "1f2d5ff82218a0283abd4319eb1692980c19f01334192169af3525b2fec6d922",
+    "regime_structure_anchor_inventory.json": "ff0312cb7cfeaa96f841ae053517bc962ac5ec07ec0359e03053c4731dc9435b",
+    "regime_structure_candidate_inventory.csv": "72e5bbd4998fd280a96adb061f6be422e0ee09d9270e4ad4e0864b02cc7f8768",
+    "regime_structure_candidate_inventory.json": "b483ee115b2aff9f94ea5230907b343cb5f50f37acd0541fd6eb4e1e1e79a048",
+    "regime_structure_fold_plan.json": "c25414013978ede36cb28786694178d9b508e0ccdd4b6d37346801e97fcbc515",
+    "regime_structure_report.md": "9cbd5375b85d159ea90e07b2d27af7cdfa3f282b10d4999d7a01fc5792e6b341",
+    "regime_structure_results.csv": "19052315f0e8db25735a4ab13d1ec13b32566bde8d56542dc46c8a0cff7d8853",
+    "regime_structure_results.json": "07962b3c081e0b7c3b6da70b967f666fba72606ae5dd14614971aeffa1981a38",
+    "regime_structure_source_manifest.json": "84cfeeeb9a62cffbf0d48776294ea663487a5104027b24a65838c1e45a7628da"
+  },
+  "observation_only": true,
+  "runtime_mutation_allowed": false,
+  "strategy_mutation_allowed": false
+}

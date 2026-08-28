@@ -72,6 +72,15 @@ def parse_args() -> argparse.Namespace:
                    help="Slippage bps per 100%% NAV turnover (default 10)")
     p.add_argument("--slippage-vol-factor", type=float, default=None,
                    help="Slippage bps per 100%% ATR (default 50)")
+    p.add_argument("--spread-k", type=float, default=None,
+                   help="Spread coefficient: half_spread_bps = k * atr_pct * 10_000 / 2 "
+                        "(default 0.5). This ties spread width to the instrument's own "
+                        "volatility -- a reasonable heuristic for crypto, but wrong for a "
+                        "mega-liquid, tight-spread instrument (e.g. a bond ETF) where real "
+                        "spread is closer to a small fixed floor than an ATR-scaled figure. "
+                        "Set near 0 and rely on --min-spread instead for those instruments.")
+    p.add_argument("--min-spread", type=float, default=None,
+                   help="Hard floor on half-spread per side, in bps (default 1)")
     p.add_argument("--cooldown", type=int, default=None,
                    help="Minimum bars between trades (default 0)")
     p.add_argument("--rebalance-threshold", type=float, default=None,
@@ -123,14 +132,19 @@ def main() -> None:
         exec_config.slippage_size_factor = args.slippage_size_factor
     if args.slippage_vol_factor is not None:
         exec_config.slippage_vol_factor = args.slippage_vol_factor
+    if args.spread_k is not None:
+        exec_config.spread_k = args.spread_k
+    if args.min_spread is not None:
+        exec_config.min_spread_bps = args.min_spread
     if args.cooldown is not None:
         exec_config.cooldown_bars = args.cooldown
 
     log.info(
         "Execution model: taker_fee=%.4f  base_slip=%.1fbps  "
-        "size_factor=%.1f  vol_factor=%.1f  cooldown=%d",
+        "size_factor=%.1f  vol_factor=%.1f  spread_k=%.2f  min_spread=%.1fbps  cooldown=%d",
         exec_config.taker_fee_rate, exec_config.base_slippage_bps,
         exec_config.slippage_size_factor, exec_config.slippage_vol_factor,
+        exec_config.spread_k, exec_config.min_spread_bps,
         exec_config.cooldown_bars,
     )
 

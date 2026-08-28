@@ -1,0 +1,578 @@
+[
+  {
+    "candidate_id": "return_trailing_24h__R__24h",
+    "candidate_ordinal": 0,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "return_trailing_24h"
+  },
+  {
+    "candidate_id": "return_trailing_24h__R__72h",
+    "candidate_ordinal": 1,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "return_trailing_24h"
+  },
+  {
+    "candidate_id": "return_trailing_24h__R__168h",
+    "candidate_ordinal": 2,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "return_trailing_24h"
+  },
+  {
+    "candidate_id": "return_trailing_24h__M__24h",
+    "candidate_ordinal": 3,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "return_trailing_24h"
+  },
+  {
+    "candidate_id": "return_trailing_24h__M__72h",
+    "candidate_ordinal": 4,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "return_trailing_24h"
+  },
+  {
+    "candidate_id": "return_trailing_24h__M__168h",
+    "candidate_ordinal": 5,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "return_trailing_24h"
+  },
+  {
+    "candidate_id": "return_trailing_24h__V__24h",
+    "candidate_ordinal": 6,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "return_trailing_24h"
+  },
+  {
+    "candidate_id": "return_trailing_24h__V__72h",
+    "candidate_ordinal": 7,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "return_trailing_24h"
+  },
+  {
+    "candidate_id": "return_trailing_24h__V__168h",
+    "candidate_ordinal": 8,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "return_trailing_24h"
+  },
+  {
+    "candidate_id": "return_trailing_72h__R__24h",
+    "candidate_ordinal": 9,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "return_trailing_72h"
+  },
+  {
+    "candidate_id": "return_trailing_72h__R__72h",
+    "candidate_ordinal": 10,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "return_trailing_72h"
+  },
+  {
+    "candidate_id": "return_trailing_72h__R__168h",
+    "candidate_ordinal": 11,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "return_trailing_72h"
+  },
+  {
+    "candidate_id": "return_trailing_72h__M__24h",
+    "candidate_ordinal": 12,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "return_trailing_72h"
+  },
+  {
+    "candidate_id": "return_trailing_72h__M__72h",
+    "candidate_ordinal": 13,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "return_trailing_72h"
+  },
+  {
+    "candidate_id": "return_trailing_72h__M__168h",
+    "candidate_ordinal": 14,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "return_trailing_72h"
+  },
+  {
+    "candidate_id": "return_trailing_72h__V__24h",
+    "candidate_ordinal": 15,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "return_trailing_72h"
+  },
+  {
+    "candidate_id": "return_trailing_72h__V__72h",
+    "candidate_ordinal": 16,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "return_trailing_72h"
+  },
+  {
+    "candidate_id": "return_trailing_72h__V__168h",
+    "candidate_ordinal": 17,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "return_trailing_72h"
+  },
+  {
+    "candidate_id": "return_trailing_168h__R__24h",
+    "candidate_ordinal": 18,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "return_trailing_168h"
+  },
+  {
+    "candidate_id": "return_trailing_168h__R__72h",
+    "candidate_ordinal": 19,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "return_trailing_168h"
+  },
+  {
+    "candidate_id": "return_trailing_168h__R__168h",
+    "candidate_ordinal": 20,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "return_trailing_168h"
+  },
+  {
+    "candidate_id": "return_trailing_168h__M__24h",
+    "candidate_ordinal": 21,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "return_trailing_168h"
+  },
+  {
+    "candidate_id": "return_trailing_168h__M__72h",
+    "candidate_ordinal": 22,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "return_trailing_168h"
+  },
+  {
+    "candidate_id": "return_trailing_168h__M__168h",
+    "candidate_ordinal": 23,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "return_trailing_168h"
+  },
+  {
+    "candidate_id": "return_trailing_168h__V__24h",
+    "candidate_ordinal": 24,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "return_trailing_168h"
+  },
+  {
+    "candidate_id": "return_trailing_168h__V__72h",
+    "candidate_ordinal": 25,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "return_trailing_168h"
+  },
+  {
+    "candidate_id": "return_trailing_168h__V__168h",
+    "candidate_ordinal": 26,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "return_trailing_168h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_24h__R__24h",
+    "candidate_ordinal": 27,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "realized_volatility_trailing_24h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_24h__R__72h",
+    "candidate_ordinal": 28,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "realized_volatility_trailing_24h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_24h__R__168h",
+    "candidate_ordinal": 29,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "realized_volatility_trailing_24h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_24h__M__24h",
+    "candidate_ordinal": 30,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "realized_volatility_trailing_24h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_24h__M__72h",
+    "candidate_ordinal": 31,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "realized_volatility_trailing_24h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_24h__M__168h",
+    "candidate_ordinal": 32,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "realized_volatility_trailing_24h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_24h__V__24h",
+    "candidate_ordinal": 33,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "realized_volatility_trailing_24h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_24h__V__72h",
+    "candidate_ordinal": 34,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "realized_volatility_trailing_24h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_24h__V__168h",
+    "candidate_ordinal": 35,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "realized_volatility_trailing_24h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_168h__R__24h",
+    "candidate_ordinal": 36,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "realized_volatility_trailing_168h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_168h__R__72h",
+    "candidate_ordinal": 37,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "realized_volatility_trailing_168h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_168h__R__168h",
+    "candidate_ordinal": 38,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "realized_volatility_trailing_168h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_168h__M__24h",
+    "candidate_ordinal": 39,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "realized_volatility_trailing_168h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_168h__M__72h",
+    "candidate_ordinal": 40,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "realized_volatility_trailing_168h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_168h__M__168h",
+    "candidate_ordinal": 41,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "realized_volatility_trailing_168h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_168h__V__24h",
+    "candidate_ordinal": 42,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "realized_volatility_trailing_168h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_168h__V__72h",
+    "candidate_ordinal": 43,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "realized_volatility_trailing_168h"
+  },
+  {
+    "candidate_id": "realized_volatility_trailing_168h__V__168h",
+    "candidate_ordinal": 44,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "realized_volatility_trailing_168h"
+  },
+  {
+    "candidate_id": "distance_from_mean_trailing_168h__R__24h",
+    "candidate_ordinal": 45,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "distance_from_mean_trailing_168h"
+  },
+  {
+    "candidate_id": "distance_from_mean_trailing_168h__R__72h",
+    "candidate_ordinal": 46,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "distance_from_mean_trailing_168h"
+  },
+  {
+    "candidate_id": "distance_from_mean_trailing_168h__R__168h",
+    "candidate_ordinal": 47,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "distance_from_mean_trailing_168h"
+  },
+  {
+    "candidate_id": "distance_from_mean_trailing_168h__M__24h",
+    "candidate_ordinal": 48,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "distance_from_mean_trailing_168h"
+  },
+  {
+    "candidate_id": "distance_from_mean_trailing_168h__M__72h",
+    "candidate_ordinal": 49,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "distance_from_mean_trailing_168h"
+  },
+  {
+    "candidate_id": "distance_from_mean_trailing_168h__M__168h",
+    "candidate_ordinal": 50,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "distance_from_mean_trailing_168h"
+  },
+  {
+    "candidate_id": "distance_from_mean_trailing_168h__V__24h",
+    "candidate_ordinal": 51,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "distance_from_mean_trailing_168h"
+  },
+  {
+    "candidate_id": "distance_from_mean_trailing_168h__V__72h",
+    "candidate_ordinal": 52,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "distance_from_mean_trailing_168h"
+  },
+  {
+    "candidate_id": "distance_from_mean_trailing_168h__V__168h",
+    "candidate_ordinal": 53,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "distance_from_mean_trailing_168h"
+  },
+  {
+    "candidate_id": "range_position_trailing_168h__R__24h",
+    "candidate_ordinal": 54,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "range_position_trailing_168h"
+  },
+  {
+    "candidate_id": "range_position_trailing_168h__R__72h",
+    "candidate_ordinal": 55,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "range_position_trailing_168h"
+  },
+  {
+    "candidate_id": "range_position_trailing_168h__R__168h",
+    "candidate_ordinal": 56,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "range_position_trailing_168h"
+  },
+  {
+    "candidate_id": "range_position_trailing_168h__M__24h",
+    "candidate_ordinal": 57,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "range_position_trailing_168h"
+  },
+  {
+    "candidate_id": "range_position_trailing_168h__M__72h",
+    "candidate_ordinal": 58,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "range_position_trailing_168h"
+  },
+  {
+    "candidate_id": "range_position_trailing_168h__M__168h",
+    "candidate_ordinal": 59,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "range_position_trailing_168h"
+  },
+  {
+    "candidate_id": "range_position_trailing_168h__V__24h",
+    "candidate_ordinal": 60,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "range_position_trailing_168h"
+  },
+  {
+    "candidate_id": "range_position_trailing_168h__V__72h",
+    "candidate_ordinal": 61,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "range_position_trailing_168h"
+  },
+  {
+    "candidate_id": "range_position_trailing_168h__V__168h",
+    "candidate_ordinal": 62,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "range_position_trailing_168h"
+  },
+  {
+    "candidate_id": "drawdown_from_high_trailing_168h__R__24h",
+    "candidate_ordinal": 63,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_R_24h",
+    "outcome_family": "R",
+    "predictor": "drawdown_from_high_trailing_168h"
+  },
+  {
+    "candidate_id": "drawdown_from_high_trailing_168h__R__72h",
+    "candidate_ordinal": 64,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_R_72h",
+    "outcome_family": "R",
+    "predictor": "drawdown_from_high_trailing_168h"
+  },
+  {
+    "candidate_id": "drawdown_from_high_trailing_168h__R__168h",
+    "candidate_ordinal": 65,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_R_168h",
+    "outcome_family": "R",
+    "predictor": "drawdown_from_high_trailing_168h"
+  },
+  {
+    "candidate_id": "drawdown_from_high_trailing_168h__M__24h",
+    "candidate_ordinal": 66,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_M_24h",
+    "outcome_family": "M",
+    "predictor": "drawdown_from_high_trailing_168h"
+  },
+  {
+    "candidate_id": "drawdown_from_high_trailing_168h__M__72h",
+    "candidate_ordinal": 67,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_M_72h",
+    "outcome_family": "M",
+    "predictor": "drawdown_from_high_trailing_168h"
+  },
+  {
+    "candidate_id": "drawdown_from_high_trailing_168h__M__168h",
+    "candidate_ordinal": 68,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_M_168h",
+    "outcome_family": "M",
+    "predictor": "drawdown_from_high_trailing_168h"
+  },
+  {
+    "candidate_id": "drawdown_from_high_trailing_168h__V__24h",
+    "candidate_ordinal": 69,
+    "horizon_hours": 24,
+    "outcome_column": "outcome_V_24h",
+    "outcome_family": "V",
+    "predictor": "drawdown_from_high_trailing_168h"
+  },
+  {
+    "candidate_id": "drawdown_from_high_trailing_168h__V__72h",
+    "candidate_ordinal": 70,
+    "horizon_hours": 72,
+    "outcome_column": "outcome_V_72h",
+    "outcome_family": "V",
+    "predictor": "drawdown_from_high_trailing_168h"
+  },
+  {
+    "candidate_id": "drawdown_from_high_trailing_168h__V__168h",
+    "candidate_ordinal": 71,
+    "horizon_hours": 168,
+    "outcome_column": "outcome_V_168h",
+    "outcome_family": "V",
+    "predictor": "drawdown_from_high_trailing_168h"
+  }
+]

@@ -21,6 +21,13 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from runtime.core_v1.allocation import SELECTED_CORE_V1_SCENARIO, SELECTED_CORE_V1_SLEEVES
+from scripts.core_v1_dashboard_health import (
+    LARGEST_DRIFT_CAVEAT,
+    audit_failure_lines,
+    derive_audit_trust,
+    nav_history,
+    runtime_identity_view,
+)
 
 STATE_PATH = Path(os.getenv("CORE_V1_STATE_PATH", "/opt/itera/runtime/core_v1/state.json"))
 SIGNALS_LOG = Path(os.getenv("CORE_V1_SIGNALS_LOG", "/opt/itera/logs/core_v1_signals.jsonl"))
@@ -28,6 +35,7 @@ FILLS_LOG = Path(os.getenv("CORE_V1_FILLS_LOG", "/opt/itera/logs/core_v1_fills.j
 MARKET_DATA_LOG = Path(os.getenv("CORE_V1_MARKET_DATA_LOG", "/opt/itera/logs/core_v1_market_data.jsonl"))
 ERROR_LOG = SIGNALS_LOG.with_name("core_v1_errors.jsonl")
 AUDIT_REPORT_PATH = Path(os.getenv("CORE_V1_AUDIT_REPORT_PATH", str(STATE_PATH.with_name("core_v1_audit_report.json"))))
+RUNTIME_IDENTITY_PATH = Path(os.getenv("CORE_V1_RUNTIME_IDENTITY_PATH", str(STATE_PATH.with_name("core_v1_runtime_identity.json"))))
 PAPER_EXPORT_DIR = Path(os.getenv("CORE_V1_PAPER_EXPORT_DIR", str(REPO_ROOT / "artifacts" / "core_v1_paper_export")))
 EXPECTED_POLL_SECONDS = int(os.getenv("CORE_V1_POLL_SECONDS", "3600"))
 STALE_AFTER_SECONDS = int(os.getenv("CORE_V1_STALE_AFTER_SECONDS", str(EXPECTED_POLL_SECONDS * 2 + 300)))
@@ -224,6 +232,21 @@ div[data-testid="stButton"] button:hover { border-color:#38bdf8; color:#38bdf8; 
 .err { background:#3f0a0a; color:#fecaca; border:1px solid #dc2626; }
 .neutral { background:#111827; color:#cbd5e1; border:1px solid #334155; }
 .info { background:#0c1e33; color:#bfdbfe; border:1px solid #1d4ed8; }
+.unverified { background:#3a1d02; color:#fed7aa; border:1px solid #ea580c; }
+.identity-strip { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; background:#0d1422; border:1px solid #1f2a3d; border-radius:12px; padding:8px 13px; margin:0 0 12px 0; font-size:.72rem; color:#94a3b8; }
+.identity-strip.unknown { background:#3a1d02; border-color:#ea580c; color:#fed7aa; }
+.identity-strip .id-k { color:#64748b; text-transform:uppercase; letter-spacing:.07em; font-weight:850; font-size:.62rem; margin-right:5px; }
+.identity-strip .id-v { color:#dbe4f0; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
+.identity-strip.unknown .id-v { color:#fed7aa; }
+.identity-warn { color:#fdba74; font-size:.70rem; margin:-6px 0 12px 2px; display:flex; flex-direction:column; gap:2px; }
+.deck-flag { display:flex; align-items:center; gap:9px; background:#3a1d02; border:1px solid #ea580c; color:#fed7aa; border-radius:12px; padding:9px 13px; margin:10px 0 0 0; font-size:.80rem; font-weight:800; letter-spacing:.01em; }
+.deck-flag::before { content:"⚠"; font-size:1rem; }
+.unverified-banner { display:flex; align-items:center; gap:16px; border-radius:16px; padding:14px 18px; margin:10px 0 16px 0; background:linear-gradient(145deg,#3a1d02 0%, #2a1401 100%); border:1px solid #ea580c; box-shadow:0 18px 40px rgba(0,0,0,.24); }
+.unverified-banner .healthy-icon { font-size:1.6rem; color:#fb923c; flex:none; }
+.unverified-banner .healthy-title { color:#ffedd5; font-size:1.02rem; font-weight:900; letter-spacing:-.02em; }
+.unverified-banner .healthy-sub { color:#fed7aa; font-size:.78rem; margin-top:4px; display:flex; gap:14px; flex-wrap:wrap; }
+.banner-failures { color:#fecaca; font-size:.74rem; margin-top:7px; display:flex; flex-direction:column; gap:3px; }
+.banner-failures.amber { color:#fed7aa; }
 .command-deck { display:grid; grid-template-columns:1.5fr repeat(4, 1fr); gap:10px; margin:10px 0 12px 0; }
 .command-card { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:16px; box-shadow:0 18px 40px rgba(0,0,0,.24); min-height:108px; }
 .command-card.primary { background:linear-gradient(145deg,#132033 0%, #0b1220 62%, #07101d 100%); border-color:#334155; }
@@ -248,6 +271,10 @@ div[data-testid="stButton"] button:hover { border-color:#38bdf8; color:#38bdf8; 
 .attention-banner .healthy-sub { color:#fecaca; }
 .section-head { display:flex; justify-content:space-between; align-items:end; gap:12px; margin:22px 0 10px 0; }
 .section-title { color:#f8fafc; font-size:1.08rem; font-weight:850; letter-spacing:-.025em; }
+.live-pill { display:inline-flex; align-items:center; vertical-align:middle; margin-left:9px; background:#052e26; color:#6ee7b7; border:1px solid #0f766e; border-radius:999px; padding:3px 9px; font-size:.58rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+.chart-caption { color:#94a3b8; font-size:.74rem; margin:6px 2px 2px 2px; }
+.chart-caption b { color:#e2e8f0; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-weight:800; }
+.chart-caption .live-pill { margin-left:6px; padding:2px 7px; }
 .section-sub { color:#64748b; font-size:.76rem; margin-top:2px; }
 div[data-testid="stElementContainer"]:has(> div[data-testid="stFullScreenFrame"]) { background:linear-gradient(180deg,#111827 0%, #0b1220 100%); border:1px solid #1f2a3d; border-radius:18px; padding:10px 12px 4px 12px; box-shadow:0 18px 40px rgba(0,0,0,.24); }
 .posture-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
@@ -308,8 +335,17 @@ div[data-testid="stElementContainer"]:has(> div[data-testid="stFullScreenFrame"]
 .state-flat { background:#1e293b; color:#cbd5e1; border:1px solid #334155; }
 .state-entering { background:#0c1e33; color:#bfdbfe; border:1px solid #1d4ed8; }
 .state-exiting { background:#3b2505; color:#fde68a; border:1px solid #b45309; }
-.health-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
+.health-grid { display:grid; grid-template-columns:repeat(4,1fr); align-items:start; gap:10px; }
+@media (max-width:1100px) { .health-grid { grid-template-columns:repeat(2,1fr); } }
 .health-card { background:#0d1422; border:1px solid #1f2a3d; border-radius:14px; padding:11px 12px; min-height:72px; box-shadow:0 12px 28px rgba(0,0,0,.20); }
+.health-bar { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 2px 0; }
+.hchip { display:inline-flex; align-items:center; gap:8px; background:#0d1422; border:1px solid #1f2a3d; border-radius:10px; padding:7px 12px; font-size:.72rem; white-space:nowrap; }
+.hchip .hdot { width:8px; height:8px; border-radius:50%; flex:none; }
+.hchip .hk { color:#8b98ab; text-transform:uppercase; letter-spacing:.06em; font-weight:850; font-size:.62rem; }
+.hchip .hv { color:#f1f5f9; font-weight:800; }
+.hchip.attn { border-color:#ea580c; }
+.hdot.ok { background:#4ade80; } .hdot.warn { background:#fbbf24; } .hdot.err { background:#f87171; } .hdot.unverified { background:#fb923c; } .hdot.neutral { background:#64748b; }
+.health-bar-note { color:#64748b; font-size:.7rem; margin:6px 0 2px 2px; }
 .health-label { color:#94a3b8; font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; font-weight:900; }
 .health-value { color:#f8fafc; font-size:.98rem; font-weight:850; margin-top:6px; }
 .health-sub { color:#64748b; font-size:.72rem; margin-top:2px; }
@@ -605,26 +641,41 @@ def latest_same_day_navs(events: list[dict[str, Any]]) -> dict[str, float]:
     return {}
 
 
-def nav_chart(events: list[dict[str, Any]], fills: list[dict[str, Any]]) -> go.Figure | None:
-    if not events:
+# Drawdown panel is drawn on a fixed scale so today's calm and a future real
+# drawdown both render truthfully. The pre-committed -26% / -35% planning
+# band as drawn reference *lines* is Phase 2 item 11 (from the governed
+# degradation-band artifact, not hardcoded here) — the numbers below are
+# only quoted as caption text.
+DRAWDOWN_AXIS_FLOOR = -0.40
+# Pre-registered planning drawdown assumption. Source of truth:
+# docs/research/CORE_V1_LIVE_EXPECTATION_AND_DEGRADATION_BAND.md ("roughly
+# -26% to -35%"). Quoted as text only; keep in sync with that doc.
+DRAWDOWN_PLANNING_BAND = (-0.26, -0.35)
+
+
+def nav_chart(history: list[dict[str, Any]], fills: list[dict[str, Any]]) -> go.Figure | None:
+    """Row 1: % return vs. the $100k inception baseline. Row 2: worst-of-day
+    drawdown on a fixed scale. `history` is the daily series from
+    core_v1_dashboard_health.nav_history()."""
+    if not history:
         return None
-    hist = pd.DataFrame([{"timestamp": e.get("timestamp"), "nav": e.get("total_nav"), "drawdown": e.get("drawdown_frac")} for e in events])
+    hist = pd.DataFrame(history)
     hist["timestamp"] = pd.to_datetime(hist["timestamp"], utc=True, errors="coerce")
     hist = hist.dropna(subset=["timestamp"]).sort_values("timestamp")
-    hist["nav"] = pd.to_numeric(hist["nav"], errors="coerce")
-    hist = hist.dropna(subset=["nav"])
     if hist.empty:
         return None
-    if "drawdown" not in hist or hist["drawdown"].isna().all():
-        running_peak = hist["nav"].cummax()
-        hist["drawdown"] = hist["nav"] / running_peak - 1.0
 
-    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.74, 0.26], vertical_spacing=0.04)
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.72, 0.28], vertical_spacing=0.05)
+
+    # Row 1 — return since inception, baseline ($100k) = 0%. Anchoring the
+    # fill at 0 keeps every move proportional and keeps 0 in frame, so a
+    # future flat stretch reads flat rather than as autoranged noise.
     fig.add_trace(
         go.Scatter(
-            x=hist["timestamp"], y=hist["nav"], mode="lines", name="NAV",
-            line=dict(color="#38bdf8", width=2.4), fill="tozeroy", fillcolor="rgba(56,189,248,0.10)",
-            hovertemplate="%{x|%b %d %H:%M}<br>NAV $%{y:,.2f}<extra></extra>",
+            x=hist["timestamp"], y=hist["ret"], mode="lines", name="Return",
+            line=dict(color="#38bdf8", width=2.2), fill="tozeroy", fillcolor="rgba(56,189,248,0.10)",
+            customdata=hist["nav"],
+            hovertemplate="%{x|%b %-d}<br>%{y:+.2%} · $%{customdata:,.0f}<extra></extra>",
         ),
         row=1, col=1,
     )
@@ -633,26 +684,29 @@ def nav_chart(events: list[dict[str, Any]], fills: list[dict[str, Any]]) -> go.F
     if not fill_df.empty and "timestamp" in fill_df:
         fill_df["timestamp"] = pd.to_datetime(fill_df["timestamp"], utc=True, errors="coerce")
         fill_df = fill_df.dropna(subset=["timestamp"]).sort_values("timestamp")
-        merged = pd.merge_asof(fill_df, hist[["timestamp", "nav"]], on="timestamp", direction="nearest")
-        for side, color, symbol in (("BUY", "#22c55e", "triangle-up"), ("SELL", "#ef4444", "triangle-down")):
-            side_rows = merged[merged["side"].astype(str).str.upper() == side]
-            if side_rows.empty:
-                continue
-            fig.add_trace(
-                go.Scatter(
-                    x=side_rows["timestamp"], y=side_rows["nav"], mode="markers", name=side,
-                    marker=dict(color=color, size=10, symbol=symbol, line=dict(color="#05070c", width=1)),
-                    customdata=side_rows[["sleeve", "qty", "price"]].to_numpy() if {"sleeve", "qty", "price"}.issubset(side_rows.columns) else None,
-                    hovertemplate=(f"{side} %{{customdata[0]}}<br>qty %{{customdata[1]:.4f}} @ $%{{customdata[2]:,.2f}}<extra></extra>" if {"sleeve", "qty", "price"}.issubset(side_rows.columns) else f"{side}<extra></extra>"),
-                ),
-                row=1, col=1,
-            )
+        fill_df = fill_df[fill_df["timestamp"] >= hist["timestamp"].min()]
+        if not fill_df.empty:
+            merged = pd.merge_asof(fill_df, hist[["timestamp", "ret"]], on="timestamp", direction="nearest")
+            for side, color, symbol in (("BUY", "#22c55e", "triangle-up"), ("SELL", "#ef4444", "triangle-down")):
+                side_rows = merged[merged["side"].astype(str).str.upper() == side]
+                if side_rows.empty:
+                    continue
+                has_meta = {"sleeve", "qty", "price"}.issubset(side_rows.columns)
+                fig.add_trace(
+                    go.Scatter(
+                        x=side_rows["timestamp"], y=side_rows["ret"], mode="markers", name=side,
+                        marker=dict(color=color, size=9, symbol=symbol, line=dict(color="#05070c", width=1)),
+                        customdata=side_rows[["sleeve", "qty", "price"]].to_numpy() if has_meta else None,
+                        hovertemplate=(f"{side} %{{customdata[0]}}<br>qty %{{customdata[1]:.4f}} @ $%{{customdata[2]:,.2f}}<extra></extra>" if has_meta else f"{side}<extra></extra>"),
+                    ),
+                    row=1, col=1,
+                )
 
     fig.add_trace(
         go.Scatter(
             x=hist["timestamp"], y=hist["drawdown"], mode="lines", name="Drawdown",
             line=dict(color="#ef4444", width=1.4), fill="tozeroy", fillcolor="rgba(239,68,68,0.16)",
-            hovertemplate="%{x|%b %d %H:%M}<br>Drawdown %{y:.2%}<extra></extra>",
+            hovertemplate="%{x|%b %-d}<br>Drawdown %{y:.2%}<extra></extra>",
         ),
         row=2, col=1,
     )
@@ -669,13 +723,16 @@ def nav_chart(events: list[dict[str, Any]], fills: list[dict[str, Any]]) -> go.F
     )
     fig.update_xaxes(showgrid=False, showspikes=True, spikemode="across", spikecolor="#334155", spikethickness=1, row=1, col=1)
     fig.update_xaxes(showgrid=False, row=2, col=1)
-    fig.update_yaxes(showgrid=True, gridcolor="#182235", tickprefix="$", tickformat=",.0f", row=1, col=1)
-    fig.update_yaxes(showgrid=True, gridcolor="#182235", tickformat=".1%", nticks=4, row=2, col=1)
+    fig.update_yaxes(showgrid=True, gridcolor="#182235", zeroline=True, zerolinecolor="#475569", tickformat="+.0%", row=1, col=1)
+    fig.update_yaxes(showgrid=True, gridcolor="#182235", tickformat=".0%", range=[DRAWDOWN_AXIS_FLOOR, 0.02], dtick=0.1, row=2, col=1)
     return fig
 
 
 state = read_json(STATE_PATH)
 events = read_jsonl(SIGNALS_LOG)
+# Full since-inception cycle history for the equity curve — the recent
+# window `events` (used for intraday/activity) truncates the record.
+nav_events = read_jsonl(SIGNALS_LOG, n=200_000)
 fills = read_jsonl(FILLS_LOG)
 errors = read_jsonl(ERROR_LOG, 100)
 audit_report = read_json(AUDIT_REPORT_PATH)
@@ -849,6 +906,16 @@ audit_available = bool(audit_report)
 audit_ok = bool(audit_report.get("ok")) if audit_available else None
 audit_stale = audit_available and audit_age is not None and audit_age > STALE_AUDIT_AFTER_SECONDS
 audit_rows = audit_report.get("rows", []) if audit_available else []
+audit_failures = audit_failure_lines(audit_report)
+# Single verdict on whether the NAV / P&L numbers on this page can be
+# trusted: only "verified" (an independent audit ran recently and passed)
+# clears them. "No audit" and "stale audit" both read as UNVERIFIED, never
+# as a silent pass. Phase 0 items 2-4 of the dashboard redesign.
+audit_trust = derive_audit_trust(
+    audit_available=audit_available,
+    audit_ok=audit_ok,
+    audit_stale=audit_stale,
+)
 # "Largest drift" surfaces live market movement since each sleeve's last
 # completed bar — informational context, not a pass/fail signal. Pass/fail
 # comes from bar_price_ok, which compares the runtime's stored bar price
@@ -908,11 +975,302 @@ if active_error:
 if not state_is_v2:
     issues.append("Runtime has not completed a v2 telemetry cycle yet.")
 if audit_available and not audit_ok:
-    issues.append(f"Price/accounting audit failing: {audit_report.get('failures', ['unknown'])[0]}")
+    issues.append(
+        "Price/accounting audit failing: "
+        + ("; ".join(audit_failures) if audit_failures else "unknown")
+    )
+if not audit_available:
+    issues.append(
+        "Independent price audit has never run against this state — NAV/P&L figures are UNVERIFIED."
+    )
 if audit_stale:
-    issues.append(f"Audit report stale: last run {age_text(audit_ts)}.")
-health_status = "err" if is_stale or missing_sleeves or (audit_available and not audit_ok) else "warn" if active_error or not state_is_v2 or audit_stale else "ok"
+    issues.append(f"Audit report stale: last run {age_text(audit_ts)} — NAV/P&L figures are UNVERIFIED.")
+# An unavailable or stale audit is at least a "warn" (it was previously
+# possible for a missing audit to fall through to "ok" / green).
+health_status = (
+    "err"
+    if is_stale or missing_sleeves or (audit_available and not audit_ok)
+    else "warn"
+    if active_error or not state_is_v2 or not audit_trust.numbers_trustworthy
+    else "ok"
+)
 health_label = "ALERT" if health_status == "err" else "CHECK" if health_status == "warn" else "VERIFIED"
+
+# Issues not related to the price audit — the audit gets its own dedicated,
+# visually distinct banner treatment, so it must not be double-reported as a
+# generic issue line beneath it.
+non_audit_issues = [i for i in issues if "audit" not in i.lower() and "unverified" not in i.lower()]
+
+runtime_ident = runtime_identity_view(
+    read_json(RUNTIME_IDENTITY_PATH) or state.get("runtime_identity"),
+    dashboard_state_path=str(STATE_PATH),
+    audit_state_path=audit_report.get("state_path") if audit_available else None,
+)
+
+
+def render_identity_strip() -> None:
+    """Phase 0 item 1 — which git branch / commit / host produced the
+    state.json being rendered. Renders as a warning strip when the runtime
+    did not record its identity (the branch-blind-spot the redesign exists
+    to surface), rather than silently omitting it."""
+    # Under Option B a clean, known identity is shown only as a chip in the
+    # health bar + a tile in the System Health grid. The loud strip is
+    # reserved for the case that actually matters: unknown or mismatched
+    # provenance.
+    if runtime_ident.known and not runtime_ident.warnings:
+        return
+    if not runtime_ident.known:
+        msg = "UNKNOWN — the git branch / commit that produced these numbers is not recorded"
+    else:
+        msg = "MISMATCH — " + "; ".join(runtime_ident.warnings)
+    st.markdown(
+        f'<div class="identity-strip unknown"><span><span class="id-k">Provenance</span>'
+        f'<span class="id-v">{esc(msg)}</span></span></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_top_banner() -> None:
+    """Phase 0 items 2-4 — the trust verdict on this page's numbers, rendered
+    above the NAV/PnL command deck. An unavailable or stale price audit gets
+    its own visually distinct 'Numbers Unverified' treatment and can never
+    render inside the green 'System Healthy' banner."""
+    t = audit_trust
+    if t.level == "failing":
+        bullets = ["Review audit details", *non_audit_issues]
+        bullets_html = "".join(f"<span>{esc(b)}</span>" for b in bullets)
+        failures_html = (
+            '<div class="banner-failures">' + "".join(f"<span>• {esc(f)}</span>" for f in audit_failures) + "</div>"
+            if audit_failures
+            else ""
+        )
+        st.markdown(
+            f"""
+<div class="attention-banner">
+  <div class="healthy-icon">✕</div>
+  <div>
+    <div class="healthy-title">{esc(t.headline)}</div>
+    <div class="healthy-sub"><span>{esc(t.detail)}</span>{bullets_html}</div>
+    {failures_html}
+  </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+        return
+    if t.level in ("unverified", "stale"):
+        bullets_html = "".join(f"<span>{esc(b)}</span>" for b in non_audit_issues)
+        extra = ""
+        if t.level == "stale" and audit_ts is not None:
+            extra = f"<span>Last audit {age_text(audit_ts)}</span>"
+        st.markdown(
+            f"""
+<div class="unverified-banner">
+  <div class="healthy-icon">◐</div>
+  <div>
+    <div class="healthy-title">{esc(t.headline)}</div>
+    <div class="healthy-sub"><span>{esc(t.detail)}</span>{extra}{bullets_html}</div>
+  </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+        return
+    if non_audit_issues:
+        alert_class = "alert-err" if health_status == "err" else "alert-warn"
+        alert_right = "Action required" if health_status == "err" else "Review"
+        st.markdown(
+            f'<div class="alert-line {alert_class}"><span>{esc(" · ".join(non_audit_issues))}</span><span class="mono">{esc(alert_right)}</span></div>',
+            unsafe_allow_html=True,
+        )
+        return
+    # Provenance is a separate axis from health: the runtime can be fully
+    # healthy while we still can't verify which branch/commit built it. Say
+    # so on the banner rather than letting a bare "System Healthy" imply the
+    # numbers are fully vouched for.
+    provenance_ok = runtime_ident.known and not runtime_ident.warnings
+    title = "System Healthy" if provenance_ok else "System Healthy · provenance unverified"
+    third_bullet = "Provenance Verified" if provenance_ok else "Provenance Unverified"
+    st.markdown(
+        f"""
+<div class="healthy-banner">
+  <div class="healthy-icon">✓</div>
+  <div>
+    <div class="healthy-title">{esc(title)}</div>
+    <div class="healthy-sub"><span>Runtime Active</span><span>Pricing Verified</span><span>Market Data Fresh</span><span>{esc(third_bullet)}</span></div>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def compute_health_checks() -> list[tuple[str, str, str, str, list[tuple[str, str]]]]:
+    """Every operational check as (label, value, css_klass, sub, detail_rows).
+    Shared by the compact health bar (above the deck) and the full System
+    Health grid (further down the page)."""
+    next_cycle_text = (
+        "unknown"
+        if seconds_until_next_cycle is None
+        else (
+            f"in {format_duration(seconds_until_next_cycle)}"
+            if seconds_until_next_cycle > 0
+            else f"overdue {format_duration(seconds_until_next_cycle)}"
+        )
+    )
+    sleeves_checked = f"{len(audit_rows)}/{len(EXPECTED_WEIGHTS)}"
+    largest_drift_text = (
+        f"{signed_pct(largest_drift_row.get('live_drift_pct'), 2)} "
+        f"({largest_drift_row.get('sleeve') or largest_drift_row.get('asset') or '—'})"
+        if largest_drift_row is not None
+        else "—"
+    )
+    # Phase 0 item 6: surface every failure, not just failures[0].
+    failure_rows = [(f"Failure {i + 1}", f) for i, f in enumerate(audit_failures)] or [("Failure Reason", "—")]
+
+    if not audit_available:
+        audit_value, audit_klass, audit_sub = "UNVERIFIED", "unverified", "No independent audit has run"
+        audit_detail = [
+            ("Meaning", "NAV / P&L on this page are the runtime's own numbers, un-cross-checked."),
+            ("To populate", f"schedule scripts/audit_core_v1_prices.py --output {AUDIT_REPORT_PATH}"),
+        ]
+    elif not audit_ok:
+        audit_value, audit_klass, audit_sub = "FAIL", "err", "Pricing verification failed"
+        affected = (
+            ", ".join(sorted({r.get("sleeve") or r.get("asset") or "—" for r in failed_audit_rows}))
+            if failed_audit_rows
+            else "—"
+        )
+        audit_detail = [
+            ("Largest Drift", largest_drift_text),
+            ("Drift note", LARGEST_DRIFT_CAVEAT),
+            ("Affected Sleeves", affected),
+            *failure_rows,
+            ("Audit Timestamp", friendly_ts(audit_report.get("timestamp"))),
+        ]
+    elif audit_stale:
+        audit_value, audit_klass, audit_sub = "STALE", "warn", f"last run {age_text(audit_ts)} — unverified"
+        audit_detail = [
+            ("Largest Drift", largest_drift_text),
+            ("Drift note", LARGEST_DRIFT_CAVEAT),
+            ("Sleeves Checked", sleeves_checked),
+            ("Audit Timestamp", friendly_ts(audit_report.get("timestamp"))),
+        ]
+    else:
+        audit_value, audit_klass, audit_sub = "PASS", "ok", "Verified"
+        audit_detail = [
+            ("Last Audit", friendly_ts(audit_report.get("timestamp"))),
+            ("Largest Drift", largest_drift_text),
+            ("Drift note", LARGEST_DRIFT_CAVEAT),
+            ("Sleeves Checked", sleeves_checked),
+        ]
+
+    runtime_detail = [
+        ("Cycle #", str(state.get("cycle", last.get("cycle", 0)))),
+        ("Last cycle", age_text(last_ts)),
+    ]
+    market_data_detail = [
+        ("Oldest bar", format_duration(oldest_bar_age) if oldest_bar_age is not None else "—"),
+        ("Newest bar", format_duration(newest_bar_age) if newest_bar_age is not None else "—"),
+    ]
+    scheduler_detail = [("Next cycle", next_cycle_text)]
+
+    last_fill_sub = "No fills recorded"
+    last_fill_value = "—"
+    last_fill_klass = "neutral"
+    if last_fill_overall:
+        side = str(last_fill_overall.get("side") or "—").upper()
+        last_fill_value = side
+        last_fill_klass = "ok" if side == "BUY" else "warn" if side == "SELL" else "neutral"
+        fill_sleeve_name = SLEEVE_NAMES.get(last_fill_overall.get("sleeve"), last_fill_overall.get("sleeve"))
+        last_fill_sub = f"{fill_sleeve_name} · {age_text(parse_ts(last_fill_overall.get('timestamp')))}"
+
+    if active_error:
+        errors_value, errors_klass = "CHECK", "warn"
+        errors_sub = f"active {age_text(latest_error_ts)}"
+    elif resolved_error:
+        errors_value, errors_klass = "RESOLVED", "ok"
+        errors_sub = f"last error {age_text(latest_error_ts)} · recovered {friendly_ts(latest_success_ts)}"
+    else:
+        errors_value, errors_klass = "CLEAR", "ok"
+        errors_sub = "0 logged"
+
+    identity_value = "REPORTED" if runtime_ident.known else "UNKNOWN"
+    identity_klass = "unverified" if not runtime_ident.known else ("warn" if runtime_ident.warnings else "ok")
+    if runtime_ident.known:
+        identity_sub = f"{runtime_ident.branch or '—'} @ {runtime_ident.commit_display}"
+        identity_detail = [("Host", runtime_ident.hostname or "—")]
+        if runtime_ident.recorded_at:
+            identity_detail.append(("Recorded", friendly_ts(runtime_ident.recorded_at)))
+    else:
+        identity_sub = "branch / commit not recorded"
+        identity_detail = []
+    identity_detail += [("Warning", w) for w in runtime_ident.warnings]
+
+    return [
+        ("Runtime Identity", identity_value, identity_klass, identity_sub, identity_detail),
+        ("Runtime", "RUNNING" if not is_stale else "STALE", "ok" if not is_stale else "err", f"poll every {poll_minutes}m", runtime_detail),
+        ("Market Data", "FRESH" if not missing_sleeves else "MISSING", "ok" if not missing_sleeves else "err", f"{len(EXPECTED_WEIGHTS) - len(missing_sleeves)}/{len(EXPECTED_WEIGHTS)} sleeves", market_data_detail),
+        ("Price Audit", audit_value, audit_klass, audit_sub, audit_detail),
+        ("Scheduler", "ON", "ok", f"every {poll_minutes}m", scheduler_detail),
+        ("Last Fill", last_fill_value, last_fill_klass, last_fill_sub, []),
+        ("Errors", errors_value, errors_klass, errors_sub, []),
+        ("State Persistence", "V2" if state_is_v2 else "V1", "ok" if state_is_v2 else "warn", STATE_PATH.name, []),
+        ("Cost & Fees", money(fees_total + slippage_total), "neutral", "fees + slippage to date", []),
+    ]
+
+
+# Which checks ride in the compact bar above the command deck. The rest
+# (Scheduler, Last Fill, Cost & Fees) are pure operational trivia and stay
+# in the full grid lower down.
+HEALTH_BAR_CHECKS = ("Runtime Identity", "Runtime", "Market Data", "Price Audit", "Errors", "State Persistence")
+
+
+def render_health_bar(checks: list[tuple[str, str, str, str, list[tuple[str, str]]]]) -> None:
+    """Compact one-row health readout directly above the NAV/PnL deck
+    (Phase 0 item 2 + the four-seat 'too much on the page' finding). One
+    chip per trust-relevant check; full detail is in the System Health
+    section further down."""
+    chosen = [c for c in checks if c[0] in HEALTH_BAR_CHECKS]
+    chosen.sort(key=lambda c: HEALTH_BAR_CHECKS.index(c[0]))
+    bar = '<div class="health-bar">'
+    for label, value, klass, sub, detail_rows in chosen:
+        tip = " · ".join([sub, *[f"{k}: {v}" for k, v in detail_rows]])
+        attn = " attn" if klass in ("err", "unverified") else ""
+        bar += (
+            f'<span class="hchip{attn}" title="{esc(tip)}">'
+            f'<span class="hdot {klass}"></span>'
+            f'<span class="hk">{esc(label)}</span><span class="hv">{esc(value)}</span></span>'
+        )
+    bar += "</div>"
+    st.markdown(bar, unsafe_allow_html=True)
+    st.markdown('<div class="health-bar-note">Full System Health &amp; audit detail below.</div>', unsafe_allow_html=True)
+
+
+def render_system_health(checks: list[tuple[str, str, str, str, list[tuple[str, str]]]]) -> None:
+    """Full operational status grid (lower on the page under Option B)."""
+    st.markdown(
+        '<div class="section-head"><div><div class="section-title">System Health</div>'
+        '<div class="section-sub">Full detail behind the status bar at the top of the page.</div></div></div>',
+        unsafe_allow_html=True,
+    )
+    health_html = '<div class="health-grid">'
+    for label, value, klass, sub, detail_rows in checks:
+        detail_html = ""
+        if detail_rows:
+            detail_html = '<div class="health-detail">' + "".join(
+                f'<div class="health-detail-row{" stacked" if len(str(v)) > 18 else ""}">'
+                f"<span>{esc(k)}</span><span>{esc(v)}</span></div>"
+                for k, v in detail_rows
+            ) + "</div>"
+        health_html += (
+            f'<div class="health-card"><div class="health-label">{esc(label)}</div>'
+            f'<div class="health-value">{status_badge(value, klass)}</div>'
+            f'<div class="health-sub">{esc(sub)}</div>{detail_html}</div>'
+        )
+    health_html += "</div>"
+    st.markdown(health_html, unsafe_allow_html=True)
+
 
 st.markdown(
     f"""
@@ -941,6 +1299,14 @@ with refresh_button_col:
     st.button("Refresh now", use_container_width=True)
 
 # ---------------------------------------------------------------------------
+# 0. Can I trust this page? — provenance + health gate, always above the deck
+# ---------------------------------------------------------------------------
+health_checks = compute_health_checks()
+render_identity_strip()
+render_top_banner()
+render_health_bar(health_checks)
+
+# ---------------------------------------------------------------------------
 # 1. Am I making money? — command deck + NAV / drawdown chart
 # ---------------------------------------------------------------------------
 primary_class = css_class_for_value(since_inception_pnl)
@@ -959,48 +1325,17 @@ command_cards = [
     ("Drawdown", drawdown_value, drawdown_sub, "", drawdown_class if total_nav > 0 else "muted"),
     ("Unrealized", signed_money(unrealized_pnl_total), f"Basis {money(total_cost_basis)}", "", unrealized_class),
 ]
-command_html = '<div class="command-deck">'
+# Phase 0 item 4: an unavailable / stale / failing price audit stamps an
+# explicit "numbers unverified" flag on the command deck itself, not just a
+# buried tile lower down the page.
+command_html = ""
+if not audit_trust.numbers_trustworthy and audit_trust.deck_flag:
+    command_html += f'<div class="deck-flag">{esc(audit_trust.deck_flag)}</div>'
+command_html += '<div class="command-deck">'
 for label, value, sub, extra, value_class in command_cards:
     command_html += f'<div class="command-card {extra}"><div class="command-label">{esc(label)}</div><div class="command-value {value_class}">{value}</div><div class="command-sub">{sub}</div></div>'
 command_html += "</div>"
 st.markdown(command_html, unsafe_allow_html=True)
-
-audit_failing = audit_available and not audit_ok
-if not issues:
-    pricing_bullet = "Pricing Verified" if audit_available else "Pricing Check Pending"
-    st.markdown(
-        f"""
-<div class="healthy-banner">
-  <div class="healthy-icon">✓</div>
-  <div>
-    <div class="healthy-title">System Healthy</div>
-    <div class="healthy-sub"><span>Runtime Active</span><span>{esc(pricing_bullet)}</span><span>Market Data Fresh</span><span>No Intervention Required</span></div>
-  </div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-elif audit_failing:
-    other_issues = [i for i in issues if "audit" not in i.lower()]
-    bullets = ["Pricing Verification Failed", "Review Audit Details", *other_issues]
-    bullets_html = "".join(f"<span>{esc(b)}</span>" for b in bullets)
-    st.markdown(
-        f"""
-<div class="attention-banner">
-  <div class="healthy-icon">✕</div>
-  <div>
-    <div class="healthy-title">Attention Required</div>
-    <div class="healthy-sub">{bullets_html}</div>
-  </div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-else:
-    alert_class = "alert-err" if health_status == "err" else "alert-warn"
-    alert_text = " · ".join(issues)
-    alert_right = "Action required" if health_status == "err" else "Review"
-    st.markdown(f'<div class="alert-line {alert_class}"><span>{esc(alert_text)}</span><span class="mono">{esc(alert_right)}</span></div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Market Regime — plain-English read of what each asset class is doing and
@@ -1025,10 +1360,28 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown('<div class="section-head"><div><div class="section-title">Portfolio NAV</div><div class="section-sub">Equity curve with drawdown and trade markers.</div></div></div>', unsafe_allow_html=True)
-fig = nav_chart(events, fills)
+_inception_ts = parse_ts(state.get("started_at"))
+inception_label = _inception_ts.strftime("%b %-d, %Y") if _inception_ts is not None else "inception"
+st.markdown(
+    f'<div class="section-head"><div><div class="section-title">Portfolio NAV '
+    f'<span class="live-pill">LIVE · PAPER</span></div>'
+    f'<div class="section-sub">Equity curve as % return vs. $100k inception, with worst-of-day drawdown. '
+    f'Full record since {esc(inception_label)}.</div></div></div>',
+    unsafe_allow_html=True,
+)
+nav_daily = nav_history(nav_events, capital)
+fig = nav_chart(nav_daily, fills)
 if fig is not None:
     st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+    worst_dd = min((d["drawdown"] for d in nav_daily), default=0.0)
+    lo, hi = DRAWDOWN_PLANNING_BAND
+    st.markdown(
+        f'<div class="chart-caption">Drawdown from high-water · now '
+        f'<b>{signed_pct(min(drawdown_frac, 0.0), 1)}</b> · worst <b>{signed_pct(worst_dd, 1)}</b> · '
+        f'planning band <b>{lo:.0%} / {hi:.0%}</b> '
+        f'<span class="live-pill">LIVE</span></div>',
+        unsafe_allow_html=True,
+    )
 else:
     st.info("No NAV history yet.")
 
@@ -1162,92 +1515,11 @@ else:
     st.markdown('<div class="audit-note">No signal changes or fills in the latest activity window.</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# 5. Is everything healthy? — operational status
+# 5. Is everything healthy? — full operational status grid. The compact
+# health bar above the command deck (Phase 0 item 2) is the at-a-glance
+# version; this is the drill-down.
 # ---------------------------------------------------------------------------
-st.markdown('<div class="section-head"><div><div class="section-title">System Health</div><div class="section-sub">Do I need to SSH into the server? Answered below.</div></div></div>', unsafe_allow_html=True)
-
-next_cycle_text = "unknown" if seconds_until_next_cycle is None else (f"in {format_duration(seconds_until_next_cycle)}" if seconds_until_next_cycle > 0 else f"overdue {format_duration(seconds_until_next_cycle)}")
-
-sleeves_checked = f"{len(audit_rows)}/{len(EXPECTED_WEIGHTS)}"
-largest_drift_text = f"{signed_pct(largest_drift_row.get('live_drift_pct'), 2)} ({largest_drift_row.get('sleeve') or largest_drift_row.get('asset') or '—'})" if largest_drift_row is not None else "—"
-
-if not audit_available:
-    audit_value, audit_klass, audit_sub = "PENDING", "neutral", "No audit report found yet"
-    audit_detail = []
-elif not audit_ok:
-    audit_value, audit_klass, audit_sub = "FAIL", "err", "Pricing verification failed"
-    affected = ", ".join(sorted({r.get("sleeve") or r.get("asset") or "—" for r in failed_audit_rows})) if failed_audit_rows else "—"
-    audit_detail = [
-        ("Largest Drift", largest_drift_text),
-        ("Affected Sleeves", affected),
-        ("Failure Reason", str(audit_report["failures"][0]) if audit_report.get("failures") else "—"),
-        ("Audit Timestamp", friendly_ts(audit_report.get("timestamp"))),
-    ]
-elif audit_stale:
-    audit_value, audit_klass, audit_sub = "STALE", "warn", f"last run {age_text(audit_ts)}"
-    audit_detail = [
-        ("Largest Drift", largest_drift_text),
-        ("Sleeves Checked", sleeves_checked),
-        ("Audit Timestamp", friendly_ts(audit_report.get("timestamp"))),
-    ]
-else:
-    audit_value, audit_klass, audit_sub = "PASS", "ok", "Verified"
-    audit_detail = [
-        ("Last Audit", friendly_ts(audit_report.get("timestamp"))),
-        ("Largest Drift", largest_drift_text),
-        ("Sleeves Checked", sleeves_checked),
-    ]
-
-runtime_detail = [("Cycle #", str(state.get("cycle", last.get("cycle", 0)))), ("Last cycle", age_text(last_ts))]
-
-market_data_detail = [
-    ("Oldest bar", format_duration(oldest_bar_age) if oldest_bar_age is not None else "—"),
-    ("Newest bar", format_duration(newest_bar_age) if newest_bar_age is not None else "—"),
-]
-
-scheduler_detail = [("Next cycle", next_cycle_text)]
-
-last_fill_sub = "No fills recorded"
-last_fill_value = "—"
-last_fill_klass = "neutral"
-if last_fill_overall:
-    side = str(last_fill_overall.get("side") or "—").upper()
-    last_fill_value = side
-    last_fill_klass = "ok" if side == "BUY" else "warn" if side == "SELL" else "neutral"
-    fill_sleeve_name = SLEEVE_NAMES.get(last_fill_overall.get("sleeve"), last_fill_overall.get("sleeve"))
-    last_fill_sub = f"{fill_sleeve_name} · {age_text(parse_ts(last_fill_overall.get('timestamp')))}"
-
-if active_error:
-    errors_value = "CHECK"
-    errors_klass = "warn"
-    errors_sub = f"active {age_text(latest_error_ts)}"
-elif resolved_error:
-    errors_value = "RESOLVED"
-    errors_klass = "ok"
-    errors_sub = f"last error {age_text(latest_error_ts)} · recovered {friendly_ts(latest_success_ts)}"
-else:
-    errors_value = "CLEAR"
-    errors_klass = "ok"
-    errors_sub = "0 logged"
-
-checks = [
-    ("Runtime", "RUNNING" if not is_stale else "STALE", "ok" if not is_stale else "err", f"poll every {poll_minutes}m", runtime_detail),
-    ("Market Data", "FRESH" if not missing_sleeves else "MISSING", "ok" if not missing_sleeves else "err", f"{len(EXPECTED_WEIGHTS) - len(missing_sleeves)}/{len(EXPECTED_WEIGHTS)} sleeves", market_data_detail),
-    ("Price Audit", audit_value, audit_klass, audit_sub, audit_detail),
-    ("Scheduler", "ON", "ok", f"every {poll_minutes}m", scheduler_detail),
-    ("Last Fill", last_fill_value, last_fill_klass, last_fill_sub, []),
-    ("Errors", errors_value, errors_klass, errors_sub, []),
-    ("State Persistence", "V2" if state_is_v2 else "V1", "ok" if state_is_v2 else "warn", STATE_PATH.name, []),
-    ("Cost & Fees", money(fees_total + slippage_total), "neutral", "fees + slippage to date", []),
-]
-health_html = '<div class="health-grid">'
-for label, value, klass, sub, detail_rows in checks:
-    detail_html = ""
-    if detail_rows:
-        detail_html = '<div class="health-detail">' + "".join(f'<div class="health-detail-row{" stacked" if len(str(v)) > 18 else ""}"><span>{esc(k)}</span><span>{esc(v)}</span></div>' for k, v in detail_rows) + "</div>"
-    health_html += f'<div class="health-card"><div class="health-label">{esc(label)}</div><div class="health-value">{status_badge(value, klass)}</div><div class="health-sub">{esc(sub)}</div>{detail_html}</div>'
-health_html += "</div>"
-st.markdown(health_html, unsafe_allow_html=True)
+render_system_health(health_checks)
 
 # ---------------------------------------------------------------------------
 # Portfolio Thesis — the executive-level "why" behind the current portfolio.

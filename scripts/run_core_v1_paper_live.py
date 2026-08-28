@@ -24,6 +24,8 @@ import csv
 import json
 import math
 import os
+import socket
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -72,6 +74,55 @@ STATE_VERSION = "core_v1_paper_runtime_v2"
 
 def utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+def _git(*args: str) -> str | None:
+    try:
+        out = subprocess.check_output(
+            ["git", *args], cwd=REPO_ROOT, stderr=subprocess.DEVNULL, timeout=10
+        )
+        return out.decode("utf-8").strip() or None
+    except Exception:
+        return None
+
+
+def build_runtime_identity() -> dict[str, Any]:
+    """Record which codebase / host is operating this runtime.
+
+    Observability only: written each cycle to the ``core_v1_runtime_identity.json``
+    sidecar (never into ``state.json`` — that file is replay-compared) so the
+    dashboard can show which git branch and commit produced the numbers it is
+    rendering. It never influences market data, signals, fills, NAV,
+    exposure, or any trading decision.
+    """
+    commit = _git("rev-parse", "HEAD")
+    try:
+        hostname = socket.gethostname()
+    except Exception:
+        hostname = None
+    return {
+        "git_branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
+        "git_commit": commit,
+        "git_commit_short": commit[:12] if commit else None,
+        "git_dirty": bool(_git("status", "--porcelain")),
+        "hostname": hostname,
+        "runtime_entrypoint": "scripts/run_core_v1_paper_live.py",
+        "runtime_version": STATE_VERSION,
+        "process_started_at": utc_now().isoformat(),
+        "python": sys.version.split()[0],
+    }
+
+
+_RUNTIME_IDENTITY: dict[str, Any] | None = None
+
+
+def runtime_identity() -> dict[str, Any]:
+    """Process-lifetime cache of :func:`build_runtime_identity` — computed
+    once at first use (process startup in practice), not per cycle."""
+    global _RUNTIME_IDENTITY
+    if _RUNTIME_IDENTITY is None:
+        _RUNTIME_IDENTITY = build_runtime_identity()
+    return _RUNTIME_IDENTITY
 
 
 def read_json(path: Path, default: Any) -> Any:
@@ -778,6 +829,19 @@ def run_cycle(args: argparse.Namespace) -> dict[str, Any]:
     state["unrealized_pnl"] = unrealized_pnl
     state["open_position_count"] = int(sum(1 for v in sleeve_telemetry.values() if abs(v["qty"]) > 1e-12))
     write_json_atomic(state_path, state)
+
+    # Observability only — never read by any trading path, and deliberately
+    # a sidecar file rather than a field inside state.json so state.json
+    # stays byte-for-byte comparable for the replay / parity gates. Lets the
+    # dashboard show which branch / commit / host produced this state.
+    write_json_atomic(
+        state_path.with_name("core_v1_runtime_identity.json"),
+        {
+            **runtime_identity(),
+            "state_path": str(state_path.resolve()),
+            "recorded_at": utc_now().isoformat(),
+        },
+    )
 
     # Observability only: record the exact bar each sleeve's strategy call used
     # this cycle (plus BIL, used for cash-yield accrual). Never influences

@@ -66,21 +66,29 @@ def _finite_probability(value: float) -> bool:
     return math.isfinite(value) and 0.0 <= value <= 1.0
 
 
-def config_payload() -> dict[str, Any]:
+def config_payload(max_input_age_seconds: int = MAX_INPUT_AGE_SECONDS) -> dict[str, Any]:
     return {
         "mapping": "btc_eth_aligned_upside",
         "base_scale": BASE_SCALE,
         "boost_scale": BOOST_SCALE,
         "risk_quantile": RISK_QUANTILE,
         "models": list(MODEL_NAMES),
-        "max_input_age_seconds": MAX_INPUT_AGE_SECONDS,
+        "max_input_age_seconds": max_input_age_seconds,
         "paper_only": True,
         "standalone_direction_prohibited": True,
     }
 
 
-def config_fingerprint() -> str:
-    payload = json.dumps(config_payload(), sort_keys=True, separators=(",", ":"))
+def config_fingerprint(max_input_age_seconds: int = MAX_INPUT_AGE_SECONDS) -> str:
+    """Identify the exact configuration a decision was made under.
+
+    The freshness bound is a parameter of ``decide_asset_scale``, so it must be
+    part of the fingerprint; otherwise a decision taken under an overridden
+    bound would be labelled with the module default it did not use.
+    """
+    payload = json.dumps(
+        config_payload(max_input_age_seconds), sort_keys=True, separators=(",", ":")
+    )
     return sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -94,6 +102,7 @@ def _base_decision(
     extended_active: bool = False,
     freshest_source_bar_ts: datetime | None = None,
     stalest_input_age_seconds: float | None = None,
+    max_input_age_seconds: int = MAX_INPUT_AGE_SECONDS,
 ) -> OverlayDecision:
     return OverlayDecision(
         asset=asset,
@@ -106,7 +115,7 @@ def _base_decision(
         extended_up_active=extended_active,
         freshest_source_bar_ts=freshest_source_bar_ts,
         stalest_input_age_seconds=stalest_input_age_seconds,
-        config_fingerprint=config_fingerprint(),
+        config_fingerprint=config_fingerprint(max_input_age_seconds),
     )
 
 
@@ -136,6 +145,7 @@ def decide_asset_scale(
             reason_code="UNSUPPORTED_ASSET",
             decision_at=now,
             core_aligned=core_aligned,
+            max_input_age_seconds=max_input_age_seconds,
         )
     if not paper_mode:
         return _base_decision(
@@ -143,6 +153,7 @@ def decide_asset_scale(
             reason_code="PAPER_ONLY_GUARD",
             decision_at=now,
             core_aligned=core_aligned,
+            max_input_age_seconds=max_input_age_seconds,
         )
     if not enabled:
         return _base_decision(
@@ -150,6 +161,7 @@ def decide_asset_scale(
             reason_code="FEATURE_DISABLED",
             decision_at=now,
             core_aligned=core_aligned,
+            max_input_age_seconds=max_input_age_seconds,
         )
     if not core_aligned:
         return _base_decision(
@@ -157,6 +169,7 @@ def decide_asset_scale(
             reason_code="CORE_NOT_ALIGNED",
             decision_at=now,
             core_aligned=False,
+            max_input_age_seconds=max_input_age_seconds,
         )
     if probabilities is None:
         return _base_decision(
@@ -164,6 +177,7 @@ def decide_asset_scale(
             reason_code="MISSING_INPUTS",
             decision_at=now,
             core_aligned=True,
+            max_input_age_seconds=max_input_age_seconds,
         )
 
     missing = [name for name in MODEL_NAMES if name not in probabilities]
@@ -173,6 +187,7 @@ def decide_asset_scale(
             reason_code="MISSING_INPUTS",
             decision_at=now,
             core_aligned=True,
+            max_input_age_seconds=max_input_age_seconds,
         )
 
     normalized: dict[str, ProbabilityInput] = {}
@@ -194,6 +209,7 @@ def decide_asset_scale(
                 reason_code="INVALID_PROBABILITY",
                 decision_at=now,
                 core_aligned=True,
+                max_input_age_seconds=max_input_age_seconds,
             )
         if not _finite_probability(normalized[name].threshold):
             return _base_decision(
@@ -201,6 +217,7 @@ def decide_asset_scale(
                 reason_code="INVALID_THRESHOLD",
                 decision_at=now,
                 core_aligned=True,
+                max_input_age_seconds=max_input_age_seconds,
             )
         if computed_at > now or source_ts > computed_at:
             return _base_decision(
@@ -208,6 +225,7 @@ def decide_asset_scale(
                 reason_code="INVALID_TIMESTAMP_ORDER",
                 decision_at=now,
                 core_aligned=True,
+                max_input_age_seconds=max_input_age_seconds,
             )
         age = (now - computed_at).total_seconds()
         ages.append(age)
@@ -228,6 +246,7 @@ def decide_asset_scale(
             extended_active=extended_active,
             freshest_source_bar_ts=freshest_source,
             stalest_input_age_seconds=stalest_age,
+            max_input_age_seconds=max_input_age_seconds,
         )
 
     active = medium_active or extended_active
@@ -242,5 +261,5 @@ def decide_asset_scale(
         extended_up_active=extended_active,
         freshest_source_bar_ts=freshest_source,
         stalest_input_age_seconds=stalest_age,
-        config_fingerprint=config_fingerprint(),
+        config_fingerprint=config_fingerprint(max_input_age_seconds),
     )

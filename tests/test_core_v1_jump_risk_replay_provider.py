@@ -143,3 +143,24 @@ def test_future_or_duplicate_rows_are_rejected() -> None:
 
     with pytest.raises(ValueError, match="unique and increasing"):
         ReplayProbabilityProvider(report)
+
+
+def test_missing_digest_fails_closed_by_default() -> None:
+    """Absent integrity evidence must not read as passing evidence."""
+    report = deepcopy(_report())
+    del report["assets"]["BTC"]["decision_digest"]
+    with pytest.raises(ValueError, match="no decision_digest"):
+        ReplayProbabilityProvider(report)
+
+
+def test_missing_digest_allowed_only_by_explicit_opt_out() -> None:
+    report = deepcopy(_report())
+    del report["assets"]["BTC"]["decision_digest"]
+    provider = ReplayProbabilityProvider(report, require_digests=False)
+    assert provider.version == "core_v1_jump_risk_replay_v1"
+
+
+def test_config_fingerprint_tracks_the_effective_freshness_bound() -> None:
+    from runtime.core_v1.jump_risk_overlay import config_fingerprint
+
+    assert config_fingerprint(7200) != config_fingerprint(3600)
