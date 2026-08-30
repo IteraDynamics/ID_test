@@ -152,3 +152,54 @@ The backtest-engine gap found during this pass does not affect the live paper re
 runtime is unaffected and has run the strategy as coded since inception — but leaves an
 unquantified, narrowly-scoped asterisk on the canonical backtest ceiling. See the result document
 for scope; correcting it is a separate, not-yet-scheduled governed decision.
+
+---
+
+## Refinement to the One Rule — pre-registered pod degradation bands (2026-08-30)
+
+Core v1 has a pre-registered live expectation and degradation band
+(`docs/research/CORE_V1_LIVE_EXPECTATION_AND_DEGRADATION_BAND.md`), committed before the strategy
+went live, so drift gets caught against a number fixed in advance rather than rationalized after
+the fact. No equivalent requirement existed for any Core v2 pod. This section closes that gap as a
+standing rule, drafted by Risk/PM and adopted after two independent Red Team passes.
+
+**Rule.** No pod — Core v2 sleeve, overlay, or future successor strategy — may begin live paper or
+real-capital operation without a dated, frozen document stating:
+
+1. **Live expectation range vs. backtest ceiling** — same haircut discipline as Core v1: state
+   both numbers, never one standing in for the other.
+2. **Numeric degradation triggers, quantified at drafting time** — a stated number and window
+   (e.g. "-X% over Y trading days," "Sharpe below Z over N months"). A trigger that cannot be
+   checked mechanically does not count as written. A trigger built on correlation to another
+   instrument must name the specific instrument, statistic, and lookback window at drafting
+   time — no discretion to pick a different benchmark after inception.
+3. **A trigger forces a default action within a stated deadline** (e.g., halve position size
+   within 5 trading days) unless the operator files a dated, written override reason. Silence
+   defaults to de-risking, not to staying at size. **The override may be used once per trigger
+   condition per pod** — the second consecutive trigger on the same condition executes the
+   default action with no override available.
+4. **Frozen before inception, with a minimum 24-hour gap** between drafting and going live — not
+   merely "not the same session."
+5. **The document must be git-committed before the pod's funding action**, and the funding record
+   must cite that commit hash. This reuses the same append-only, dated discipline already applied
+   to every other governance document in this repo, rather than a new enforcement mechanism.
+6. **Retroactive, with a 30-day deadline.** `crash_short_v6` (already live at 15% hedge weight,
+   sized by judgment call with no framework) and the equity-options premium-selling sleeve (near
+   live) both get a band backfilled within 30 days of this rule's adoption (by 2026-09-29). A
+   missed deadline is itself treated as a triggered breach under item 3 — the pod is de-risked
+   under the same default-action mechanism, not left live and ungoverned.
+7. **No exception by seniority or origin** — applies identically whether the pod is CIO-championed
+   or CEO-directed. Red Team's mandatory pre-alive gate is extended to check this document exists,
+   is committed, and predates funding, before signing off on any pod.
+
+**Standing caveat, stated in this rule rather than implied away.** Every pod individually
+satisfying its own degradation band does not bound risk at the moonshot-bucket level. A correlated
+shock across multiple pods (e.g., a volatility event hitting a short-vol sleeve and a crypto trend
+sleeve together) can leave every individual trigger green while aggregate loss is severe. That gap
+is real, is not closed by this rule, and stays open and named until a separate aggregate
+moonshot-bucket cap exists — full pod-level compliance must never be read as aggregate risk being
+covered.
+
+This refinement does not authorize any Core v2 runtime, capital allocation, or composition change
+by itself — it governs pods that are separately authorized to go live under this charter's existing
+successor and floor-firewall rules.

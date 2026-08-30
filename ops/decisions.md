@@ -9,6 +9,34 @@ ones — this is what makes "brief me" informative over time._
 - **CEO decision:** [what was said, verbatim if short]
 - **Follow-up:** [any resulting action, and who owns it]
 
+## 2026-08-30 — pre-registered pod degradation bands (Tier 1 addition)
+- **Raised by:** Risk/PM, following a CEO gut-check on why every pod is bound by the same
+  governance rules and whether the existing rule set (One Rule + standing research amendments)
+  was strong enough as written.
+- **The ask:** adopt a standing rule requiring every Core v2 pod to pre-register a live
+  expectation and degradation band before going live, closing a gap Core v1 already had covered
+  (`CORE_V1_LIVE_EXPECTATION_AND_DEGRADATION_BAND.md`) but no successor pod did.
+- **Process:** Risk/PM drafted the rule; Red Team ran two independent adversarial passes (not the
+  same context that drafted it). Round 1 found five real defects (no forced consequence on a
+  trigger; individually-compliant pods can mask aggregate correlated risk; unenforceable
+  self-graded correlation-drift triggers; silent retroactivity defaulting to grandfathering the
+  two pods that most needed it; a vacuous seniority clause plus no pacing floor plus no technical
+  enforcement). Round 2 verified the revision: 3 of 5 genuinely fixed, 1 correctly scoped as
+  unchanged (aggregate risk was never this rule's job — the fix there was to stop the document
+  implying it was covered), 1 still broken (correlation-drift), plus 3 new loopholes introduced by
+  the fixes themselves (unlimited override use; self-attested funding tie-in with no independent
+  ledger; no consequence for a missed backfill deadline). A third round of targeted fixes reused
+  existing fund infrastructure (git-commit-before-funding as the ledger, an override cap, treating
+  a missed deadline as itself a breach, named-benchmark-at-drafting for correlation triggers)
+  rather than inventing new discretionary mechanisms.
+- **CEO decision:** "Approved. Proceed."
+- **Follow-up (done):** committed as a dated append to `docs/ITERA_DESTINATION_CHARTER.md`
+  ("Refinement to the One Rule — pre-registered pod degradation bands (2026-08-30)"). Open and
+  owned by Risk/PM: backfill degradation bands for `crash_short_v6` and the equity-options
+  premium-selling sleeve by **2026-09-29** (30-day deadline per the rule's own retroactivity
+  clause). The aggregate cross-pod risk cap remains a separate, not-yet-chartered item — explicitly
+  named as open in the adopted rule itself, not implied solved by it.
+
 ## 2026-08-28 — "Portfolio NAV" dashboard section: fix now vs. bundle into Phase 2
 - **Raised by:** Chief of Staff (synthesizing Performance / CIO / Risk/PM / Red Team design review)
 - **The ask:** do the four honesty fixes to the NAV chart now, or hold the whole section and rebuild it as part of Phase 2 item 11 (degradation band + benchmark panel)?
