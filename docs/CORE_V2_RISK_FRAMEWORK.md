@@ -1,184 +1,187 @@
-# Core v2 Risk Framework — Tier 2 (Per-Pod Risk Parameters) — DRAFT v2
+# Core v2 Risk Framework — Tier 2 (Per-Pod Risk Parameters) — DRAFT v3
 
 ## Status
 
-**Draft, revised after independent review.** Round 1 was reviewed in parallel by Ops/Compliance,
-CIO, and Red Team — all three found real, non-overlapping problems, summarized in each section
-below rather than glossed over. This version fixes what's fixable now; three items are named as
-still open at the end, honestly, rather than papered over to look finished. Not frozen, pending
-CEO sign-off.
+**Draft, revised after two rounds of independent review.** Round 1 (Ops/Compliance, CIO, Red
+Team) found real, non-overlapping problems, fixed in v2. Round 2 verification found v2's fixes
+only partly held — two convergent structural problems (found independently by different seats,
+not restatements of each other) required a real rewrite, not word changes. This version does that
+rewrite and names one item as urgent regardless of the rest of this document's completeness. Not
+frozen, pending CEO sign-off.
 
 ## Purpose, and how this differs from the degradation bands
 
-`docs/ITERA_DESTINATION_CHARTER.md`'s pod degradation bands (2026-08-30) ask **"is this pod's
-edge still real?"** Tier 2 asks **"how much can this pod risk, independent of whether it's
-currently working?"** A pod can be within its degradation band and still need a hard leverage cap,
-because a single tail cycle can hurt the fund regardless of the long-run thesis. A pod needs both
-documents; neither replaces the other.
+`docs/ITERA_DESTINATION_CHARTER.md`'s pod degradation bands ask **"is this pod's edge still
+real?"** Tier 2 asks **"how much can this pod risk, independent of whether it's currently
+working?"** A pod needs both; neither replaces the other.
 
-## 1. Moonshot-bucket-level methodology — frozen now, only its numeric inputs wait
+## What this framework can and cannot do — stated honestly after round 2
 
-**Round 1 deferred the whole methodology, not just the number, reasoning that no second pod is
-live yet to calibrate against. Red Team correctly rejected that reasoning:** the *formula* for how
-pod-level risk aggregates is a policy choice independent of which pod is second or what its
-numbers turn out to be. Deferring the formula itself means it would get written under time
-pressure the moment a second pod is ready to fund — the same "spec frozen the same session it's
-needed" failure this repo's Amendment 3 already exists to prevent, one level up.
+Round 2 found the same defect from two independent directions: Ops/Compliance showed the
+reconciliation cadence (monthly/immediate) can only detect a breach *after* it happens; Red Team
+showed the enforcement chain's detection latency can exceed the horizon of the tail event it's
+meant to catch. Both are right, and no amount of process wording fixes it — **a one-person shop
+with no real-time OMS cannot build after-the-fact monitoring that prevents a single acute cycle.**
+Pretending otherwise would be the exact false-rigor pattern (a control that reads as more solid
+than it is) this fund's Red Team process exists to catch.
 
-**CIO separately found the original formula was already wrong**, not just prematurely deferred: it
-assumed every pod's worst case is "a macro equity/crypto selloff," true for crash-short and VRP
-options but not for a rates trend sleeve, whose defining risk is a rate-shock/inflation regime that
-may or may not coincide with an equity selloff (2022 delivered both at once; that is not
-guaranteed). A methodology built around one shared scenario was retrofitted to the two pods in
-hand.
+Stated plainly, this framework provides two genuinely different kinds of protection, and only one
+of them is fast enough for a single bad cycle:
 
-**Frozen methodology, fixing both problems at once:** each pod, at its own Tier 2 filing, must
-name its own worst-case stress regime in its own terms (not borrowed from another pod). The
-aggregate moonshot-bucket exposure under a **given** regime is the sum, across every live pod, of
-that pod's own worst-case loss under that regime, signed by that pod's declared correlation in that
-specific regime (see §2.3's revision below — declarations are now regime-conditional, not a single
-number). This is computed for every regime any live pod has named, not one presumed universal
-scenario. **Only the ceiling this computation is checked against remains deferred**, pending a
-second live pod to calibrate a real number rather than guessing one — the formula itself is final
-as of this filing and does not get relitigated per pod.
+- **Structural / ex-ante protection — the only real defense against a single acute cycle.** A
+  defined-risk structure (the VRP sleeve's capped max loss by construction) or a conservative,
+  pre-committed position size (crash-short's already-fixed 15%/50%) bounds the damage *before* it
+  happens, with no detection required. If a pod has neither, this framework cannot protect it from
+  a single bad cycle — full stop.
+- **Drift / pattern protection — what reconciliation-cadence monitoring is actually good for.**
+  Sustained cost-of-insurance breaches, correlation creep, or ratchet accumulation across multiple
+  cycles or quarters. This is what §4's checks and the degradation bands' own triggers are built
+  to catch, and they catch it at the speed reconciliation runs, not faster.
 
-## 2. Per-pod parameter template (revised)
+**Direct consequence: `crash_short_v6` currently has no defined-risk structure — its only
+single-cycle protection is its already-decided fixed sizing, which is why verifying its real
+margin commitment (below) is urgent, not a paper cleanup item.**
 
-Every pod's Tier 2 filing states:
+## 1. Moonshot-bucket-level methodology — frozen, with the regime-matching gap closed
 
-1. **Notional exposure cap**, as a percentage of Core v2's total notional, computed from the pod's
-   actual capital/margin commitment — not just directional notional. For a levered or margined
-   instrument, state both the notional exposure and the capital actually committed/at risk (they
-   differ; see §3's revision for why this matters).
-2. **Position-sizing rule** — stated as one of three shapes, since one shape does not fit every
-   pod (CIO's finding): (a) **fixed weight**, no scaling; (b) **contracts/units per a defined-risk
-   structure**, sized from a stated risk budget and the structure's own max loss; (c) **weight
-   scaled by a graduated or binary signal** (e.g., a trend filter), for which the filing must also
-   state the exposure-swing risk — how fast and how far the position can move on a signal flip,
-   since for this shape *whipsaw*, not a single tail cycle, is often the dominant risk.
-3. **Correlation declaration, regime-conditional.** For each stress regime the pod names (§1), the
-   filing states the pod's expected or measured correlation sign against every other live pod and
-   against Core v1's own sleeves **in that specific regime**, and names the specific historical
-   episode the declaration is grounded in (e.g., "2022, when bonds and equities fell together" for
-   a rates sleeve; "2008 and August 2024" for FX carry unwinds) — a declaration with no named
-   historical anchor does not satisfy this item. A pod whose correlation sign is genuinely unstable
-   across regimes must say so explicitly rather than picking one number, closing the rubber-stamp
-   risk CIO flagged.
-4. **Leverage source and margin mechanics** — not just "embedded vs. margin-based" but the actual
-   capital commitment: initial/maintenance margin if applicable, funding or roll costs if the
-   instrument carries them, and whether the venue's own liquidation mechanics could force an exit
-   before the pod's own logic would (see §3).
-5. **The filing is git-committed at filing time**, same discipline as the degradation bands' own
-   funding-gate mechanism, so a correlation or sizing declaration cannot be revised after the fact
-   without a dated, visible append.
+The aggregate formula (per-regime sum of each live pod's declared worst-case loss, signed by
+regime-conditional correlation) is frozen; only its numeric ceiling waits for a second live pod.
 
-## 3. Filled in for the two existing pods (revised)
+**Round 2 found the same new gap from two directions.** CIO: a pod can dodge the entire
+correlation-limit mechanism by naming an idiosyncratic worst-case regime that never overlaps with
+any other pod's named regime — even if both would actually co-lose in some broader, unnamed
+scenario. Red Team: nothing says who decides two differently-worded regimes count as "the same
+regime" for aggregation — the adjudication problem just moved, it didn't close.
 
-**`crash_short_v6`** (live, 15% Core v2 weight, Campaign #54):
-- Notional exposure: 7.5% of Core v2 notional (15% weight × coded `ENTRY_EXPOSURE = 0.50`) when
-  the gate is active, 0% otherwise. **Capital/margin commitment is a materially different, larger
-  number, not yet verified against the live account** — Ops/Compliance flagged that CDE futures
-  margin is typically 10-20%+ of notional for a retail account, meaning the true capital tied up
-  when the gate fires is plausibly 15-30% of Core v2 capital, not 7.5%. **This must be confirmed
-  against the actual CDE margin schedule before the notional figure above is treated as the
-  binding constraint** — flagged here as unverified, not silently assumed correct.
-- **Roll and liquidation mechanics, previously missing entirely.** CDE's crypto contracts are
-  dated futures (this fund's own prior research: `BIP-20DEC30-CDE` is "BTC PERP" in name but a
-  long-dated future in mechanics), not a continuously-funded perpetual — so there is no ongoing
-  funding drag while short, but there is a roll date and a basis at roll that this document does
-  not yet quantify. Separately, exchange maintenance-margin auto-liquidation can trigger before
-  `crash_short_v6`'s own coded exit logic would, at a retail account with no negotiated terms —
-  the pod's own backtested worst case does not model this, because the backtest has no margin
-  mechanics at all. Both are named as open verification items, not resolved here.
-- Position-sizing rule: (a) fixed weight, zero perturbation, matching Campaign #54's frozen
-  specification.
-- Correlation declaration (regime-conditional): under "confirmed macro bear, all seven gates
-  fired" (the only regime this pod names), expected negative correlation with Core v1's SPY/QQQ
-  trend sleeves — grounded in 2018 and 2022, the pod's own two payoff episodes. Measured live via
-  the degradation band's own T4 trigger.
+**Fix — an empirical proxy instead of a judgment call, reusing infrastructure this fund already
+computes:**
+
+1. **Regime-matching protocol.** Two pods' named regimes are aggregated together only if their
+   named historical anchor episodes empirically overlap — specifically, both anchor episodes fall
+   within a period where SPY closed below its own 175-day SMA for at least 20 trading days (the
+   same macro-bear proxy `crash_short_v6` and Core v1 already use). This is a data check against
+   an existing computed series, not a person deciding two English-language descriptions match.
+2. **Mandatory common-stress declaration, closing the dodge.** Every pod, regardless of its own
+   self-selected worst case, must also declare its expected profit/loss *sign* (not magnitude)
+   under this same SPY-175-day-SMA-confirmed-bear proxy. A pod cannot opt out of the
+   correlation-limit machinery by naming a narrow, non-overlapping regime — every pod is checked
+   against one common, fund-wide yardstick in addition to its own self-named worst case.
+
+## 2. Per-pod parameter template (unchanged from v2, plus item 3's addition)
+
+1. **Notional exposure cap**, computed from actual capital/margin commitment, not directional
+   notional alone.
+2. **Position-sizing rule** — one of three shapes: (a) fixed weight; (b) contracts/units per a
+   defined-risk structure; (c) weight scaled by a graduated/binary signal, which must also state
+   its exposure-swing (whipsaw) risk.
+3. **Correlation declaration, regime-conditional and now dual:** (i) for each stress regime the
+   pod names, its correlation sign against every other live pod and Core v1's sleeves, grounded in
+   a named historical episode; **and (ii) its expected sign under the mandatory common
+   SPY-175-day-SMA-bear proxy (§1.2), regardless of whether that is the pod's own named worst
+   case.**
+4. **Leverage source and margin mechanics** — actual capital commitment, funding/roll costs,
+   liquidation mechanics.
+5. **Git-committed at filing time.**
+
+## 3. Filled in for the two existing pods
+
+**`crash_short_v6`** (live, 15% Core v2 weight):
+- Notional exposure: 7.5% of Core v2 notional when the gate is active (15% × coded
+  `ENTRY_EXPOSURE = 0.50`).
+- **Interim conservative margin assumption, adopted now rather than left open indefinitely — this
+  pod is live.** Ops/Compliance's range was 15-30% of Core v2 capital tied up when the gate fires.
+  **Working assumption until verified: 30%, the top of the range**, used for all Tier 2 accounting
+  (including §1's aggregate formula and §4's correlation-limit checks) until the actual CDE margin
+  schedule is pulled and confirmed. **Deadline: 14 days from this filing (shorter than the
+  degradation bands' 30-day precedent, because this is live capital, not a paper filing).** A
+  missed deadline is treated the same as a missed degradation-band backfill — itself a triggered
+  breach forcing the default action in §4.
+- Roll/basis and liquidation mechanics: named as open verification items (§3 of v2), unchanged —
+  CDE's contracts are dated futures, not continuously-funded perpetuals; exchange auto-liquidation
+  could trigger before the pod's own exit logic. No interim number is assumed for these beyond the
+  30% margin working figure above, since no reasonable range has been established yet.
+- Position-sizing rule: (a) fixed weight, zero perturbation.
+- Correlation declaration: under "confirmed macro bear, all seven gates fired," negative
+  correlation with Core v1's SPY/QQQ trend sleeves (2018, 2022). Under the mandatory common proxy
+  (§1.2): also negative — this pod's own named regime and the common proxy coincide by design,
+  since its gate requires SPY confirmation.
 
 **VRP options sleeve** (not live, pending brokerage approval):
-- Notional exposure cap: still a CEO decision, not a staff one. Staff recommendation unchanged at
-  2% risk budget (~4 contracts/cycle), given zero live fill-quality confirmation exists.
-- **The $553/contract figure is the structure's max theoretical loss, not confirmed buying-power
-  reduction** — Ops/Compliance's finding. At a real broker, BPR for a defined-risk spread is
-  usually close to this if the account is approved for spread margining, but (a) approval tier is
-  not yet confirmed, and (b) 4-leg entry is not atomic — a partial fill mid-construction can spike
-  margin requirements before all legs are on. **This sizing formula is provisional until the first
-  live cycle confirms actual BPR against the real account** — stated here as a condition of going
-  live, not assumed away.
-- Position-sizing rule: (b) contracts per cycle = floor(risk_budget_dollars ÷ confirmed BPR per
-  contract), recalculated each cycle — BPR, not the theoretical $553, once real data exists.
-- Correlation declaration (regime-conditional): under "equity-crash scenario" (the only regime
-  this pod names), expected positive correlation with Core v1's equity trend sleeves — grounded in
-  the 2020-02-12 COVID cycle, already flagged as a concentration risk in the campaign record.
+- Notional exposure cap: CEO decision. Staff recommendation: 2% risk budget.
+- Position-sizing rule: (b) contracts = floor(risk_budget_dollars ÷ confirmed BPR per contract),
+  provisional on the first live cycle confirming actual BPR — the $553 theoretical max loss is not
+  assumed equal to buying-power reduction.
+- Correlation declaration: under "equity-crash scenario" (its own named regime), positive
+  correlation with Core v1's equity sleeves (2020-02-12 COVID cycle). Under the mandatory common
+  proxy (§1.2): also positive — this pod's own named regime and the common proxy coincide, since
+  an equity crash and a confirmed SPY bear are the same kind of event here.
 
-**The crash-short / VRP "natural hedge" finding, with an explicit constraint Red Team required:**
-`crash_short_v6` is expected to profit under exactly the regime where the VRP options sleeve is
-expected to lose. This is a real, useful observation from reading both filings together — and it
-is **not yet measured**. Per Red Team's finding, a named, plausible hedge story is psychologically
-sticky enough to become the operative assumption before it's confirmed. **This finding may not be
-cited to increase either pod's notional exposure cap or risk budget until both pods have live data
-confirming the correlation sign in a real shared-regime observation.** Until then, size each pod
-as if the other did not exist.
+**The natural-hedge finding, with a real confirmation bar this time.** `crash_short_v6` is
+expected to profit under exactly the regime where the VRP options sleeve is expected to lose —
+both pods' own declarations above agree on this, and now so does the mandatory common-proxy check
+in §1.2. This remains a real, useful cross-read. Round 2's finding: the original fence
+("a real shared-regime observation," singular) had no defined bar and could be satisfied by one
+convenient data point. **Fixed: citing this finding to increase either pod's exposure cap requires
+at least 2 independent live regime observations with a consistent correlation sign across both**
+— not one. Until two independent observations exist, size each pod as if the other did not exist.
 
-**Capital siloing, a real constraint not previously named (Ops/Compliance):** the two pods sit in
-unlinked accounts (CDE, and a separate equity-options broker) with no cross-margining. Even a
-confirmed natural hedge does not free up capital the way it would at a real prime broker — it
-reduces portfolio-level *risk*, not per-account *margin requirements*. Do not size either pod
-assuming capital efficiency from the other's existence.
+**Capital siloing (unchanged from v2):** unlinked accounts, no cross-margining — a confirmed
+hedge reduces portfolio risk, not per-account margin requirements.
 
-## 4. Correlation limit across pods (revised, with an actual enforcement mechanism)
+## 4. Correlation limit across pods
 
-**Rule:** for any stress regime named by two or more live pods, if their declared or measured
-correlation in that regime is positive and exceeds +0.5, their combined exposure under that regime
-(per §1's formula) may not exceed a stated ceiling without a CEO-approved exception.
+**Rule:** for any regime matched under §1.1's empirical protocol, if declared/measured correlation
+is positive and exceeds +0.5, combined exposure under that regime may not exceed a stated ceiling
+without a CEO-approved exception.
 
-**What was missing in round 1, per Red Team, and is fixed now:** a numeric threshold with no
-process behind it is not a control. This rule now carries the same mechanism already proven on the
-degradation bands: a breach forces a **default action — halve the smaller pod's exposure within 5
-trading days** — unless the operator files a dated, written override; **a second consecutive
-breach of the same pair/regime executes the default action with no override available.** The
-correlation figure feeding this check is the one git-committed at each pod's own filing time
-(§2.5) — not a number recomputed informally at the moment someone wants an exception.
+**Enforcement (unchanged mechanism, proven on the degradation bands):** a breach forces halving
+exposure within 5 trading days unless overridden once with a dated written reason; a second
+consecutive breach of the same regime executes with no override.
 
-**Closing the one-way ratchet Red Team identified:** checking each new pod only against the
-current set, forever, lets several pairwise-compliant pods jointly exceed any sane ceiling. Fix:
-in addition to the per-new-pod pairwise check, **the full live-pod correlation matrix is
-recomputed every quarter**, regardless of whether a new pod was added, and any regime where the
-*aggregate* (not just pairwise) positively-correlated exposure exceeds the ceiling triggers the
-same default action against the most recently added contributing pod, not an arbitrary one.
+**Penalty allocation, fixed after Red Team's round-2 finding.** v2's rule halved "the most
+recently added contributing pod" — a sequencing tie-breaker with no link to fault, gameable by an
+operator who controls both which pod launches last and when a breach is likely. **Fixed: the
+default action is applied proportionally across every pod contributing to the regime's
+positively-correlated excess, each halved in proportion to its own share of that excess** — not
+whichever pod happens to be newest.
 
-## 5. The cross-account monitoring mechanism, named rather than assumed (Ops/Compliance)
+**On the ratchet (honest framing after round 2):** the quarterly full-portfolio recompute bounds
+how long a jointly-excessive aggregate can run undetected to one quarter — it does not eliminate
+the possibility, and round 2 correctly identified this as a real residual gap, not a closed one.
+Tightening the recompute cadence below quarterly is a real option but trades directly against
+operator time in a one-person shop; **left as an explicit CEO choice, not decided here.**
 
-There is no OMS and no real-time cross-venue aggregation, and pretending otherwise would make
-every number in this document paper-only. **Named mechanism:** the operator runs a reconciliation
-check — manual or scripted — pulling both accounts' current exposure at each pod's own monitoring
-cadence (mirroring the degradation bands' own monthly/immediate split), and that reconciliation is
-what §4's checks and the quarterly recompute in §4 actually run against. This is not a real-time
-control and is stated as such: **exposure caps in this document are checked at each reconciliation
-point, not continuously enforced.** A breach between reconciliation points is caught at the next
-one, not prevented in real time — an honest limitation for a one-person shop, not a gap to hide.
+## 5. The cross-account monitoring mechanism
+
+No OMS, no real-time cross-venue aggregation. Reconciliation — manual or scripted — runs at each
+pod's own monitoring cadence and is what §4's checks run against. **Per the honest framing above,
+this is drift/pattern protection, not single-cycle protection** — a breach between reconciliation
+points is caught at the next one, not prevented.
 
 ## 6. Process for adding a new pod
 
 Before any pipeline idea (rates/duration sleeve, FX carry basket, broadened crypto trend basket)
 or any future pod may hold live risk, it files both a degradation band and a Tier 2 declaration
-using the revised template in §2 — including a regime-conditional correlation declaration, grounded
-in a named historical episode, against every pod live at that time. New pods update the correlation
-picture for the existing set; per §4's quarterly recompute, the full set is also periodically
-re-checked in aggregate, not just pairwise at each new pod's launch.
+per §2 — including both its own named-regime correlation declaration and the mandatory
+common-proxy declaration (§1.2), against every pod live at that time. The full set is also
+re-checked in aggregate every quarter regardless of new pods (§4).
 
 ## Still open — named, not resolved by this revision
 
-1. **The aggregate moonshot-bucket ceiling itself** (a number, not the formula) — still waits for a
-   second live pod, per the original reasoning, which review did not overturn.
-2. **`crash_short_v6`'s real margin/roll/liquidation figures** — Ops/Compliance's finding requires
-   pulling CDE's actual margin schedule, not something this document can resolve without that data.
-3. **The VRP sleeve's real buying-power reduction** — requires a live account and at least one real
-   cycle; cannot be confirmed on paper.
+1. **The aggregate moonshot-bucket ceiling itself** (a number) — waits for a second live pod.
+2. **`crash_short_v6`'s real margin/roll/liquidation figures** — interim 30% working assumption
+   adopted above; real figures due within 14 days.
+3. **The VRP sleeve's real buying-power reduction** — requires a live account and a real cycle.
+4. **Sub-quarterly ratchet risk** — the quarterly recompute bounds but does not eliminate a
+   multi-pod correlated buildup; tightening this cadence is left as a CEO choice against operator
+   time cost, not decided here.
+5. **This framework provides no protection against a single acute cycle for any pod that lacks
+   either a defined-risk structure or an already-fixed conservative size** — stated as a structural
+   limit of a solo operator with no real-time infrastructure, not something a future revision of
+   this document is expected to solve.
 
 ## Authorization boundary
 
 This document authorizes nothing by itself. It does not change `crash_short_v6`'s coded weight,
-set the VRP sleeve's risk budget (a named CEO decision), or authorize any new pod.
+set the VRP sleeve's risk budget (a named CEO decision), authorize any new pod, or set the
+quarterly-vs-tighter recompute cadence (also a named CEO decision, §4).
