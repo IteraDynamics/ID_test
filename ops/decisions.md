@@ -9,6 +9,50 @@ ones — this is what makes "brief me" informative over time._
 - **CEO decision:** [what was said, verbatim if short]
 - **Follow-up:** [any resulting action, and who owns it]
 
+## 2026-08-30 — Core v2 Tier 2 risk framework (per-pod leverage/sizing/correlation)
+- **Raised by:** Risk/PM, following CEO direction to build Tier 2 with full staff collaboration
+  after the pod-degradation-band rule (below) named it as a gap.
+- **The ask:** adopt a standing framework governing how much risk/leverage/notional exposure each
+  Core v2 pod may hold, independent of whether its edge is currently working (distinct from the
+  degradation bands, which ask whether the edge is still real).
+- **Process:** three full rounds, each run as genuinely independent parallel reviews (not the same
+  context grading its own draft) across three seats — Ops/Compliance, CIO, Red Team:
+  - **Round 1** found real, non-overlapping problems: `crash_short_v6`'s exposure figure ignored
+    real CDE margin/roll/liquidation mechanics; the VRP sleeve's $553 figure was max theoretical
+    loss, not confirmed buying-power reduction; the per-pod template only fit options/futures-style
+    sizing, not a trend sleeve's weight-times-signal shape; correlation declarations assumed one
+    fixed sign per pod, which breaks for a rates sleeve (2022: bonds and equities fell together);
+    the aggregate-cap methodology assumed one universal stress scenario retrofitted to the two
+    existing pods; and the correlation-limit rule had a numeric threshold with no enforcement
+    mechanism and no defense against a one-way ratchet.
+  - **Round 2** (the same three seats verifying their own round-1 findings against the revision)
+    surfaced two convergent structural problems found independently from different angles, not
+    restatements of each other: (a) Ops/Compliance and Red Team both found the reconciliation-
+    cadence enforcement chain is slower than the single-tail-cycle risk the framework exists to
+    bound; (b) CIO and Red Team both found pods could dodge the correlation-limit mechanism by
+    naming non-overlapping worst-case regimes, with no defined process for when two regimes count
+    as "the same" for aggregation. Also found: the natural-hedge fence had no defined confirmation
+    bar; the correlation-breach penalty ("halve the most recently added pod") was gameable by
+    sequencing; and `crash_short_v6`'s real margin was still unverified with no interim safeguard
+    despite being live capital right now.
+  - **Round 3** was a rewrite, not a wording pass: the document now states honestly what
+    reconciliation-based monitoring can and cannot do (drift/pattern protection only — single-cycle
+    protection can only come from a defined-risk structure or a pre-fixed conservative size);
+    regime-matching uses an empirical protocol (historical overlap against SPY's existing 175-day
+    SMA bear proxy) plus a mandatory common-proxy declaration every pod must report regardless of
+    its own named worst case; the natural-hedge fence now requires 2 independent observations, not
+    1; the correlation-breach penalty is proportional to each pod's contribution, not sequencing;
+    and an interim 30% conservative margin assumption was adopted immediately for the already-live
+    `crash_short_v6`, with a 14-day deadline for the real figure.
+- **CEO decision:** "Reviewed. Approved."
+- **Follow-up (done):** adopted as `docs/CORE_V2_RISK_FRAMEWORK.md`, status changed to ADOPTED.
+  **Open, owned by Risk/PM:** confirm `crash_short_v6`'s real CDE margin schedule by **2026-09-13**
+  (14-day deadline) — until then the 30% interim working assumption governs all Tier 2 accounting
+  for that pod. **Still open CEO decisions, not resolved by this approval and not urgent today:**
+  the VRP sleeve's actual risk-budget percentage (staff recommends 2%; moot until its brokerage
+  account clears) and whether the quarterly correlation-recompute cadence should be tightened
+  against operator time cost (quarterly is the working default).
+
 ## 2026-08-30 — pre-registered pod degradation bands (Tier 1 addition)
 - **Raised by:** Risk/PM, following a CEO gut-check on why every pod is bound by the same
   governance rules and whether the existing rule set (One Rule + standing research amendments)

@@ -15,9 +15,15 @@ lives in campaign-log.md and decisions.md._
 - Pod degradation bands for `crash_short_v6` (retroactive) and the equity-options sleeve
   (prospective) filed 2026-08-30, ahead of the 2026-09-29 deadline —
   `docs/research/CORE_V2_CRASH_SHORT_DEGRADATION_BAND.md`,
-  `docs/research/CORE_V2_VRP_OPTIONS_DEGRADATION_BAND.md`. Next open governance item: Tier 2
-  (per-pod risk parameters) and the aggregate moonshot-bucket cap, both still unbuilt — see
-  `docs/ITERA_DESTINATION_CHARTER.md`'s "Refinement to the One Rule" for the standing caveat.
+  `docs/research/CORE_V2_VRP_OPTIONS_DEGRADATION_BAND.md`.
+- Tier 2 risk framework (`docs/CORE_V2_RISK_FRAMEWORK.md`) ADOPTED 2026-08-30, three rounds of
+  independent review (Ops/Compliance, CIO, Red Team). Risk/PM owes `crash_short_v6`'s real CDE
+  margin schedule by **2026-09-13** (14-day deadline); a 30% interim conservative margin
+  assumption governs until then. Aggregate moonshot-bucket cap (a number, not the methodology,
+  which is now frozen) still waits on a second live pod — see the framework's "Still open" section.
+- Two CEO decisions named in the risk framework are open but not urgent: the VRP sleeve's
+  risk-budget % (moot until its brokerage account clears) and whether the quarterly correlation
+  recompute should be tightened.
 
 ## Fund constraints (keep current)
 - Jurisdiction: [e.g. US — Binance/Bybit unreachable]

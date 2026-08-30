@@ -1,13 +1,19 @@
-# Core v2 Risk Framework — Tier 2 (Per-Pod Risk Parameters) — DRAFT v3
+# Core v2 Risk Framework — Tier 2 (Per-Pod Risk Parameters)
 
 ## Status
 
-**Draft, revised after two rounds of independent review.** Round 1 (Ops/Compliance, CIO, Red
-Team) found real, non-overlapping problems, fixed in v2. Round 2 verification found v2's fixes
-only partly held — two convergent structural problems (found independently by different seats,
-not restatements of each other) required a real rewrite, not word changes. This version does that
-rewrite and names one item as urgent regardless of the rest of this document's completeness. Not
-frozen, pending CEO sign-off.
+**ADOPTED — 2026-08-30**, after two rounds of independent review (Ops/Compliance, CIO, Red Team)
+and CEO sign-off. Round 1 found real, non-overlapping problems, fixed in v2. Round 2 verification
+found two convergent structural problems — reconciliation-cadence enforcement being slower than
+the single-cycle risk it was meant to bound, and a regime-matching gap letting a pod dodge the
+correlation-limit mechanism — each caught independently by two different seats, which is why v3
+was a rewrite rather than a wording pass. This is that adopted version.
+
+**Two items in this framework remain explicit, open CEO decisions, not resolved by adoption:**
+the VRP options sleeve's actual risk-budget percentage (staff recommendation: 2%, §3) and whether
+the quarterly correlation recompute cadence (§4) should be tightened against operator time cost.
+Neither blocks anything today — the VRP sleeve isn't live yet, and quarterly is the working
+default — but both need a real answer before they become load-bearing.
 
 ## Purpose, and how this differs from the degradation bands
 
