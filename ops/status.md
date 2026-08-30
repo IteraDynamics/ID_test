@@ -12,10 +12,12 @@ lives in campaign-log.md and decisions.md._
 - [dependency] — owner: [seat] — since: [date]
 
 ## 🟢 In motion (no action needed)
-- Risk/PM backfilling pre-registered degradation bands for `crash_short_v6` and the equity-options
-  premium-selling sleeve, per the 2026-08-30 pod-degradation-band rule — due 2026-09-29.
-  See `ops/decisions.md` 2026-08-30 and `docs/ITERA_DESTINATION_CHARTER.md`'s "Refinement to the
-  One Rule — pre-registered pod degradation bands."
+- Pod degradation bands for `crash_short_v6` (retroactive) and the equity-options sleeve
+  (prospective) filed 2026-08-30, ahead of the 2026-09-29 deadline —
+  `docs/research/CORE_V2_CRASH_SHORT_DEGRADATION_BAND.md`,
+  `docs/research/CORE_V2_VRP_OPTIONS_DEGRADATION_BAND.md`. Next open governance item: Tier 2
+  (per-pod risk parameters) and the aggregate moonshot-bucket cap, both still unbuilt — see
+  `docs/ITERA_DESTINATION_CHARTER.md`'s "Refinement to the One Rule" for the standing caveat.
 
 ## Fund constraints (keep current)
 - Jurisdiction: [e.g. US — Binance/Bybit unreachable]

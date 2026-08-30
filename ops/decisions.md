@@ -31,11 +31,19 @@ ones — this is what makes "brief me" informative over time._
   rather than inventing new discretionary mechanisms.
 - **CEO decision:** "Approved. Proceed."
 - **Follow-up (done):** committed as a dated append to `docs/ITERA_DESTINATION_CHARTER.md`
-  ("Refinement to the One Rule — pre-registered pod degradation bands (2026-08-30)"). Open and
-  owned by Risk/PM: backfill degradation bands for `crash_short_v6` and the equity-options
-  premium-selling sleeve by **2026-09-29** (30-day deadline per the rule's own retroactivity
-  clause). The aggregate cross-pod risk cap remains a separate, not-yet-chartered item — explicitly
-  named as open in the adopted rule itself, not implied solved by it.
+  ("Refinement to the One Rule — pre-registered pod degradation bands (2026-08-30)"). The
+  aggregate cross-pod risk cap remains a separate, not-yet-chartered item — explicitly named as
+  open in the adopted rule itself, not implied solved by it.
+  **Backfill complete, same day:** `docs/research/CORE_V2_CRASH_SHORT_DEGRADATION_BAND.md` and
+  `docs/research/CORE_V2_VRP_OPTIONS_DEGRADATION_BAND.md` filed 2026-08-30, both well inside the
+  2026-09-29 deadline. Real, quantified triggers grounded in each pod's own campaign record (cost
+  breakpoints straight from the VRP campaign's own cost-sensitivity sweep, tail-correlation and
+  win-rate thresholds, an operational-integrity trigger for each mirroring Core v1's T4) rather
+  than generic placeholders.
+  **Correction, same day:** the line above calling the equity-options sleeve "near live" overstates
+  its status — it is not live, not chartered as a numbered campaign, and remains blocked on Gate 2
+  (brokerage approval); its filing above is prospective, not a backfill. Caught while drafting its
+  degradation band; recorded here rather than silently fixed.
 
 ## 2026-08-28 — "Portfolio NAV" dashboard section: fix now vs. bundle into Phase 2
 - **Raised by:** Chief of Staff (synthesizing Performance / CIO / Risk/PM / Red Team design review)
