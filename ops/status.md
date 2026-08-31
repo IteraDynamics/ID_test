@@ -24,6 +24,10 @@ lives in campaign-log.md and decisions.md._
 - Two CEO decisions named in the risk framework are open but not urgent: the VRP sleeve's
   risk-budget % (moot until its brokerage account clears) and whether the quarterly correlation
   recompute should be tightened.
+- **Campaign #56 (rates/duration trend sleeve) chartered 2026-08-30** — gates 0-3 pass, gate 4
+  scoped (not run). Next step: pull real SHY/IEI/IEF/TLT data and run the actual power
+  simulation, on a later session per the pacing rule. See
+  `docs/research/CAMPAIGN_56_RATES_DURATION_TREND_PLANNING_CHARTER.md`.
 
 ## Fund constraints (keep current)
 - Jurisdiction: [e.g. US — Binance/Bybit unreachable]

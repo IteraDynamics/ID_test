@@ -454,6 +454,27 @@ Closed:
   artifact; the corrected result is a clean null. Not pursued further. The percentile-computation
   fix itself (rolling-window bias correction, quintile-balance canary) is retained in the script
   as a real, reusable methodological lesson independent of this specific idea's outcome.
+- **Campaign #56 (rates/duration trend sleeve, TLT/IEF via `equity_sma175.py`'s existing,
+  unmodified SMA175 mechanism) — PLANNING CHARTER, 2026-08-30, gates 0-3 pass.** Named
+  deficiency: "no rates or fixed income exposure," the fourth and last of Core v1's named
+  deficiencies, confirmed still fully unaddressed (`research/strategies/` has no rates
+  instrument). Gate 1 (horizon) passes trivially — daily-bar regime signal against ~0.5-0.6
+  effective bars measured cadence. Gate 2 (tradeability) is close to the cleanest this fund has
+  seen: TLT is a plain, unlevered, already-liquid ETF on the same brokerage already executing
+  SPY/QQQ/GLD, no new venue, no derivatives/options approval tier — only unconfirmed detail is a
+  one-line check that TLT specifically is enabled on the live account. Gate 3 materiality: ~$975/yr
+  at a Core-v1-sleeve-sized allocation, sourced from published time-series-momentum Sharpe
+  estimates (~0.4-0.6 for a single uncorrelated instrument) — squarely inside this fund's
+  repeated $400-1,500/yr range, stated plainly as not expected to move returns materially on its
+  own. **Gate 4 (power) is scoped, not run, and flags its own risk before any data exists:** this
+  is structurally a single-instrument time-series design with a small number of genuinely
+  independent multi-year rate regimes in reachable history (TLT itself only launched 2002) — the
+  same shape of power limitation Campaign #54 hit with `crash_short_v6`. Planned mitigation:
+  broaden to the Treasury maturity curve (SHY/IEI/IEF/TLT) under the identical mechanism, honestly
+  noted as not true cross-sectional independence (curve maturities move together) but a real
+  improvement over n=1. Next executable step: acquire SHY/IEI/IEF/TLT daily history and run the
+  actual regime census + Amendment 1 power simulation — not done this session. Full record:
+  `docs/research/CAMPAIGN_56_RATES_DURATION_TREND_PLANNING_CHARTER.md`.
 - **Cross-sectional crypto momentum (Coinbase spot) — CLOSED 2026-08-26, clean discovery-stage
   null, never chartered as a numbered campaign.** Named deficiency: "single-name crypto" (Core
   v1's only crypto exposure is BTC 4H / ETH 1H+4H, both single-name trend-following). Gate 0/1

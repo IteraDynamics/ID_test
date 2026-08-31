@@ -9,6 +9,31 @@ ones — this is what makes "brief me" informative over time._
 - **CEO decision:** [what was said, verbatim if short]
 - **Follow-up:** [any resulting action, and who owns it]
 
+## 2026-08-30 — charter Campaign #56 (rates/duration trend sleeve)
+- **Raised by:** CEO, directing staff to move from idea discussion to real scoping/backtesting
+  on the rates/duration sleeve — the pick from the earlier three-idea review, chosen over an FX
+  carry basket (lower materiality, unverified venue) and a broadened crypto basket (adds count,
+  not genuine independence from existing BTC/ETH sleeves).
+- **The ask:** run the idea through the actual `charter-campaign` gates rather than continue
+  discussing it informally.
+- **What staff did:** Gates 0-3 passed cleanly — named deficiency confirmed still fully open
+  (grepped `research/strategies/`, no rates instrument exists); horizon feasibility trivial;
+  tradeability close to the cleanest this fund has seen (plain ETF, same brokerage, no new
+  approval tier — confirmed by reading `equity_sma175.py`, the exact existing mechanism this
+  campaign reuses unmodified); materiality ~$975/yr, consistent with the fund's own standing
+  range, stated plainly as not expected to be exciting standalone. **Gate 4 (power) was scoped
+  honestly rather than skipped or faked:** flagged upfront, before any data was pulled, that this
+  is a single-instrument time-series design with a small number of independent rate regimes in
+  reachable history — the same structural limitation Campaign #54 hit with `crash_short_v6` —
+  with a planned mitigation (broaden to the SHY/IEI/IEF/TLT maturity curve) named and honestly
+  qualified as not true cross-sectional independence.
+- **CEO decision:** implicit approval via direction to proceed with scoping.
+- **Follow-up (in progress):** `docs/research/CAMPAIGN_56_RATES_DURATION_TREND_PLANNING_CHARTER.md`
+  filed, planning charter only — nothing frozen, per Amendment 3's pacing rule (no spec frozen the
+  same session it's drafted). **Next executable step, not done this session:** acquire real
+  SHY/IEI/IEF/TLT daily history and run the actual regime census + Amendment 1 power simulation.
+  Owner: Quant Researcher, on a later session.
+
 ## 2026-08-30 — Core v2 Tier 2 risk framework (per-pod leverage/sizing/correlation)
 - **Raised by:** Risk/PM, following CEO direction to build Tier 2 with full staff collaboration
   after the pod-degradation-band rule (below) named it as a gap.
