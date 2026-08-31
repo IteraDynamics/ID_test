@@ -651,6 +651,7 @@ dependencies = [
     { name = "scipy" },
     { name = "streamlit" },
     { name = "typer" },
+    { name = "yfinance" },
 ]
 
 [package.optional-dependencies]
@@ -676,6 +677,7 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.11" },
     { name = "streamlit", specifier = ">=1.36" },
     { name = "typer", specifier = ">=0.9" },
+    { name = "yfinance", specifier = ">=1.5.2" },
     { name = "yfinance", marker = "extra == 'data'", specifier = ">=0.2.40" },
 ]
 provides-extras = ["data", "dev"]
