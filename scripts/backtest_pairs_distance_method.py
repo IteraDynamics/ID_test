@@ -58,16 +58,35 @@ import argparse
 import json
 from pathlib import Path
 
+import re
+
 import numpy as np
 import pandas as pd
 
 RNG_SEED = 20260901  # fixed for replay determinism, not tuned
 MIN_FORMATION_STD = 1e-6  # guards a near-degenerate (effectively identical) pair's spread std
 
+# Plain US equity/ETF ticker: 1-6 uppercase letters, nothing else. Deliberately excludes
+# international listings (a dot suffix, e.g. "2914.T" for Tokyo), index tickers (a "^" prefix,
+# e.g. "^N225", "^VIX" -- not directly tradable anyway), and futures continuous contracts (an
+# "=F" suffix, e.g. "GC=F", "ES=F"). This isn't just a data-cleanliness filter: those trade on
+# different exchange calendars (Tokyo holidays don't match NYSE holidays; futures often trade
+# near-24/5), and mixing them into one same-day distance-method pairs universe doesn't even make
+# mechanical sense, independent of what it does to the eligibility math below.
+US_EQUITY_TICKER_PATTERN = re.compile(r"^[A-Z]{1,6}$")
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--data-dir", default="data")
+    parser.add_argument(
+        "--ticker-pattern",
+        default=US_EQUITY_TICKER_PATTERN.pattern,
+        help="Regex a ticker's filename stem must fully match to be included -- default restricts "
+        "to plain US equity/ETF symbols, excluding international listings (.T etc), index tickers "
+        "(^ prefix), and futures continuous contracts (=F suffix), which trade on incompatible "
+        "calendars. Pass '.*' to disable filtering entirely (not recommended -- see module docstring).",
+    )
     parser.add_argument("--formation-months", type=int, default=12)
     parser.add_argument("--trading-months", type=int, default=6)
     parser.add_argument("--top-n-pairs", type=int, default=20, help="Pairs selected per window, by lowest formation-period distance.")
@@ -83,7 +102,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_price_panel(data_dir: Path) -> pd.DataFrame:
+def load_price_panel(data_dir: Path, ticker_pattern: str) -> pd.DataFrame:
     """Local {TICKER}_1D.csv files aren't guaranteed to agree on timestamp convention -- some
     were pulled tz-naive, some tz-aware, likely across different download sessions. Two distinct
     bugs stacked here, both found by actually reproducing the reported symptom rather than
@@ -110,18 +129,35 @@ def load_price_panel(data_dir: Path) -> pd.DataFrame:
     Converting to UTC and normalizing to midnight is safe specifically for this repo's data (US
     equities and crypto, timezones always behind UTC) -- a local midnight timestamp shifted a few
     hours forward to UTC never crosses into the next UTC calendar date. That assumption would need
-    revisiting for a timezone ahead of UTC."""
+    revisiting for a timezone ahead of UTC.
+
+    ticker_pattern filters which files are even considered before any of the above -- a real
+    run found this loader was silently mixing plain US equities with Japanese listings (a ".T"
+    suffix), index tickers ("^" prefix), and futures continuous contracts ("=F" suffix) from
+    the same data/ directory. Those trade on incompatible calendars, which is what actually
+    collapsed the eligible universe (see US_EQUITY_TICKER_PATTERN above) -- the timestamp fixes
+    in points 1-2 were real bugs worth fixing but were not, on their own, sufficient."""
+    pattern = re.compile(ticker_pattern)
     frames = {}
+    excluded: list[str] = []
     for path in sorted(data_dir.glob("*_1D.csv")):
         ticker = path.stem[: -len("_1D")]
+        if not pattern.fullmatch(ticker):
+            excluded.append(ticker)
+            continue
         frame = pd.read_csv(path)
         frame["timestamp"] = pd.to_datetime(frame["timestamp"], utc=True)
         frame = frame.sort_values("timestamp").drop_duplicates(subset="timestamp").set_index("timestamp")
         frame.index = frame.index.tz_localize(None).normalize()
         frame = frame[~frame.index.duplicated(keep="last")]  # normalize() can re-collide two intraday stamps onto one date
         frames[ticker] = frame["close"]
+    if excluded:
+        sample = ", ".join(excluded[:8]) + (", ..." if len(excluded) > 8 else "")
+        print(f"Excluded {len(excluded)} file(s) not matching ticker pattern {ticker_pattern!r} (e.g. {sample})")
     if not frames:
-        raise FileNotFoundError(f"No {{TICKER}}_1D.csv files found in {data_dir}. Nothing to pair.")
+        raise FileNotFoundError(
+            f"No {{TICKER}}_1D.csv files in {data_dir} matched ticker pattern {ticker_pattern!r}. Nothing to pair."
+        )
     panel = pd.DataFrame(frames)
     print(f"Loaded {panel.shape[1]} tickers, {panel.shape[0]} raw dates, {panel.index.min().date()} to {panel.index.max().date()}.")
     return panel
@@ -328,7 +364,7 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(args.seed)
 
-    panel = load_price_panel(data_dir)
+    panel = load_price_panel(data_dir, args.ticker_pattern)
     windows = generate_windows(panel.index, args.formation_months, args.trading_months)
     if not windows:
         raise RuntimeError(
