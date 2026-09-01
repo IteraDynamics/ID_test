@@ -199,18 +199,38 @@ def simulate_pair_trades(
 def run_walk_forward(
     panel: pd.DataFrame, windows: list[tuple], top_n: int, entry_z: float, exit_z: float,
     stop_z: float, cost_bps: float, min_price: float, rng: np.random.Generator | None,
-) -> tuple[list[dict], list[float]]:
-    """rng=None means real distance-based selection; rng given means random-pair null."""
+) -> tuple[list[dict], list[float], list[dict]]:
+    """rng=None means real distance-based selection; rng given means random-pair null.
+
+    Always collects per-window diagnostics (eligible-ticker and pair counts) -- cheap to
+    compute, and the only way to tell "this window had a thin universe" apart from "this
+    window had a full universe that just never crossed the entry threshold." Both look
+    identical from the trade count alone."""
     all_trades: list[dict] = []
     window_returns: list[float] = []
+    diagnostics: list[dict] = []
 
     for formation_start, trading_start, trading_end in windows:
         window_prices = eligible_slice(panel, formation_start, trading_end, min_price)
+        diag = {
+            "formation_start": formation_start,
+            "trading_start": trading_start,
+            "trading_end": trading_end,
+            "n_eligible_tickers": int(window_prices.shape[1]),
+            "n_pairs_selected": 0,
+            "n_pairs_valid": 0,
+            "n_trades": 0,
+            "skip_reason": None,
+        }
         if window_prices.shape[1] < 2:
+            diag["skip_reason"] = "fewer than 2 eligible tickers"
+            diagnostics.append(diag)
             continue
 
         formation_prices = window_prices.loc[window_prices.index < trading_start]
         if len(formation_prices) < 20:
+            diag["skip_reason"] = "fewer than 20 formation-period observations"
+            diagnostics.append(diag)
             continue
         base_row = formation_prices.iloc[0]
         formation_normalized = formation_prices / base_row
@@ -219,29 +239,43 @@ def run_walk_forward(
             pairs = select_pairs_by_distance(formation_prices, top_n)
         else:
             pairs = select_pairs_random(window_prices.columns.tolist(), top_n, rng)
+        diag["n_pairs_selected"] = len(pairs)
 
         trading_prices = window_prices.loc[window_prices.index >= trading_start]
         if trading_prices.empty:
+            diag["skip_reason"] = "no trading-period data"
+            diagnostics.append(diag)
             continue
         trading_normalized = trading_prices / base_row
 
         window_trades: list[dict] = []
+        n_pairs_valid = 0
         for ticker_a, ticker_b in pairs:
             formation_mean, formation_std = formation_spread_stats(formation_normalized, ticker_a, ticker_b)
             if formation_std < MIN_FORMATION_STD or np.isnan(formation_std):
                 continue
+            n_pairs_valid += 1
             spread_series = (trading_normalized[ticker_a] - trading_normalized[ticker_b]).to_numpy()
             trades = simulate_pair_trades(
                 trading_normalized.index.to_list(), spread_series, formation_mean, formation_std,
                 entry_z, exit_z, stop_z, cost_bps, f"{ticker_a}/{ticker_b}",
             )
             window_trades.extend(trades)
+        diag["n_pairs_valid"] = n_pairs_valid
+        diag["n_trades"] = len(window_trades)
+        if not pairs:
+            diag["skip_reason"] = "fewer than 2 eligible tickers to form a pair"
+        elif n_pairs_valid == 0:
+            diag["skip_reason"] = "every selected pair had a degenerate (near-zero) formation spread std"
+        elif not window_trades:
+            diag["skip_reason"] = "valid pairs formed but none crossed the entry threshold"
+        diagnostics.append(diag)
 
         all_trades.extend(window_trades)
         if window_trades:
             window_returns.append(float(np.mean([t["net_return"] for t in window_trades])))
 
-    return all_trades, window_returns
+    return all_trades, window_returns, diagnostics
 
 
 def annualized_sharpe(window_returns: np.ndarray, windows_per_year: float) -> float:
@@ -282,7 +316,7 @@ def main() -> None:
     print(f"{len(windows)} walk-forward windows, {args.formation_months}mo formation / {args.trading_months}mo trading each.\n")
 
     print("=== Real strategy: distance-method pair selection ===")
-    real_trades, real_window_returns = run_walk_forward(
+    real_trades, real_window_returns, real_diagnostics = run_walk_forward(
         panel, windows, args.top_n_pairs, args.entry_z, args.exit_z, args.stop_z,
         args.cost_bps, args.min_price, rng=None,
     )
@@ -297,10 +331,27 @@ def main() -> None:
         print(f"Mean net return/trade: {net_returns.mean():+.3%}  Win rate: {win_rate:.1%}")
     print(f"Annualized Sharpe (window-level, equal-weight across pairs each window): {real_sharpe:+.2f}\n")
 
+    n_skipped = sum(1 for d in real_diagnostics if d["n_trades"] == 0)
+    print(f"=== Window diagnostic: why {n_skipped}/{len(real_diagnostics)} windows produced zero trades ===")
+    reason_counts: dict[str, int] = {}
+    for d in real_diagnostics:
+        if d["n_trades"] == 0:
+            reason_counts[d["skip_reason"]] = reason_counts.get(d["skip_reason"], 0) + 1
+    for reason, count in sorted(reason_counts.items(), key=lambda kv: -kv[1]):
+        print(f"  {count:>2} window(s): {reason}")
+    print(f"{'trading_start':>13} | {'eligible':>8} | {'pairs_sel':>9} | {'pairs_valid':>11} | {'trades':>6} | reason")
+    for d in real_diagnostics:
+        reason = d["skip_reason"] or ""
+        print(
+            f"  {pd.Timestamp(d['trading_start']).date()} | {d['n_eligible_tickers']:>8} | "
+            f"{d['n_pairs_selected']:>9} | {d['n_pairs_valid']:>11} | {d['n_trades']:>6} | {reason}"
+        )
+    print()
+
     print(f"=== Negative control: {args.n_permutation_nulls} random-pair null repeats ===")
     null_sharpes = []
     for i in range(args.n_permutation_nulls):
-        _, null_window_returns = run_walk_forward(
+        _, null_window_returns, _ = run_walk_forward(
             panel, windows, args.top_n_pairs, args.entry_z, args.exit_z, args.stop_z,
             args.cost_bps, args.min_price, rng=rng,
         )
@@ -344,6 +395,7 @@ def main() -> None:
         "n_trades": n_trades,
         "real_sharpe": real_sharpe,
         "real_window_returns": real_window_returns,
+        "real_window_diagnostics": real_diagnostics,
         "null_sharpes": null_sharpes,
         "permutation_p_value": permutation_p_value,
         "bootstrap": bootstrap,
