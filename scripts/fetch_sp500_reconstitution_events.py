@@ -72,7 +72,28 @@ def parse_args() -> argparse.Namespace:
         default="sp500_reconstitution_events.csv",
         help="Output CSV filename, written under --output-dir.",
     )
+    parser.add_argument(
+        "--debug-list-tables",
+        action="store_true",
+        help="Print every <table> on the page (index, class attribute, header text) and exit, "
+        "instead of trying to locate the changes table. Use this to diagnose a "
+        "'no wikitable matched' failure by seeing the page's real structure.",
+    )
     return parser.parse_args()
+
+
+def debug_list_tables(soup: BeautifulSoup) -> None:
+    all_tables = soup.find_all("table")
+    print(f"Found {len(all_tables)} <table> element(s) total on the page (any class).\n")
+    for index, table in enumerate(all_tables):
+        classes = table.get("class", [])
+        header_cells = table.find_all("th")[:8]
+        header_preview = [cell.get_text(strip=True) for cell in header_cells]
+        caption = table.find("caption")
+        caption_text = caption.get_text(strip=True) if caption else ""
+        print(f"[{index}] class={classes!r} caption={caption_text!r}")
+        print(f"     first ~8 <th> cells: {header_preview}")
+        print()
 
 
 def fetch_page_html(url: str) -> str:
@@ -255,6 +276,11 @@ def main() -> None:
     print(f"Fetched {len(html):,} bytes. Parsing...")
 
     soup = BeautifulSoup(html, "html.parser")
+
+    if args.debug_list_tables:
+        debug_list_tables(soup)
+        return
+
     table = find_changes_table(soup)
     events = parse_changes_table(table)
     print(f"Parsed {len(events)} raw change events from the page.")
