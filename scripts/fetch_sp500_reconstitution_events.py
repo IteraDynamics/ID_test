@@ -1,8 +1,23 @@
 """Campaign #58 (planning) — S&P 500 reconstitution event calendar, Stage 1 of 2.
 
-Fetches Wikipedia's "List of S&P 500 companies" page and extracts its
-"Selected changes to the list of S&P 500 components" table into a clean,
-long-format event calendar: one row per (date, ticker, action).
+Pulls a purpose-built S&P 500 change-event log and normalizes it into a
+clean, long-format event calendar: one row per (date, ticker, action).
+
+Revision note: this originally scraped Wikipedia's "List of S&P 500
+companies" page directly. A real run found that page no longer has a
+separate "Selected changes" table -- only the current-constituents table,
+which cannot supply removal events or additions of companies later
+removed (survivorship bias baked in). Verified via WebSearch/WebFetch
+(not this environment's blocked direct network access) that a
+purpose-built dataset exists instead: fja05680/sp500 on GitHub maintains
+sp500_changes_since_2019.csv specifically for this, built by supplementing
+Wikipedia's own incomplete "Selected changes" list with researched exact
+dates. This script pulls that file directly -- no HTML table-structure
+guessing required, since it's already structured data.
+
+Real constraint this file's own scope imposes: it only covers changes
+since 2019, not further back. --start-date below 2019-01-01 will simply
+yield nothing before that date; it is not a bug in this script.
 
 This is Stage 1 only. It produces the *event calendar* -- which tickers
 changed, when, add or remove. It does NOT pull price data. Stage 2 (a
@@ -10,44 +25,52 @@ separate analysis script, not yet written) needs per-ticker daily OHLCV
 for every ticker this stage discovers, pulled via the existing
 scripts/download_equity_data.py.
 
-UNTESTED against the live page -- this environment cannot reach Wikipedia
-to verify (same network policy that blocked Yahoo Finance and Stooq).
-Written defensively: it validates its own assumptions about the table's
-structure and fails with a specific, readable error rather than silently
-parsing garbage if Wikipedia's table layout has changed. If it fails,
-send back the exact error -- that tells me which assumption broke.
+UNTESTED against the live file -- this environment's direct network
+access is blocked for exactly this kind of fetch (same policy that
+blocked Yahoo Finance and Stooq); only the WebFetch/WebSearch tools used
+to research and confirm the source could reach GitHub, and those don't
+substitute for actually running this script. Written defensively: the
+CSV's exact column names were not independently confirmed (the source
+repo's README describes the file's purpose but not its schema), so this
+script inspects the real header at runtime, tries several plausible
+column-name matches, and fails with a specific, readable error naming
+the actual header found if none match -- rather than silently
+misreading columns.
 
 Known trap, handled here: Wikipedia/S&P notation uses a dot for share
 classes (e.g. "BRK.B"); Yahoo Finance (and therefore
 download_equity_data.py) uses a hyphen ("BRK-B"). Tickers are normalized
-on the way out. If a ticker still fails to price in Stage 2, check this
-mapping first before assuming the data is missing.
+on the way out. This source dataset is itself built by supplementing
+Wikipedia, so the same dot notation is expected here too.
 
-Uses only the standard library plus BeautifulSoup (already installed
-transitively via the yfinance dependency added for Stage 0) -- no new
-dependency required.
+Uses only the standard library (urllib, csv) -- no new dependency.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import io
 import re
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from bs4 import BeautifulSoup
-
-WIKIPEDIA_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+SOURCE_URL = "https://raw.githubusercontent.com/fja05680/sp500/master/sp500_changes_since_2019.csv"
 USER_AGENT = (
     "Mozilla/5.0 (compatible; IteraDynamicsResearch/1.0; research-only, "
     "non-commercial historical index membership lookup)"
 )
 
-# Wikipedia/S&P share-class notation ("BRK.B") -> Yahoo Finance notation ("BRK-B").
 TICKER_DOT_TO_DASH = re.compile(r"\.")
+
+# Candidate substrings (checked case-insensitively) for identifying each
+# semantic column in a header whose exact names were not independently
+# confirmed before writing this script.
+DATE_COL_HINTS = ("date",)
+ADD_TICKER_COL_HINTS = ("add",)
+REMOVE_TICKER_COL_HINTS = ("remov", "delet", "drop")
 
 
 @dataclass(frozen=True)
@@ -55,7 +78,6 @@ class ChangeEvent:
     date: str  # ISO 8601
     ticker: str
     action: str  # "add" | "remove"
-    company: str
     reason: str
 
 
@@ -63,8 +85,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--start-date",
-        default="2015-01-01",
-        help="Only keep events on or after this date (keeps the Stage 2 ticker list manageable).",
+        default="2019-01-01",
+        help="Only keep events on or after this date. The source file itself starts in 2019 -- "
+        "an earlier date here will not recover earlier events.",
     )
     parser.add_argument("--output-dir", default="data")
     parser.add_argument(
@@ -73,134 +96,85 @@ def parse_args() -> argparse.Namespace:
         help="Output CSV filename, written under --output-dir.",
     )
     parser.add_argument(
-        "--debug-list-tables",
+        "--debug-show-header",
         action="store_true",
-        help="Print every <table> on the page (index, class attribute, header text) and exit, "
-        "instead of trying to locate the changes table. Use this to diagnose a "
-        "'no wikitable matched' failure by seeing the page's real structure.",
+        help="Print the raw source file's header row and first 3 data rows, then exit, "
+        "without attempting to parse. Use this if column matching fails.",
     )
     return parser.parse_args()
 
 
-def debug_list_tables(soup: BeautifulSoup) -> None:
-    all_tables = soup.find_all("table")
-    print(f"Found {len(all_tables)} <table> element(s) total on the page (any class).\n")
-    for index, table in enumerate(all_tables):
-        classes = table.get("class", [])
-        header_cells = table.find_all("th")[:8]
-        header_preview = [cell.get_text(strip=True) for cell in header_cells]
-        caption = table.find("caption")
-        caption_text = caption.get_text(strip=True) if caption else ""
-        print(f"[{index}] class={classes!r} caption={caption_text!r}")
-        print(f"     first ~8 <th> cells: {header_preview}")
-        print()
-
-
-def fetch_page_html(url: str) -> str:
+def fetch_source_csv(url: str) -> str:
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(request, timeout=30) as response:
         charset = response.headers.get_content_charset() or "utf-8"
         return response.read().decode(charset, errors="replace")
 
 
-def find_changes_table(soup: BeautifulSoup):
-    """Locate the changes table by header content, not position -- table order
-    on the page is not something this script should assume is stable."""
-    candidates = soup.find_all("table", class_="wikitable")
-    if not candidates:
+def _find_column(fieldnames: list[str], hints: tuple[str, ...]) -> str | None:
+    for name in fieldnames:
+        lowered = name.lower()
+        if any(hint in lowered for hint in hints):
+            return name
+    return None
+
+
+def _parse_date(text: str) -> str | None:
+    text = text.strip()
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%B %d, %Y", "%b %d, %Y"):
+        try:
+            return datetime.strptime(text, fmt).date().isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def _normalize_ticker(raw: str) -> str:
+    ticker = raw.strip().upper()
+    if not ticker:
+        return ticker
+    return TICKER_DOT_TO_DASH.sub("-", ticker)
+
+
+def parse_events(raw_csv: str) -> list[ChangeEvent]:
+    reader = csv.DictReader(io.StringIO(raw_csv))
+    fieldnames = reader.fieldnames or []
+
+    date_col = _find_column(fieldnames, DATE_COL_HINTS)
+    add_col = _find_column(fieldnames, ADD_TICKER_COL_HINTS)
+    remove_col = _find_column(fieldnames, REMOVE_TICKER_COL_HINTS)
+
+    if date_col is None or (add_col is None and remove_col is None):
         raise RuntimeError(
-            "No table with class='wikitable' found on the page at all. "
-            "Wikipedia's page structure may have changed significantly, or "
-            "the fetch did not actually return the article (check for a "
-            "login wall, redirect, or CAPTCHA page instead)."
-        )
-
-    for table in candidates:
-        header_text = " ".join(
-            cell.get_text(strip=True).lower() for cell in table.find_all(["th"])
-        )
-        if "date" in header_text and "ticker" in header_text and (
-            "added" in header_text or "removed" in header_text
-        ):
-            return table
-
-    raise RuntimeError(
-        f"Found {len(candidates)} wikitable(s) on the page, but none had header "
-        "cells containing ('date' and 'ticker' and ('added' or 'removed')). "
-        "The changes table's headers likely changed wording -- inspect the "
-        "page manually and update find_changes_table()'s keyword match."
-    )
-
-
-def _clean_cell(cell) -> str:
-    return cell.get_text(strip=True)
-
-
-def parse_changes_table(table) -> list[ChangeEvent]:
-    rows = table.find_all("tr")
-    if len(rows) < 3:
-        raise RuntimeError(
-            f"Changes table has only {len(rows)} <tr> rows; expected a two-row "
-            "header plus many data rows. Table structure assumption failed."
-        )
-
-    # Expect a two-tier header: row 0 has ~5 <th> (Date | Added(colspan2) |
-    # Removed(colspan2) | Reason), row 1 has the 4 sub-headers
-    # (Ticker, Security, Ticker, Security). Validate this rather than assume it.
-    header_row_0 = [c.get_text(strip=True).lower() for c in rows[0].find_all(["th", "td"])]
-    header_row_1 = [c.get_text(strip=True).lower() for c in rows[1].find_all(["th", "td"])]
-    if "ticker" not in " ".join(header_row_1):
-        raise RuntimeError(
-            f"Expected row 1 of the changes table to contain sub-headers "
-            f"including 'Ticker'; got {header_row_1!r}. The two-tier header "
-            f"assumption (row 0: {header_row_0!r}) does not hold -- this "
-            "script's column-position logic needs updating for the real layout."
+            f"Could not identify the needed columns in the source file. "
+            f"Actual header: {fieldnames!r}. "
+            f"Matched date_col={date_col!r}, add_col={add_col!r}, remove_col={remove_col!r}. "
+            "Re-run with --debug-show-header to see real rows, then update "
+            "DATE_COL_HINTS/ADD_TICKER_COL_HINTS/REMOVE_TICKER_COL_HINTS above "
+            "to match the actual column names."
         )
 
     events: list[ChangeEvent] = []
     skipped: list[str] = []
-    data_rows = rows[2:]
 
-    for row in data_rows:
-        cells = row.find_all(["td", "th"])
-        if len(cells) < 5:
-            skipped.append(f"too few cells ({len(cells)}): {[c.get_text(strip=True) for c in cells]}")
-            continue
-
-        date_text, added_ticker, added_security, removed_ticker, removed_security = (
-            _clean_cell(cells[0]),
-            _clean_cell(cells[1]),
-            _clean_cell(cells[2]),
-            _clean_cell(cells[3]),
-            _clean_cell(cells[4]),
-        )
-        reason = _clean_cell(cells[5]) if len(cells) > 5 else ""
-
-        iso_date = _parse_wikipedia_date(date_text)
+    for row in reader:
+        date_text = row.get(date_col, "")
+        iso_date = _parse_date(date_text)
         if iso_date is None:
-            skipped.append(f"unparseable date {date_text!r} in row: {[c.get_text(strip=True) for c in cells]}")
+            skipped.append(f"unparseable date {date_text!r} in row: {row}")
             continue
 
-        if added_ticker:
-            events.append(
-                ChangeEvent(
-                    date=iso_date,
-                    ticker=_normalize_ticker(added_ticker),
-                    action="add",
-                    company=added_security,
-                    reason=reason,
-                )
-            )
-        if removed_ticker:
-            events.append(
-                ChangeEvent(
-                    date=iso_date,
-                    ticker=_normalize_ticker(removed_ticker),
-                    action="remove",
-                    company=removed_security,
-                    reason=reason,
-                )
-            )
+        reason = row.get("reason", "") or row.get("Reason", "") or ""
+
+        if add_col is not None:
+            added_ticker = _normalize_ticker(row.get(add_col, ""))
+            if added_ticker:
+                events.append(ChangeEvent(date=iso_date, ticker=added_ticker, action="add", reason=reason))
+
+        if remove_col is not None:
+            removed_ticker = _normalize_ticker(row.get(remove_col, ""))
+            if removed_ticker:
+                events.append(ChangeEvent(date=iso_date, ticker=removed_ticker, action="remove", reason=reason))
 
     if skipped:
         print(f"WARNING: skipped {len(skipped)} row(s) that did not parse cleanly:")
@@ -211,28 +185,12 @@ def parse_changes_table(table) -> list[ChangeEvent]:
 
     if not events:
         raise RuntimeError(
-            "Parsed zero events from a table that passed structural validation. "
-            "This means every data row failed to parse -- almost certainly a "
-            "date-format assumption is wrong. Inspect the skipped-row list above."
+            "Parsed zero events despite matching column names -- every row's date or "
+            "ticker value was empty/unparseable. Inspect the skipped-row list above, "
+            "or re-run with --debug-show-header to see real raw rows."
         )
 
     return events
-
-
-def _parse_wikipedia_date(text: str) -> str | None:
-    text = text.strip()
-    for fmt in ("%B %d, %Y", "%b %d, %Y", "%Y-%m-%d", "%B %d %Y"):
-        try:
-            return datetime.strptime(text, fmt).date().isoformat()
-        except ValueError:
-            continue
-    return None
-
-
-def _normalize_ticker(raw: str) -> str:
-    ticker = raw.strip().upper()
-    ticker = TICKER_DOT_TO_DASH.sub("-", ticker)
-    return ticker
 
 
 def write_events(events: list[ChangeEvent], output_path: Path, start_date: str) -> int:
@@ -242,9 +200,9 @@ def write_events(events: list[ChangeEvent], output_path: Path, start_date: str) 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["date", "ticker", "action", "company", "reason"])
+        writer.writerow(["date", "ticker", "action", "reason"])
         for event in filtered:
-            writer.writerow([event.date, event.ticker, event.action, event.company, event.reason])
+            writer.writerow([event.date, event.ticker, event.action, event.reason])
 
     return len(filtered)
 
@@ -271,19 +229,21 @@ def main() -> None:
     args = parse_args()
     output_path = Path(args.output_dir) / args.output_name
 
-    print(f"Fetching {WIKIPEDIA_URL} ...")
-    html = fetch_page_html(WIKIPEDIA_URL)
-    print(f"Fetched {len(html):,} bytes. Parsing...")
+    print(f"Fetching {SOURCE_URL} ...")
+    raw_csv = fetch_source_csv(SOURCE_URL)
+    print(f"Fetched {len(raw_csv):,} bytes.")
 
-    soup = BeautifulSoup(html, "html.parser")
-
-    if args.debug_list_tables:
-        debug_list_tables(soup)
+    if args.debug_show_header:
+        reader = csv.reader(io.StringIO(raw_csv))
+        rows = list(reader)
+        print(f"Header: {rows[0] if rows else '(empty file)'}")
+        print("First 3 data rows:")
+        for row in rows[1:4]:
+            print(f"  {row}")
         return
 
-    table = find_changes_table(soup)
-    events = parse_changes_table(table)
-    print(f"Parsed {len(events)} raw change events from the page.")
+    events = parse_events(raw_csv)
+    print(f"Parsed {len(events)} raw change events from the source file.")
 
     written = write_events(events, output_path, args.start_date)
     print(f"Wrote {written} events (from {args.start_date} onward) to {output_path}")
