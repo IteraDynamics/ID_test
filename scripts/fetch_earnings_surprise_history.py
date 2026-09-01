@@ -7,9 +7,15 @@ reported EPS, and surprise % -- confirmed by a real diagnostic run to
 return ~24 years of history with 87-100% field coverage for large,
 long-listed names (docs/... see diagnose_yfinance_earnings_dates.py).
 
-Universe: read from data/sp500_reconstitution_events.csv (the ticker set
-idea #2 already established and priced), not a fresh ticker list -- reuses
-already-downloaded price data rather than acquiring a new universe.
+Universe: by default, read from data/sp500_reconstitution_events.csv (the
+ticker set idea #2 already established and priced) -- reuses already-
+downloaded price data rather than acquiring a new universe. Pass
+--tickers explicitly to bypass this entirely for a universe with no
+event calendar of its own (e.g. the Japan/Europe international
+stress-test universe, which has no reconstitution-style source to derive
+from). Either way, each ticker still needs local price data on disk to
+be included -- the cache-dir resumability and retry/backoff logic below
+is unchanged by which universe source is used.
 
 Per-ticker caching + retry/backoff, same pattern as
 download_equity_data.py's bulk-download fixes: each ticker's result is
@@ -38,7 +44,20 @@ from pathlib import Path
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--events-file", default="data/sp500_reconstitution_events.csv")
+    parser.add_argument(
+        "--events-file",
+        default="data/sp500_reconstitution_events.csv",
+        help="Universe source: tickers in this event calendar (idea #2's US universe). "
+        "Ignored if --tickers is passed instead.",
+    )
+    parser.add_argument(
+        "--tickers",
+        nargs="+",
+        default=None,
+        help="Explicit ticker list, bypassing --events-file entirely -- for a universe with no "
+        "reconstitution-style event calendar of its own (e.g. an international stress-test "
+        "universe). Each still needs local price data (see --price-data-dir) to be included.",
+    )
     parser.add_argument("--price-data-dir", default="data")
     parser.add_argument("--cache-dir", default="data/earnings_dates")
     parser.add_argument(
@@ -53,24 +72,30 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_universe(events_path: Path, price_data_dir: Path) -> list[str]:
-    if not events_path.exists():
-        raise FileNotFoundError(
-            f"{events_path} not found. This reuses idea #2's ticker universe -- "
-            "run scripts/fetch_sp500_reconstitution_events.py first if it doesn't exist."
-        )
-
-    with events_path.open(newline="", encoding="utf-8") as handle:
-        reader = csv.DictReader(handle)
-        all_tickers = sorted({row["ticker"] for row in reader})
+def load_universe(events_path: Path, price_data_dir: Path, explicit_tickers: list[str] | None) -> list[str]:
+    if explicit_tickers:
+        all_tickers = sorted({ticker.strip().upper() for ticker in explicit_tickers if ticker.strip()})
+        source_label = f"{len(all_tickers)} explicitly-provided tickers"
+    else:
+        if not events_path.exists():
+            raise FileNotFoundError(
+                f"{events_path} not found. This reuses idea #2's ticker universe -- "
+                "run scripts/fetch_sp500_reconstitution_events.py first if it doesn't exist, "
+                "or pass --tickers directly for a universe with no event calendar of its own."
+            )
+        with events_path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            all_tickers = sorted({row["ticker"] for row in reader})
+        source_label = f"{len(all_tickers)} tickers in the event calendar"
 
     priced_tickers = [
         ticker for ticker in all_tickers if (price_data_dir / f"{ticker}_1D.csv").exists()
     ]
     missing = len(all_tickers) - len(priced_tickers)
-    print(f"Universe: {len(all_tickers)} tickers in the event calendar, {len(priced_tickers)} have local price data.")
+    print(f"Universe: {source_label}, {len(priced_tickers)} have local price data.")
     if missing:
-        print(f"  ({missing} skipped -- no local {price_data_dir}/{{TICKER}}_1D.csv, matches idea #2's own gaps)")
+        missing_list = sorted(set(all_tickers) - set(priced_tickers))
+        print(f"  ({missing} skipped -- no local {price_data_dir}/{{TICKER}}_1D.csv: {missing_list})")
     return priced_tickers
 
 
@@ -135,7 +160,7 @@ def main() -> None:
     price_data_dir = Path(args.price_data_dir)
     cache_dir = Path(args.cache_dir)
 
-    universe = load_universe(events_path, price_data_dir)
+    universe = load_universe(events_path, price_data_dir, args.tickers)
     if not universe:
         raise RuntimeError("No tickers with local price data found -- nothing to fetch.")
 
