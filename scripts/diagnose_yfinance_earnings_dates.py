@@ -32,9 +32,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--limit",
         type=int,
-        default=400,
-        help="Requested row limit, generously above what's expected (400 quarters = "
-        "100 years) to find the real ceiling rather than assume one.",
+        default=100,
+        help="Requested row limit. 100 is Yahoo's own hard cap (confirmed by a real "
+        "run: requesting 400 raised 'Yahoo caps limit at 100' rather than silently "
+        "truncating) -- 100 quarters is 25 years if that many actually exist and are "
+        "returned, which is itself part of what this diagnostic checks.",
     )
     return parser.parse_args()
 
