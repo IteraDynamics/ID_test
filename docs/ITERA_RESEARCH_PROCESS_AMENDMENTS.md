@@ -199,3 +199,50 @@ Reachable market data does not imply a tradeable instrument. Several venues publ
 funding history while restricting trading access by jurisdiction. A campaign that researches
 venue A's funding and executes on venue B is exposed to the basis between them, which is a
 distinct risk the research would not have measured.
+
+---
+
+## Amendment 6 — Exploration sandbox precedes campaign governance when appropriate (2026-09-01)
+
+The September 1 off-charter pairs-trading and low-volatility tests exposed a missing layer in the
+research process. Full campaign governance is appropriate before Itera believes or deploys an
+edge, but it is unnecessarily expensive for the cheaper question: *does this idea deserve serious
+research at all?*
+
+Itera therefore adopts `docs/ITERA_EXPLORATION_SANDBOX.md` as the standing pre-campaign screening
+protocol.
+
+### The rule
+
+A new idea may be run as an **exploration screen** without a campaign number, campaign-level power
+simulation, FDR family, frozen holdout, full campaign document, or later-day specification freeze,
+provided the screen complies with the sandbox protocol's minimum safety and falsification rules.
+
+The relaxed process applies only to the cost of **asking** whether an idea deserves research. It
+does not lower the standard for **believing** the result.
+
+A sandbox result may be classified only as `SCREEN_NEGATIVE`, `SCREEN_INCONCLUSIVE`,
+`SCREEN_POSITIVE`, or `SCREEN_INVALID`. `SCREEN_POSITIVE` means only that the candidate earns
+promotion into the normal governed pipeline. It is not `ALIVE`, `VALIDATED`, `CONFIRMED`, or an
+authorization for paper/live trading, portfolio sizing, or Core v2 inclusion.
+
+### Candidate-selection standard
+
+Exploration should optimize for prior probability of a persistent edge, not merely novelty,
+convenience, or available data. Before implementation, every screen must name the persistent
+economic friction or compelled/non-alpha-maximizing behavior expected to create the edge and why
+that mechanism could survive modern competition.
+
+Generic textbook anomalies or famous historical strategies are not prohibited, but publication
+or fame is not itself a mechanism and gives them no priority.
+
+### Boundaries
+
+- Core v1 remains frozen.
+- Cheap horizon and tradeability sanity checks remain mandatory.
+- No sandbox output may be used as an untouched confirmation holdout after promotion; sandbox data
+  is discovery-contaminated by definition.
+- Independent Red Team review remains mandatory before any candidate can be called alive.
+- Risk/PM and CEO approval remain mandatory before any Core v2 composition or weight decision.
+- No capital, paper runtime, production, order, NAV, exposure, or strategy behavior is authorized
+  by this amendment.
