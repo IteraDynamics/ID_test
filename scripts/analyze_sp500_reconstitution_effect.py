@@ -137,6 +137,10 @@ def main() -> None:
             f"{events_path} not found. Run scripts/fetch_sp500_reconstitution_events.py first."
         )
     events = pd.read_csv(events_path, parse_dates=["date"])
+    # Price data (download_equity_data.py's output) carries UTC-aware timestamps;
+    # the events CSV's plain "YYYY-MM-DD" parses tz-naive by default. Localize to
+    # match, or every comparison against the price index raises downstream.
+    events["date"] = events["date"].dt.tz_localize("UTC")
 
     benchmark_returns = load_daily_returns(data_dir, args.benchmark)
     if benchmark_returns is None:
