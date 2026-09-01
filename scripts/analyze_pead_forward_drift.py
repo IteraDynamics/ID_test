@@ -49,6 +49,17 @@ FORWARD_DAY_CHECKPOINTS = (1, 5, 20, 60)
 MIN_PRIOR_EVENTS_FOR_STANDARDIZATION = 4
 N_QUINTILES = 5
 
+# A real run exposed z-surprise values in the thousands (Q1 ranged to -4886),
+# and the earliest diagnostic already showed raw surprise_pct itself hitting
+# 1088.89% for AAPL -- both are percentage-of-a-near-zero-denominator
+# artifacts (a tiny EPS estimate or a tiny trailing std), not genuine
+# economic extremes. Same failure shape as the COT gold percentile bug and
+# the crypto momentum outlier bug: an unstandardized or badly-standardized
+# ranking variable getting dominated by a handful of degenerate observations.
+# Two independent guards, addressing the root cause and backstopping it:
+SURPRISE_PCT_WINSORIZE_LIMIT = 200.0  # raw surprise_pct clipped to [-200, 200] before any use
+Z_SCORE_WINSORIZE_LIMIT = 10.0  # resulting z-scores clipped to [-10, 10] as a backstop
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -66,6 +77,15 @@ def load_events(path: Path) -> pd.DataFrame:
     events["date"] = events["date"].dt.tz_localize("UTC")
     events["surprise_pct"] = pd.to_numeric(events["surprise_pct"], errors="coerce")
     events = events.dropna(subset=["surprise_pct"]).sort_values(["ticker", "date"]).reset_index(drop=True)
+
+    raw = events["surprise_pct"].to_numpy()
+    clipped_count = int(np.sum(np.abs(raw) > SURPRISE_PCT_WINSORIZE_LIMIT))
+    events["surprise_pct"] = np.clip(raw, -SURPRISE_PCT_WINSORIZE_LIMIT, SURPRISE_PCT_WINSORIZE_LIMIT)
+    print(
+        f"Winsorized {clipped_count}/{len(events)} raw surprise_pct values that exceeded "
+        f"±{SURPRISE_PCT_WINSORIZE_LIMIT:.0f}% (near-zero-EPS-estimate percentage artifacts, "
+        "not genuine economic extremes)."
+    )
     return events
 
 
@@ -98,6 +118,15 @@ def add_standardized_surprise(events: pd.DataFrame) -> pd.DataFrame:
     excluded = int((~events["_standardizable"]).sum())
     print(f"Excluded {excluded}/{len(events)} events with fewer than {MIN_PRIOR_EVENTS_FOR_STANDARDIZATION} "
           f"prior same-ticker observations to standardize against.")
+
+    z_raw = events["z_surprise"].to_numpy()
+    z_clipped_count = int(np.nansum(np.abs(z_raw) > Z_SCORE_WINSORIZE_LIMIT))
+    events["z_surprise"] = np.clip(z_raw, -Z_SCORE_WINSORIZE_LIMIT, Z_SCORE_WINSORIZE_LIMIT)
+    print(
+        f"Winsorized {z_clipped_count} z-surprise values that still exceeded "
+        f"±{Z_SCORE_WINSORIZE_LIMIT:.0f} after input winsorization -- backstop for a near-zero "
+        "trailing std denominator, not a genuine 10-sigma economic event."
+    )
     return events[events["_standardizable"]].drop(columns="_standardizable").reset_index(drop=True)
 
 
