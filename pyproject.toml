@@ -19,6 +19,7 @@ dependencies = [
     "streamlit>=1.36",
     "plotly>=5.18",
     "yfinance>=1.5.2",
+    "lxml>=5.0",
 ]
 
 [project.optional-dependencies]
