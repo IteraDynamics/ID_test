@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -50,6 +51,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default="data")
     parser.add_argument("--auto-adjust", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="Skip any asset whose output file already exists, without needing --overwrite. "
+        "Lets a failed bulk run be re-invoked with the exact same command to retry only "
+        "the tickers that didn't succeed last time, without re-fetching or erroring on "
+        "the ones that already did.",
+    )
+    parser.add_argument(
+        "--retry-count",
+        type=int,
+        default=3,
+        help="Per-ticker retry attempts on failure before giving up on that ticker. "
+        "A single bad ticker anywhere in a bulk pull can otherwise look identical whether "
+        "it's genuinely delisted (retries won't help, and won't hurt) or a transient "
+        "rate-limit/network hiccup (retries usually do help) -- retrying lets the two "
+        "cases sort themselves out instead of being guessed at.",
+    )
+    parser.add_argument("--retry-delay-seconds", type=float, default=3.0)
+    parser.add_argument(
+        "--request-delay-seconds",
+        type=float,
+        default=1.0,
+        help="Pause between tickers in a bulk pull, to reduce the chance of Yahoo's endpoint "
+        "rate-limiting a long sequential run in the first place.",
+    )
     return parser.parse_args()
 
 
@@ -205,6 +232,7 @@ def main() -> None:
     print()
 
     failed: list[tuple[str, str]] = []
+    skipped_existing: list[str] = []
 
     for position, asset in enumerate(assets, start=1):
         request = DownloadRequest(
@@ -216,37 +244,70 @@ def main() -> None:
         )
         path = _output_path(output_dir, request)
         print(f"[{position}/{len(assets)}] {asset} -> {path}", flush=True)
-        try:
-            raw = yf.download(
-                asset,
-                start=args.start,
-                end=args.end,
-                interval=interval,
-                auto_adjust=args.auto_adjust,
-                progress=False,
-                actions=False,
-                threads=False,
-                group_by="column",
-                multi_level_index=False,
-            )
-            frame = _normalize_download(raw, asset)
-            _write_csv(path, frame, overwrite=args.overwrite)
-            _write_manifest(path, request, frame)
-        except Exception as exc:  # noqa: BLE001 -- bulk pulls must not die on one bad ticker
-            print(f"  FAILED: {exc}", flush=True)
-            failed.append((asset, str(exc)))
+
+        if args.skip_existing and path.exists():
+            print(f"  skipping, already exists (--skip-existing)", flush=True)
+            skipped_existing.append(asset)
             print()
             continue
+
+        last_error: Exception | None = None
+        frame = None
+        for attempt in range(1, args.retry_count + 1):
+            try:
+                raw = yf.download(
+                    asset,
+                    start=args.start,
+                    end=args.end,
+                    interval=interval,
+                    auto_adjust=args.auto_adjust,
+                    progress=False,
+                    actions=False,
+                    threads=False,
+                    group_by="column",
+                    multi_level_index=False,
+                )
+                frame = _normalize_download(raw, asset)
+                _write_csv(path, frame, overwrite=args.overwrite)
+                _write_manifest(path, request, frame)
+                last_error = None
+                break
+            except Exception as exc:  # noqa: BLE001 -- bulk pulls must not die on one bad ticker
+                last_error = exc
+                if attempt < args.retry_count:
+                    print(
+                        f"  attempt {attempt}/{args.retry_count} failed ({exc}); "
+                        f"retrying in {args.retry_delay_seconds:.0f}s...",
+                        flush=True,
+                    )
+                    time.sleep(args.retry_delay_seconds)
+
+        if last_error is not None:
+            print(f"  FAILED after {args.retry_count} attempts: {last_error}", flush=True)
+            failed.append((asset, str(last_error)))
+            print()
+            time.sleep(args.request_delay_seconds)
+            continue
+
+        time.sleep(args.request_delay_seconds)
         print(
             f"  wrote {len(frame):,} rows | {frame.index.min().isoformat()} -> {frame.index.max().isoformat()}",
             flush=True,
         )
         print()
 
-    succeeded = len(assets) - len(failed)
-    print(f"Download complete: {succeeded}/{len(assets)} succeeded, {len(failed)} failed.")
+    succeeded = len(assets) - len(failed) - len(skipped_existing)
+    print(
+        f"Download complete: {succeeded}/{len(assets)} succeeded, "
+        f"{len(skipped_existing)} skipped (already existed), {len(failed)} failed after "
+        f"{args.retry_count} attempts each."
+    )
     if failed:
-        print("Failed assets (expected for delisted/renamed/acquired tickers, not necessarily a bug):")
+        print(
+            "Failed assets -- each was retried, so a real delisting/rename is more likely "
+            "than a transient hiccup, but not certain. Re-run this exact command with "
+            "--skip-existing to retry only these:"
+        )
         for asset, reason in failed:
             print(f"  - {asset}: {reason}")
 
