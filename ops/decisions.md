@@ -9,6 +9,35 @@ ones — this is what makes "brief me" informative over time._
 - **CEO decision:** [what was said, verbatim if short]
 - **Follow-up:** [any resulting action, and who owns it]
 
+## 2026-09-01 — off-charter alpha-hunt directive; distance-method pairs trading closed
+- **Raised by:** CEO, frustrated with the pace and materiality of governed research to date and
+  demanding an immediately-testable, genuinely untouched strategy outside the normal
+  `charter-campaign` gate sequence — "stop... find the alpha... give me a backtest -- if it
+  passes we move to OOS/Monte Carlo," explicitly instructing staff not to reference any prior
+  research while picking it.
+- **The ask:** produce real, runnable, testable code now, not another gated discussion.
+- **What staff did:** built distance-method (Gatev/Goetzmann/Rouwenhorst) pairs trading —
+  selected specifically for being mechanistically distinct from everything on the board and
+  immediately testable against data already on the CEO's machine, with an automatic negative
+  control (random-pair null) and bootstrap baked into the same run rather than offered as a
+  follow-up. Flagged plainly, only after the first run, that the pick optimized for novelty and
+  testability over prior probability of live edge, and that this doubled as a calibration check
+  on the harness itself. Two real infrastructure bugs surfaced and were fixed before the result
+  could be trusted: mixed tz-aware/DST-spanning timestamp parsing, and — the dominant one — the
+  loader silently mixing US equities with Japanese listings, index tickers, and futures
+  contracts on incompatible trading calendars, which had collapsed the eligible universe to
+  0-then-2 tickers for over a decade and produced a first-pass result that was an artifact, not
+  a finding. Diagnosed via a per-window eligibility diagnostic added specifically to make that
+  class of failure visible rather than guessed at. On the corrected single-market universe (265
+  tickers, 2003-2026), the result was a clean, well-powered negative: real Sharpe -0.98,
+  underperforming **100 of 100** random-pair null repeats, bootstrap P(Sharpe<=0)=100%.
+- **CEO decision:** "close it. What's next? My outburst still stands."
+- **Follow-up (done):** logged CLOSED_NEGATIVE in `campaign-log.md`, including the two
+  infrastructure bugs separately from the strategy verdict since they're reusable findings.
+  **Open:** next candidate not yet picked — held to a sharper selection bar going forward
+  (novel and testable, *and* a stated structural reason to expect it hasn't already been
+  arbitraged away, not novelty/testability alone).
+
 ## 2026-08-30 — charter Campaign #56 (rates/duration trend sleeve)
 - **Raised by:** CEO, directing staff to move from idea discussion to real scoping/backtesting
   on the rates/duration sleeve — the pick from the earlier three-idea review, chosen over an FX
