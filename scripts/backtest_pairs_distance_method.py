@@ -84,11 +84,18 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_price_panel(data_dir: Path) -> pd.DataFrame:
+    """Local {TICKER}_1D.csv files aren't guaranteed to agree on tz-awareness -- some were
+    pulled tz-naive, some tz-aware, depending on when/how each was downloaded (the same
+    inconsistency this repo already hit once in the earnings-drift stage 2 script). Normalizing
+    every series to tz-naive UTC before combining avoids pandas refusing to union a tz-naive
+    index with a tz-aware one when building the panel."""
     frames = {}
     for path in sorted(data_dir.glob("*_1D.csv")):
         ticker = path.stem[: -len("_1D")]
         frame = pd.read_csv(path, parse_dates=["timestamp"])
         frame = frame.sort_values("timestamp").drop_duplicates(subset="timestamp").set_index("timestamp")
+        if frame.index.tz is not None:
+            frame.index = frame.index.tz_convert("UTC").tz_localize(None)
         frames[ticker] = frame["close"]
     if not frames:
         raise FileNotFoundError(f"No {{TICKER}}_1D.csv files found in {data_dir}. Nothing to pair.")
