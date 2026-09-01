@@ -204,6 +204,8 @@ def main() -> None:
     print(f"Window: {args.start} -> {args.end}")
     print()
 
+    failed: list[tuple[str, str]] = []
+
     for position, asset in enumerate(assets, start=1):
         request = DownloadRequest(
             asset=asset,
@@ -214,28 +216,39 @@ def main() -> None:
         )
         path = _output_path(output_dir, request)
         print(f"[{position}/{len(assets)}] {asset} -> {path}", flush=True)
-        raw = yf.download(
-            asset,
-            start=args.start,
-            end=args.end,
-            interval=interval,
-            auto_adjust=args.auto_adjust,
-            progress=False,
-            actions=False,
-            threads=False,
-            group_by="column",
-            multi_level_index=False,
-        )
-        frame = _normalize_download(raw, asset)
-        _write_csv(path, frame, overwrite=args.overwrite)
-        _write_manifest(path, request, frame)
+        try:
+            raw = yf.download(
+                asset,
+                start=args.start,
+                end=args.end,
+                interval=interval,
+                auto_adjust=args.auto_adjust,
+                progress=False,
+                actions=False,
+                threads=False,
+                group_by="column",
+                multi_level_index=False,
+            )
+            frame = _normalize_download(raw, asset)
+            _write_csv(path, frame, overwrite=args.overwrite)
+            _write_manifest(path, request, frame)
+        except Exception as exc:  # noqa: BLE001 -- bulk pulls must not die on one bad ticker
+            print(f"  FAILED: {exc}", flush=True)
+            failed.append((asset, str(exc)))
+            print()
+            continue
         print(
             f"  wrote {len(frame):,} rows | {frame.index.min().isoformat()} -> {frame.index.max().isoformat()}",
             flush=True,
         )
         print()
 
-    print("Download complete")
+    succeeded = len(assets) - len(failed)
+    print(f"Download complete: {succeeded}/{len(assets)} succeeded, {len(failed)} failed.")
+    if failed:
+        print("Failed assets (expected for delisted/renamed/acquired tickers, not necessarily a bug):")
+        for asset, reason in failed:
+            print(f"  - {asset}: {reason}")
 
 
 if __name__ == "__main__":

@@ -136,6 +136,15 @@ def _normalize_ticker(raw: str) -> str:
     return TICKER_DOT_TO_DASH.sub("-", ticker)
 
 
+def _split_tickers(raw_cell: str) -> list[str]:
+    """A single row's add/remove cell can hold multiple comma-joined tickers
+    (several simultaneous changes on one date, e.g. a large reconstitution
+    day) -- split first, normalize each piece independently. A real run
+    surfaced this: cells like "ABNB,BX" or "APO,WDAY,LII" were being passed
+    through whole as one invalid ticker before this fix."""
+    return [_normalize_ticker(piece) for piece in raw_cell.split(",") if piece.strip()]
+
+
 def parse_events(raw_csv: str) -> list[ChangeEvent]:
     reader = csv.DictReader(io.StringIO(raw_csv))
     fieldnames = reader.fieldnames or []
@@ -167,13 +176,11 @@ def parse_events(raw_csv: str) -> list[ChangeEvent]:
         reason = row.get("reason", "") or row.get("Reason", "") or ""
 
         if add_col is not None:
-            added_ticker = _normalize_ticker(row.get(add_col, ""))
-            if added_ticker:
+            for added_ticker in _split_tickers(row.get(add_col, "")):
                 events.append(ChangeEvent(date=iso_date, ticker=added_ticker, action="add", reason=reason))
 
         if remove_col is not None:
-            removed_ticker = _normalize_ticker(row.get(remove_col, ""))
-            if removed_ticker:
+            for removed_ticker in _split_tickers(row.get(remove_col, "")):
                 events.append(ChangeEvent(date=iso_date, ticker=removed_ticker, action="remove", reason=reason))
 
     if skipped:
