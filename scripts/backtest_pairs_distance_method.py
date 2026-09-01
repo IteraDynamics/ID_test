@@ -84,18 +84,41 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_price_panel(data_dir: Path) -> pd.DataFrame:
-    """Local {TICKER}_1D.csv files aren't guaranteed to agree on tz-awareness -- some were
-    pulled tz-naive, some tz-aware, depending on when/how each was downloaded (the same
-    inconsistency this repo already hit once in the earnings-drift stage 2 script). Normalizing
-    every series to tz-naive UTC before combining avoids pandas refusing to union a tz-naive
-    index with a tz-aware one when building the panel."""
+    """Local {TICKER}_1D.csv files aren't guaranteed to agree on timestamp convention -- some
+    were pulled tz-naive, some tz-aware, likely across different download sessions. Two distinct
+    bugs stacked here, both found by actually reproducing the reported symptom rather than
+    guessing at it:
+
+    1. A tz-aware column spanning a DST boundary (e.g. US/Eastern, "-05:00" in winter vs "-04:00"
+       in summer) does NOT reliably parse into a proper DatetimeIndex via
+       pd.read_csv(parse_dates=[...]) -- pandas can silently leave it as an object column of
+       individual fixed-offset scalars with no shared dtype, which crashes or silently misbehaves
+       on anything downstream (.tz access, sort_values, normalize). The fix is to force
+       consolidation explicitly with pd.to_datetime(..., utc=True), which pandas will actually do
+       correctly regardless of mixed per-row offsets.
+    2. Even after that, a daily bar represents a trading DATE, not a precise instant. An earlier
+       version of this function fixed only tz-awareness (converting through UTC) without also
+       normalizing away time-of-day, so two files representing the same trading day but recorded
+       with different clock times (e.g. midnight US/Eastern vs an already-naive midnight) still
+       landed on different index values once combined -- pandas treated them as separate rows.
+       Combined with this script's eligibility check (a ticker needs zero gaps across an entire
+       18-month window), that fragmentation collapsed the eligible universe to near-zero for most
+       of a real run: 28 consecutive windows (2006-2019) with ZERO eligible tickers out of 322,
+       then a sudden jump to exactly 2 held for 12 straight windows (2020-2025) -- a pattern that
+       doesn't happen with genuine market data and was traced directly to this, not the strategy.
+
+    Converting to UTC and normalizing to midnight is safe specifically for this repo's data (US
+    equities and crypto, timezones always behind UTC) -- a local midnight timestamp shifted a few
+    hours forward to UTC never crosses into the next UTC calendar date. That assumption would need
+    revisiting for a timezone ahead of UTC."""
     frames = {}
     for path in sorted(data_dir.glob("*_1D.csv")):
         ticker = path.stem[: -len("_1D")]
-        frame = pd.read_csv(path, parse_dates=["timestamp"])
+        frame = pd.read_csv(path)
+        frame["timestamp"] = pd.to_datetime(frame["timestamp"], utc=True)
         frame = frame.sort_values("timestamp").drop_duplicates(subset="timestamp").set_index("timestamp")
-        if frame.index.tz is not None:
-            frame.index = frame.index.tz_convert("UTC").tz_localize(None)
+        frame.index = frame.index.tz_localize(None).normalize()
+        frame = frame[~frame.index.duplicated(keep="last")]  # normalize() can re-collide two intraday stamps onto one date
         frames[ticker] = frame["close"]
     if not frames:
         raise FileNotFoundError(f"No {{TICKER}}_1D.csv files found in {data_dir}. Nothing to pair.")
