@@ -38,6 +38,29 @@ ones — this is what makes "brief me" informative over time._
   (novel and testable, *and* a stated structural reason to expect it hasn't already been
   arbitraged away, not novelty/testability alone).
 
+## 2026-09-01 — low-volatility factor closed; two off-charter attempts, two clean negatives
+- **Raised by:** CEO, picking staff's second candidate after the pairs closure, with an explicit
+  reservation stated before any code was written: "the crowding caveat doesn't make me feel warm
+  and fuzzy about it not being arbitraged out... but if it's the best you got, I guess let's
+  build it."
+- **The ask:** build and test it anyway, given no zero-new-data candidate with a cleaner
+  "still-undiscovered" story was available.
+- **What staff did:** built the low-volatility factor backtest reusing the pairs campaign's
+  already-validated loading infrastructure directly (not re-derived), with the negative control
+  and window diagnostic included from the start rather than bolted on after a confusing result.
+  Ran clean on the first real-data attempt — no debugging round needed, unlike both prior
+  scripts this session.
+- **Result:** real Sharpe -0.30, underperforming the random-split null's mean and 86% of its
+  repeats, bootstrap P(Sharpe<=0)=92.3%. Clean, well-powered negative, consistent with the CEO's
+  own stated crowding concern going in.
+- **CEO decision:** (pending this session's next turn as of this entry — see `status.md`.)
+- **Follow-up:** logged CLOSED_NEGATIVE in `campaign-log.md`. Worth naming plainly rather than
+  quietly cycling to a third attempt: this is now two real, well-motivated, correctly-tested
+  candidates in one session, both clean negatives, sitting on top of an already-extensive prior
+  campaign board where nearly everything that survived its own gates still landed at modest
+  ($400-1,500/yr) materiality. That pattern is itself informative and worth surfacing to the CEO
+  directly rather than treated as just another data point before immediately trying idea #3.
+
 ## 2026-08-30 — charter Campaign #56 (rates/duration trend sleeve)
 - **Raised by:** CEO, directing staff to move from idea discussion to real scoping/backtesting
   on the rates/duration sleeve — the pick from the earlier three-idea review, chosen over an FX

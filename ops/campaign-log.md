@@ -51,3 +51,35 @@ new entry that references the old one._
   is worth reusing on any future walk-forward script over this same local data.
 - **Risk/PM note (if applicable):** n/a — closed before reaching a risk/sizing/materiality
   review; the mechanism itself did not clear its own negative control.
+
+## Campaign — Low-volatility factor (cross-sectional equity, vol-sorted long/short)
+- **Chartered:** 2026-09-01 — off-charter, same session, CEO's second pick after the pairs
+  closure ("if it's the best you got, I guess let's build it," with an explicit crowding
+  reservation stated upfront, not discovered after the result).
+- **Status:** CLOSED_NEGATIVE
+- **Summary:** Ang/Hodrick/Xing/Zhang-style low-volatility anomaly (a close cousin of
+  Frazzini/Pedersen's beta-neutral "Betting Against Beta") — rank the universe by trailing
+  12-month realized volatility each formation window, long the lowest-vol quintile / short the
+  highest-vol quintile, hold 3 months, walk forward 2003-2026. Reused the pairs campaign's
+  already-fixed loading/eligibility infrastructure directly (import, not re-derivation), with
+  the same automatic negative control (random long/short split of the same universe) and
+  bootstrap baked into the same run. Window diagnostic included from the start this time rather
+  than added reactively.
+- **Result:** Real annualized Sharpe -0.30 across 82/90 valid windows (only the earliest 8
+  windows, 2004-2005, skipped for a thin universe — the same organic early-history pattern as
+  the pairs campaign, not a data artifact; confirmed clean on the first run, no debugging round
+  needed). Real underperformed the random-split null's mean and 86% of its 100 repeats
+  (permutation p=0.8614). Bootstrap: 90% CI [-0.62, +0.05], P(Sharpe<=0)=92.3%.
+- **Red Team verdict:** FAIL, mechanical. Consistent with the CEO's own stated reservation
+  before the build: this factor is not undiscovered — it's one of the most widely traded in
+  finance (billion-dollar ETFs built on it) — and a clean negative here is exactly what
+  substantial crowding since its academic documentation would look like, though the specific
+  simplified construction used (realized-volatility sort, not full beta-neutral leverage
+  adjustment; quarterly full-turnover rebalance) could independently account for some of the
+  gap. Not disentangled here — read as informed reasoning, not a confirmed cause.
+- **What killed it / what kept it alive:** The negative control and bootstrap, run automatically
+  in the same pass — no separate debugging phase was needed this time because the reused
+  infrastructure (ticker-pattern market filter, tz/DST-safe parsing) had already been proven
+  clean on the same universe by the pairs campaign.
+- **Risk/PM note (if applicable):** n/a — closed before reaching a risk/sizing/materiality
+  review.
