@@ -5,7 +5,7 @@ _Overwrite this file each session. This is a snapshot, not a log — history liv
 **Last updated:** 2026-09-02
 
 ## 🔴 Needs CEO decision
-- **Month-end equity/bond rebalancing pressure:** sandbox screen passed its frozen gate and a separately frozen month-end-specificity placebo. CIO recommendation is to promote it into the normal governed research pipeline as a new campaign; CEO approval is required to charter the direction. Promotion handoff: `docs/research/MONTH_END_REBALANCE_PROMOTION_HANDOFF.md`. No Core v1/Core v2/runtime/portfolio/paper/live action is authorized by the sandbox result.
+- None from Campaign #57 at this stage. CEO explicitly authorized promotion on 2026-09-02.
 
 ## 🟡 Blocked (no action available from CEO)
 - Campaign #53 confirmation — CDE live-forward funding holdout accumulating since 2026-08-24; do not open early. Basis ladder is also accumulating toward a full roll-cycle observation.
@@ -13,8 +13,9 @@ _Overwrite this file each session. This is a snapshot, not a log — history liv
 - Core v2 Tier 2 risk framework — Risk/PM owes the real `crash_short_v6` CDE margin schedule by 2026-09-13; 30% interim conservative margin assumption governs until then.
 
 ## 🟢 In motion (no action needed)
+- **Campaign #57 — Month-End Equity/Bond Rebalancing Pressure:** CHARTERED 2026-09-02 after sandbox `SCREEN_POSITIVE` and month-end-specificity placebo pass. Charter: `docs/research/CAMPAIGN_57_MONTH_END_REBALANCE_PRESSURE_CHARTER.md`. Authorized next step is source/calendar feasibility for untouched VTI/BND adjusted daily data plus pre-outcome deterministic power simulation only. Real VTI/BND signal/outcome computation is not yet authorized. Independent Red Team remains mandatory before `ALIVE`.
 - Exploration sandbox adopted 2026-09-01: `docs/ITERA_EXPLORATION_SANDBOX.md`; Amendment 6 added to `docs/ITERA_RESEARCH_PROCESS_AMENDMENTS.md`.
-- Month-end equity/bond rebalancing exploration — `SCREEN_POSITIVE`: 275 valid months, primary 3-session rho -0.2486 (permutation p=0.000999), causal low-minus-high relative-return spread +0.8478% (p=0.001998), all leave-one-year-out aggregate rhos negative. Frozen -5/-10/-15-session placebo windows were all weaker than actual month-end. Awaiting CEO promotion decision; independent Red Team still required before `ALIVE`.
+- Month-end equity/bond rebalancing exploration — `SCREEN_POSITIVE`: 275 valid months, primary 3-session rho -0.2486 (permutation p=0.000999), causal low-minus-high relative-return spread +0.8478% (p=0.001998), all leave-one-year-out aggregate rhos negative. Frozen -5/-10/-15-session placebo windows were all weaker than actual month-end. Promoted to Campaign #57 by explicit CEO authorization.
 - Index-options dealer gamma pressure exploration — `SCREEN_NEGATIVE`: frozen dealer-directional sign story failed all horizons; reversed sign performed better at 2d/5d, so no promotion.
 - Distance-method pairs trading exploration — CLOSED_NEGATIVE: Sharpe -0.98, worse than 100/100 random-pair controls after correcting universe/timestamp infrastructure defects.
 - Low-volatility factor exploration — CLOSED_NEGATIVE: Sharpe -0.30, underperformed random-split control; no reason to continue this implementation.
@@ -31,12 +32,12 @@ _Overwrite this file each session. This is a snapshot, not a log — history liv
 
 ## Open deficiencies (Core v2)
 1. Structurally long-only — provisionally addressed by `crash_short_v6`; evidence/sizing remain judgment-bound and governed as a separate pod.
-2. Single return source — Campaign #53 funding/carry discovery is positive but unconfirmed; defined-risk VRP is promising but execution-gated; month-end rebalancing is now a sandbox-positive candidate awaiting governed-campaign authorization.
+2. Single return source — Campaign #53 funding/carry discovery is positive but unconfirmed; defined-risk VRP is promising but execution-gated; Campaign #57 is now the governed month-end mandate-flow research track.
 3. No rates/fixed-income exposure — Campaign #56 is the active research thread; power gate not yet run.
 4. Single-name crypto concentration — open. Campaign #53's current statistical execution scope is BTC/ETH only and does not solve broad cross-sectional crypto exposure.
 
 ## Research queue
-1. CEO decision: promote or decline month-end equity/bond rebalancing into a governed campaign.
+1. Campaign #57: establish untouched VTI/BND source/calendar support and run the pre-outcome power simulation. Do not inspect confirmatory signal/outcome results before the power gate and explicit later authorization.
 2. Run Campaign #56's real-data regime census and Amendment 1 power simulation in a later session under its charter.
 3. Let Campaign #53 and VRP external clocks accumulate without peeking/routing around their gates.
-4. Continue exploration-sandbox alpha hunting only after the promotion decision is resolved or explicitly deferred.
+4. Continue exploration-sandbox alpha hunting only when it does not interfere with the governed queue above.
