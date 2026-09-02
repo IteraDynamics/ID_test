@@ -1,6 +1,6 @@
 # Exploration Screen — Index-Options Dealer Gamma Pressure
 
-**Status:** FREE SOURCE IDENTIFIED / OCC RECONCILIATION PENDING
+**Status:** FREE SOURCE STRUCTURALLY VALIDATED / OCC HISTORICAL SERIES RECONCILIATION UNAVAILABLE / CAUSAL LAG FROZEN
 **Date:** 2026-09-02
 **Governance:** `docs/ITERA_EXPLORATION_SANDBOX.md`
 
@@ -44,11 +44,30 @@ This is not an exchange-certified or institutional vendor dataset. The upstream 
 - it is not accepted as future confirmation/production-grade evidence merely because it is large;
 - any promoted campaign would need a fresh source-governance decision.
 
-### OCC official reference
+### OCC official semantics and historical-reconciliation correction
 
-OCC publicly exposes a daily open-interest batch endpoint and states that displayed/reported open interest is derived from the **previous day's settlement**. For example, an OCC report date of 2024-01-03 should reconcile to the mirror's 2024-01-02 observation, not to 2024-01-03 itself.
+OCC's public **Series Search** states that displayed open-interest figures are derived from the **previous day's settlement** and exposes current series/contract-date/strike call and put open interest.
 
-That timing convention is the causal boundary for this screen. A failure to reconcile OI semantics is `SCREEN_INVALID`, not a negative alpha finding.
+The previously attempted OCC `daily-open-interest` batch endpoint was incorrectly assumed to be a historical series-level download. The operator run on 2026-09-02 showed the downloaded file begins with a title row such as `Daily Open Interest - January 2024`; the endpoint is a **monthly aggregate daily-open-interest report**, not a contract-level historical SPY file. It therefore cannot support an expiration/strike/type exact-match reconciliation.
+
+The documented OCC Series Search batch interface accepts `symbolType` and `symbol` but does not expose a historical `reportDate` parameter. Therefore an exact free historical contract-level OCC reconciliation for 2024 cannot be performed through the documented public interface.
+
+This is a correction to the source-governance plan, not an alpha result and not evidence that the mirror is wrong.
+
+### Frozen causal timing rule
+
+To remove ambiguity about whether the mirror's observation-date open interest reflects same-day EOD or prior-settlement OI, the sandbox will use a deliberately conservative timing rule:
+
+> **Every dealer-gamma state computed from mirror observation date `t` is lagged by one full trading day before it may be associated with any forward return or path outcome.**
+
+No state from observation date `t` may be used to explain or predict the return occurring on `t`.
+
+This makes the screen causal under either plausible labeling convention:
+
+- if mirror OI on `t` is prior-settlement OI, the extra day is conservative;
+- if mirror OI on `t` is same-day EOD OI, the state is first actionable on `t+1`.
+
+This lag is frozen before any dealer-gamma outcome is inspected and may not be relaxed after seeing results.
 
 ### Commercial/institutional sources — not pursued
 
@@ -67,7 +86,7 @@ A result that exists only under one arbitrary sign convention is not enough for 
 
 ## Source-validation implementation
 
-`scripts/probe_free_options_history.py` implements the reproducible mirror source gate. For a selected year it:
+`scripts/probe_free_options_history.py` implements the structural source gate. For a selected year it:
 
 1. downloads one yearly SPY Parquet file from the public preservation mirror;
 2. records byte size and SHA-256;
@@ -77,71 +96,66 @@ A result that exists only under one arbitrary sign convention is not enough for 
 6. fails closed on invalid call/put types, negative OI, or expiration-before-observation rows;
 7. writes a deterministic JSON validation report under `artifacts/free_options_history_probe/`.
 
+`scripts/reconcile_free_options_oi_with_occ.py` now correctly diagnoses the OCC aggregate report and records the frozen one-trading-day causal rule rather than pretending the aggregate file contains contract-level rows.
+
 No runtime, strategy, portfolio, NAV, order, or exposure path is touched.
 
-## Multi-year structural validation — PASS
+## Structural validation results
 
-Three deliberately different years were checked: modern 2024, crisis 2020, and earliest-history 2008.
+### 2024 — PASS
 
-### 2024
-
-- status `USABLE`;
 - 2,292,800 rows;
-- 253 dates, 286 expirations, 495 strikes;
-- 0 missing OI/gamma/IV;
-- 0 invalid type, negative OI, or expiry-before-observation rows;
-- 479,442 zero-OI rows;
+- 253 distinct trading dates;
+- 286 distinct expirations;
+- 495 distinct strikes;
+- 0 missing OI/gamma/IV rows;
+- 0 invalid call/put rows;
+- 0 negative OI rows;
+- 0 expiry-before-observation rows;
 - SHA-256 `d9bf7c14b5bfb01cf03bc413773d30eee14026afc377e2daf3d0691a92a0b38d`.
 
-### 2020
+### 2020 crisis year — PASS
 
-- status `USABLE`;
 - 2,346,116 rows;
-- 252 dates, 194 expirations, 460 strikes;
-- 0 missing OI/gamma/IV;
-- 0 invalid type, negative OI, or expiry-before-observation rows;
-- 463,377 zero-OI rows;
+- 252 distinct trading dates;
+- 194 distinct expirations;
+- 460 distinct strikes;
+- 0 missing OI/gamma/IV rows;
+- 0 invalid call/put rows;
+- 0 negative OI rows;
+- 0 expiry-before-observation rows;
 - SHA-256 `4e69fbbcb55139a84a3d58b85c87982fce52ec3044cbb510d422c4061aa1e5eb`.
 
-### 2008
+### 2008 earliest history — PASS
 
-- status `USABLE`;
 - 515,605 rows;
-- 253 dates, 32 expirations, 190 strikes;
-- 0 missing OI/gamma/IV;
-- 0 invalid type, negative OI, or expiry-before-observation rows;
-- 92,935 zero-OI rows;
-- calls 257,941 vs puts 257,664 (not forced symmetry; accepted as observed early-history structure);
+- 253 distinct trading dates;
+- 32 distinct expirations;
+- 190 distinct strikes;
+- 0 missing OI/gamma/IV rows;
+- 0 invalid call/put rows;
+- 0 negative OI rows;
+- 0 expiry-before-observation rows;
 - SHA-256 `78acbfa15264b197b4bf77dca5f8f03d218a440249259d9d6d28f1f7a1f21194`.
 
-Interpretation: the public mirror is internally coherent across modern, crisis, and earliest-history samples. Structural validation is complete. This does not by itself establish that its OI observation-date semantics match OCC.
-
-## OCC reconciliation implementation
-
-`scripts/reconcile_free_options_oi_with_occ.py` is the final pre-alpha source-governance probe. It:
-
-1. downloads OCC's official daily open-interest CSV for a selected report date;
-2. records the OCC payload SHA-256 and raw CSV;
-3. normalizes supported OCC schema variants without silently guessing unresolved fields;
-4. filters SPY and constructs expiration/strike/call-put/open-interest keys;
-5. loads the mirror for an explicitly supplied prior trading date;
-6. compares common contract keys and exact OI values;
-7. returns `RECONCILES` only with at least 100 common contracts, >=95% exact OI identity, and >=80% OCC-key overlap.
-
-If OCC changes the historical CSV schema in a way the probe cannot resolve, it returns the observed columns and `OCC_SCHEMA_UNRESOLVED_OR_NO_SYMBOL_ROWS` rather than fabricating a comparison.
+Interpretation: the mirror is internally and structurally consistent across modern, crisis, and earliest-history samples. This remains sandbox-grade source validation, not confirmation-grade provenance.
 
 ## Current classification
 
-`SCREEN_INCONCLUSIVE — OCC RECONCILIATION PENDING`
+`SCREEN_INCONCLUSIVE — SOURCE VALIDATED FOR SANDBOX / ALPHA SCREEN NOT YET RUN`
 
-The multi-year structural source gate is now complete. The only remaining source-governance condition before constructing the gamma-pressure alpha screen is one successful OCC prior-settlement reconciliation.
+The free source is structurally usable across all three stress samples. Exact historical OCC contract-level reconciliation is unavailable through the attempted free batch endpoint, so the conservative one-trading-day lag above is now the governing causal safeguard.
 
 ## Next evidence
 
-With the already-downloaded 2024 mirror file, run:
+Build and run the actual dealer-gamma sandbox screen using:
 
-```powershell
-python scripts/reconcile_free_options_oi_with_occ.py --occ-report-date 2024-01-03 --mirror-date 2024-01-02 --year 2024
-```
+- only mirror data that passed the structural gate;
+- one full trading-day lag from mirror observation to usable state;
+- next 1, 2, and 5 trading-day outcomes;
+- a sign-free gamma/OI geometry measure plus at least two explicit dealer-sign conventions;
+- shuffled-state negative controls;
+- year/regime decomposition so a single crisis cannot dominate;
+- no parameter tuning after outcome inspection.
 
-OCC states that the 2024-01-03 report reflects OI following the previous trading day's settlement, so 2024-01-02 is the causal mirror comparison date. If this returns `RECONCILES`, source validation is sufficient for sandbox alpha construction. If it returns a schema diagnostic, inspect that diagnostic and adapt only the parser—not the economic hypothesis. If it returns a genuine OI mismatch after correct schema resolution, classify the data path `SCREEN_INVALID` and stop.
+A `SCREEN_POSITIVE` result only earns a governed campaign. It authorizes no Core v1 change, no Core v2 inclusion, no portfolio weight, and no paper/live action.
