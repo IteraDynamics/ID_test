@@ -40,15 +40,14 @@ new entry that references the old one._
 - **What killed it / what kept it alive:** Two real infrastructure bugs were found and fixed
   along the way before the result could be trusted — worth recording separately from the
   strategy verdict since they'll recur if not fixed at the source: (1) mixed tz-aware/tz-naive
-  and DST-spanning timestamps across locally-downloaded `{TICKER}_1D.csv` files didn't reliably
-  parse into a `DatetimeIndex`; (2) the loader was silently mixing plain US equities with
-  Japanese listings, index tickers, and futures contracts from the same `data/` directory,
-  which — on incompatible trading calendars — collapsed the eligible pairing universe to
-  0-then-exactly-2 tickers for 13+ years and produced a first-pass "result" that was actually
-  an artifact, not a strategy finding. Once both were fixed and the universe restricted to a
-  single coherent market, the negative held cleanly. The per-window eligibility diagnostic
-  added specifically to catch this class of bug (`scripts/backtest_pairs_distance_method.py`)
-  is worth reusing on any future walk-forward script over this same local data.
+  and DST-spanning timestamp parsing, and — the dominant one — the
+  loader silently mixing US equities with Japanese listings, index tickers, and futures
+  contracts on incompatible trading calendars, which had collapsed the eligible universe to
+  0-then-2 tickers for over a decade and produced a first-pass result that was an artifact, not
+  a finding. Diagnosed via a per-window eligibility diagnostic added specifically to make that
+  class of failure visible rather than guessed at. On the corrected single-market universe (265
+  tickers, 2003-2026), the result was a clean, well-powered negative: real Sharpe -0.98,
+  underperforming **100 of 100** random-pair null repeats, bootstrap P(Sharpe<=0)=100%.
 - **Risk/PM note (if applicable):** n/a — closed before reaching a risk/sizing/materiality
   review; the mechanism itself did not clear its own negative control.
 
@@ -61,10 +60,10 @@ new entry that references the old one._
   Frazzini/Pedersen's beta-neutral "Betting Against Beta") — rank the universe by trailing
   12-month realized volatility each formation window, long the lowest-vol quintile / short the
   highest-vol quintile, hold 3 months, walk forward 2003-2026. Reused the pairs campaign's
-  already-fixed loading/eligibility infrastructure directly (import, not re-derivation), with
-  the same automatic negative control (random long/short split of the same universe) and
-  bootstrap baked into the same run. Window diagnostic included from the start this time rather
-  than added reactively.
+  already-validated loading infrastructure directly (import, not re-derivation), with the
+  same automatic negative control (random long/short split of the same universe) and bootstrap
+  baked into the same run. Window diagnostic included from the start this time rather than
+  bolted on after a confusing result.
 - **Result:** Real annualized Sharpe -0.30 across 82/90 valid windows (only the earliest 8
   windows, 2004-2005, skipped for a thin universe — the same organic early-history pattern as
   the pairs campaign, not a data artifact; confirmed clean on the first run, no debugging round
@@ -111,3 +110,10 @@ new entry that references the old one._
 - **Power gate:** at least 80% estimated power for the joint confirmatory gate at a central injected effect no larger than 50% of the sandbox discovery ceiling absent separate external justification. If underpowered, stop before inspecting VTI/BND outcomes.
 - **Red Team verdict:** not yet eligible. The sandbox placebo was an in-thread adversarial check, not an independent Red Team review. Genuine independent review remains mandatory before `ALIVE`.
 - **Risk/PM note:** deferred until after valid confirmation and independent Red Team. No Core v2 composition, sizing, or capital inference is authorized.
+
+## Campaign #57 correction — VTI/BND 50/25/25 historical validation architecture underpowered
+- **Recorded:** 2026-09-02 after metadata-only/calendar-only preflight; no VTI/BND close, return, signal, or outcome values were read.
+- **Status:** HISTORICAL_ARCHITECTURE_UNDERPOWERED; hypothesis remains unresolved.
+- **Source/calendar:** 232 valid common months from 2007-05 through 2026-08. Frozen chronological partitioning produced 116 development months (2007-05 to 2016-12), 58 OOS months (2017-01 to 2021-10), and 58 sealed final-holdout months (2021-11 to 2026-08).
+- **Power result:** at the frozen central 50%-haircut effect, joint-gate power was only 16.2% for OOS and 18.0% for final holdout versus the required 80%. At 40% haircut, OOS/holdout power was 14.4%/9.0%; at 25% haircut, 8.0%/7.6%.
+- **Interpretation:** this is a design failure, not an alpha failure. The VTI/BND history remains fully unspent as predictive evidence. The frozen charter prohibits enlarging, merging, or date-shifting these partitions after source acquisition to rescue power. A redesigned validation architecture requires a new pre-outcome authorization; until then no VTI/BND outcomes may be inspected.
