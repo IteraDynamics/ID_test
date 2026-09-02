@@ -117,3 +117,39 @@ new entry that references the old one._
 - **Source/calendar:** 232 valid common months from 2007-05 through 2026-08. Frozen chronological partitioning produced 116 development months (2007-05 to 2016-12), 58 OOS months (2017-01 to 2021-10), and 58 sealed final-holdout months (2021-11 to 2026-08).
 - **Power result:** at the frozen central 50%-haircut effect, joint-gate power was only 16.2% for OOS and 18.0% for final holdout versus the required 80%. At 40% haircut, OOS/holdout power was 14.4%/9.0%; at 25% haircut, 8.0%/7.6%.
 - **Interpretation:** this is a design failure, not an alpha failure. The VTI/BND history remains fully unspent as predictive evidence. The frozen charter prohibits enlarging, merging, or date-shifting these partitions after source acquisition to rescue power. A redesigned validation architecture requires a new pre-outcome authorization; until then no VTI/BND outcomes may be inspected.
+
+## Campaign #57 — independent Red Team review of the long-history confirmation
+- **Reviewed:** 2026-09-02, as a genuinely independent subagent context (separate from CIO/Quant), per the mandatory
+  gate in `.claude/skills/itera-staff/agents/red-team.md`. Withheld the prior in-thread (non-independent) staff
+  review until after forming its own verdict, so it could not anchor on the existing interpretation.
+- **Verdict:** `CONDITIONAL_PASS_TO_VTI_BND_REPLICATION`. Not a rubber stamp and not a kill: the reviewer actively
+  tried to break the result — independently reproducing the 85.2%/69.6%/37.0% power figures from the frozen seed and
+  calendar alone, proving the primary test lookahead-clean with a corruption canary, and empirically verifying the
+  block-permutation null is correctly sized (5.7% Type-I error against a nominal 5% under deliberately severe
+  synthetic era heterogeneity) — and found no defect fatal to the primary result.
+- **Material corrections recorded, nothing re-run or re-gated:** (1) the VFINX/VBMFX long-history sample overlaps
+  the original SPY/AGG sandbox discovery sample by 57.8% of its months (275/476); VFINX tracks the same index as
+  SPY and VBMFX the same universe as AGG, so this is closer to a long-history consistency check on largely the same
+  market events than an independent confirmation — the genuinely new pre-2003 portion (n=201) does not reach
+  significance on its own under any plausible assumption. (2) Amendment 2's stated reason for replacing the dual
+  co-primary statistical gate with a single primary test — that the joint gate was infeasible with available
+  history — is wrong at the long-history sample size: independently re-run, the dual gate has ~75.5% power at
+  n=476, not the 16-18% that actually killed the earlier, differently-partitioned 50/25/25 architecture. (3) three
+  of the five frozen robustness diagnostics (LOYO, top-10 trim, tercile-spread sign) had ~99-100% chance of passing
+  regardless of whether the mechanism is real, and are not meaningful confirmatory evidence on their own; the
+  era-consistency diagnostic that actually failed (the 1990s) had only ~51.5% power to pass even under a perfectly
+  real, correctly-sized effect, so its failure is reclassified as largely uninformative rather than either
+  "harmless" or "a fatal instability" — though the full era sequence (1980s strongest, 2020s second-weakest) does
+  not match the campaign's own stated growth-in-rebalancing-AUM mechanism story and that mismatch is recorded
+  plainly rather than rationalized away.
+- **Newly authorized:** none. VTI/BND remains sealed. The pass is conditional on: closing artifact/provenance gaps
+  (no raw JSON or source CSVs survived this session — `artifacts/*`/`data/*.csv` are gitignored and every reachable
+  price-data source, Yahoo/Vanguard/SEC EDGAR, returned HTTP 403 through this environment's proxy when checked);
+  pre-registering a quantitative VTI/BND expectation band (rho in [-0.32, -0.10], not a bare sign check, since
+  VTI/BND's span sits entirely inside the long-history sample against near-identical assets and a sign-only check
+  would be ~98% likely to pass regardless of real transportability) before any VTI/BND return is read; and adding
+  unit tests to the Campaign #57 code matching the practice already established by Campaigns #50-53.
+- **Not authorized by this review:** any `ALIVE` classification, Risk/PM review, Core v2 composition/weight
+  decisions, economic materiality analysis (not yet performed for this campaign at all), or any Core v1/runtime/
+  portfolio/paper/live/capital action.
+- **Full record:** `docs/research/CAMPAIGN_57_INDEPENDENT_RED_TEAM_REVIEW_20260902.md`.

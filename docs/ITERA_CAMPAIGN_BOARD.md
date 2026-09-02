@@ -553,3 +553,30 @@ The sandbox SPY/AGG sample is discovery-contaminated and cannot serve as an unto
 - any change to Core v1, which remains frozen.
 
 A genuinely independent Red Team review remains mandatory before this candidate may be called `ALIVE`; Risk/PM and explicit CEO approval remain mandatory before any Core v2 composition/weight or capital decision.
+
+## Correction — 2026-09-02: independent Red Team verdict on the long-history confirmation
+
+The mandatory independent Red Team review (run as a genuinely separate subagent context, withheld the prior
+non-independent in-thread review until after forming its own verdict) is complete. Verdict:
+`CONDITIONAL_PASS_TO_VTI_BND_REPLICATION`. Full record: `docs/research/CAMPAIGN_57_INDEPENDENT_RED_TEAM_REVIEW_20260902.md`.
+
+No defect was found fatal to the primary result — the lookahead-clean design, the correct null calibration, and the
+pre-outcome power claim were each independently reproduced or tested by the reviewer, not merely re-read. Two
+material corrections were made to the existing record without re-running or re-gating anything: (1) the VFINX/VBMFX
+long-history sample overlaps the original SPY/AGG discovery sample by 57.8% of its months, and the genuinely new
+pre-2003 portion is not independently significant on its own — this is a long-history consistency check with a weak
+new-evidence tail, not an independent confirmation; (2) Amendment 2's stated reason for weakening the statistical
+gate (claimed ~17% power for the original dual-primary test) is wrong at the actual long-history sample size — that
+gate would have had ~75.5% power at n=476, not 16-18%. The 1990s era weakness is reclassified as largely
+uninformative (the diagnostic that flagged it had only ~51.5% chance of passing even under a perfectly real,
+correctly-sized effect) rather than either "harmless" or "a fatal instability."
+
+**Newly authorized:** none. VTI/BND remains sealed. The Red Team pass is conditional on closing artifact/provenance
+gaps (no raw JSON/source data survived this session; network access to every reachable price source was blocked)
+and pre-registering a quantitative VTI/BND expectation band (rho in [-0.32, -0.10], not a bare sign check) before
+any VTI/BND return is read. Full conditions in the linked record.
+
+**Still not authorized:** VTI/BND return/signal/outcome computation, any `ALIVE` classification, Risk/PM review
+(gated on Red Team, which has now passed but with the above conditions unmet), Core v2 composition/weight decisions,
+economic materiality analysis has not yet been performed for this campaign, and all standing Core v1/runtime/
+portfolio/paper/live/capital prohibitions remain unchanged.
