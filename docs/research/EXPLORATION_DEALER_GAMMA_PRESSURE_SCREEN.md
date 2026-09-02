@@ -1,6 +1,6 @@
 # Exploration Screen — Index-Options Dealer Gamma Pressure
 
-**Status:** FREE SOURCE IDENTIFIED / SOURCE VALIDATION PENDING
+**Status:** FREE SOURCE IDENTIFIED / MULTI-YEAR SOURCE VALIDATION IN PROGRESS
 **Date:** 2026-09-02
 **Governance:** `docs/ITERA_EXPLORATION_SANDBOX.md`
 
@@ -21,7 +21,7 @@ No existing historical SPX/SPY option-chain/open-interest/gamma dataset or imple
 
 ### Free historical source identified
 
-A public preservation mirror of the Philipp Dubach historical options dataset is available on GitHub (`SaidBahaDev/options-dataset-hist`) and exposes yearly SPY Parquet files covering **2008-2025**. The published schema contains exactly the fields needed for a sandbox dealer-gamma proxy:
+A public preservation mirror of the Philipp Dubach historical options dataset is available on GitHub and exposes yearly SPY Parquet files covering **2008-2025**. The published schema contains exactly the fields needed for a sandbox dealer-gamma proxy:
 
 - observation `date`;
 - `expiration`;
@@ -32,13 +32,13 @@ A public preservation mirror of the Philipp Dubach historical options dataset is
 - `gamma`;
 - bid/ask/volume and additional Greeks.
 
-The mirror states that SPY contains about **24.7 million contract-day rows** across roughly 4,500 trading days. A separate public mirror describes the rows as end-of-day chain observations and says files were recovered from surviving Git LFS storage with hashes checked against the original LFS pointers.
+The mirror states that SPY contains about **24.7 million contract-day rows** across roughly 4,500 trading days. A public preservation mirror describes the rows as end-of-day chain observations and says files were recovered from surviving Git LFS storage with hashes checked against the original LFS pointers.
 
 This clears the **cost/access** blocker for sandbox purposes: no paid data subscription is required to attempt the screen.
 
 ### Provenance caveat
 
-This is not an exchange-certified or institutional vendor dataset. A surviving mirror explicitly notes that the upstream dataset's underlying market-data sourcing was not fully documented. Therefore:
+This is not an exchange-certified or institutional vendor dataset. The upstream dataset's underlying market-data sourcing is not sufficiently documented for confirmation-grade use. Therefore:
 
 - it is acceptable only for a cheap sandbox screen after structural validation;
 - it is not accepted as future confirmation/production-grade evidence merely because it is large;
@@ -67,11 +67,11 @@ A result that exists only under one arbitrary sign convention is not enough for 
 
 ## Source-validation implementation
 
-`scripts/probe_free_options_history.py` now implements the first reproducible source gate. For a selected year it:
+`scripts/probe_free_options_history.py` implements the first reproducible source gate. For a selected year it:
 
-1. downloads one yearly SPY Parquet file from the public mirror;
+1. downloads one yearly SPY Parquet file from the public preservation mirror;
 2. records byte size and SHA-256;
-3. verifies required columns;
+3. verifies Parquet magic bytes and required columns;
 4. reports date/expiration/strike breadth;
 5. inventories missing OI, gamma, and IV;
 6. fails closed on invalid call/put types, negative OI, or expiration-before-observation rows;
@@ -79,18 +79,49 @@ A result that exists only under one arbitrary sign convention is not enough for 
 
 No runtime, strategy, portfolio, NAV, order, or exposure path is touched.
 
+## 2024 structural validation — PASS
+
+Operator run on 2026-09-02:
+
+```powershell
+python scripts/probe_free_options_history.py --year 2024
+```
+
+Result: `USABLE`.
+
+Observed source properties:
+
+- 2,292,800 rows;
+- 253 distinct trading dates from 2024-01-02 through 2024-12-31;
+- 286 distinct expirations;
+- 495 distinct strikes;
+- 1,146,400 call rows and 1,146,400 put rows;
+- 0 missing open-interest rows;
+- 0 missing gamma rows;
+- 0 missing IV rows;
+- 0 invalid call/put rows;
+- 0 negative-open-interest rows;
+- 0 expiration-before-observation rows;
+- 479,442 zero-open-interest rows (not itself an error; retained as a source-quality characteristic to handle explicitly in the later screen);
+- downloaded file size 56,948,550 bytes;
+- Parquet magic bytes valid;
+- SHA-256 `d9bf7c14b5bfb01cf03bc413773d30eee14026afc377e2daf3d0691a92a0b38d`.
+
+Interpretation: 2024 is structurally clean enough to continue source validation. This is not yet an alpha result and does not resolve the remaining provenance/OCC-timing question.
+
 ## Current classification
 
-`SCREEN_INCONCLUSIVE — SOURCE VALIDATION PENDING`
+`SCREEN_INCONCLUSIVE — MULTI-YEAR SOURCE VALIDATION IN PROGRESS`
 
-This replaces the earlier `DATA BLOCKED` classification. A free candidate source now exists, but no dealer-gamma alpha result is authorized until the source probe returns structurally usable data and a small OCC timing/series spot-check is completed.
+The prior `DATA BLOCKED` state remains superseded. The free path is now structurally usable for 2024. Before any dealer-gamma alpha screen, the same source gate must pass one crisis-era year and one earliest-history year, then a small OCC timing/series spot-check must reconcile the OI semantics.
 
 ## Next evidence
 
 Run:
 
 ```powershell
-python scripts/probe_free_options_history.py --year 2024
+python scripts/probe_free_options_history.py --year 2020
+python scripts/probe_free_options_history.py --year 2008
 ```
 
-If `USABLE`, repeat on one crisis-era year (2020) and one early-history year (2008 or 2009). If all three pass structural validation, proceed to the actual dealer-gamma sandbox screen with the OI timing lag enforced. If the mirror fails schema, chronology, or OCC reconciliation, classify the data path `SCREEN_INVALID` and park the idea without purchasing data.
+If 2008 is unavailable or structurally defective, use 2009 as the early-history fallback rather than silently relaxing the test. If 2020 and 2008/2009 both pass, proceed to the OCC spot-check and only then build the dealer-gamma sandbox screen with the OI timing lag enforced.
