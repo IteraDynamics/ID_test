@@ -201,3 +201,9 @@ ones — this is what makes "brief me" informative over time._
   - The design doc's "Needs-CEO item" is now marked RESOLVED. Prod tracks the reviewed mainline.
   - Paper record integrity unaffected — parity / shadow-runtime gates prove the sidecar write is
     byte-neutral for `state.json` / `fills.jsonl` / NAV / fill count.
+
+## 2026-09-02 — promote month-end rebalancing into Campaign #57
+- **Raised by:** CIO / Chief of Staff after the month-end equity/bond rebalancing sandbox screen passed its frozen gate and the separately frozen -5/-10/-15-session placebo test returned `MONTH_END_SPECIFICITY_SURVIVES`.
+- **The ask:** authorize promotion of Month-End Equity/Bond Rebalancing Pressure from `SCREEN_POSITIVE` into the normal governed research pipeline as a new campaign.
+- **CEO decision:** "Authorize promotion".
+- **Follow-up (done):** Campaign #57 chartered in `docs/research/CAMPAIGN_57_MONTH_END_REBALANCE_PRESSURE_CHARTER.md`; authoritative campaign board updated; campaign history and current status updated. Sandbox SPY/AGG evidence is explicitly discovery-contaminated and may not be reused as confirmation. Authorized next step is limited to untouched VTI/BND source/calendar feasibility and a pre-outcome deterministic power simulation. No VTI/BND predictive outcome computation, economic backtest, Core v2 composition/weight, capital, paper/live action, or Core v1 change is authorized by this decision.
