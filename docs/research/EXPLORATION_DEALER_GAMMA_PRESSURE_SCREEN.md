@@ -1,6 +1,6 @@
 # Exploration Screen — Index-Options Dealer Gamma Pressure
 
-**Status:** FREE SOURCE IDENTIFIED / MULTI-YEAR SOURCE VALIDATION IN PROGRESS
+**Status:** FREE SOURCE IDENTIFIED / OCC RECONCILIATION PENDING
 **Date:** 2026-09-02
 **Governance:** `docs/ITERA_EXPLORATION_SANDBOX.md`
 
@@ -46,9 +46,9 @@ This is not an exchange-certified or institutional vendor dataset. The upstream 
 
 ### OCC official reference
 
-OCC publicly exposes daily open-interest reports and series search. OCC states that reported open interest is derived from the **previous day's settlement**. That timing convention is the causal boundary for this screen: an OI state associated with trading date `t` must not be used earlier than it would have been observable under the prior-settlement publication rule.
+OCC publicly exposes a daily open-interest batch endpoint and states that displayed/reported open interest is derived from the **previous day's settlement**. For example, an OCC report date of 2024-01-03 should reconcile to the mirror's 2024-01-02 observation, not to 2024-01-03 itself.
 
-The public dataset must be spot-checked against OCC on overlapping dates/series before any alpha result is interpreted. A failure to reconcile OI semantics is `SCREEN_INVALID`, not a negative alpha finding.
+That timing convention is the causal boundary for this screen. A failure to reconcile OI semantics is `SCREEN_INVALID`, not a negative alpha finding.
 
 ### Commercial/institutional sources — not pursued
 
@@ -67,7 +67,7 @@ A result that exists only under one arbitrary sign convention is not enough for 
 
 ## Source-validation implementation
 
-`scripts/probe_free_options_history.py` implements the first reproducible source gate. For a selected year it:
+`scripts/probe_free_options_history.py` implements the reproducible mirror source gate. For a selected year it:
 
 1. downloads one yearly SPY Parquet file from the public preservation mirror;
 2. records byte size and SHA-256;
@@ -79,49 +79,69 @@ A result that exists only under one arbitrary sign convention is not enough for 
 
 No runtime, strategy, portfolio, NAV, order, or exposure path is touched.
 
-## 2024 structural validation — PASS
+## Multi-year structural validation — PASS
 
-Operator run on 2026-09-02:
+Three deliberately different years were checked: modern 2024, crisis 2020, and earliest-history 2008.
 
-```powershell
-python scripts/probe_free_options_history.py --year 2024
-```
+### 2024
 
-Result: `USABLE`.
-
-Observed source properties:
-
+- status `USABLE`;
 - 2,292,800 rows;
-- 253 distinct trading dates from 2024-01-02 through 2024-12-31;
-- 286 distinct expirations;
-- 495 distinct strikes;
-- 1,146,400 call rows and 1,146,400 put rows;
-- 0 missing open-interest rows;
-- 0 missing gamma rows;
-- 0 missing IV rows;
-- 0 invalid call/put rows;
-- 0 negative-open-interest rows;
-- 0 expiration-before-observation rows;
-- 479,442 zero-open-interest rows (not itself an error; retained as a source-quality characteristic to handle explicitly in the later screen);
-- downloaded file size 56,948,550 bytes;
-- Parquet magic bytes valid;
+- 253 dates, 286 expirations, 495 strikes;
+- 0 missing OI/gamma/IV;
+- 0 invalid type, negative OI, or expiry-before-observation rows;
+- 479,442 zero-OI rows;
 - SHA-256 `d9bf7c14b5bfb01cf03bc413773d30eee14026afc377e2daf3d0691a92a0b38d`.
 
-Interpretation: 2024 is structurally clean enough to continue source validation. This is not yet an alpha result and does not resolve the remaining provenance/OCC-timing question.
+### 2020
+
+- status `USABLE`;
+- 2,346,116 rows;
+- 252 dates, 194 expirations, 460 strikes;
+- 0 missing OI/gamma/IV;
+- 0 invalid type, negative OI, or expiry-before-observation rows;
+- 463,377 zero-OI rows;
+- SHA-256 `4e69fbbcb55139a84a3d58b85c87982fce52ec3044cbb510d422c4061aa1e5eb`.
+
+### 2008
+
+- status `USABLE`;
+- 515,605 rows;
+- 253 dates, 32 expirations, 190 strikes;
+- 0 missing OI/gamma/IV;
+- 0 invalid type, negative OI, or expiry-before-observation rows;
+- 92,935 zero-OI rows;
+- calls 257,941 vs puts 257,664 (not forced symmetry; accepted as observed early-history structure);
+- SHA-256 `78acbfa15264b197b4bf77dca5f8f03d218a440249259d9d6d28f1f7a1f21194`.
+
+Interpretation: the public mirror is internally coherent across modern, crisis, and earliest-history samples. Structural validation is complete. This does not by itself establish that its OI observation-date semantics match OCC.
+
+## OCC reconciliation implementation
+
+`scripts/reconcile_free_options_oi_with_occ.py` is the final pre-alpha source-governance probe. It:
+
+1. downloads OCC's official daily open-interest CSV for a selected report date;
+2. records the OCC payload SHA-256 and raw CSV;
+3. normalizes supported OCC schema variants without silently guessing unresolved fields;
+4. filters SPY and constructs expiration/strike/call-put/open-interest keys;
+5. loads the mirror for an explicitly supplied prior trading date;
+6. compares common contract keys and exact OI values;
+7. returns `RECONCILES` only with at least 100 common contracts, >=95% exact OI identity, and >=80% OCC-key overlap.
+
+If OCC changes the historical CSV schema in a way the probe cannot resolve, it returns the observed columns and `OCC_SCHEMA_UNRESOLVED_OR_NO_SYMBOL_ROWS` rather than fabricating a comparison.
 
 ## Current classification
 
-`SCREEN_INCONCLUSIVE — MULTI-YEAR SOURCE VALIDATION IN PROGRESS`
+`SCREEN_INCONCLUSIVE — OCC RECONCILIATION PENDING`
 
-The prior `DATA BLOCKED` state remains superseded. The free path is now structurally usable for 2024. Before any dealer-gamma alpha screen, the same source gate must pass one crisis-era year and one earliest-history year, then a small OCC timing/series spot-check must reconcile the OI semantics.
+The multi-year structural source gate is now complete. The only remaining source-governance condition before constructing the gamma-pressure alpha screen is one successful OCC prior-settlement reconciliation.
 
 ## Next evidence
 
-Run:
+With the already-downloaded 2024 mirror file, run:
 
 ```powershell
-python scripts/probe_free_options_history.py --year 2020
-python scripts/probe_free_options_history.py --year 2008
+python scripts/reconcile_free_options_oi_with_occ.py --occ-report-date 2024-01-03 --mirror-date 2024-01-02 --year 2024
 ```
 
-If 2008 is unavailable or structurally defective, use 2009 as the early-history fallback rather than silently relaxing the test. If 2020 and 2008/2009 both pass, proceed to the OCC spot-check and only then build the dealer-gamma sandbox screen with the OI timing lag enforced.
+OCC states that the 2024-01-03 report reflects OI following the previous trading day's settlement, so 2024-01-02 is the causal mirror comparison date. If this returns `RECONCILES`, source validation is sufficient for sandbox alpha construction. If it returns a schema diagnostic, inspect that diagnostic and adapt only the parser—not the economic hypothesis. If it returns a genuine OI mismatch after correct schema resolution, classify the data path `SCREEN_INVALID` and stop.
