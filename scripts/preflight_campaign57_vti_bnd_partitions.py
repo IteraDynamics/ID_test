@@ -13,15 +13,16 @@ Frozen before VTI/BND outcome inspection:
 - fixed seed 20260957;
 - OOS and final holdout each require >=80% estimated joint-gate power at the central effect.
 
-The synthetic generator is calibrated so the latent bivariate-normal population
-approximately matches BOTH the haircutted Spearman relationship and the haircutted
-low-minus-high tercile spread. It then applies the exact Campaign #57 directional,
-permutation, causal-tercile, and leave-one-year-out gate on each simulated path.
+The optimized implementation preserves those frozen choices exactly. It replaces
+repeated scipy Spearman calls with equivalent rank-correlation arithmetic and
+computes causal terciles incrementally from sorted prior values. This is a pure
+runtime optimization; it does not change the null, seed, simulations, permutations,
+calendar partitions, effect grid, or pass/fail gate.
 
 Usage:
     python scripts/preflight_campaign57_vti_bnd_partitions.py
 
-Expected inputs (adjusted total-return downloads):
+Expected inputs:
     artifacts/campaign57_vti_bnd/VTI_1D.csv
     artifacts/campaign57_vti_bnd/BND_1D.csv
 """
@@ -29,13 +30,13 @@ Expected inputs (adjusted total-return downloads):
 from __future__ import annotations
 
 import argparse
+import bisect
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy import stats
-
 
 SANDBOX_SPEARMAN = -0.24861256166873433
 SANDBOX_SPREAD = 0.008477770698736769
@@ -46,6 +47,7 @@ N_PERMUTATIONS = 199
 SEED = 20260957
 MIN_PRIOR_MONTHS = 36
 POWER_FLOOR = 0.80
+PROGRESS_EVERY = 50
 
 
 def parse_args() -> argparse.Namespace:
@@ -78,7 +80,6 @@ def valid_common_months(vti_dates: pd.DatetimeIndex, bnd_dates: pd.DatetimeIndex
     valid: list[pd.Period] = []
     for month in months:
         prior = month - 1
-        # Need prior-month anchor plus at least 6 sessions so the final-3 cutoff exists robustly.
         if prior in grouped and len(grouped[month]) >= 6 and len(grouped[prior]) >= 1:
             valid.append(month)
     return valid
@@ -97,28 +98,68 @@ def partition_months(months: list[pd.Period]) -> dict[str, list[pd.Period]]:
     }
 
 
-def causal_labels(signal: np.ndarray) -> np.ndarray:
-    labels = np.full(len(signal), "", dtype=object)
-    for i, value in enumerate(signal):
-        prior = signal[:i]
-        prior = prior[np.isfinite(prior)]
-        if len(prior) < MIN_PRIOR_MONTHS or not np.isfinite(value):
-            continue
-        q1, q2 = np.quantile(prior, [1 / 3, 2 / 3])
-        labels[i] = "low" if value <= q1 else ("high" if value >= q2 else "mid")
-    return labels
+def _sorted_quantile(sorted_values: list[float], q: float) -> float:
+    """Match numpy's default linear quantile on an already sorted list."""
+    n = len(sorted_values)
+    if n == 0:
+        return np.nan
+    pos = (n - 1) * q
+    lo = int(np.floor(pos))
+    hi = int(np.ceil(pos))
+    if lo == hi:
+        return float(sorted_values[lo])
+    w = pos - lo
+    return float(sorted_values[lo] * (1.0 - w) + sorted_values[hi] * w)
+
+
+def causal_labels_for_idx(signal: np.ndarray, idx: np.ndarray) -> np.ndarray:
+    """Exact causal labels for tested indices only, using all prior observations."""
+    if len(idx) == 0:
+        return np.empty(0, dtype=object)
+    order = np.argsort(idx)
+    sorted_idx = idx[order]
+    out_sorted = np.full(len(sorted_idx), "", dtype=object)
+    prior_sorted: list[float] = []
+    next_test = 0
+    max_i = int(sorted_idx[-1])
+    test_positions = {int(v): j for j, v in enumerate(sorted_idx)}
+    for i in range(max_i + 1):
+        if i in test_positions:
+            j = test_positions[i]
+            value = signal[i]
+            if len(prior_sorted) >= MIN_PRIOR_MONTHS and np.isfinite(value):
+                q1 = _sorted_quantile(prior_sorted, 1.0 / 3.0)
+                q2 = _sorted_quantile(prior_sorted, 2.0 / 3.0)
+                out_sorted[j] = "low" if value <= q1 else ("high" if value >= q2 else "mid")
+        value = signal[i]
+        if np.isfinite(value):
+            bisect.insort(prior_sorted, float(value))
+    out = np.empty(len(idx), dtype=object)
+    out[order] = out_sorted
+    return out
+
+
+def _rank_corr(x: np.ndarray, y: np.ndarray) -> float:
+    if len(x) < 3:
+        return np.nan
+    rx = stats.rankdata(x, method="average")
+    ry = stats.rankdata(y, method="average")
+    sx = float(np.std(rx))
+    sy = float(np.std(ry))
+    if sx == 0.0 or sy == 0.0:
+        return np.nan
+    return float(np.corrcoef(rx, ry)[0, 1])
 
 
 def spearman(signal: np.ndarray, outcome: np.ndarray, idx: np.ndarray) -> float:
-    if len(idx) < 3:
-        return np.nan
-    return float(stats.spearmanr(signal[idx], outcome[idx]).statistic)
+    return _rank_corr(signal[idx], outcome[idx])
 
 
 def spread(signal: np.ndarray, outcome: np.ndarray, idx: np.ndarray) -> float:
-    labels = causal_labels(signal)
-    low = outcome[idx[labels[idx] == "low"]]
-    high = outcome[idx[labels[idx] == "high"]]
+    labels = causal_labels_for_idx(signal, idx)
+    test_outcome = outcome[idx]
+    low = test_outcome[labels == "low"]
+    high = test_outcome[labels == "high"]
     if len(low) == 0 or len(high) == 0:
         return np.nan
     return float(np.mean(low) - np.mean(high))
@@ -129,12 +170,7 @@ def five_year_blocks(months: list[pd.Period]) -> np.ndarray:
     return (years // 5) * 5
 
 
-def shuffled_test_signal(
-    signal: np.ndarray,
-    test_idx: np.ndarray,
-    blocks: np.ndarray,
-    rng: np.random.Generator,
-) -> np.ndarray:
+def shuffled_test_signal(signal: np.ndarray, test_idx: np.ndarray, blocks: np.ndarray, rng: np.random.Generator) -> np.ndarray:
     out = signal.copy()
     test_blocks = blocks[test_idx]
     for block in np.unique(test_blocks):
@@ -143,23 +179,27 @@ def shuffled_test_signal(
     return out
 
 
-def permutation_pvalues(
-    signal: np.ndarray,
-    outcome: np.ndarray,
-    test_idx: np.ndarray,
-    blocks: np.ndarray,
-    rng: np.random.Generator,
-) -> tuple[float, float]:
+def permutation_pvalues(signal: np.ndarray, outcome: np.ndarray, test_idx: np.ndarray, blocks: np.ndarray, rng: np.random.Generator) -> tuple[float, float]:
     obs_rho = spearman(signal, outcome, test_idx)
     obs_spread = spread(signal, outcome, test_idx)
     if not np.isfinite(obs_rho) or not np.isfinite(obs_spread):
         return np.nan, np.nan
 
+    # Outcome ranks are constant throughout the permutation test.
+    out_ranks = stats.rankdata(outcome[test_idx], method="average")
+    out_ranks_centered = out_ranks - out_ranks.mean()
+    out_norm = float(np.sqrt(np.dot(out_ranks_centered, out_ranks_centered)))
+
     null_rho = np.empty(N_PERMUTATIONS, dtype=float)
     null_spread = np.empty(N_PERMUTATIONS, dtype=float)
     for i in range(N_PERMUTATIONS):
         shuffled = shuffled_test_signal(signal, test_idx, blocks, rng)
-        null_rho[i] = spearman(shuffled, outcome, test_idx)
+        sig_ranks = stats.rankdata(shuffled[test_idx], method="average")
+        sig_centered = sig_ranks - sig_ranks.mean()
+        sig_norm = float(np.sqrt(np.dot(sig_centered, sig_centered)))
+        null_rho[i] = np.nan if sig_norm == 0.0 or out_norm == 0.0 else float(
+            np.dot(sig_centered, out_ranks_centered) / (sig_norm * out_norm)
+        )
         null_spread[i] = spread(shuffled, outcome, test_idx)
 
     valid_rho = null_rho[np.isfinite(null_rho)]
@@ -169,18 +209,12 @@ def permutation_pvalues(
     return p_rho, p_spread
 
 
-def leave_one_year_out_negative(
-    signal: np.ndarray,
-    outcome: np.ndarray,
-    test_idx: np.ndarray,
-    months: list[pd.Period],
-) -> bool:
+def leave_one_year_out_negative(signal: np.ndarray, outcome: np.ndarray, test_idx: np.ndarray, months: list[pd.Period]) -> bool:
     years = np.array([m.year for m in months], dtype=int)
     test_years = years[test_idx]
     checked = 0
     for year in np.unique(test_years):
-        year_count = int(np.sum(test_years == year))
-        if year_count < 6:
+        if int(np.sum(test_years == year)) < 6:
             continue
         idx = test_idx[test_years != year]
         rho = spearman(signal, outcome, idx)
@@ -190,14 +224,7 @@ def leave_one_year_out_negative(
     return checked > 0
 
 
-def passes_joint_gate(
-    signal: np.ndarray,
-    outcome: np.ndarray,
-    test_idx: np.ndarray,
-    months: list[pd.Period],
-    blocks: np.ndarray,
-    rng: np.random.Generator,
-) -> bool:
+def passes_joint_gate(signal: np.ndarray, outcome: np.ndarray, test_idx: np.ndarray, months: list[pd.Period], blocks: np.ndarray, rng: np.random.Generator) -> bool:
     rho = spearman(signal, outcome, test_idx)
     spr = spread(signal, outcome, test_idx)
     if not np.isfinite(rho) or rho >= 0 or not np.isfinite(spr) or spr <= 0:
@@ -211,9 +238,7 @@ def passes_joint_gate(
 def gaussian_params(haircut: float) -> tuple[float, float, float, float]:
     target_spearman = SANDBOX_SPEARMAN * haircut
     target_spread = SANDBOX_SPREAD * haircut
-    # For bivariate normal: rho_s = 6/pi * asin(rho_p/2).
     target_pearson = float(2.0 * np.sin(np.pi * target_spearman / 6.0))
-    # Standard-normal mean in upper tercile; lower-upper X mean difference = -2*mu_upper.
     q = stats.norm.ppf(2 / 3)
     mu_upper = stats.norm.pdf(q) / (1 - stats.norm.cdf(q))
     x_low_minus_high = -2.0 * mu_upper
@@ -223,12 +248,7 @@ def gaussian_params(haircut: float) -> tuple[float, float, float, float]:
     return target_spearman, target_spread, beta, sigma_eps
 
 
-def estimate_power(
-    months: list[pd.Period],
-    partitions: dict[str, list[pd.Period]],
-    haircut: float,
-    seed: int,
-) -> dict[str, float | int]:
+def estimate_power(months: list[pd.Period], partitions: dict[str, list[pd.Period]], haircut: float, seed: int) -> dict[str, float | int]:
     month_to_idx = {m: i for i, m in enumerate(months)}
     oos_idx = np.array([month_to_idx[m] for m in partitions["oos"]], dtype=int)
     holdout_idx = np.array([month_to_idx[m] for m in partitions["holdout"]], dtype=int)
@@ -238,13 +258,20 @@ def estimate_power(
     oos_pass = 0
     holdout_pass = 0
 
-    for _ in range(OUTER_SIMS):
+    print(f"Power haircut {haircut:.0%}: {OUTER_SIMS} simulations", flush=True)
+    for sim in range(1, OUTER_SIMS + 1):
         signal = rng.normal(0.0, 1.0, size=len(months))
         outcome = beta * signal + rng.normal(0.0, sigma_eps, size=len(months))
         if passes_joint_gate(signal, outcome, oos_idx, months, blocks, rng):
             oos_pass += 1
         if passes_joint_gate(signal, outcome, holdout_idx, months, blocks, rng):
             holdout_pass += 1
+        if sim % PROGRESS_EVERY == 0 or sim == OUTER_SIMS:
+            print(
+                f"  {sim}/{OUTER_SIMS} | OOS pass {oos_pass}/{sim} ({oos_pass/sim:.1%}) | "
+                f"holdout pass {holdout_pass}/{sim} ({holdout_pass/sim:.1%})",
+                flush=True,
+            )
 
     return {
         "haircut": haircut,
@@ -258,11 +285,7 @@ def estimate_power(
 
 
 def period_range(items: list[pd.Period]) -> dict[str, object]:
-    return {
-        "months": len(items),
-        "start": str(items[0]) if items else None,
-        "end": str(items[-1]) if items else None,
-    }
+    return {"months": len(items), "start": str(items[0]) if items else None, "end": str(items[-1]) if items else None}
 
 
 def main() -> int:
@@ -275,15 +298,15 @@ def main() -> int:
         months = valid_common_months(vti_dates, bnd_dates)
         partitions = partition_months(months)
     except Exception as exc:
-        report = {
-            "status": "NOT_READY",
-            "reason": "SOURCE_OR_CALENDAR_FAILURE",
-            "error": f"{type(exc).__name__}: {exc}",
-            "outcomes_inspected": False,
-        }
+        report = {"status": "NOT_READY", "reason": "SOURCE_OR_CALENDAR_FAILURE", "error": f"{type(exc).__name__}: {exc}", "outcomes_inspected": False}
         print(json.dumps(report, indent=2, sort_keys=True))
         (out_dir / "campaign57_preflight.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return 2
+
+    print(f"Shared valid months: {len(months)}", flush=True)
+    for name, items in partitions.items():
+        r = period_range(items)
+        print(f"  {name}: {r['months']} months | {r['start']} -> {r['end']}", flush=True)
 
     power = [estimate_power(months, partitions, h, SEED + int(h * 1000)) for h in HAIRCUTS]
     central = next(x for x in power if abs(float(x["haircut"]) - CENTRAL_HAIRCUT) < 1e-12)
@@ -319,14 +342,10 @@ def main() -> int:
                 "causal-tercile low-minus-high spread>0 and one-sided block-permutation p<=0.05",
                 "every eligible leave-one-year-out Spearman<0",
             ],
+            "runtime_optimization_only": True,
         },
         "power_results": power,
-        "central_gate": {
-            "oos_power": central["oos_power"],
-            "holdout_power": central["holdout_power"],
-            "oos_pass": oos_ok,
-            "holdout_pass": holdout_ok,
-        },
+        "central_gate": {"oos_power": central["oos_power"], "holdout_power": central["holdout_power"], "oos_pass": oos_ok, "holdout_pass": holdout_ok},
         "boundary": "Pre-outcome calendar/power preflight only. VTI/BND close/returns are not read. POWER_PASS does not itself authorize confirmation outcome inspection.",
     }
     (out_dir / "campaign57_preflight.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
