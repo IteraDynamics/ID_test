@@ -1,6 +1,6 @@
 # Campaign #57 — Month-End Equity/Bond Rebalancing Pressure
 
-**Status:** CHARTERED 2026-09-02 by explicit CEO authorization. Planning, feasibility, source acquisition for the untouched confirmation pair, and pre-outcome power analysis are authorized. No confirmatory outcome computation, economic strategy test, Core v1/Core v2 composition change, paper/live trading, order, NAV, exposure, or runtime change is authorized by this charter alone.
+**Status:** CHARTERED 2026-09-02 by explicit CEO authorization. **Amended 2026-09-02 before any VTI/BND download or outcome inspection to reserve chronological development, OOS, and final-holdout partitions.** Planning, feasibility, source acquisition for the untouched VTI/BND pair, and pre-outcome power analysis are authorized. No confirmatory outcome computation, economic strategy test, Core v1/Core v2 composition change, paper/live trading, order, NAV, exposure, or runtime change is authorized by this charter alone.
 
 **Branch:** `agent/exploration-sandbox-governance-20260901`
 
@@ -54,7 +54,7 @@ Expected sign: negative association between signal and outcome.
 
 No 1-day, 5-day, quarter-end-only, threshold, or alternate-window variant is confirmatory. Those sandbox diagnostics are discovery-contaminated and cannot rescue a failed Campaign #57 confirmation.
 
-### 4.2 Untouched historical confirmation pair
+### 4.2 VTI/BND historical validation pair
 
 **VTI / BND**, adjusted daily total-return series.
 
@@ -63,18 +63,48 @@ Rationale frozen before acquisition/outcome inspection:
 - VTI is a broad US equity proxy rather than the sandbox SPY instrument;
 - BND is a broad US investment-grade bond proxy rather than the sandbox AGG instrument;
 - both are highly liquid US ETFs and map directly to the same economic allocation mechanism;
-- BND's inception naturally limits the common sample, which is acceptable if the pre-outcome power gate passes.
+- BND's inception naturally limits the common sample, which is acceptable only if the pre-outcome power gates below pass.
 
-This is a **cross-instrument historical confirmation**, not a fully independent market-event holdout: VTI/BND and SPY/AGG share the same underlying US equity/bond regimes. A successful historical confirmation therefore does not eliminate the need for future-forward evidence before any capital decision.
+This is a **cross-instrument historical validation**, not a fully independent market-event holdout: VTI/BND and SPY/AGG share the same underlying US equity/bond regimes. A successful historical validation therefore does not eliminate the need for future-forward evidence before any capital decision.
 
-The VTI/BND source must not be downloaded or inspected for predictive outcomes until the power/feasibility procedure below has frozen the exact usable interval and demonstrated adequate power.
+The VTI/BND files may be downloaded after this amendment, but predictive outcomes must remain mechanically sealed by partition until the applicable power and stage gates authorize opening them.
 
-### 4.3 Primary confirmatory statistics
+### 4.2A Chronological partition amendment — frozen before VTI/BND download
 
-Exactly two co-primary statistics, both required:
+The VTI/BND common valid-month sequence will be partitioned **chronologically by valid-month ordinal position, never randomly and never using returns or signal/outcome values**.
+
+After source/calendar feasibility identifies the ordered list of valid common months:
+
+1. **Development / replication block:** first 50% of valid months.
+2. **Chronological OOS block:** next 25% of valid months.
+3. **Final historical holdout:** final 25% of valid months.
+
+For odd/non-divisible counts, integer boundaries are deterministic:
+
+- `dev_end = floor(0.50 * N)`;
+- `oos_end = floor(0.75 * N)`;
+- development = indices `[0, dev_end)`;
+- OOS = `[dev_end, oos_end)`;
+- final holdout = `[oos_end, N)`.
+
+No date boundary may be moved after source acquisition to improve balance, regime representation, significance, or performance. The exact first/last calendar month of each block will be recorded from source metadata immediately after download, before any signal/outcome computation.
+
+Purpose of the three blocks:
+
+- **Development / replication:** verify the frozen SPY/AGG mechanism on a different proxy pair and permit only pre-authorized implementation diagnostics that do not alter the primary 3-session mechanism.
+- **Chronological OOS:** test the frozen rule after all development-stage choices are locked. No parameter or implementation change after opening OOS may be justified by OOS performance.
+- **Final historical holdout:** one-shot historical validation after the complete economic/statistical rule is frozen. It is not opened merely because OOS looks promising.
+
+The final holdout is a **hard seal**. Monte Carlo/bootstrap work does not consume it and may not use its returns.
+
+### 4.3 Primary statistics
+
+Exactly two co-primary statistics, both required at each opened validation stage:
 
 1. Spearman correlation between monthly signal and 3-session relative outcome, expected `< 0`.
 2. Causal expanding-tercile low-signal minus high-signal outcome spread, expected `> 0`, with 36 prior valid months required before state assignment.
+
+For OOS and final-holdout evaluation, tercile thresholds must be generated causally from information available before each tested month. No percentile threshold may be learned using future OOS/holdout months.
 
 ### 4.4 Null/control
 
@@ -82,45 +112,86 @@ Fixed-seed permutations shuffle signal values within five-year calendar blocks w
 
 The same random seed family used in the governed implementation must be fixed before outcome inspection.
 
-### 4.5 Confirmatory decision rule
+### 4.5 Staged decision rule
 
-A historical confirmation passes only if all of the following are true:
+#### Development / replication
+
+Development is not a confirmation and may not be called OOS. It passes only if the frozen expected sign is present for both co-primary statistics and source/replay checks pass. Statistical significance is reported but is not by itself sufficient to promote a changed rule; the rule is already frozen from SPY/AGG.
+
+#### Chronological OOS
+
+OOS may be opened only after:
+
+- partition boundaries are committed;
+- development-stage code and rule are frozen;
+- OOS-specific power is at least 80% at the central haircutted effect under Section 5.
+
+OOS passes only if all of the following are true:
 
 - Spearman rho `< 0`;
 - one-sided block-permutation p for rho `<= 0.05`;
 - causal low-minus-high spread `> 0`;
 - one-sided block-permutation p for the spread `<= 0.05`;
-- leave-one-calendar-year-out Spearman rho is `< 0` for every eligible year with at least six months of source support;
 - source and replay validation pass;
 - no timing or adjusted-price defect is found.
 
-Failure of any required condition closes the historical confirmation as negative or invalid according to the failure mode. No alternate proxy, window, threshold, or quarter-end subset may be substituted after outcome inspection.
+#### Final historical holdout
 
-## 5. Power gate — required before confirmation
+The final holdout may be opened only after:
+
+- OOS passes without any post-OOS parameter/rule modification;
+- the complete economic/statistical rule is frozen;
+- final-holdout-specific power is at least 80% at the central haircutted effect under Section 5;
+- a one-shot holdout decision record is committed before computation.
+
+Final holdout passes under the same co-primary sign/significance requirements as OOS. No alternate proxy, window, threshold, quarter-end subset, or post-hoc weighting may substitute after outcome inspection.
+
+Failure of any required condition closes the applicable stage as negative or invalid according to the failure mode. A failed OOS or final holdout cannot be rescued by recombining partitions.
+
+## 5. Power gates — required before opening each VTI/BND outcome stage
 
 Before any VTI/BND predictive outcome is computed:
 
-1. acquire only enough source metadata/calendar information to establish common monthly support without calculating the signal/outcome relationship;
-2. run a deterministic power simulation using the frozen monthly calendar and effect-size grid derived conservatively from the sandbox discovery ceiling;
-3. selection-bias haircut the sandbox effect before injection; the central injected effect may not exceed 50% of the sandbox rank/spread effect without a separately documented external justification;
-4. require at least 80% estimated power for the joint confirmatory gate at the central injected effect;
-5. if power is below 80%, classify Campaign #57 `UNDERPOWERED` for this historical confirmation architecture. Do not weaken the gate, add windows, or inspect real confirmation outcomes.
+1. acquire source files and inspect **only metadata/calendar structure** needed to establish valid common months and partition boundaries;
+2. record exact development/OOS/final-holdout calendar intervals from the deterministic 50/25/25 rule;
+3. run deterministic power simulations using the frozen monthly calendar and effect-size grid derived conservatively from the sandbox discovery ceiling;
+4. selection-bias haircut the sandbox effect before injection; the central injected effect may not exceed 50% of the sandbox rank/spread effect without a separately documented external justification;
+5. estimate power separately for development, OOS, and final holdout using each block's own month count/calendar structure;
+6. require at least **80% estimated power for the OOS joint gate** before OOS may be opened;
+7. require at least **80% estimated power for the final-holdout joint gate** before the final holdout may ever be opened;
+8. if either OOS or final-holdout power is below 80%, classify that historical architecture `UNDERPOWERED` for the affected stage. Do not weaken the gate, move partition boundaries, merge OOS with holdout, add windows, or inspect the sealed outcomes.
 
-The exact simulation implementation and injected-effect grid must be committed before real VTI/BND outcome computation.
+The exact simulation implementation, injected-effect grid, random seeds, and partition manifest must be committed before real VTI/BND outcome computation.
 
-## 6. Data/source requirements
+## 6. Monte Carlo / bootstrap role
+
+Monte Carlo or bootstrap analysis is **not a substitute for OOS or the final holdout**.
+
+It may be run only on data from stages already legitimately opened, and before the final holdout it must exclude final-holdout returns entirely.
+
+Its purpose is to estimate:
+
+- sampling uncertainty around the observed effect;
+- sequence risk and drawdown dispersion for any later economic implementation;
+- plausible Sharpe/Calmar/CAGR ranges under resampled event sequences;
+- probability of negative or disappointing finite-sample outcomes despite a positive underlying edge.
+
+Any bootstrap must respect the monthly/event structure and any measured serial dependence; naive IID reshuffling is not automatically acceptable.
+
+## 7. Data/source requirements
 
 - research-only adjusted daily total-return data;
 - deterministic timestamp normalization and shared-session intersection;
 - source manifests including provider request, actual coverage, row count, and file hash;
 - no use of the canonical Core v1 price files for adjusted-total-return inference;
-- fail closed on missing months, duplicate dates, nonpositive prices, or ambiguous session ordering.
+- fail closed on missing months, duplicate dates, nonpositive prices, or ambiguous session ordering;
+- partition manifest containing `N`, ordinal boundaries, and exact month ranges must be written before any predictive outcome computation.
 
 Sandbox SPY/AGG adjusted files remain discovery artifacts and are not confirmation inputs.
 
-## 7. Economic implementation gate — not yet authorized
+## 8. Economic implementation gate — not yet authorized
 
-No trade rule is frozen by this charter. A successful mechanism confirmation would authorize a separate economic-design phase only.
+No trade rule is frozen by this charter. A successful mechanism validation would authorize a separate economic-design phase only.
 
 That later phase must, before any portfolio recommendation:
 
@@ -133,13 +204,13 @@ That later phase must, before any portfolio recommendation:
 
 No economic test may mutate Core v1.
 
-## 8. Future-forward holdout
+## 9. Future-forward holdout
 
 Starting only after Campaign #57's specification is frozen, a future-forward SPY/AGG observation ledger may be accumulated without acting on it. It must record, at each month-end cutoff, the frozen signal and later realized three-session outcome without parameter changes.
 
 A future-forward record is required before any capital deployment decision. The amount of forward evidence required will be set by the later Risk/PM and independent Red Team review; this charter does not invent a capital threshold now.
 
-## 9. Red Team and staff boundaries
+## 10. Red Team and staff boundaries
 
 The in-thread placebo review that killed the generic-reversal objection was performed in the same broader research context and is therefore **not** the mandatory independent Red Team review required to call the candidate `ALIVE`.
 
@@ -149,12 +220,14 @@ Before any `ALIVE`, `VALIDATED`, Core v2 composition, or capital language:
 - then, and only if Red Team passes, route to Risk/PM for portfolio fit and materiality;
 - Core v2 composition/weights and all capital decisions require explicit CEO approval.
 
-## 10. Authorized next step
+## 11. Authorized next step
 
-Authorized now, by CEO direction on 2026-09-02:
+Authorized now, by CEO direction on 2026-09-02 and the same-day pre-download partition amendment:
 
-1. source/calendar feasibility for untouched VTI/BND adjusted daily data;
-2. pre-outcome deterministic power simulation under Section 5;
-3. documentation/tests necessary to make those two steps replay-safe and fail-closed.
+1. download adjusted daily VTI/BND data for research-only use;
+2. inspect source/calendar metadata only;
+3. write and commit the deterministic 50/25/25 partition manifest;
+4. run separate pre-outcome power simulations for development, OOS, and final holdout;
+5. documentation/tests necessary to make those steps replay-safe and fail-closed.
 
-**Not authorized yet:** real VTI/BND signal/outcome computation, confirmation verdict, economic backtest, strategy implementation, Core v2 composition, portfolio sizing, paper/live trading, or any Core v1 change.
+**Not authorized yet:** any VTI/BND signal/outcome computation, development result, OOS result, final-holdout result, economic backtest, strategy implementation, Core v2 composition, portfolio sizing, paper/live trading, or any Core v1 change.
