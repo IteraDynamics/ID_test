@@ -82,4 +82,13 @@ new entry that references the old one._
   infrastructure (ticker-pattern market filter, tz/DST-safe parsing) had already been proven
   clean on the same universe by the pairs campaign.
 - **Risk/PM note (if applicable):** n/a — closed before reaching a risk/sizing/materiality
-  review.
+  review; the mechanism itself did not clear its own negative control.
+
+## Exploration screen — Index-options dealer gamma pressure
+- **Screened:** 2026-09-02 under `docs/ITERA_EXPLORATION_SANDBOX.md`; no campaign number.
+- **Status:** SCREEN_NEGATIVE
+- **Mechanism:** aggregate SPY option gamma/open-interest geometry was tested as a proxy for compelled dealer hedging pressure. The frozen directional story expected low signed GEX to produce more trend continuation than high signed GEX after a conservative one-trading-day source lag.
+- **Result:** frozen signed-GEX continuation gate failed at all three horizons: 1d difference -0.000739, p=0.8982; 2d -0.001868, p=0.9621; 5d -0.004451, p=1.0000. The supplemental reversed call/put sign convention produced the opposite relationship and was nominally significant at 2d (p=0.0339) and 5d (p=0.0020), therefore contradicting rather than rescuing the primary dealer-sign story. The tested panel contains 3,024 usable state rows from 2013-12-02 through 2025-12-12; earlier option history was source-validation evidence only because the local SPY outcome file begins later.
+- **Control / artifact findings:** raw total-gamma level separated future absolute movement at 1d/2d/5d (one-sided permutation p≈0.0020/0.0040/0.0279), but this does not earn promotion. Its causal expanding-tercile states were severely imbalanced (2,173 low vs 372 high), later-year high/low comparisons largely disappeared, raw total gamma grows with the secular size of the options market, and gamma itself is mechanically related to volatility and time-to-expiry. Treating that side result as alpha would be outcome-informed salvage and likely scale/volatility confounding. Gamma-concentration movement also failed its frozen expected direction at all horizons (p=1.0).
+- **What killed it:** the pre-outcome directional gate failed cleanly, and the reversed sign convention performed better. Open interest does not identify dealer inventory direction, so the observed reverse-sign relationship cannot be interpreted as validating the same mechanism under a preferred convention.
+- **Boundary:** closed as a sandbox negative. No Core v1/Core v2/runtime/portfolio/paper/live implication. Any future gamma-related screen must be a genuinely new pre-specified hypothesis rather than a retune of this result.
