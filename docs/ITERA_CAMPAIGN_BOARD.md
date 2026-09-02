@@ -529,3 +529,27 @@ Not authorized:
 ## Passive campaign
 
 Campaign #49 remains in passive prospective accumulation under method lock `9203b6f20983b8c168182e6bc58135f4f7d5913c`.
+
+## Correction — 2026-09-02: Campaign #57 authorized
+
+**Campaign #57 — Month-End Equity/Bond Rebalancing Pressure** is CHARTERED by explicit CEO authorization on 2026-09-02 following a `SCREEN_POSITIVE` sandbox result and a separately frozen month-end-specificity placebo that returned `MONTH_END_SPECIFICITY_SURVIVES`.
+
+Governing charter: `docs/research/CAMPAIGN_57_MONTH_END_REBALANCE_PRESSURE_CHARTER.md`.
+
+The sandbox SPY/AGG sample is discovery-contaminated and cannot serve as an untouched confirmation holdout. The charter freezes VTI/BND as the untouched historical confirmation pair and requires future-forward SPY/AGG evidence before any eventual capital decision.
+
+**Authorized now:**
+
+- untouched VTI/BND adjusted-data source/calendar feasibility without predictive outcome inspection;
+- deterministic source manifests and replay/fail-closed checks;
+- pre-outcome power simulation under the charter's frozen 3-session design, with at least 80% power required for the joint confirmation gate at the central injected effect;
+- the central injected effect may not exceed 50% of the sandbox discovery ceiling absent separately documented external justification.
+
+**Not authorized yet:**
+
+- real VTI/BND signal/outcome computation or any confirmation verdict;
+- alternate windows, proxy pairs, thresholds, or quarter-end subsets after seeing confirmation outcomes;
+- economic strategy/backtest selection, sizing, portfolio weights, Core v2 composition, paper/live trading, orders, NAV/exposure changes, or any runtime change;
+- any change to Core v1, which remains frozen.
+
+A genuinely independent Red Team review remains mandatory before this candidate may be called `ALIVE`; Risk/PM and explicit CEO approval remain mandatory before any Core v2 composition/weight or capital decision.
