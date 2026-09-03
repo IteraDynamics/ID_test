@@ -658,3 +658,48 @@ changes.
 
 Staff reports the proposed frozen design and power result back for the next governed
 transition before any real Campaign #58 model fit is run.
+
+## Correction — 2026-09-03: Campaign #58 specification-freeze prerequisites result — neither track freezes today
+
+Full record: `docs/research/CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md`.
+
+**Phase 0 (cross-sectional COT census): BLOCKED on data/network access, not a decision.** This
+session's environment has no outbound network access to any market-data source (verified: a
+proxy-level 403 on `cftc.gov`, `deribit.com`, and generic internet hosts alike — organization
+policy, not transient), and no COT positioning history is committed to this repo. Red Team
+condition 5's required effective-breadth measurement could not be run for Campaign #58's own
+proposed universe; reusing Campaign #55's old 5.1/21 figure would not satisfy it (different
+universe, different session, exactly the shortcut that condition exists to forbid). Same class
+of blocker as Campaign #57's VTI/BND data-access gap, logged the same way — blocked, not routed
+around.
+
+**Phase 1 (time-series residual census): real, computed result — FAIL at the power gate.** A
+power analysis was run for real against the one multi-year dataset available in this session
+(Campaign #48's own committed, replay-verified 403-anchor BTC price-state inventory), reusing
+Campaign #53's governed block-bootstrap `inject_ic` methodology verbatim
+(`scripts/run_campaign58_phase1_power_analysis.py`). Result: **average power at the central IC
+(0.065) = 13.0%, against the 50% floor — FAIL** — on the base 7-candidate family alone, before
+Phase 1's actual proposed grid adds further multiplicity (which would only push power lower, not
+higher). BTC-only; no real ETH/SPY/QQQ/GLD data was available to test the full proposed scope.
+Per the CEO's own explicit conditional ("Phase 1... only if independently supportable by
+power"), **Phase 1 does not qualify for specification freeze at this time.** This result is used
+as computed, not adjusted after seeing it fail, per Red Team condition 6.
+
+**Completed regardless of either track's data situation:** the leakage canary (Red Team
+condition 3) was built and proven capable of failing on synthetic data — clean expanding-window
+residualization showed a first-half leak-correlation of 0.0064 (no false positive), a
+deliberately leaky full-sample residualization showed 0.6923 (leak clearly detected). The
+regime-state source is identified and restricted to `research/regimes/baseline_engine.py`'s
+causal `classify_bar`/`classify_dataframe` path only, explicitly excluding the
+`historical_regime_*` discovery tools (Red Team condition 4). Fixed hyperparameters per model
+type (Red Team condition 2) and the fold/target/FDR-family methodology (not yet data-sized) are
+recorded in the result document.
+
+**Not authorized and not done:** any candidate-grid sizing or specification freeze for either
+track (both are blocked — one on data, one on a real negative power result); any real
+predictor/outcome computation; any model fit.
+
+**Open fork for the CEO, not resolved by staff:** whether to resource a future session with real
+multi-year ETH/SPY/QQQ/GLD data to re-test Phase 1's power across the full proposed instrument
+set, or accept the BTC-only result as a clean FAIL and close the time-series track. Full
+reasoning: `docs/research/CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md` §10.

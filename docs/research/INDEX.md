@@ -12,7 +12,7 @@ This index is the front door to Itera Dynamics research. It distinguishes predic
 | Liquidity Compression Engine | Planned | Not started | Not tested | None | — |
 | Cross-Asset Leadership Engine | Planned | Not started | Not tested | None | — |
 | Recovery Trust Gate | Retroactively closed — diagnostic negative, never governed | UNESTABLISHED (one ungoverned run) | Never attempted | Not promoted | `RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md` |
-| Itera Residual Predictability Census (Campaign #58) | Planning charter — Red Team CONDITIONAL PASS, spec not frozen | Not started | Not tested | None | `CAMPAIGN_58_ITERA_RESIDUAL_PREDICTABILITY_CENSUS_CHARTER.md` |
+| Itera Residual Predictability Census (Campaign #58) | Spec-freeze prerequisites run — Phase 0 blocked on data access, Phase 1 real power result FAIL (13.0%, BTC-only) | Not started | Not tested | None | `CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md` |
 | Learned Regime / Representation Research | Future | Not started | Not tested | None | — |
 
 ## Lifecycle Vocabulary
@@ -69,8 +69,17 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
   (secondary) time-series residual census on BTC/ETH/SPY/QQQ/GLD.
 - Frozen kill condition: `ML_COMPLEXITY_NOT_JUSTIFIED` if no candidate clears FDR + fold
   stability + permutation-negative-control across the full frozen grid.
-- Lifecycle: **PLANNING — specification not frozen; CEO authorization needed to proceed to
-  the power-analysis and grid-freeze prerequisites.**
+- CEO authorized the specification-freeze prerequisites 2026-09-03; staff ran them for real.
+  **Phase 0 blocked on data/network access** (no COT data committed, no outbound network access
+  in this session — verified). **Phase 1: real power result FAIL** — 13.0% average power at the
+  central IC on the base BTC-only price-state family (Campaign #48's committed anchor
+  inventory, Campaign #53's governed power methodology reused verbatim), against the 50% floor;
+  does not qualify for freeze per the CEO's own conditional. Leakage canary proven capable of
+  failing on synthetic data; regime-source restricted to the causal engine path; hyperparameters
+  fixed per model type. Full record:
+  `CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md`.
+- Lifecycle: **SPEC-FREEZE PREREQUISITES RUN — neither track frozen; CEO fork pending on
+  whether to resource a full-scope Phase 1 re-test or close it (Phase 0 awaits data access).**
 
 ## Canonical Research Documents
 
@@ -84,6 +93,7 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
 - `TREND_PERSISTENCE_V0_FINAL.md`
 - `RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md`
 - `CAMPAIGN_58_ITERA_RESIDUAL_PREDICTABILITY_CENSUS_CHARTER.md`
+- `CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md`
 
 ## Separation of Responsibilities
 

@@ -289,3 +289,35 @@ ones — this is what makes "brief me" informative over time._
   measurement, candidate grid, hyperparameter freeze, fold/target definitions, residualization
   spec, leakage-canary proof, regime-source identification, and FDR family definition per this
   authorization.
+
+## 2026-09-03 — Campaign #58 specification-freeze prerequisites: result
+
+- **Follow-up to the 2026-09-03 CEO authorization above.** Full record:
+  `docs/research/CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md`.
+- **Phase 0 (cross-sectional COT census): BLOCKED, not a decision.** This session's environment
+  has no outbound network access to any market-data source (verified: proxy-level 403 on
+  `cftc.gov`, `deribit.com`, and generic internet hosts alike), and no COT data is committed to
+  this repo. The Red Team's required effective-breadth measurement for Campaign #58's own
+  proposed universe cannot be run. Same class of gap as Campaign #57's VTI/BND block.
+- **Phase 1 (time-series residual census): real, computed result — FAIL.** Power analysis run
+  for real against the one multi-year dataset available (Campaign #48's committed BTC anchor
+  inventory), reusing Campaign #53's governed block-bootstrap methodology verbatim
+  (`scripts/run_campaign58_phase1_power_analysis.py`). Average power at the central IC (0.065)
+  = 13.0% against the 50% floor, on the base 7-candidate family alone (before Phase 1's actual
+  proposed grid adds further multiplicity, which would only lower this). BTC-only — no real
+  ETH/SPY/QQQ/GLD data available this session. Result used as computed, not adjusted after
+  seeing it fail, per Red Team condition 6.
+- **Completed regardless of either track's data situation:** leakage canary built and proven
+  capable of failing on synthetic data (`scripts/prove_campaign58_residualization_leakage_canary.py`
+  — clean pipeline 0.0064 first-half leak-correlation, no false positive; leaky pipeline 0.6923,
+  clearly detected); regime-state source identified and restricted to
+  `research/regimes/baseline_engine.py`'s causal path, excluding the full-sample discovery
+  tools; fixed hyperparameters chosen per model type (single values, not ranges); fold/target/
+  FDR-family methodology recorded, not yet data-sized.
+- **No specification frozen for either track** — per the CEO's own explicit conditional
+  ("Phase 1... only if independently supportable by power") and the charter's Red Team
+  conditions, neither track's inputs support a freeze today.
+- **CEO decision:** PENDING — logged as a 🔴 item in `ops/status.md`: resource a future session
+  to re-test Phase 1's power on the full BTC/ETH/SPY/QQQ/GLD scope, or accept the BTC-only
+  result as a clean FAIL and close the time-series track. Staff does not recommend between
+  these — a resourcing decision, not a routine research call.
