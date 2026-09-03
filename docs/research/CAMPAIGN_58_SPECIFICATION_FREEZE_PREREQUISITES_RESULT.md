@@ -211,3 +211,66 @@ first — they apply to whichever track is eventually specified.
 3. Recovery Trust's closure, the leakage canary proof, the regime-source restriction, and the
    fixed hyperparameter set are complete and do not need to be revisited when either track's
    data situation resolves.
+
+## 11. Correction, 2026-09-03 (same day): real multi-asset Phase 1 power result — PASS
+
+The CEO resolved item 2 above directly, by running §3's script locally against the full real
+BTC/ETH/SPY/QQQ/GLD dataset (2018-2025, ~70k hourly BTC/ETH rows, ~3,200-5,500 daily SPY/QQQ/GLD
+rows) — the option this document declined to recommend between. This section records the real
+result on the generalized multi-asset script
+(`scripts/run_campaign58_phase1_power_analysis.py`, revised same day to accept operator-supplied
+OHLCV paths instead of the BTC-only committed artifact §3 used).
+
+**Provenance:** this result is the operator's own terminal output, run on their local machine
+where the full data lives — not independently re-executed by staff, since staff has no access to
+that data (§1's network/access constraints are unchanged in this session). Staff DID
+independently recompute the reported headline number from the printed intermediate values
+(central-IC linear interpolation between the IC=0.05 and IC=0.08 grid points, per candidate,
+then averaged) and it matches the reported `0.583` to four decimal places (`0.5834`), and the
+reported pooled anchor count (`2527`) matches the sum of the five per-asset anchor counts printed
+(`417+417+456+456+781`). This is real, internally consistent output, not garbled or fabricated in
+transit — but the underlying CSVs themselves have not been independently inspected by staff.
+
+**Result: average power at the central IC (0.065) = 58.3%, against the 50% floor — PASS.** 2,527
+real pooled anchors across all 5 proposed instruments (BTC 417, ETH 417, SPY 456, QQQ 456, GLD
+781 — daily assets contributed more anchors per unit of history since their native cadence,
+correctly inferred, gives finer 7-bar rather than 168-bar anchor spacing). This clears the base
+7-candidate family's power gate on the FULL proposed Phase 1 instrument scope — the gap this
+document's §3 and §10-item-2 explicitly left open (BTC-only, 13.0%, FAIL) is closed.
+
+**Not uniform across the family — worth recording precisely rather than only the average.** At
+the central IC, 5 of 7 candidates individually clear 65-75% power: `return_trailing_24h` 75.4%,
+`return_trailing_72h` 73.7%, `return_trailing_168h` 70.4%, `distance_from_mean_trailing_168h`
+72.4%, `range_position_trailing_168h` 65.4%. **Two candidates fall well under the 50% floor
+individually:** `drawdown_from_high_trailing_168h` at 31.7%, and `realized_volatility_trailing_168h`
+at only 19.7% — the weakest by a wide margin. The volatility candidate's weakness has a clear,
+sensible explanation rather than looking like a defect: it has by far the highest lag-1
+autocorrelation in the pooled data (0.7826, vs. -0.03 to 0.33 for the other six), giving it a
+correspondingly wider empirical null distribution (null median |r| 0.0282 vs. 0.0118-0.0185 for
+the rest) — a noisier candidate needs a larger true effect to detect at a fixed power level,
+exactly the mechanism this whole methodology exists to surface rather than paper over with a
+simple average. **The 58.3% headline is real, but it is carried by the return- and
+position-style candidates, not evenly by the whole family** — this matters for how the eventual
+full grid is sized (see below): a grid weighted toward volatility-style features specifically
+should not assume it inherits this session's average power.
+
+**What this does and does not yet establish, stated plainly:**
+
+- It establishes that the real, pooled, five-asset dataset itself carries enough independent
+  information for the base 7-candidate price-state family to be worth taking further — a
+  genuine, data-grounded green light for Phase 1 that did not exist before this run.
+- It does **not** yet establish that the actual charter-scoped grid (multiple feature families
+  beyond these 7, both raw and residualized target versions, multiple horizons, and all six
+  permitted model types compared against each other and against simple baselines — Red Team
+  condition 1's hard-capped ≤150-candidate family) clears power. A family that large applies a
+  stricter Benjamini-Hochberg threshold than this 7-candidate test did; whether it still clears
+  50% is real, undone work, not a formality.
+- Per the CEO's own conditional ("Phase 1... only if independently supportable by power"),
+  Phase 1 is now **eligible to proceed** to actual grid construction and grid-level power
+  testing — the fork this document logged in ops/status.md ("resource a re-test, or close the
+  track") is resolved: the re-test happened and passed. **The remaining fork is a new, narrower
+  one — proceed to size and test the real frozen grid, which is itself the next authorized
+  specification-freeze step, not a new CEO decision.**
+
+Full artifact (operator's machine, not committed — `artifacts/` is gitignored per repo
+convention): `artifacts\campaign58_phase1_power_analysis\phase1_power_analysis_multiasset_20260903T150203Z.json`.

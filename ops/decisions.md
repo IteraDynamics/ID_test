@@ -321,3 +321,32 @@ ones — this is what makes "brief me" informative over time._
   to re-test Phase 1's power on the full BTC/ETH/SPY/QQQ/GLD scope, or accept the BTC-only
   result as a clean FAIL and close the time-series track. Staff does not recommend between
   these — a resourcing decision, not a routine research call.
+
+## 2026-09-03 — Campaign #58 Phase 1: real multi-asset power result — PASS, fork resolved
+
+- **Follow-up to the 2026-09-03 prerequisites-result entry above.** Full record:
+  `docs/research/CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md` §11.
+- **CEO action:** ran the same-day generalized power-analysis script
+  (`scripts/run_campaign58_phase1_power_analysis.py`, revised to accept operator-supplied OHLCV
+  paths) locally against the real, full BTC/ETH/SPY/QQQ/GLD dataset (2018-2025), resolving the
+  fork this session had logged as pending CEO input, rather than staff resolving it unilaterally.
+- **Real result: average power at the central IC (0.065) = 58.3%, against the 50% floor — PASS.**
+  2,527 real pooled anchors across all 5 proposed instruments. Staff independently recomputed
+  the headline number and pooled anchor count from the printed intermediate values — both match
+  exactly, confirming real, internally consistent output (underlying CSVs not independently
+  inspected by staff, no access to the operator's local data).
+- **Asymmetry noted, not smoothed over:** 5 of 7 candidates individually clear 65-75% power;
+  `drawdown_from_high_trailing_168h` (31.7%) and `realized_volatility_trailing_168h` (19.7%)
+  fall under the 50% floor individually — the latter explained by much higher lag-1
+  autocorrelation widening its null distribution, not treated as a defect.
+- **What changes:** the earlier BTC-only FAIL (13.0%) is superseded by this real, full-scope
+  result — both are real, they tested different scopes. Phase 1 is now eligible to proceed to
+  constructing and power-testing the actual charter-scoped candidate grid (Red Team condition 1,
+  hard-capped ≤150 candidates) — the next specification-freeze step, already within the
+  2026-09-03 standing authorization, not a new CEO decision.
+- **What does not change:** Phase 0 remains blocked on data/network access, unaffected by this
+  result. No specification is frozen for either track yet — this result clears the base-family
+  power gate, not the actual (larger, stricter-FDR) grid's own power gate, which is real,
+  undone work.
+- **CEO decision:** none pending from this entry — the prior fork is resolved by the CEO's own
+  action, and the next step (grid construction) proceeds under standing authorization.

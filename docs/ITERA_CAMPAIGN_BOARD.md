@@ -703,3 +703,35 @@ predictor/outcome computation; any model fit.
 multi-year ETH/SPY/QQQ/GLD data to re-test Phase 1's power across the full proposed instrument
 set, or accept the BTC-only result as a clean FAIL and close the time-series track. Full
 reasoning: `docs/research/CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md` §10.
+
+## Correction — 2026-09-03 (same day): fork resolved — real multi-asset Phase 1 power result is PASS
+
+The CEO resolved the fork above directly by running the (same-day generalized) power analysis
+script locally against the real, full BTC/ETH/SPY/QQQ/GLD dataset. Full record:
+`docs/research/CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md` §11.
+
+**Result: average power at the central IC (0.065) = 58.3%, against the 50% floor — PASS.** 2,527
+real pooled anchors across all 5 proposed instruments. Staff independently recomputed the
+headline number from the printed intermediate values (matches to four decimals) and the pooled
+anchor count (matches exactly) — real, internally consistent output. The underlying CSVs
+themselves were not independently inspected by staff (no access to the operator's local data).
+
+**Not uniform across the family:** 5 of 7 candidates individually clear 65-75% power;
+`drawdown_from_high_trailing_168h` (31.7%) and `realized_volatility_trailing_168h` (19.7%, the
+weakest) fall under the 50% floor individually — the latter explained by its much higher lag-1
+autocorrelation (0.78 vs. -0.03 to 0.33 for the rest) widening its null distribution. The 58.3%
+average is real but is not carried evenly by the family.
+
+**What changes:** Phase 1's power gate, at the base 7-candidate level, is cleared on the real,
+full proposed instrument scope — the BTC-only FAIL recorded above is superseded, not retracted
+(both results are real; they tested different scopes). **What does not yet change:** this is the
+base family's power, not the actual charter-scoped grid's (Red Team condition 1's hard-capped
+≤150-candidate family, spanning multiple feature families, raw and residualized targets, and all
+six permitted model types) — a larger family applies a stricter FDR threshold, and whether it
+still clears 50% is real, undone work. Phase 1 is now **eligible to proceed** to grid
+construction and grid-level power testing, per the CEO's own conditional — this is the next
+authorized specification-freeze step, not a new CEO decision.
+
+**Not authorized and not done, still:** any real predictor/outcome computation for a Campaign
+#58 decision; any model fit; consuming any holdout; the actual frozen grid's own power test
+(next step); Phase 0 remains blocked on data/network access, unchanged by this result.

@@ -12,7 +12,7 @@ This index is the front door to Itera Dynamics research. It distinguishes predic
 | Liquidity Compression Engine | Planned | Not started | Not tested | None | — |
 | Cross-Asset Leadership Engine | Planned | Not started | Not tested | None | — |
 | Recovery Trust Gate | Retroactively closed — diagnostic negative, never governed | UNESTABLISHED (one ungoverned run) | Never attempted | Not promoted | `RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md` |
-| Itera Residual Predictability Census (Campaign #58) | Spec-freeze prerequisites run — Phase 0 blocked on data access, Phase 1 real power result FAIL (13.0%, BTC-only) | Not started | Not tested | None | `CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md` |
+| Itera Residual Predictability Census (Campaign #58) | Phase 1 base-family power PASS (58.3%, real full multi-asset data); Phase 0 blocked on data access; grid-level power test pending | Not started | Not tested | None | `CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md` |
 | Learned Regime / Representation Research | Future | Not started | Not tested | None | — |
 
 ## Lifecycle Vocabulary
@@ -71,15 +71,18 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
   stability + permutation-negative-control across the full frozen grid.
 - CEO authorized the specification-freeze prerequisites 2026-09-03; staff ran them for real.
   **Phase 0 blocked on data/network access** (no COT data committed, no outbound network access
-  in this session — verified). **Phase 1: real power result FAIL** — 13.0% average power at the
-  central IC on the base BTC-only price-state family (Campaign #48's committed anchor
-  inventory, Campaign #53's governed power methodology reused verbatim), against the 50% floor;
-  does not qualify for freeze per the CEO's own conditional. Leakage canary proven capable of
-  failing on synthetic data; regime-source restricted to the causal engine path; hyperparameters
-  fixed per model type. Full record:
+  in this session — verified), unresolved. **Phase 1: real power result, first pass, FAIL** —
+  13.0% average power at the central IC on the base BTC-only price-state family (session-local
+  data only). **CEO then ran the same script locally against the real, full BTC/ETH/SPY/QQQ/GLD
+  dataset — PASS, 58.3% average power at the central IC**, 2,527 real pooled anchors, headline
+  number independently recomputed and confirmed by staff. Not uniform: 5 of 7 candidates clear
+  65-75%, two (drawdown, volatility) fall under 50% individually. Leakage canary proven capable
+  of failing on synthetic data; regime-source restricted to the causal engine path;
+  hyperparameters fixed per model type. Full record:
   `CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md`.
-- Lifecycle: **SPEC-FREEZE PREREQUISITES RUN — neither track frozen; CEO fork pending on
-  whether to resource a full-scope Phase 1 re-test or close it (Phase 0 awaits data access).**
+- Lifecycle: **PHASE 1 BASE-FAMILY POWER PASS (real, full-scope data) — next step is
+  constructing and power-testing the actual charter-scoped candidate grid, not yet frozen.
+  Phase 0 still blocked on data/network access.**
 
 ## Canonical Research Documents
 
