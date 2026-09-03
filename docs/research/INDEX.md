@@ -12,7 +12,7 @@ This index is the front door to Itera Dynamics research. It distinguishes predic
 | Liquidity Compression Engine | Planned | Not started | Not tested | None | — |
 | Cross-Asset Leadership Engine | Planned | Not started | Not tested | None | — |
 | Recovery Trust Gate | Retroactively closed — diagnostic negative, never governed | UNESTABLISHED (one ungoverned run) | Never attempted | Not promoted | `RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md` |
-| Itera Residual Predictability Census (Campaign #58) | Phase 1 base-family power PASS (58.3%, real full multi-asset data); Phase 0 blocked on data access; grid-level power test pending | Not started | Not tested | None | `CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md` |
+| Itera Residual Predictability Census (Campaign #58) | Phase 1 spec frozen, Red Team `CONDITIONAL_PASS` (10 conditions applied); grid-level power test pending; model-fit NOT authorized. Phase 0 blocked on data access | Not started | Not tested | None | `CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md` |
 | Learned Regime / Representation Research | Future | Not started | Not tested | None | — |
 
 ## Lifecycle Vocabulary
@@ -80,9 +80,22 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
   of failing on synthetic data; regime-source restricted to the causal engine path;
   hyperparameters fixed per model type. Full record:
   `CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md`.
-- Lifecycle: **PHASE 1 BASE-FAMILY POWER PASS (real, full-scope data) — next step is
-  constructing and power-testing the actual charter-scoped candidate grid, not yet frozen.
-  Phase 0 still blocked on data/network access.**
+- **Phase 1 statistical specification frozen** (144-candidate grid: 16 feature-variants × 3
+  horizons × 3 outcome families R/M/V) and **independently Red-Teamed — `CONDITIONAL_PASS`, 10
+  conditions, all applied same day.** Corrections: material-margin threshold recalibrated from an
+  untested flat 0.02 to the census's own central-IC-implied effect size (≈0.0042); negative-
+  control and lift-FDR tests now explicitly replicate the full model-selection procedure per
+  resample; underpowered-feature list explicitly closed; charter's Risk/PM correlation-to-
+  Core-NAV check reinstated. Full record: `CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md`,
+  `CAMPAIGN_58_PHASE1_SPEC_INDEPENDENT_RED_TEAM_REVIEW.md`.
+- **Real model-fitting is NOT authorized** under the standing 2026-09-03 CEO authorization,
+  independent of the Red Team verdict — that authorization's text explicitly excludes real
+  predictor/outcome computation and model fitting. Staff is not yet requesting the needed new
+  authorization; two cheap prerequisite checks (grid-level power test across all 3 outcome
+  families, leakage-canary re-proof against the real implementation) remain first.
+- Lifecycle: **SPEC FROZEN, RED-TEAM CONDITIONAL PASS APPLIED — grid-level power test (all 3
+  families) pending, not yet run for real. Model-fit authorization not requested yet. Phase 0
+  still blocked on data/network access.**
 
 ## Canonical Research Documents
 
@@ -97,6 +110,8 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
 - `RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md`
 - `CAMPAIGN_58_ITERA_RESIDUAL_PREDICTABILITY_CENSUS_CHARTER.md`
 - `CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md`
+- `CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md`
+- `CAMPAIGN_58_PHASE1_SPEC_INDEPENDENT_RED_TEAM_REVIEW.md`
 
 ## Separation of Responsibilities
 

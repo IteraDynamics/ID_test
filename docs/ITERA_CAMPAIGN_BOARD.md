@@ -735,3 +735,71 @@ authorized specification-freeze step, not a new CEO decision.
 **Not authorized and not done, still:** any real predictor/outcome computation for a Campaign
 #58 decision; any model fit; consuming any holdout; the actual frozen grid's own power test
 (next step); Phase 0 remains blocked on data/network access, unchanged by this result.
+
+## Correction — 2026-09-03 (same day): Phase 1 candidate grid frozen, independently Red-Teamed (CONDITIONAL_PASS, 10 conditions applied), model-fit authorization NOT yet granted
+
+**Verification performed first (task order matters here):** the CEO-reported power run
+(2,527 pooled anchors, central IC 0.065, average power 0.583, PASS, per-feature lag-1
+autocorrelations ≈0.783 for `realized_volatility_trailing_168h` and ≈0.331 for
+`drawdown_from_high_trailing_168h`) was cross-checked against the already-committed §11 record
+above — every number matches exactly, confirming no drift or post-hoc alteration. Of the
+charter's 8 binding Red Team conditions, only condition 1 (grid sized to a real power result)
+remained open at this stage; conditions 2, 3, 4, 7 were already satisfied and condition 6 is a
+standing rule carried into the frozen spec below, not a one-time checkpoint.
+
+**Frozen specification produced:**
+`docs/research/CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md`. 144-candidate grid (16
+feature-variants — 8 base features × raw/residualized — × 3 target horizons × 3 outcome
+families R/M/V, BH-FDR q=0.10 within each 48-candidate family), naive/simple baselines, four
+fixed-hyperparameter constrained-ML models (ridge, elastic net, shallow RF, shallow GBM),
+identical chronological folds/targets across every model type, causal expanding-window
+residualization restricted to already-confirmed known signals only, the regime-state source
+restricted to `research/regimes/baseline_engine.py`'s causal path, the leakage canary, a
+four-part "does ML materially beat simple" decision rule (margin, FDR-on-the-lift, block-
+permutation negative control, fold stability), and a binding pre-registered rule for how the
+three already-identified underpowered features may (and may not) be interpreted if they return
+a null.
+
+**Independent Red Team review of the frozen specification:** `CONDITIONAL_PASS`, ten binding
+conditions — `docs/research/CAMPAIGN_58_PHASE1_SPEC_INDEPENDENT_RED_TEAM_REVIEW.md`. Run as a
+genuinely separate subagent context with no visibility into the specification's drafting. It
+independently verified the hyperparameter freeze, leakage canary, regime-source restriction,
+grid arithmetic, and §12c's sourcing directly against real code and real committed numbers — all
+confirmed genuine. It also found and required correction of: a filename defect; that the
+grid-level power check must cover all three outcome families, not Family R alone (the original
+R-only justification conflated whether a true effect exists with how autocorrelated a series is,
+which is what actually drives this methodology's power); that the §12b material-margin threshold
+(originally a flat 0.02 absolute R²) was untested and roughly 5× the census's own central-IC-
+implied effect size (R² ≈ IC² ≈ 0.0042) — recalibrated to that implied size; that the
+permutation and lift-FDR null constructions needed to explicitly replicate the full best-of-
+model-selection procedure at each resample, not fix the model choice from the real run; that the
+§12c flagged-feature list needed to be explicitly closed (no future addition without a new
+Red-Team-reviewed amendment) and its "90 clean candidates" claim made conditional on the
+outstanding grid-level power check; and that the charter's own Risk/PM realized-correlation-to-
+Core-NAV check had been dropped from the decision rules rather than deferred — reinstated. All
+ten conditions are applied as dated corrections directly in the frozen specification.
+
+**Companion tool updated to match:** `scripts/run_campaign58_grid_power_analysis.py` now
+simulates all three outcome families (144 hypotheses total, not 48), and refuses to report a
+clean PASS/FAIL headline if any hypothesis falls below a minimum trial count — closing the
+under-sampling gap the review found in the tool's own first smoke test. Not yet run for real
+(requires the operator's local multi-asset data, same as before).
+
+**Authorization determination (task explicitly required this to stop here if a new CEO decision
+is needed, rather than proceed):** the first real Campaign #58 predictor/outcome model-fit
+experiment is **NOT authorized** under the standing 2026-09-03 CEO authorization, independent of
+the Red Team verdict above. That authorization's own "not authorized yet" list, verified verbatim
+against `ops/decisions.md`, explicitly excludes "fitting real ML models against real predictor/
+outcome data" and "predictor/outcome computation for a Campaign #58 decision." A new, explicit
+CEO decision is required before either occurs, regardless of specification quality.
+
+**Staff does not recommend bringing that decision to the CEO yet.** Two prerequisite technical
+gates remain, both cheap and neither requiring new CEO input: (1) the grid-level power
+verification, now scoped to all three outcome families, has not been run for real — only a
+tiny-file smoke test exists; (2) the leakage canary has been proven on synthetic data but not
+re-proven against the real residualization implementation (which does not exist yet). Staff's
+recommended next action is for the operator to run the updated
+`scripts/run_campaign58_grid_power_analysis.py` locally against the real multi-asset data before
+any authorization request is made — asking for execution authorization ahead of knowing whether
+the grid itself clears power would be asking the CEO to decide on a foundation staff has not
+yet finished checking.

@@ -6,13 +6,32 @@
 residualization, and decision rules — frozen before any real predictor/outcome value, residual,
 or model fit is computed, viewed, inspected, ranked, or interpreted.**
 
-This freezes the design. It does **not** authorize execution. Two gates remain open and are
-stated explicitly in §12 rather than assumed clear: (1) a grid-level power verification at this
-grid's actual family size (not yet run — the only power result that exists, §2, tested a
-7-candidate family, not this specification's 48-candidate-per-outcome-family design), and (2) a
-new, explicit CEO authorization for real predictor/outcome computation and model fitting, which
-the standing 2026-09-03 authorization did not grant (it authorized specification-freeze work
-only). Neither gate is satisfied by this document.
+**Correction — independent Red Team review, same day: `CONDITIONAL_PASS`, ten binding
+conditions, all applied below.** Full review:
+`docs/research/CAMPAIGN_58_PHASE1_SPEC_INDEPENDENT_RED_TEAM_REVIEW.md`. The review independently
+verified the hyperparameter freeze, leakage canary, regime-source restriction, grid arithmetic,
+and §12c's sourcing against real code and real committed numbers — all confirmed genuine, not
+merely claimed. It also found: a filename defect (fixed in §13/§14 below); that the grid-level
+power check must cover all three outcome families, not Family R alone (§14, script updated); that
+§12b's material-margin threshold was untested and roughly 5× the census's own assumed effect size
+(§12b, recalibrated below); that the permutation/lift-null constructions and the best-of-N model
+selection needed explicit multiplicity treatment (§12a/§12b, stated below); that §12c's flagged
+list needed to be explicitly closed and its "90 clean candidates" claim made conditional (both
+done below); and that the charter's own Risk/PM correlation-to-Core-NAV check was dropped rather
+than deferred (reinstated in §12d below). Each correction is marked at the section it changes,
+per this fund's append-only-correction convention — the original frozen text is not silently
+rewritten.
+
+This freezes the design. It does **not** authorize execution. Gates remain open and are stated
+explicitly in §12/§13 rather than assumed clear: (1) a grid-level power verification at this
+grid's actual family size, across all three outcome families (not yet run — the only power
+result that exists, §2, tested a 7-candidate Family-R-only base family; the one grid-scale
+attempt so far, `artifacts/campaign58_grid_power_analysis/grid_power_analysis_20260903T152626Z.json`,
+was a tiny-file smoke test with `min_trials_per_hypothesis: 0`, not informative), (2) the §12b
+material-margin recalibration's own power has not been independently verified, and (3) a new,
+explicit CEO authorization for real predictor/outcome computation and model fitting, which the
+standing 2026-09-03 authorization did not grant (it authorized specification-freeze work only).
+No gate is satisfied by this document.
 
 Campaign #58 Phase 1 remains observation-only. It authorizes no runtime, threshold, regime,
 classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or
@@ -25,9 +44,8 @@ model-training-for-production change, and no Core v1 or Core v2 change of any ki
   `docs/research/CAMPAIGN_58_SPECIFICATION_FREEZE_PREREQUISITES_RESULT.md`
 - Recovery Trust retroactive closure:
   `docs/research/RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md`
-- independent Red Team review of this specification:
-  `docs/research/CAMPAIGN_58_PHASE1_SPEC_INDEPENDENT_RED_TEAM_REVIEW.md` (referenced once
-  produced; this document is not itself final until that review is recorded)
+- independent Red Team review of this specification (`CONDITIONAL_PASS`, 10 conditions, applied):
+  `docs/research/CAMPAIGN_58_PHASE1_SPEC_INDEPENDENT_RED_TEAM_REVIEW.md`
 
 ## 1. Plain-English question
 
@@ -108,6 +126,17 @@ Every one of the 8 base features enters the grid twice: **raw** (as computed in 
 **residualized** against known Itera signals (§9). This is the campaign's actual novel content —
 "residual predictability after known signals are removed" is the question in the charter's own
 title, not something added in reaction to the power result.
+
+**Correction — independent Red Team review:** the preceding sentence stated this connection with
+more confidence than the charter's actual text supports. The charter's Quant Research design
+(Part 2) describes residualization as a step to apply, not unambiguously a parallel raw-vs-
+residual comparison axis — a narrower reading (test residualized values only, since raw
+predictability was already Campaign #48's job) is equally defensible and was not previously
+acknowledged as an alternative. The raw/residual doubling adopted here is one reasonable
+interpretation of the charter, chosen because it lets the grid report both "is there raw
+predictability" and "is there anything left after removing known signal" side by side (the
+research map the charter's own deliverable section asks for), not because it is the only
+available reading. Recorded plainly rather than asserted as unambiguous.
 
 ## 6. Target families (Campaign #48's own R/M/V, unchanged)
 
@@ -233,27 +262,61 @@ out-of-sample R²) is used to determine whether the candidate clears family-wise
 whether its association direction is consistent across the pooled fit and both partition-2 and
 partition-3 evaluations (directional consistency, Campaign #48's own convention).
 
+**Correction — independent Red Team review (condition 5):** selecting the best of 6 models per
+candidate is itself a source of multiplicity beyond the between-candidate FDR correction above,
+and this was previously unaddressed. It is corrected the same way as 12b's own selection
+multiplicity below (§12b's amended condition 2): **the empirical null reference each candidate's
+p-value is measured against (§2's `build_null_reference`-style construction) must itself apply
+the identical best-of-6-models selection at every null resample**, not compare a real best-of-6
+statistic against a null built from a single fixed model. This makes the comparison like-for-like
+— the selection procedure is baked symmetrically into both the real statistic and its null
+reference, rather than only inflating the real side. No additional FDR correction factor is
+applied for the model-selection step itself; matching the null construction to the real
+procedure is the correction.
+
 ### 12b. Does ML materially beat simple (the campaign's actual research question)
 
 For any candidate that clears 12a, compare the **best constrained-ML model's** partition-3 OOS R²
 against the **best of {naive, simple linear}'s** partition-3 OOS R². ML "wins" for that candidate
 only if **all** of the following hold:
 
-1. **Material margin:** the ML model's OOS R² exceeds the best baseline's OOS R² by at least
-   `0.02` absolute (pre-registered now; not adjustable after seeing any real result) — a
-   deliberately non-trivial bar, since the charter's own instruction is that ML must be
+1. **Material margin — corrected, independent Red Team review (condition 3):** the original
+   `0.02` absolute figure was untested and had no derivation; at the census's own central IC
+   (0.065), the implied effect size is R² ≈ IC² ≈ `0.0042` — the 0.02 figure was roughly 5× that,
+   an unjustified and effectively near-unfalsifiable bar. **Corrected margin: the ML model's OOS
+   R² must exceed the best baseline's OOS R² by at least `0.0042` (= the central-IC-implied R²,
+   rounded to no fewer significant figures than the IC itself carries) — i.e., ML must add at
+   least one central-effect-size unit of incremental information beyond what the simple baseline
+   already captures.** This ties the materiality bar to the same yardstick the power analysis
+   itself is calibrated against, rather than an arbitrary round number, and is still a
+   deliberately non-trivial bar (a real, whole additional unit of the census's own assumed
+   effect, not a fraction of one) consistent with the charter's instruction that ML must be
    "materially better, not merely numerically higher."
 2. **Survives family-wise FDR on the lift itself:** the ML-vs-baseline R² improvement, treated as
    its own 48-candidate-family test (one p-value per candidate, from a block-bootstrap null of
    the lift itself, block size 8 anchors matching §2), clears BH-FDR at `q=0.10` within the same
-   outcome family.
-3. **Survives the negative/permutation control:** the best ML model is re-fit against a
-   block-permuted target (target values shuffled in contiguous 8-anchor blocks per asset,
-   preserving each asset's own within-block structure, ≥100 permutation resamples) on the
-   identical folds and feature. The real lift must exceed the 95th percentile of the
-   permutation-null lift distribution. A candidate whose real lift does not clear this bar is
-   **not** counted as an ML win regardless of 1-2, since a lift that beats simple baselines even
-   on a permuted (informationless) target is a model/infrastructure artifact, not signal.
+   outcome family. **Correction (condition 4):** the null reference for this test must be
+   constructed by re-running the **full best-of-4-ML/best-of-2-baseline selection** at each null
+   resample (matching 12a's own correction above) — not by fixing the model choice selected on
+   real data and only resampling that one pair's difference, which would understate the true
+   null variability of the actual "pick best of 4, pick best of 2" statistic used on real data.
+3. **Survives the negative/permutation control — corrected, independent Red Team review
+   (condition 4):** the best ML model is re-fit against a block-permuted target (target values
+   shuffled in contiguous 8-anchor blocks per asset, preserving each asset's own within-block
+   structure, ≥100 permutation resamples) on the identical folds and feature. **At each
+   permutation resample, the full best-of-4-ML/best-of-2-baseline selection is re-run on the
+   permuted data — the model choice is not fixed from the real run.** The real lift must exceed
+   the 95th percentile of this permutation-null lift distribution. A candidate whose real lift
+   does not clear this bar is **not** counted as an ML win regardless of 1-2, since a lift that
+   beats simple baselines even on a permuted (informationless) target is a model/infrastructure
+   artifact, not signal. **Flagged asymmetry (independent Red Team review):** 8-anchor block
+   permutation is more reliable at destroying spurious lift for **residualized** variants (which
+   have had slow macro/regime drift explicitly removed) than for **raw** variants, where a raw
+   feature and a raw target sharing a slow multi-year macro co-movement could retain some
+   spurious block-permuted "lift" that this granularity does not fully eliminate. Any raw-variant
+   candidate that clears 12b.3 narrowly (real lift only modestly above the permutation-null 95th
+   percentile) should be reported with this caveat attached, not treated as equivalent-strength
+   evidence to a residualized-variant candidate clearing the same bar by the same margin.
 4. **Fold-stable:** the sign of the ML-vs-baseline lift is the same in both the partition-2 and
    partition-3 evaluations independently, not only in the pooled fit — a lift driven by one
    partition alone does not count.
@@ -273,10 +336,39 @@ a **negative** result on these specific candidates may be interpreted, per the s
 CLAUDE.md's own retirement notes for Jump Risk and Trend Persistence apply to distinguishing "not
 reachable given real constraints" from "disproven."
 
+**Correction — independent Red Team review (condition 6):** this list of three features is
+**closed**. No feature may be added to it after seeing any real result, on any rationale, without
+a new Red-Team-reviewed amendment to this specification recorded as a dated correction to this
+document — the same discipline that applies to every other frozen element here. This exists
+specifically to prevent an inconvenient future null on an adequately-powered feature from being
+relabeled "underpowered" after the fact.
+
 The remaining 90 candidates (5 adequately-powered base features × 2 variants × 3 horizons × 3
 outcomes) may have their null results counted as genuine evidence toward the overall verdict.
 
-### 12d. Campaign verdict
+**Correction — independent Red Team review (condition 7):** the preceding sentence is
+**conditional, not unconditional**, on §13 item 1's outstanding grid-level power verification —
+covering all three outcome families per the §14 correction below — actually confirming these 90
+candidates individually clear 50% power at the true 48-candidate-family FDR stringency, using
+real (not proxy) targets. The 58.3%-average, unevenly-distributed result these 90 candidates'
+"adequately powered" label currently rests on was measured at a 7-candidate family with a proxy
+target, not at this specification's true scale. Until that check is done, treat the 90-candidate
+set as **provisionally** adequately powered, not confirmed.
+
+### 12d. Orthogonality check on any supported candidate (charter Part 2, Risk/PM — reinstated)
+
+**Correction — independent Red Team review (condition 8):** the charter's own Risk/PM condition
+was absent from this specification's decision rules and is reinstated here rather than left
+dropped. Any candidate that clears 12a and 12b must additionally be checked, before it is
+described anywhere as "residual," "orthogonal," or "independent information," for realized
+correlation between that candidate's own real feature series (raw or residualized, whichever
+variant cleared) and Core v1's own real NAV series over the same real evaluation window. This is
+a simple, deterministic, observation-only check — it makes no capital or sizing claim — and its
+result is reported alongside any supported candidate, not deferred to a later Risk/PM gate.
+"Residualized against known signals" is necessary but not sufficient for orthogonality: a feature
+can be uncorrelated with Core's signals today while still being a noisier proxy for Core's beta.
+
+### 12e. Campaign verdict
 
 **`ML_COMPLEXITY_NOT_JUSTIFIED`** if none of the 90 adequately-powered candidates clears 12b. This
 is the pre-registered default outcome, not a fallback — this fund's only two completed fitted-ML
@@ -292,31 +384,55 @@ campaign's planning charter already states.
 
 ## 13. What remains before real execution (stated plainly, not glossed over)
 
-1. **Grid-level power verification, not yet run.** §2's power result covers a 7-candidate family;
-   this specification's actual FDR families are 48 candidates each. BH-FDR's threshold tightens
-   as family size grows for a fixed single injected effect, so this specification's own power at
-   the frozen central IC (0.065) has **not** been demonstrated at its true 48-candidate family
-   size and must be checked — using the identical assets, central IC, and block size already
-   frozen — before real predictor/outcome computation is responsible. Companion script
-   `scripts/run_campaign58_phase1_grid_power_analysis.py` (built alongside this specification) is
-   ready for the operator to run locally for this purpose; see §14.
+1. **Grid-level power verification, not yet run at full scope.** §2's power result covers a
+   7-candidate, Family-R-only family; this specification's actual FDR families are 48 candidates
+   each, across three outcome families (R, M, V). BH-FDR's threshold tightens as family size
+   grows for a fixed single injected effect, so this specification's own power at the frozen
+   central IC (0.065) has **not** been demonstrated at its true scale and must be checked — using
+   the identical assets, central IC, and block size already frozen — before real predictor/
+   outcome computation is responsible. Companion script
+   `scripts/run_campaign58_grid_power_analysis.py` (corrected filename; built alongside this
+   specification) is ready for the operator to run locally for this purpose; see §14.
+   **Correction — independent Red Team review (condition 2):** the script as first built covered
+   Family R only, on the reasoning that Campaign #48 found no directional association there
+   (implying it's the "hardest" family). The review correctly identified this as conflating
+   whether a true effect exists (irrelevant to injected-IC power calibration) with how
+   autocorrelated a series is (what actually drives this methodology's power) — if forward
+   volatility/magnitude targets are as persistent as this fund's own price-state features
+   already measured are, Family M/V power could be *lower* than Family R's, meaning an R-only
+   result could **overstate**, not lower-bound, the real grid's power. The script (§14) is
+   updated to simulate all three outcome families; a Family-R-only result no longer satisfies
+   this item.
 2. **Residualization re-proof against the real implementation's own code**, per §9's own
    requirement, not yet done.
-3. **A new, explicit CEO authorization for real predictor/outcome computation and model
+3. **The §12b material-margin recalibration's own power has not been independently verified** —
+   it is now tied to the census's own central-IC-implied effect size rather than an arbitrary
+   number, but no power simulation has tested how often a real material-margin-clearing effect
+   of that size would actually be detected under 12b's full four-part test. Not a blocker to
+   freezing the specification's design, but a real, undone check before any real result from
+   12b is treated as conclusive.
+4. **A new, explicit CEO authorization for real predictor/outcome computation and model
    fitting** — the standing 2026-09-03 authorization covered specification-freeze work only and
    explicitly excluded "fitting real ML models against real predictor/outcome data" and
    "predictor/outcome computation for a Campaign #58 decision." This specification does not
    change that; it is a design document, not an execution authorization.
-4. **Independent Red Team review of this specification itself**, mandatory before any of the
-   above proceeds, per the itera-staff skill's standing guardrail and this campaign's own
-   charter.
+5. **Independent Red Team review of this specification itself** — complete.
+   `docs/research/CAMPAIGN_58_PHASE1_SPEC_INDEPENDENT_RED_TEAM_REVIEW.md`, `CONDITIONAL_PASS`,
+   ten conditions, all applied in this document as dated corrections.
 
-## 14. Companion tool for item 1 (built, not yet run)
+## 14. Companion tool for item 1 (built, updated per independent Red Team review, not yet run for real)
 
 `scripts/run_campaign58_grid_power_analysis.py` extends the already-proven block-bootstrap
 methodology (§2) to simulate power at this specification's actual 48-candidate-per-family scale,
-using the same real multi-asset data the operator already has locally. It is a power/methodology
-calibration tool only — like §2's own script, it does not compute any real predictor/outcome
-value or fit any real model against real data; it estimates whether the frozen gates (§12) would
-detect a real effect of the central assumed size, at the family size this specification actually
-freezes.
+**across all three outcome families (R, M, V)**, using the same real multi-asset data the
+operator already has locally. It is a power/methodology calibration tool only — like §2's own
+script, it does not compute any real predictor/outcome value or fit any real model against real
+data; it estimates whether the frozen gates (§12) would detect a real effect of the central
+assumed size, at the family size and scope this specification actually freezes.
+
+**Correction — independent Red Team review (condition 9):** the script's own resample-adequacy
+check is strengthened. Its own smoke test produced `min_trials_per_hypothesis: 0` and degenerate
+0.0/1.0 per-hypothesis power estimates at a low `--n-power-total` — a real run must use a budget
+large enough that every hypothesis receives a meaningful number of trials, and the script must
+refuse to report a clean PASS/FAIL headline if any hypothesis's trial count falls below a stated
+floor, rather than silently averaging over unreliable per-hypothesis estimates.
