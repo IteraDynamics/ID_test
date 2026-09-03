@@ -622,10 +622,39 @@ return source).
 **Authorized now:** this planning charter and the Recovery Trust retroactive closure (both
 complete; documentation-only, no new data touched).
 
-**Not authorized yet:** the specification-freeze prerequisites (autocorrelation-corrected power
-analysis, frozen candidate/hyperparameter grid) pending explicit CEO authorization per the staff
-escalation rule (chartering a new research direction is not a routine staff call); any predictor,
-feature, residual, or outcome computation; any model training; any implementation code; any
-inspection of any sealed holdout for any purpose; any strategy/signal/threshold/regime/order/
-execution/portfolio/NAV/exposure/dashboard/runtime change; any Core v1 change under any
-circumstance; any Core v2 composition/weight/capital decision.
+**Not authorized yet (superseded in part below):** the specification-freeze prerequisites
+(autocorrelation-corrected power analysis, frozen candidate/hyperparameter grid) pending
+explicit CEO authorization per the staff escalation rule (chartering a new research direction
+is not a routine staff call); any predictor, feature, residual, or outcome computation; any
+model training; any implementation code; any inspection of any sealed holdout for any purpose;
+any strategy/signal/threshold/regime/order/execution/portfolio/NAV/exposure/dashboard/runtime
+change; any Core v1 change under any circumstance; any Core v2 composition/weight/capital
+decision.
+
+## Correction — 2026-09-03: CEO authorizes Campaign #58 specification-freeze prerequisites
+
+Explicit CEO authorization, intentionally narrow, recorded in full in `ops/decisions.md`.
+
+**Newly authorized:** the autocorrelation-corrected power analysis; the Phase 0 cross-
+sectional effective-breadth measurement; construction and commitment of the complete
+candidate grid; exact fixed hyperparameters for every permitted model type; chronological
+fold and target definitions; the strictly causal expanding/walk-forward residualization
+specification; leakage-canary design and proof that the canary can fail; exact causal
+regime-state source/function identification; the multiplicity/FDR family definition; and
+Phase 0 (plus Phase 1, only if independently supportable by power) statistical-specification
+drafting and freeze. All eight binding independent Red Team conditions are adopted as-is.
+The default campaign outcome remains `ML_COMPLEXITY_NOT_JUSTIFIED`, restated by the CEO: ML
+does not earn continuation merely by producing statistically nonzero predictions — it must
+materially and reproducibly improve untouched chronological OOS information versus naive and
+simple statistical baselines under the same data, folds, targets, and multiplicity budget.
+Priority restated: Phase 0 (cross-sectional/non-price-information census) before Phase 1.
+
+**Still not authorized:** fitting real ML models against real predictor/outcome data;
+predictor/outcome computation for a Campaign #58 decision; consuming any untouched holdout;
+broad hyperparameter search; neural networks; strategy optimization; Sharpe optimization;
+economic trading-rule construction; portfolio mapping; Core v2 composition or weights; any
+Core v1 change; runtime, threshold, order, execution, NAV, exposure, paper/live, or capital
+changes.
+
+Staff reports the proposed frozen design and power result back for the next governed
+transition before any real Campaign #58 model fit is run.

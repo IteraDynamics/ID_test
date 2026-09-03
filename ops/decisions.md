@@ -252,3 +252,40 @@ ones — this is what makes "brief me" informative over time._
   freeze prerequisites (autocorrelation-corrected power analysis, frozen candidate/
   hyperparameter grid) is logged as a 🔴 Needs-CEO item in `ops/status.md`, per the staff
   escalation rule that chartering a new research direction is not a routine staff call.
+
+## 2026-09-03 — CEO authorizes Campaign #58 specification-freeze prerequisites
+
+- **Raised by:** Staff (Campaign #58 planning charter, ML research arm review) — CEO decision
+  logged as pending in `ops/status.md`.
+- **CEO decision:** "AUTHORIZED: proceed from PLANNING CHARTER to the specification-freeze
+  prerequisites for Campaign #58 — Itera Residual Predictability Census. This authorization is
+  intentionally narrow."
+- **Authorized now:** autocorrelation-corrected power analysis; effective-breadth measurement
+  for the proposed Phase 0 cross-sectional universe; construction and commitment of the
+  complete candidate grid; exact fixed hyperparameters for every permitted model type;
+  chronological fold and target definitions; strictly causal expanding/walk-forward
+  residualization specification; leakage-canary design and proof that the canary can fail;
+  exact causal regime-state source/function identification; multiplicity/FDR family
+  definition; Phase 0 and, if independently supportable by power, Phase 1 statistical-
+  specification drafting and freeze. All eight binding independent Red Team conditions from
+  the planning charter are adopted as-is. Default campaign outcome remains
+  `ML_COMPLEXITY_NOT_JUSTIFIED` — CEO restated explicitly: ML does not earn continuation
+  merely by producing statistically nonzero predictions; it must materially and reproducibly
+  improve untouched chronological OOS information versus naive and simple statistical
+  baselines under the same data, folds, targets, and multiplicity budget. Priority restated:
+  Phase 0 (cross-sectional/non-price-information census) before Phase 1 (time-series
+  residual-predictability census, only if pre-execution power/specification work supports
+  it).
+- **Not authorized yet:** fitting real ML models against real predictor/outcome data;
+  predictor/outcome computation for a Campaign #58 decision; consuming any untouched holdout;
+  broad hyperparameter search; neural networks; strategy optimization; Sharpe optimization;
+  economic trading-rule construction; portfolio mapping; Core v2 composition or weights; Core
+  v1 changes of any kind; runtime, threshold, order, execution, NAV, exposure, paper/live, or
+  capital changes.
+- **Required before the next transition:** once the specification-freeze prerequisites are
+  complete, staff reports the proposed frozen design and power result back for the next
+  governed transition before any real Campaign #58 model fit is run.
+- **Follow-up (in progress):** staff proceeding to the power analysis, effective-breadth
+  measurement, candidate grid, hyperparameter freeze, fold/target definitions, residualization
+  spec, leakage-canary proof, regime-source identification, and FDR family definition per this
+  authorization.
