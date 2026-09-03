@@ -11,6 +11,8 @@ This index is the front door to Itera Dynamics research. It distinguishes predic
 | Volatility Expansion Engine | Planned | Not started | Not tested | None | — |
 | Liquidity Compression Engine | Planned | Not started | Not tested | None | — |
 | Cross-Asset Leadership Engine | Planned | Not started | Not tested | None | — |
+| Recovery Trust Gate | Retroactively closed — diagnostic negative, never governed | UNESTABLISHED (one ungoverned run) | Never attempted | Not promoted | `RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md` |
+| Itera Residual Predictability Census (Campaign #58) | Planning charter — Red Team CONDITIONAL PASS, spec not frozen | Not started | Not tested | None | `CAMPAIGN_58_ITERA_RESIDUAL_PREDICTABILITY_CENSUS_CHARTER.md` |
 | Learned Regime / Representation Research | Future | Not started | Not tested | None | — |
 
 ## Lifecycle Vocabulary
@@ -50,6 +52,26 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
 - Any future work: restricted to 60h+ candidates, chartered as new research, not as a rescue
   of the 3h finding
 
+### Recovery Trust Gate
+
+- Real ML infrastructure (~3,000 lines, Logistic/RF/GBM, walk-forward folds) that gated
+  Core's own re-risk exposure decisions. Never chartered, never reached a governed artifact.
+- Documented outcome: diagnostic negative, not productionized.
+- Retroactively closed 2026-09-03 to remove the ungoverned gap before Campaign #58 opened.
+- Lifecycle: **RETROACTIVELY CLOSED — not reopened as-is; any future work is a new charter.**
+
+### Itera Residual Predictability Census (Campaign #58)
+
+- Planning charter recorded 2026-09-03 after full staff review (CIO, Quant, independent Red
+  Team, Risk/PM) of whether an ML research arm is justified by Itera's actual ML history.
+- Independent Red Team: CONDITIONAL PASS on the research direction, eight binding conditions.
+- Two tracks proposed: Phase 0 (primary) cross-sectional COT feature-family census; Phase 1
+  (secondary) time-series residual census on BTC/ETH/SPY/QQQ/GLD.
+- Frozen kill condition: `ML_COMPLEXITY_NOT_JUSTIFIED` if no candidate clears FDR + fold
+  stability + permutation-negative-control across the full frozen grid.
+- Lifecycle: **PLANNING — specification not frozen; CEO authorization needed to proceed to
+  the power-analysis and grid-freeze prerequisites.**
+
 ## Canonical Research Documents
 
 - `CANDIDATE_HORIZON_FEASIBILITY_SWEEP.md`
@@ -60,6 +82,8 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
 - `JUMP_RISK_V0_TIMELINE.md`
 - `PROMOTION_DECISION_JUMP_RISK_V0.md`
 - `TREND_PERSISTENCE_V0_FINAL.md`
+- `RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md`
+- `CAMPAIGN_58_ITERA_RESIDUAL_PREDICTABILITY_CENSUS_CHARTER.md`
 
 ## Separation of Responsibilities
 

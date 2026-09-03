@@ -580,3 +580,52 @@ any VTI/BND return is read. Full conditions in the linked record.
 (gated on Red Team, which has now passed but with the above conditions unmet), Core v2 composition/weight decisions,
 economic materiality analysis has not yet been performed for this campaign, and all standing Core v1/runtime/
 portfolio/paper/live/capital prohibitions remain unchanged.
+
+## Correction — 2026-09-03: Campaign #58 — Itera Residual Predictability Census (ML research program)
+
+Following a CEO-initiated staff review of whether a formal ML research arm is justified, full staff
+(CIO, Quant Research, independent Red Team, Risk/PM) evaluated the question against a repo-grounded
+retrospective of Itera's actual prior ML work. **PLANNING CHARTER recorded, gates not yet run.**
+
+Governing charter: `docs/research/CAMPAIGN_58_ITERA_RESIDUAL_PREDICTABILITY_CENSUS_CHARTER.md`.
+
+Retrospective (full record in the charter): exactly two governed fitted-ML programs exist in this
+repo's history — Jump Risk Engine v0 (GBM/Logistic, validated predictively, cross-asset transferred
+untuned, RETIRED on runtime-latency grounds not modeling grounds) and Trend Persistence Engine v0
+(Logistic/GBM, validated predictively, every portfolio mapping REJECTED). A third, Recovery Trust
+Gate (Logistic/RF/GBM gating Core's own re-risk decisions), was real research infrastructure that
+never entered governance — retroactively closed by this same review:
+`docs/research/RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md`. Everything else living under
+`research/ml/` is deterministic/OLS-based despite the directory name — no fitted models. Campaign
+#48 (72-candidate OLS census) is the fund's only rigorous simple-baseline study and never got an ML
+comparator; it found signal only in volatility/magnitude, none in direction.
+
+Independent Red Team verdict: **CONDITIONAL PASS** on chartering the research direction, with eight
+binding conditions (frozen candidate grid sized to autocorrelation-corrected power; frozen, not
+searched, hyperparameters; strictly walk-forward residualization with a provable leakage canary;
+regime control restricted to the causal `baseline_engine.py` path only; cross-sectional tracks must
+measure real effective breadth before any power claim; `ML_COMPLEXITY_NOT_JUSTIFIED` as the
+pre-registered default, not a fallback; Recovery Trust closed first — done; any surviving signal
+re-enters the full Gate 0-4 sequence before trading relevance). Absent all eight, FAIL.
+
+Staff recommendation: two tracks, not one — Phase 0 (primary) a cross-sectional feature-family
+census on the COT futures universe (the only dataset with independently measured, non-trivial
+effective breadth: 5.1/21 markets, Campaign #55); Phase 1 (secondary, smaller) a time-series
+residual census on BTC/ETH/SPY/QQQ/GLD, given every single-instrument design this fund has run has
+hit a low-effective-N ceiling. CIO recommends this as a single bounded research-infrastructure
+campaign, explicitly not a standing ML department — no named Core v2 structural deficiency is a
+modeling-technique gap. Risk/PM: plausible orthogonality only if scoped to non-price-history/
+cross-sectional features; unlikely if scoped to price-history features on Core's own instruments
+(both prior rigorous ML efforts reduced to trend/vol timing on Core's own exposure, not a new
+return source).
+
+**Authorized now:** this planning charter and the Recovery Trust retroactive closure (both
+complete; documentation-only, no new data touched).
+
+**Not authorized yet:** the specification-freeze prerequisites (autocorrelation-corrected power
+analysis, frozen candidate/hyperparameter grid) pending explicit CEO authorization per the staff
+escalation rule (chartering a new research direction is not a routine staff call); any predictor,
+feature, residual, or outcome computation; any model training; any implementation code; any
+inspection of any sealed holdout for any purpose; any strategy/signal/threshold/regime/order/
+execution/portfolio/NAV/exposure/dashboard/runtime change; any Core v1 change under any
+circumstance; any Core v2 composition/weight/capital decision.

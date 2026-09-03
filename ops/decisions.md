@@ -207,3 +207,48 @@ ones — this is what makes "brief me" informative over time._
 - **The ask:** authorize promotion of Month-End Equity/Bond Rebalancing Pressure from `SCREEN_POSITIVE` into the normal governed research pipeline as a new campaign.
 - **CEO decision:** "Authorize promotion".
 - **Follow-up (done):** Campaign #57 chartered in `docs/research/CAMPAIGN_57_MONTH_END_REBALANCE_PRESSURE_CHARTER.md`; authoritative campaign board updated; campaign history and current status updated. Sandbox SPY/AGG evidence is explicitly discovery-contaminated and may not be reused as confirmation. Authorized next step is limited to untouched VTI/BND source/calendar feasibility and a pre-outcome deterministic power simulation. No VTI/BND predictive outcome computation, economic backtest, Core v2 composition/weight, capital, paper/live action, or Core v1 change is authorized by this decision.
+
+## 2026-09-03 — evaluate whether Itera should create a formal ML research arm
+
+- **Raised by:** CEO — explicit instruction that this was research-program design evaluation
+  only, not authorization to deploy ML, modify Core v1, change runtime behavior, alter
+  portfolio weights, or begin live/paper trading.
+- **The ask:** given Itera's actual historical experience with ML, is there a justified,
+  bounded ML research program that complements existing deterministic research rather than
+  recreating past overfitting/weak-OOS problems? Repo-grounded retrospective required before
+  any proposal; full independent staff review (CIO, Quant Research, Red Team, Risk/PM)
+  required; preferred initial concept to evaluate was an "Itera Residual Predictability
+  Census" with a hard kill condition (`ML_COMPLEXITY_NOT_JUSTIFIED`).
+- **Staff finding:** exactly two governed fitted-ML programs exist in this repo's history
+  (Jump Risk Engine v0, Trend Persistence Engine v0) — both found real, validated OOS
+  predictive skill and both died downstream of the model (economic mapping or runtime
+  latency), never at statistical validation. A third, real but ungoverned ML program
+  (Recovery Trust Gate) ran to a diagnostic negative and was abandoned outside governance
+  entirely. Everything else living under `research/ml/` is deterministic/OLS-based despite
+  the directory name. No apples-to-apples simple-vs-ML comparison has ever been run at Itera.
+- **Independent Red Team verdict:** `CONDITIONAL PASS` on chartering the research direction,
+  run as a genuinely separate subagent with no visibility into the in-thread staff draft, per
+  the itera-staff skill's independence requirement. Eight binding conditions attach (frozen,
+  power-sized candidate grid; frozen not searched hyperparameters; provably-causal
+  residualization with a leakage canary; regime control restricted to the deterministic
+  engine's causal path; cross-sectional tracks must measure real effective breadth first;
+  `ML_COMPLEXITY_NOT_JUSTIFIED` as the pre-registered default; Recovery Trust closed first;
+  any surviving signal re-enters the full Gate 0-4 sequence). Absent all eight, FAIL.
+- **Staff recommendation:** charter a single bounded Phase 0/Phase 1 research-infrastructure
+  campaign (Campaign #58), not a standing ML department — no named Core v2 structural
+  deficiency is a modeling-technique gap. Two tracks: Phase 0 (primary) cross-sectional COT
+  feature-family census (the only dataset with independently measured non-trivial effective
+  breadth); Phase 1 (secondary, smaller) time-series residual census on
+  BTC/ETH/SPY/QQQ/GLD as originally proposed.
+- **Actions taken within staff's routine authority (no CEO input required):**
+  1. Retroactively closed Recovery Trust Gate as a governance-documentation action
+     (`docs/research/RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md`) — an already-existing
+     negative result, not new research.
+  2. Recorded Campaign #58 as a **planning charter** (not a frozen specification, per the
+     standing amendment against freezing a spec the same session it is drafted):
+     `docs/research/CAMPAIGN_58_ITERA_RESIDUAL_PREDICTABILITY_CENSUS_CHARTER.md`.
+  3. Updated `docs/ITERA_CAMPAIGN_BOARD.md` and `docs/research/INDEX.md`.
+- **CEO decision:** PENDING — whether to authorize staff to proceed to the specification-
+  freeze prerequisites (autocorrelation-corrected power analysis, frozen candidate/
+  hyperparameter grid) is logged as a 🔴 Needs-CEO item in `ops/status.md`, per the staff
+  escalation rule that chartering a new research direction is not a routine staff call.
