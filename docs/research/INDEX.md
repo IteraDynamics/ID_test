@@ -12,7 +12,7 @@ This index is the front door to Itera Dynamics research. It distinguishes predic
 | Liquidity Compression Engine | Planned | Not started | Not tested | None | — |
 | Cross-Asset Leadership Engine | Planned | Not started | Not tested | None | — |
 | Recovery Trust Gate | Retroactively closed — diagnostic negative, never governed | UNESTABLISHED (one ungoverned run) | Never attempted | Not promoted | `RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md` |
-| Itera Residual Predictability Census (Campaign #58) | Phase 1 spec frozen, Red Team `CONDITIONAL_PASS` (10 conditions applied); grid-level power test pending; model-fit NOT authorized. Phase 0 blocked on data access | Not started | Not tested | None | `CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md` |
+| Itera Residual Predictability Census (Campaign #58) | Phase 1 spec frozen, Red Team `CONDITIONAL_PASS` (10 conditions applied); grid-level power test run for real — **FAIL (45.8%)**; CEO fork open. Phase 0 blocked on data access | Not started | Not tested | None | `CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md` |
 | Learned Regime / Representation Research | Future | Not started | Not tested | None | — |
 
 ## Lifecycle Vocabulary
@@ -88,13 +88,19 @@ See `RESEARCH_PROMOTION_POLICY.md` for formal gates.
   resample; underpowered-feature list explicitly closed; charter's Risk/PM correlation-to-
   Core-NAV check reinstated. Full record: `CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md`,
   `CAMPAIGN_58_PHASE1_SPEC_INDEPENDENT_RED_TEAM_REVIEW.md`.
-- **Real model-fitting is NOT authorized** under the standing 2026-09-03 CEO authorization,
-  independent of the Red Team verdict — that authorization's text explicitly excludes real
-  predictor/outcome computation and model fitting. Staff is not yet requesting the needed new
-  authorization; two cheap prerequisite checks (grid-level power test across all 3 outcome
-  families, leakage-canary re-proof against the real implementation) remain first.
-- Lifecycle: **SPEC FROZEN, RED-TEAM CONDITIONAL PASS APPLIED — grid-level power test (all 3
-  families) pending, not yet run for real. Model-fit authorization not requested yet. Phase 0
+- **Grid-level power test run for real (all 3 outcome families) — FAIL.** Overall average power
+  45.8% against the 50% floor, trial-adequacy confirmed (min 39 ≥ 20 required). Per family: R
+  54.9%, M 41.8%, V 40.6%. Independently confirms the Red Team's own concern: a Family-R-only
+  calibration would have overstated true grid power by 9.1 points (54.9% false PASS vs. the real
+  45.8%). Used as computed, no design element adjusted after seeing it. One honest, explicitly
+  post-hoc question raised but not acted on: the calibration's residualized-variant columns are
+  numerically identical to raw ones, creating 72 exact-duplicate pairs that may have inflated
+  the effective FDR family size beyond what a real run would show — flagged, not used to
+  override the FAIL. Full record: `CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md` §15.
+- **Real model-fitting remains NOT authorized** under the standing 2026-09-03 CEO authorization,
+  independent of the Red Team verdict or this power result.
+- Lifecycle: **GRID-LEVEL POWER FAIL (real, 45.8%) — CEO fork open: close the track, or
+  independently check the post-hoc duplication concern first. Model-fit not authorized. Phase 0
   still blocked on data/network access.**
 
 ## Canonical Research Documents

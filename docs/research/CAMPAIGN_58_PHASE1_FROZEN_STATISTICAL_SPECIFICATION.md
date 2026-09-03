@@ -22,16 +22,20 @@ than deferred (reinstated in §12d below). Each correction is marked at the sect
 per this fund's append-only-correction convention — the original frozen text is not silently
 rewritten.
 
-This freezes the design. It does **not** authorize execution. Gates remain open and are stated
-explicitly in §12/§13 rather than assumed clear: (1) a grid-level power verification at this
-grid's actual family size, across all three outcome families (not yet run — the only power
-result that exists, §2, tested a 7-candidate Family-R-only base family; the one grid-scale
-attempt so far, `artifacts/campaign58_grid_power_analysis/grid_power_analysis_20260903T152626Z.json`,
-was a tiny-file smoke test with `min_trials_per_hypothesis: 0`, not informative), (2) the §12b
-material-margin recalibration's own power has not been independently verified, and (3) a new,
-explicit CEO authorization for real predictor/outcome computation and model fitting, which the
-standing 2026-09-03 authorization did not grant (it authorized specification-freeze work only).
-No gate is satisfied by this document.
+**Correction — real grid-level power result, same day: FAIL (45.8%, full detail in §15).** The
+grid-level power verification (§13 item 1) has now been run for real, at the true 144-candidate,
+3-outcome-family scope, trial-adequacy confirmed — and it does not clear the 50% floor. This gate
+is resolved, negatively. Per this specification's own standing discipline, real predictor/outcome
+computation is **not** treated as responsible while this stands. §15 records the result in full,
+including an honestly post-hoc methodological question about the grid-power tool's own
+residualized-variant approximation that is explicitly not being used to override this result.
+
+This freezes the design. It does **not** authorize execution. Of the three gates originally
+listed here: (1) the grid-level power verification is now resolved — **FAIL**, not the hoped-for
+PASS (§15); (2) the §12b material-margin recalibration's own power has still not been
+independently verified; and (3) a new, explicit CEO authorization for real predictor/outcome
+computation and model fitting was never granted by the standing 2026-09-03 authorization and
+remains ungranted — moot for now given (1). No gate is satisfied by this document.
 
 Campaign #58 Phase 1 remains observation-only. It authorizes no runtime, threshold, regime,
 classifier, signal, strategy, order, execution, portfolio, NAV, exposure, dashboard, or
@@ -403,6 +407,14 @@ campaign's planning charter already states.
    result could **overstate**, not lower-bound, the real grid's power. The script (§14) is
    updated to simulate all three outcome families; a Family-R-only result no longer satisfies
    this item.
+   **Correction — real result, 2026-09-03 (same day): FAIL.** Run for real by the operator
+   against the full multi-asset dataset, trial-adequacy guard cleared (minimum 39 trials per
+   hypothesis, ≥ the required 20). **Overall average power across all 144 hypotheses: 45.8%,
+   against the 50% floor — FAIL.** Per-family: R 54.9%, M 41.8%, V 40.6%. This independently
+   confirms the Red Team's own concern above was correct, not merely theoretical: Family R alone
+   would have reported 54.9%, overstating the true blended grid power by 9.1 points. Full
+   discussion, including an honestly-labeled post-hoc methodological question this result raises,
+   in §15.
 2. **Residualization re-proof against the real implementation's own code**, per §9's own
    requirement, not yet done.
 3. **The §12b material-margin recalibration's own power has not been independently verified** —
@@ -436,3 +448,47 @@ check is strengthened. Its own smoke test produced `min_trials_per_hypothesis: 0
 large enough that every hypothesis receives a meaningful number of trials, and the script must
 refuse to report a clean PASS/FAIL headline if any hypothesis's trial count falls below a stated
 floor, rather than silently averaging over unreliable per-hypothesis estimates.
+
+## 15. Real grid-level power result, 2026-09-03 (same day) — FAIL, and an honest open question
+
+**Result.** Run by the operator locally against the full real BTC/ETH/SPY/QQQ/GLD dataset
+(2,522 pooled real anchors), trial-adequacy guard cleared (minimum 39 trials/hypothesis, ≥ the
+required 20 — this is a trustworthy estimate, not an under-sampled artifact). **Overall average
+power across all 144 hypotheses at the central IC (0.065): 45.8%, against the 50% floor — FAIL.**
+Per outcome family: R 54.9%, M 41.8%, V 40.6%.
+
+**This is used as computed**, per this specification's own standing discipline (§2, §13) and the
+CEO's own explicit instruction not to adjust assets, horizons, feature definitions, the proxy
+target, block size, candidate family, or central IC after seeing a power result. None of those
+elements are changed in response to this result. Item 1 of §13 is now resolved — with a FAIL, not
+a PASS.
+
+**This independently confirms the Red Team's own concern (§13 item 1's correction) was correct in
+practice, not merely in principle.** Family R alone reports 54.9%; the true blended figure across
+all three families is 45.8% — a Family-R-only calibration would have overstated real grid power
+by 9.1 points and reported a false PASS. The review's reasoning (conflating "does a true effect
+exist" with "how autocorrelated is the series") predicted exactly this direction of error, and it
+materialized.
+
+**An honest, explicitly post-hoc methodological question — raised here, not acted on
+unilaterally.** The grid-power script approximates each residualized feature-variant by reusing
+its raw counterpart's exact values (§14, disclosed before this run). That approximation was
+described as conservative with respect to null *width* (residualization typically does not
+increase autocorrelation). Only after seeing this FAIL did staff notice a **second, distinct**
+effect the original disclosure did not name: because raw and "residualized" variants are
+numerically **identical** in this calibration, the 144-hypothesis family actually contains 72
+exact-duplicate pairs. Benjamini-Hochberg's detection threshold tightens with family size
+regardless of whether the added hypotheses are genuinely independent tests or exact copies of
+existing ones — so this approximation may have inflated the effective family size (and thus
+suppressed the estimated power) in a way a real run would not reproduce, since real residualized
+values would differ numerically from their raw counterparts even if correlated with them.
+
+This is flagged, explicitly, as a **post-hoc observation** — it was not identified before this
+run, and per the same discipline that prohibits adjusting the design after seeing a result, it is
+**not** used here to discount, override, or re-run away this FAIL. Two things can both be true:
+the FAIL stands as computed, and the calibration tool that produced it may have a real, nameable
+defect worth an independent look before anyone treats 45.8% as the final word on this grid's true
+power. Whether to spend further effort on that question — and whether doing so is itself
+legitimate or is a step toward exactly the kind of post-hoc design-shopping this campaign exists
+to prevent — is not a call staff is making unilaterally; see the campaign board's same-day
+correction for how this is being put to the CEO.

@@ -803,3 +803,44 @@ recommended next action is for the operator to run the updated
 any authorization request is made — asking for execution authorization ahead of knowing whether
 the grid itself clears power would be asking the CEO to decide on a foundation staff has not
 yet finished checking.
+
+## Correction — 2026-09-03 (same day): real grid-level power result is FAIL
+
+The operator ran the updated `scripts/run_campaign58_grid_power_analysis.py` locally against the
+real, full multi-asset dataset (2,522 pooled real anchors). Trial-adequacy guard cleared (minimum
+39 trials/hypothesis, ≥ the required 20) — this is a trustworthy result, not an under-sampled
+artifact. **Overall average power across all 144 hypotheses at the central IC: 45.8%, against
+the 50% floor — FAIL.** Per outcome family: R 54.9%, M 41.8%, V 40.6%. Full record:
+`docs/research/CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md` §15.
+
+**This independently confirms the independent Red Team's own concern was correct in practice, not
+just in principle.** Family R alone reports 54.9% — a Family-R-only calibration (the tool's
+original, pre-correction scope) would have overstated the true blended grid power by 9.1 points
+and returned a false PASS. Used as computed, per the standing discipline and the CEO's own
+explicit instruction not to adjust assets, horizons, feature definitions, the proxy target, block
+size, candidate family, or central IC after seeing a power result — none of those elements
+changed in response to this result.
+
+**One honest, explicitly post-hoc methodological question, raised but not acted on
+unilaterally.** The grid-power script's residualized-variant columns are numerically identical to
+their raw counterparts (a disclosed approximation, since real residualization isn't implemented
+yet). Only after seeing this FAIL did staff notice this creates 72 exact-duplicate pairs within
+the 144-hypothesis family — and Benjamini-Hochberg's threshold tightens with family size
+regardless of whether added hypotheses are genuinely independent or exact copies, which a real
+run (where residualized values would differ numerically from raw ones) would not reproduce. This
+is flagged explicitly as a post-hoc observation, not used to discount, override, or trigger an
+unauthorized re-run of this FAIL — the same discipline that prohibits adjusting the design after
+seeing a result applies to adjusting the calibration tool for the same reason. Full reasoning:
+`docs/research/CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md` §15.
+
+**What this means:** the grid-level power gate (§13 item 1) is resolved, negatively. Per the
+specification's own standing discipline, real predictor/outcome computation is not treated as
+responsible while this result stands — moot, in any case, since the standing CEO authorization
+still does not cover it. **Two forks put to the CEO, neither resolved by staff:** (1) accept this
+as a real FAIL and close or deprioritize the Phase 1 time-series track, consistent with how
+underpowered designs have been closed elsewhere in this fund's history; or (2) treat the
+post-hoc duplication concern as worth an independent (Red-Team, not staff-unilateral) check on
+whether the calibration tool itself has a fixable defect before treating 45.8% as final — and
+only if that check concludes the tool understated real power, consider a corrected calibration
+re-run, itself subject to a fresh independent review before being trusted. Staff does not
+recommend between these.

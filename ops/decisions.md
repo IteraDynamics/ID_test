@@ -407,3 +407,33 @@ ones — this is what makes "brief me" informative over time._
   doing next*. What staff is doing next (the grid-level power check) does not itself require new
   authorization; the eventual real model-fit does, and staff will return with that request once
   the two checks above are done.
+
+## 2026-09-03 — Campaign #58 Phase 1: real grid-level power result is FAIL
+
+- **Follow-up to the same-day specification-freeze and Red Team entries above.** Full record:
+  `docs/research/CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md` §15,
+  `docs/ITERA_CAMPAIGN_BOARD.md` (2026-09-03 same-day correction).
+- **CEO action:** ran the corrected `scripts/run_campaign58_grid_power_analysis.py` locally
+  against the real, full multi-asset dataset, at the actual 144-candidate, 3-outcome-family
+  scope (not the earlier 7-candidate base family).
+- **Real result: overall average power 45.8%, against the 50% floor — FAIL.** Trial-adequacy
+  guard cleared (minimum 39 trials/hypothesis, ≥ 20 required) — trustworthy, not under-sampled.
+  Per outcome family: R 54.9%, M 41.8%, V 40.6%.
+- **This independently confirms the independent Red Team's own concern was correct in practice.**
+  A Family-R-only calibration (the tool's original, pre-correction scope) would have reported
+  54.9% — a false PASS overstating the true blended power by 9.1 points.
+- **Used as computed** — no design element (assets, horizons, feature definitions, proxy target,
+  block size, candidate family, central IC) was adjusted after seeing this result, per the
+  standing discipline and the CEO's own explicit instruction.
+- **One honest, explicitly post-hoc observation, not acted on:** the calibration tool's
+  residualized-variant columns are numerically identical to their raw counterparts (a disclosed
+  approximation). Staff only noticed after this FAIL that this creates 72 exact-duplicate pairs
+  within the 144-hypothesis family, which tightens BH-FDR's threshold in a way a real run (where
+  residualized values would genuinely differ from raw ones) would not reproduce. Flagged
+  explicitly as post-hoc; not used to discount, override, or trigger an unauthorized re-run —
+  the same discipline that prohibits redesigning after seeing a result applies to the
+  calibration tool for the same reason.
+- **CEO decision requested:** logged as a 🔴 item in `ops/status.md` — accept this as a real FAIL
+  and close/deprioritize the Phase 1 time-series track, or authorize an independent (Red-Team,
+  not staff-unilateral) check on the post-hoc duplication concern before treating 45.8% as final.
+  Staff does not recommend between these.
