@@ -437,3 +437,32 @@ ones — this is what makes "brief me" informative over time._
   and close/deprioritize the Phase 1 time-series track, or authorize an independent (Red-Team,
   not staff-unilateral) check on the post-hoc duplication concern before treating 45.8% as final.
   Staff does not recommend between these.
+
+## 2026-09-03 — Campaign #58 Phase 1: independent review rejects post-hoc duplication concern, 45.8% binding
+
+- **Raised by:** CEO — explicit instructions for a genuinely independent, outcome-neutral
+  statistical implementation review of the raw=residualized duplication concern staff flagged
+  (but did not act on) against the real 45.8% grid-level power FAIL. Seven specific sub-questions,
+  hard constraints against touching the frozen design or real Campaign #58 data, and a
+  three-verdict framework with branch-specific required actions.
+- **Review conducted:** genuinely separate subagent context, not told which outcome (defect or
+  valid) was preferred. Built a synthetic experiment using this repo's own real simulator
+  primitives (imported, not reimplemented) comparing exact-duplicate fillers (mirroring the real
+  calibration script) against independently-drawn, distribution-matched fillers, at the frozen
+  central IC (0.065) and FDR (q=0.10). Result: paired mean power difference = 0.0000 ± 0.0009
+  across 8 seeds — no measurable distortion from duplication. Positive control (8→16-hypothesis
+  family size increase) produced a real, consistent ~32% relative power drop across all 8 seeds,
+  confirming the test harness is genuinely sensitive to family-size effects, ruling out
+  insensitivity as the explanation for the null duplication finding. The review also noted the
+  concern was self-reportedly post-hoc (visible in code before the run, raised only after seeing
+  the FAIL) and does not survive empirical test even given full consideration. Full record:
+  `docs/research/CAMPAIGN_58_GRID_POWER_CALIBRATION_IMPLEMENTATION_REVIEW.md`.
+- **Verdict: `ORIGINAL_POWER_FAIL_VALID`.** Per the CEO's own required actions for this verdict:
+  the 45.8% overall average power (Family R 54.9%, Family M 41.8%, Family V 40.6%) is recorded
+  as binding, not provisional. No rerun of the power calibration occurred or is recommended.
+- **Staff recommendation, put to the CEO for sign-off, not decided unilaterally:** close Campaign
+  #58 Phase 1's time-series track as underpowered, consistent with this fund's precedent for
+  closing underpowered designs. Phase 0 (cross-sectional COT census) is unaffected — remains a
+  separate, still-open track, blocked on data/network access, not on this result.
+- **CEO decision:** PENDING — logged as a 🔴 item in `ops/status.md`: confirm closure of Phase 1's
+  time-series track as underpowered.

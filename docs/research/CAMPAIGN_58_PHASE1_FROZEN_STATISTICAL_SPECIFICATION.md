@@ -492,3 +492,26 @@ power. Whether to spend further effort on that question — and whether doing so
 legitimate or is a step toward exactly the kind of post-hoc design-shopping this campaign exists
 to prevent — is not a call staff is making unilaterally; see the campaign board's same-day
 correction for how this is being put to the CEO.
+
+**Correction — independent statistical implementation review, same day: `ORIGINAL_POWER_FAIL_VALID`.**
+Full review: `docs/research/CAMPAIGN_58_GRID_POWER_CALIBRATION_IMPLEMENTATION_REVIEW.md`. Run as a
+genuinely separate subagent, not told which outcome anyone preferred, instructed to test the
+duplication claim empirically rather than accept or dismiss it on argument. It built a synthetic
+experiment using this repo's own real simulator primitives, comparing exact-duplicate fillers
+(mirroring the real script) against independently-drawn, distribution-matched fillers, holding the
+central IC and FDR exactly at their frozen values: **paired mean power difference = 0.0000 ± 0.0009**
+across 8 seeds — no measurable effect from duplication as such. A positive control confirmed the
+harness genuinely is sensitive to family size (an 8→16-hypothesis size increase produced a real,
+consistent ~32% relative power drop across all 8 seeds) — ruling out "the test is just insensitive"
+as an explanation for the null finding. The reviewer additionally noted the concern was
+self-reportedly post-hoc (raised only after the FAIL, though the duplication was visible in the
+code before the run) and, even fully considered, does not survive empirical test.
+
+**The 45.8% grid-level power result (§13 item 1) is therefore recorded as binding, not provisional.**
+The duplication concern is considered and independently rejected, not left open. No rerun of the
+grid power calibration occurred or is warranted. Consistent with the reviewer's own recommendation
+and this fund's precedent for closing underpowered designs (the original two-market COT design,
+closed at the power gate before its cross-sectional remedy), the recommended disposition — put to
+the CEO for sign-off, not decided unilaterally by staff — is to close Phase 1's time-series track
+as underpowered. Phase 0 (cross-sectional COT census) is unaffected and remains separately open,
+blocked on data/network access rather than closed on a power result.

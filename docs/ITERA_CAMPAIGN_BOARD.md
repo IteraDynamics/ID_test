@@ -844,3 +844,38 @@ whether the calibration tool itself has a fixable defect before treating 45.8% a
 only if that check concludes the tool understated real power, consider a corrected calibration
 re-run, itself subject to a fresh independent review before being trusted. Staff does not
 recommend between these.
+
+## Correction — 2026-09-03 (same day): independent review resolves fork (2) — `ORIGINAL_POWER_FAIL_VALID`
+
+Per the CEO's explicit instruction, a genuinely independent statistical implementation review
+(separate subagent, not told which outcome — defect or valid — was preferred) tested the
+duplication concern empirically rather than accepting or dismissing it on argument. Full record:
+`docs/research/CAMPAIGN_58_GRID_POWER_CALIBRATION_IMPLEMENTATION_REVIEW.md`.
+
+**Verdict: `ORIGINAL_POWER_FAIL_VALID`.** Using this repo's own real simulator primitives, the
+reviewer built a synthetic experiment comparing exact-duplicate fillers (mirroring the real
+calibration script) against independently-drawn, distribution-matched fillers, at the frozen
+central IC and FDR. Result: **paired mean power difference = 0.0000 ± 0.0009 across 8 seeds** — no
+measurable distortion from duplication. A positive control confirmed the harness is genuinely
+sensitive to family size (an 8→16-hypothesis increase produced a real, consistent ~32% relative
+power drop across all 8 seeds), ruling out "the test can't detect this" as an explanation for the
+null finding. The reviewer also noted the concern was self-reportedly post-hoc — visible in the
+code before the run, raised only after seeing the FAIL — and does not survive empirical test even
+when given full-faith consideration.
+
+**The 45.8% grid-level power result is recorded as binding, not provisional.** The duplication
+concern is considered and independently rejected, not left open for further chasing. No rerun of
+the grid power calibration occurred or is warranted — pursuing one now, absent a demonstrated
+defect, would carry the hallmarks of post-hoc redesign rather than instrument repair, exactly the
+pattern this campaign's discipline exists to prevent.
+
+**Recommended governed disposition, put to the CEO for sign-off, not decided unilaterally by
+staff:** close Campaign #58 Phase 1's time-series track as underpowered at its frozen central IC
+and full 144-candidate scope — consistent with this fund's precedent for closing underpowered
+designs (the original two-market COT design, closed at the power gate before its cross-sectional
+remedy). This does not close Campaign #58 as a whole: Phase 0 (cross-sectional COT census)
+remains a separate, still-open track, currently blocked on data/network access, not on a power
+result.
+
+**Still not authorized, unchanged:** any real Campaign #58 predictor/outcome computation; any
+model fit; any Core v1/Core v2/runtime/portfolio/paper/live/capital action.
