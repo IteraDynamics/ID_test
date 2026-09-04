@@ -20,6 +20,7 @@ INTERACTION_BASES = (
     "vol_ratio_20_60_xrank",
     "drawdown_120_xrank",
 )
+MACRO_STATES = ("rate2_pct252", "curve_10y2y_pct252", "rate2_chg20", "vix_pct252")
 
 
 def parse_args() -> argparse.Namespace:
@@ -39,14 +40,13 @@ def _read_csv_required(path: Path) -> pd.DataFrame:
     return out
 
 
-def _normalize_timestamp(df: pd.DataFrame, preferred: str = "timestamp") -> pd.DataFrame:
+def _normalize_timestamp(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
-    if preferred not in out.columns:
-        first = out.columns[0]
-        out = out.rename(columns={first: preferred})
-    out[preferred] = pd.to_datetime(out[preferred], errors="coerce", utc=True)
-    if out[preferred].isna().any():
-        raise ValueError(f"TIMESTAMP_PARSE_FAILURE:{preferred}")
+    if "timestamp" not in out.columns:
+        out = out.rename(columns={out.columns[0]: "timestamp"})
+    out["timestamp"] = pd.to_datetime(out["timestamp"], errors="coerce", utc=True)
+    if out["timestamp"].isna().any():
+        raise ValueError("TIMESTAMP_PARSE_FAILURE")
     return out
 
 
@@ -70,25 +70,16 @@ def _curve_state(x: float) -> str:
     return "curve_steep"
 
 
-def _vix_state(x: float) -> str:
-    return "vix_low" if x <= 0.5 else "vix_high"
-
-
-def _zirp_state(x: float) -> str:
-    return "zirp_like" if x < 0.5 else "non_zirp"
-
-
-def _build_regime_table(macro: pd.DataFrame) -> pd.DataFrame:
+def _build_regimes(macro: pd.DataFrame) -> pd.DataFrame:
     needed = ["timestamp", "rate2_pct252", "curve_10y2y", "vix_pct252", "DGS2"]
     missing = [c for c in needed if c not in macro.columns]
     if missing:
         raise ValueError(f"MACRO_STATE_COLUMNS_MISSING:{missing}")
-    out = macro[needed].copy()
-    out = out.dropna(subset=needed[1:]).copy()
+    out = macro[needed].dropna().copy()
     out["rate_regime"] = out["rate2_pct252"].astype(float).map(_rate_state)
     out["curve_regime"] = out["curve_10y2y"].astype(float).map(_curve_state)
-    out["vix_regime"] = out["vix_pct252"].astype(float).map(_vix_state)
-    out["zirp_regime"] = out["DGS2"].astype(float).map(_zirp_state)
+    out["vix_regime"] = np.where(out["vix_pct252"].astype(float) <= 0.5, "vix_low", "vix_high")
+    out["zirp_regime"] = np.where(out["DGS2"].astype(float) < 0.5, "zirp_like", "non_zirp")
     return out
 
 
@@ -107,7 +98,7 @@ def _regime_long(anchor: pd.DataFrame, regimes: pd.DataFrame) -> pd.DataFrame:
     merged = anchor.merge(regimes, on="timestamp", how="inner", validate="many_to_one")
     if merged.empty:
         raise ValueError("NO_ANCHOR_REGIME_MATCHES")
-    parts: list[pd.DataFrame] = []
+    parts = []
     for family, col in (
         ("rate", "rate_regime"),
         ("curve", "curve_regime"),
@@ -121,19 +112,20 @@ def _regime_long(anchor: pd.DataFrame, regimes: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(parts, ignore_index=True)
 
 
-def _model_regime_summary(regime_long: pd.DataFrame) -> pd.DataFrame:
-    rows: list[dict[str, Any]] = []
+def _model_summary(regime_long: pd.DataFrame) -> pd.DataFrame:
+    rows = []
     for (family, regime, memory, model), g in regime_long.groupby(
         ["regime_family", "regime", "memory_scheme", "model"], sort=True
     ):
-        row = {
-            "regime_family": family,
-            "regime": regime,
-            "memory_scheme": memory,
-            "model": model,
-        }
-        row.update(_summary(g))
-        rows.append(row)
+        rows.append(
+            {
+                "regime_family": family,
+                "regime": regime,
+                "memory_scheme": memory,
+                "model": model,
+                **_summary(g),
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -143,7 +135,7 @@ def _increment_summary(model_summary: pd.DataFrame) -> pd.DataFrame:
         ("macro_ridge", "price_ridge"),
         ("macro_gbm", "macro_ridge"),
     )
-    rows: list[dict[str, Any]] = []
+    rows = []
     for (family, regime, memory), g in model_summary.groupby(
         ["regime_family", "regime", "memory_scheme"], sort=True
     ):
@@ -168,36 +160,40 @@ def _increment_summary(model_summary: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _rebuild_base_panel(data_dir: Path) -> pd.DataFrame:
+def _rebuild_base_panel(data_dir: Path, oos_timestamps: pd.Index) -> pd.DataFrame:
     frames = exp5._load_universe(data_dir)
     calendar = exp5._common_calendar(frames)
     panel = exp5._build_panel(frames, calendar)
     keep = ["timestamp", "ticker", "target_rank", *INTERACTION_BASES]
     panel = panel[keep].copy()
     panel["timestamp"] = pd.to_datetime(panel["timestamp"], utc=True)
+    panel = panel[panel["timestamp"].isin(oos_timestamps)].copy()
+    if panel.empty:
+        raise ValueError("NO_REBUILT_OOS_PANEL_ROWS")
     return panel
 
 
 def _feature_ic_by_regime(panel: pd.DataFrame, regimes: pd.DataFrame) -> pd.DataFrame:
     joined = panel.merge(regimes, on="timestamp", how="inner", validate="many_to_one")
-    anchor_rows: list[dict[str, Any]] = []
+    anchor_rows = []
     for ts, g in joined.groupby("timestamp", sort=True):
-        year = int(pd.Timestamp(ts).year)
         base = {
             "timestamp": ts,
-            "test_year": year,
-            "period": _period(year),
             "rate_regime": g["rate_regime"].iloc[0],
             "curve_regime": g["curve_regime"].iloc[0],
             "vix_regime": g["vix_regime"].iloc[0],
             "zirp_regime": g["zirp_regime"].iloc[0],
         }
         for feature in INTERACTION_BASES:
-            ic = g[feature].corr(g["target_rank"], method="spearman")
-            anchor_rows.append({**base, "feature": feature, "rank_ic": float(ic)})
+            anchor_rows.append(
+                {
+                    **base,
+                    "feature": feature,
+                    "rank_ic": float(g[feature].corr(g["target_rank"], method="spearman")),
+                }
+            )
     anchors = pd.DataFrame(anchor_rows)
-
-    rows: list[dict[str, Any]] = []
+    rows = []
     for family, col in (
         ("rate", "rate_regime"),
         ("curve", "curve_regime"),
@@ -229,11 +225,7 @@ def _importance_stability(importance: pd.DataFrame) -> tuple[pd.DataFrame, dict[
     imp["feature_group"] = np.where(
         imp["feature"].str.contains("__x__", regex=False),
         "interaction",
-        np.where(
-            imp["feature"].isin(["rate2_pct252", "curve_10y2y_pct252", "rate2_chg20", "vix_pct252"]),
-            "macro_state",
-            "price_state",
-        ),
+        np.where(imp["feature"].isin(MACRO_STATES), "macro_state", "price_state"),
     )
     stability = (
         imp.groupby(["memory_scheme", "model", "period", "feature_group", "feature"])["importance"]
@@ -241,7 +233,6 @@ def _importance_stability(importance: pd.DataFrame) -> tuple[pd.DataFrame, dict[
         .reset_index()
         .sort_values(["memory_scheme", "model", "period", "importance"], ascending=[True, True, True, False])
     )
-
     diagnostics: dict[str, Any] = {}
     for (memory, model, period), g in imp.groupby(["memory_scheme", "model", "period"], sort=True):
         macro = g[g["feature_group"].isin(["interaction", "macro_state"])].groupby("feature")["importance"].mean()
@@ -265,14 +256,16 @@ def _asset_attribution(pred: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]
     )
     learned["abs_rank_error"] = (learned["score_rank"] - learned["target_rank"]).abs()
     learned["centered_product"] = (learned["score_rank"] - 0.5) * (learned["target_rank"] - 0.5)
-
     wide = learned.pivot_table(
         index=["timestamp", "ticker", "test_year", "memory_scheme", "target_rank"],
         columns="model",
         values=["abs_rank_error", "centered_product"],
         aggfunc="first",
     ).reset_index()
-    wide.columns = ["_".join([str(x) for x in c if str(x)]) if isinstance(c, tuple) else str(c) for c in wide.columns]
+    wide.columns = [
+        "_".join(str(x) for x in c if str(x)) if isinstance(c, tuple) else str(c)
+        for c in wide.columns
+    ]
     required = [
         "abs_rank_error_price_gbm",
         "abs_rank_error_macro_gbm",
@@ -282,13 +275,9 @@ def _asset_attribution(pred: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]
     missing = [c for c in required if c not in wide.columns]
     if missing:
         raise ValueError(f"ASSET_ATTRIBUTION_PIVOT_FAILURE:{missing}")
-
     wide["period"] = wide["test_year"].astype(int).map(_period)
     wide["abs_error_improvement"] = wide["abs_rank_error_price_gbm"] - wide["abs_rank_error_macro_gbm"]
-    wide["centered_product_improvement"] = (
-        wide["centered_product_macro_gbm"] - wide["centered_product_price_gbm"]
-    )
-
+    wide["centered_product_improvement"] = wide["centered_product_macro_gbm"] - wide["centered_product_price_gbm"]
     summary = (
         wide.groupby(["memory_scheme", "period", "ticker"])
         .agg(
@@ -298,10 +287,9 @@ def _asset_attribution(pred: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]
         )
         .reset_index()
     )
-
     concentration: dict[str, Any] = {}
     for (memory, period), g in summary.groupby(["memory_scheme", "period"], sort=True):
-        positive = g[g["mean_centered_product_improvement"] > 0].copy()
+        positive = g[g["mean_centered_product_improvement"] > 0]
         total = float(positive["mean_centered_product_improvement"].sum())
         top = positive.nlargest(3, "mean_centered_product_improvement")
         concentration[f"{memory}:{period}"] = {
@@ -314,17 +302,17 @@ def _asset_attribution(pred: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]
     return summary, concentration
 
 
-def _recurrence_diagnostics(increments: pd.DataFrame) -> dict[str, Any]:
+def _recurrence(increments: pd.DataFrame) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for memory in MEMORY_SCHEMES:
-        g = increments[
+        target = increments[
             (increments["memory_scheme"] == memory)
             & (increments["comparison"] == "macro_gbm_minus_price_gbm")
         ]
-        by_family: dict[str, Any] = {}
+        out[memory] = {}
         for family in ("rate", "curve", "vix", "zirp"):
-            f = g[g["regime_family"] == family]
-            by_family[family] = {
+            f = target[target["regime_family"] == family]
+            out[memory][family] = {
                 "regimes": int(len(f)),
                 "positive_ic_regimes": int((f["mean_ic_increment"] > 0).sum()),
                 "positive_spread_regimes": int((f["tail_spread_increment"] > 0).sum()),
@@ -338,7 +326,6 @@ def _recurrence_diagnostics(increments: pd.DataFrame) -> dict[str, Any]:
                     for _, r in f.iterrows()
                 ],
             }
-        out[memory] = by_family
     return out
 
 
@@ -349,15 +336,9 @@ def main() -> None:
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    pred = _normalize_timestamp(
-        _read_csv_required(source_dir / "experiment_009_oos_predictions.csv")
-    )
-    anchor = _normalize_timestamp(
-        _read_csv_required(source_dir / "experiment_009_anchor_metrics.csv")
-    )
-    macro = _normalize_timestamp(
-        _read_csv_required(source_dir / "experiment_009_macro_state.csv")
-    )
+    pred = _normalize_timestamp(_read_csv_required(source_dir / "experiment_009_oos_predictions.csv"))
+    anchor = _normalize_timestamp(_read_csv_required(source_dir / "experiment_009_anchor_metrics.csv"))
+    macro = _normalize_timestamp(_read_csv_required(source_dir / "experiment_009_macro_state.csv"))
     importance = _read_csv_required(source_dir / "experiment_009_feature_importance_by_fold.csv")
 
     if pred["test_year"].astype(int).max() > 2024 or anchor["test_year"].astype(int).max() > 2024:
@@ -367,18 +348,16 @@ def main() -> None:
     if set(pred["model"].dropna().unique()) - set(MODELS):
         raise ValueError("UNEXPECTED_MODEL")
 
-    regimes = _build_regime_table(macro)
-    regime_long = _regime_long(anchor, regimes)
-    model_summary = _model_regime_summary(regime_long)
+    regimes = _build_regimes(macro)
+    model_summary = _model_summary(_regime_long(anchor, regimes))
     increments = _increment_summary(model_summary)
 
-    panel = _rebuild_base_panel(data_dir)
+    oos_timestamps = pd.Index(pred["timestamp"].drop_duplicates())
+    panel = _rebuild_base_panel(data_dir, oos_timestamps)
     feature_ic = _feature_ic_by_regime(panel, regimes)
     importance_stability, importance_diag = _importance_stability(importance)
     asset_summary, asset_concentration = _asset_attribution(pred)
-
     zirp = increments[increments["regime_family"] == "zirp"].copy()
-    recurrence = _recurrence_diagnostics(increments)
 
     model_summary.to_csv(out_dir / "experiment_010_regime_model_summary.csv", index=False)
     increments.to_csv(out_dir / "experiment_010_regime_increment_summary.csv", index=False)
@@ -394,6 +373,7 @@ def main() -> None:
         "design": {
             "source_experiment": "ML_LAB_EXPERIMENT_009_MACRO_RATE_STATE_CROSS_SECTIONAL",
             "model_refit_performed": False,
+            "geometry_restricted_to_experiment_009_oos_anchors": True,
             "memory_schemes": list(MEMORY_SCHEMES),
             "models": list(MODELS),
             "interaction_bases": list(INTERACTION_BASES),
@@ -416,8 +396,10 @@ def main() -> None:
             "anchor_metric_rows": int(len(anchor)),
             "macro_state_rows": int(len(macro)),
             "importance_rows": int(len(importance)),
+            "rebuilt_oos_geometry_rows": int(len(panel)),
+            "rebuilt_oos_geometry_anchors": int(panel["timestamp"].nunique()),
         },
-        "macro_gbm_recurrence": recurrence,
+        "macro_gbm_recurrence": _recurrence(increments),
         "zirp_focus": [
             {
                 "memory_scheme": r["memory_scheme"],
