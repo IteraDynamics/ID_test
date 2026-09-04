@@ -879,3 +879,52 @@ result.
 
 **Still not authorized, unchanged:** any real Campaign #58 predictor/outcome computation; any
 model fit; any Core v1/Core v2/runtime/portfolio/paper/live/capital action.
+
+## 2026-09-04 — Separate ML Lab: Experiment 011 closed; Experiment 012 specified
+
+**Scope:** the exploratory branch `agent/ml-lab-exploration-20260903`, under
+`docs/research/ML_LAB_EXPLORATION_CHARTER.md`. This is not Campaign #58 and does not
+reopen or supersede its binding power failure or governed restrictions above.
+
+**Experiment 011: CLOSED — EXPLORATORY_TRANSFER_FAILURE.** The operator's actual
+Windows run completed at code commit `e512ee7ef1ec2535f59f6dec38a3069fc6b9eaf3`.
+All 144 source-parity checks passed (maximum absolute score delta
+`5.440092820663267e-15`, tolerance `1e-10`). However, macro GBM minus price GBM was
+negative on destination mean IC and target spread in all four memory/period cells.
+No destination fitting or reserved 2025 holdout use occurred.
+
+- result and closure: `docs/research/ML_LAB_EXPERIMENT_011_RESULTS.md`;
+- exact report snapshot: `docs/research/evidence/ML_LAB_EXPERIMENT_011_REPORT.json`;
+- frozen design retained: `docs/research/ML_LAB_EXPERIMENT_011_CROSS_UNIVERSE_TRANSFER.md`.
+
+The U.S. results from Experiments 009–010 remain exploratory observations confined
+to that original cross-section; portability of the frozen model is unsupported.
+Do not rescue 011 by changing its destination universe, retraining there, changing
+the feature block, or tuning the model. The closure is exploratory, not a formal
+universal null or a trading conclusion.
+
+**Experiment 012: SPECIFICATION_FROZEN — NOT_IMPLEMENTED / NOT_RUN.** The operator
+authorized recording 011 and specifying a bounded simplification test before
+further fitting, with the documentation update pushed to GitHub.
+
+- specification: `docs/research/ML_LAB_EXPERIMENT_012_COMPACT_MACRO_INTERACTIONS.md`;
+- frozen existing-input hashes: `docs/research/evidence/ML_LAB_EXPERIMENT_012_INPUT_MANIFEST.json`.
+
+Exactly one new candidate is specified: `compact_macro_ridge`, the existing
+StandardScaler + Ridge(alpha=10.0) with the 12 price features, four macro main
+effects, and six interaction products already named in Experiment 009's results
+(22 features). Same U.S. universe, target, folds, embargo, and two memory schemes;
+trailing-3y remains primary. Compare against the four saved Experiment 009 models.
+The specification fixes descriptive outcomes and stops subset/model search after
+a negative primary result. This is a separate U.S. simplification question, not a
+new international transfer attempt or independent confirmation.
+
+**Completed in this transition:** documentation, evidence snapshot, and input
+fingerprints only. No Experiment 012 implementation, model fit, or result exists.
+**Next scoped work:** implement the frozen 012 specification and prove its full
+synthetic replay/fail-closed checks before a separately requested real run; do not
+treat specification completion as an executed experiment.
+
+All ML Lab results remain discovery-contaminated and non-confirmatory. No Core,
+runtime, threshold, order, execution, NAV, exposure, portfolio, paper/live, capital,
+or reserved-holdout change is authorized by this transition.

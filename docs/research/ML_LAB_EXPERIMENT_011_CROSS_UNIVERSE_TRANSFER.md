@@ -246,3 +246,17 @@ Even a positive result remains exploratory and discovery-contaminated. It does n
 - calling the mechanism validated.
 
 A positive transfer result would only justify a separate governed confirmation design with untouched data/universe boundaries.
+
+## Result recorded 2026-09-04 — closed
+
+**CLOSED — EXPLORATORY_TRANSFER_FAILURE.** The completed run passed all 144
+source-parity checks, but macro GBM minus price GBM had negative destination mean
+IC and target-spread increments in both memories and both periods. The frozen
+specification above is preserved as the pre-result design.
+
+Full result, evidence snapshot, limitations, and disposition:
+[Experiment 011 results](ML_LAB_EXPERIMENT_011_RESULTS.md).
+
+The next bounded question is U.S.-only simplification, specified in
+[Experiment 012](ML_LAB_EXPERIMENT_012_COMPACT_MACRO_INTERACTIONS.md).
+That specification does not reopen or rescue this transfer failure.

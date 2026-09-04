@@ -1,0 +1,2 @@
+# Preserve the captured report bytes so its published SHA-256 survives checkout.
+ML_LAB_EXPERIMENT_011_REPORT.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

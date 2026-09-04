@@ -1,0 +1,96 @@
+{
+  "experiment": "ML_LAB_EXPERIMENT_012_COMPACT_MACRO_INTERACTION_SIMPLIFICATION",
+  "status": "INPUT_SNAPSHOT_ONLY_NO_NEW_FIT",
+  "recorded_date": "2026-09-04",
+  "repository": "IteraDynamics/ID_test",
+  "base_commit": "e512ee7ef1ec2535f59f6dec38a3069fc6b9eaf3",
+  "last_allowed_date": "2024-12-31",
+  "boundary": "File hashes identify existing inputs. Loaders must exclude observations after 2024-12-31 before feature or outcome computation; hashes do not authorize use of later rows.",
+  "inputs": [
+    {
+      "path": "data/RSP_1D.csv",
+      "sha256": "9cf41b9eaa50ee49a8e28153ac2240fc4fbb62bf2eaa678b439a481f0d54fbdd",
+      "bytes": 497816
+    },
+    {
+      "path": "data/MDY_1D.csv",
+      "sha256": "0d314431aff35303893a31f5eed4fba1fa4320a0064441b70ec989a96cbda53c",
+      "bytes": 501298
+    },
+    {
+      "path": "data/IWM_1D.csv",
+      "sha256": "e6cafc5ba4de5749770d439859e024b8e8026686c8e4f420da3d5f11743cea12",
+      "bytes": 507817
+    },
+    {
+      "path": "data/IWD_1D.csv",
+      "sha256": "c609169db6f6d6220f64877da52fd707c78308af67bf793422d87c8c777e2d29",
+      "bytes": 500154
+    },
+    {
+      "path": "data/IWF_1D.csv",
+      "sha256": "b5c1b73bcb75deac3329dd6e089071a8b2ecfb189240acb259617d29509b3788",
+      "bytes": 504619
+    },
+    {
+      "path": "data/XLB_1D.csv",
+      "sha256": "e85d3d0107eb8ed8d8044c00e5bdbddd4cf0ef64ba6a1d82b5541d2f2ef64087",
+      "bytes": 508055
+    },
+    {
+      "path": "data/XLE_1D.csv",
+      "sha256": "18547a4e322f75f2ab6b1f1b79418f6bbe240880eb9ee60b4cfe009c67c2e4a6",
+      "bytes": 511576
+    },
+    {
+      "path": "data/XLF_1D.csv",
+      "sha256": "205026d65898a823681b768213032bb89a7ea37f474251807d3d3e6f92b87d73",
+      "bytes": 509340
+    },
+    {
+      "path": "data/XLI_1D.csv",
+      "sha256": "e6b9f3abdbe83c4561d8bb03fe6dd6a924e9a7dfb9d3da8e9f3aadc929d76d4e",
+      "bytes": 503351
+    },
+    {
+      "path": "data/XLK_1D.csv",
+      "sha256": "1c63e414fac5090059d684b0736fc046517ae377b79887ffb0d5686d06fba874",
+      "bytes": 504398
+    },
+    {
+      "path": "data/XLP_1D.csv",
+      "sha256": "a4ccb5e2d5cd8c191133f9977afaa70ddbfceb422767dd70ce81b4ef9ff75536",
+      "bytes": 503001
+    },
+    {
+      "path": "data/XLU_1D.csv",
+      "sha256": "930b10eed5679c1acd2f9dc8329242f0510a97b1c23cbff692c700e59be00471",
+      "bytes": 508000
+    },
+    {
+      "path": "data/XLV_1D.csv",
+      "sha256": "346d1f5f43e7bd357d041276914db95a539e1906549898102c8a387ac918e902",
+      "bytes": 504168
+    },
+    {
+      "path": "data/XLY_1D.csv",
+      "sha256": "1a7b600eced3e741a56d0c98012f8163256848aeefb471e3aab2c6ecbaf1ec34",
+      "bytes": 504167
+    },
+    {
+      "path": "artifacts/ml_lab_experiment_009/experiment_009_oos_predictions.csv",
+      "sha256": "7b47c06e317dace8e5b186eb43ee56127d4bdc16c902d796de9bc9ed475bb005",
+      "bytes": 11484731
+    },
+    {
+      "path": "artifacts/ml_lab_experiment_009/experiment_009_anchor_metrics.csv",
+      "sha256": "93bd4cd314587fcf1e6e8290a5962c14ff50b2fff58b7642fb3c7ef2abf44680",
+      "bytes": 697822
+    },
+    {
+      "path": "artifacts/ml_lab_experiment_009/experiment_009_macro_state.csv",
+      "sha256": "8410129b665b45e5bf2be52a8604085c1d1c12fe6dbfd5442b0b8d13e96fa365",
+      "bytes": 673698
+    }
+  ]
+}
