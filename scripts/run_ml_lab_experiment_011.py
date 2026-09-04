@@ -112,7 +112,7 @@ def _common_calendar(frames: dict[str, pd.DataFrame]) -> pd.DatetimeIndex:
 
 
 def _build_panel(frames: dict[str, pd.DataFrame], calendar: pd.DatetimeIndex) -> pd.DataFrame:
-    return exp5._build_panel(frames, calendar)
+    return exp5._build_panel(frames, calendar, universe=DESTINATION_UNIVERSE)
 
 
 def _training_slice(panel: pd.DataFrame, test_start: pd.Timestamp, years: int | None) -> pd.DataFrame:

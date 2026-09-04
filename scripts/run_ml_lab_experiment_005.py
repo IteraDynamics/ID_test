@@ -122,10 +122,17 @@ def _asset_features(frame: pd.DataFrame, calendar: pd.DatetimeIndex, ticker: str
     return out.replace([np.inf, -np.inf], np.nan)
 
 
-def _build_panel(frames: dict[str, pd.DataFrame], calendar: pd.DatetimeIndex) -> pd.DataFrame:
+def _build_panel(
+    frames: dict[str, pd.DataFrame],
+    calendar: pd.DatetimeIndex,
+    *,
+    universe: list[str] | tuple[str, ...] | None = None,
+) -> pd.DataFrame:
+    # Existing callers retain the source universe; transfer callers supply their frozen list.
+    universe = UNIVERSE if universe is None else universe
     by_asset = {ticker: _asset_features(frame, calendar, ticker) for ticker, frame in frames.items()}
-    close_matrix = pd.DataFrame({ticker: by_asset[ticker]["close"] for ticker in UNIVERSE}, index=calendar)
-    vol60_matrix = pd.DataFrame({ticker: by_asset[ticker]["vol_60d"] for ticker in UNIVERSE}, index=calendar)
+    close_matrix = pd.DataFrame({ticker: by_asset[ticker]["close"] for ticker in universe}, index=calendar)
+    vol60_matrix = pd.DataFrame({ticker: by_asset[ticker]["vol_60d"] for ticker in universe}, index=calendar)
 
     valid_positions = range(120, len(calendar) - TARGET_HORIZON, ANCHOR_STEP)
     rows: list[pd.DataFrame] = []
@@ -138,7 +145,7 @@ def _build_panel(frames: dict[str, pd.DataFrame], calendar: pd.DatetimeIndex) ->
             continue
 
         feature_slice = pd.DataFrame(
-            {ticker: by_asset[ticker].loc[ts, raw_feature_names] for ticker in UNIVERSE}
+            {ticker: by_asset[ticker].loc[ts, raw_feature_names] for ticker in universe}
         ).T
         if feature_slice.isna().any().any():
             continue
