@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -14,8 +15,13 @@ from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-import scripts.run_ml_lab_experiment_005 as exp5
-import scripts.run_ml_lab_experiment_009 as exp9
+# Resolve sibling imports for both direct-script and module execution.
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+import run_ml_lab_experiment_005 as exp5
+import run_ml_lab_experiment_009 as exp9
 
 DESTINATION_UNIVERSE = (
     "EWA",
