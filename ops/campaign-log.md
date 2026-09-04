@@ -153,3 +153,14 @@ new entry that references the old one._
   decisions, economic materiality analysis (not yet performed for this campaign at all), or any Core v1/runtime/
   portfolio/paper/live/capital action.
 - **Full record:** `docs/research/CAMPAIGN_57_INDEPENDENT_RED_TEAM_REVIEW_20260902.md`.
+
+## Campaign #58 Phase 1 — Itera Residual Predictability Census (time-series track)
+- **Chartered:** 2026-09-03 — under Campaign #58 planning charter / CEO authorization for specification-freeze prerequisites; addresses research-program design (ML residual predictability), not a Core v1 named deficiency by itself.
+- **Status:** CLOSED_UNDERPOWERED (CEO 2026-09-04)
+- **Summary:** Phase 1 time-series residual-predictability census on BTC/ETH/SPY/QQQ/GLD. Frozen 144-candidate grid (16 feature-variants × 3 horizons × 3 outcome families R/M/V) independently Red-Teamed (`CONDITIONAL_PASS`, 10 conditions applied). Grid-level power analysis at central IC 0.065 failed the 50% floor at **45.8%** overall average power (Family R 54.9%, M 41.8%, V 40.6%). Post-hoc duplication concern independently reviewed: verdict `ORIGINAL_POWER_FAIL_VALID`; 45.8% binding.
+- **Result:** CLOSED at the power gate before any authorized real model fit. Default campaign outcome language `ML_COMPLEXITY_NOT_JUSTIFIED` for this track is consistent with underpowered closure — no claim that ML is justified or unjustified from fitted models, because fitting was never authorized.
+- **Red Team / independent review:** Phase 1 spec `CONDITIONAL_PASS` (10 conditions applied); power-calibration duplication review `ORIGINAL_POWER_FAIL_VALID`.
+- **What killed it / what kept it alive:** Binding grid-level power FAIL below the pre-registered 50% floor; independent review rejected the post-hoc calibration-duplication rescue path. Closed by CEO sign-off 2026-09-04.
+- **Scope note:** Does **not** close Campaign #58 Phase 0 (cross-sectional COT census), which remains OPEN and blocked on data/network access. No Core v1/runtime/capital implication. ML Lab Experiment 012 remains a separate exploratory thread.
+- **Full records:** `docs/research/CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md` §15; `docs/research/CAMPAIGN_58_GRID_POWER_CALIBRATION_IMPLEMENTATION_REVIEW.md`; `ops/decisions.md` (2026-09-04).
+
