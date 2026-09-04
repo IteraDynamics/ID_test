@@ -129,7 +129,8 @@ def _training_slice(panel: pd.DataFrame, test_start: pd.Timestamp, years: int | 
 def _load_macro_state(path: Path) -> pd.DataFrame:
     macro = pd.read_csv(path)
     macro["timestamp"] = pd.to_datetime(macro["timestamp"], utc=True)
-    return macro
+    # Experiment 009's augmentation helper expects dates in the index.
+    return macro.set_index("timestamp")
 
 
 def _anchor_metric(group: pd.DataFrame) -> dict[str, Any]:
