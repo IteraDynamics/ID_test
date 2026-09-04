@@ -54,11 +54,21 @@ Use only these zero-dollar external state sources:
 1. 2-year Treasury yield — FRED `DGS2`
 2. 10-year Treasury yield — FRED `DGS10`
 3. 3-month Treasury yield — FRED `DGS3MO`
-4. VIX — existing local `data/VIX_1D.csv`
+4. VIX — FRED `VIXCLS`
 
 The 10y-minus-2y curve slope is derived contemporaneously from DGS10-DGS2.
 
 No CPI, unemployment, PMI, Fed-event labels, or additional macro series are included.
+
+### VIX source correction — 2026-09-04
+
+The initial implementation assumed `data/VIX_1D.csv` already existed because older repository scripts referenced that path. The first local Experiment 009 run showed that this file is not actually present in the operator's data inventory.
+
+This is a **source-materialization correction only**, made before any Experiment 009 model outcome was produced. The economic variable and feature remain unchanged: VIX level transformed into `vix_pct252`.
+
+The corrected source is FRED `VIXCLS`, acquired at zero monetary cost. A deterministic helper caches the raw FRED CSV under `artifacts/ml_lab_experiment_009/source_cache/VIXCLS.csv` and materializes `data/VIX_1D.csv` in the repository's standard OHLCV schema by setting open/high/low/close equal to the observed VIX close and volume to zero. The generated file is then consumed by the unchanged Experiment 009 runner and its SHA-256 is recorded in the report.
+
+No model, feature, target, memory, cutoff, or evaluation rule changes because of this correction.
 
 ## Frozen macro-state representation
 
@@ -102,15 +112,15 @@ Any anchor without a complete macro block fails closed and is excluded before mo
 
 ## Zero-dollar source and replay rule
 
-Treasury series are acquired from the public FRED CSV endpoint at zero monetary cost.
+Treasury series and VIX are acquired from public FRED CSV endpoints at zero monetary cost.
 
-On first successful run, raw source CSVs are cached under:
+Raw source CSVs are cached under:
 
 `artifacts/ml_lab_experiment_009/source_cache/`
 
-The report records SHA-256 hashes of each cached raw source. Subsequent runs reuse the cache unless explicitly deleted, preserving local replay stability after acquisition.
+The report records SHA-256 hashes of source material used by the experiment. Subsequent runs reuse cached raw sources unless explicitly deleted, preserving local replay stability after acquisition.
 
-VIX uses `data/VIX_1D.csv`; its SHA-256 is recorded.
+For compatibility with the repository's existing OHLCV reader, FRED `VIXCLS` is deterministically materialized to `data/VIX_1D.csv` by the Experiment 009 source helper; the generated file's SHA-256 is recorded by the main runner.
 
 Acquisition or parsing failure is fatal. No substitute source is permitted.
 
