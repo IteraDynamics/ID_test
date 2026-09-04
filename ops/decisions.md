@@ -464,5 +464,11 @@ ones — this is what makes "brief me" informative over time._
   #58 Phase 1's time-series track as underpowered, consistent with this fund's precedent for
   closing underpowered designs. Phase 0 (cross-sectional COT census) is unaffected — remains a
   separate, still-open track, blocked on data/network access, not on this result.
-- **CEO decision:** PENDING — logged as a 🔴 item in `ops/status.md`: confirm closure of Phase 1's
-  time-series track as underpowered.
+- **CEO decision:** PENDING at time of writing — **resolved 2026-09-04** by CEO confirmation to close Phase 1 as underpowered (see following entry).
+
+## 2026-09-04 — close Campaign #58 Phase 1 time-series track as underpowered
+- **Raised by:** Staff (pending CEO sign-off after independent review `ORIGINAL_POWER_FAIL_VALID`)
+- **The ask:** confirm closure of Campaign #58 Phase 1's time-series residual-predictability track as underpowered at the binding 45.8% grid-level power FAIL (central IC 0.065; Family R 54.9%, M 41.8%, V 40.6%), or keep the track open.
+- **CEO decision:** "Yes, close Campaign #58 Phase 1 time-series track as underpowered"
+- **Follow-up (done):** Phase 1 recorded `CLOSED_UNDERPOWERED` in `ops/status.md`, `ops/campaign-log.md`, and `docs/ITERA_CAMPAIGN_BOARD.md`. Phase 0 (cross-sectional COT census) remains open and blocked on data/network access — Campaign #58 as a whole is not closed. No model fit, Core v1 change, runtime/portfolio/paper/live/capital action, or ML Lab Experiment 012 execution is authorized by this decision. Binding power record unchanged: `docs/research/CAMPAIGN_58_GRID_POWER_CALIBRATION_IMPLEMENTATION_REVIEW.md`.
+
