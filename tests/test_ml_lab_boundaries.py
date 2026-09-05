@@ -32,12 +32,14 @@ def forbidden_imports(source, *, runtime=False):
             imports.extend(alias.name for alias in node.names)
         elif isinstance(node, ast.ImportFrom):
             imports.append(node.module or '')
+            imports.extend(f'{node.module}.{alias.name}' for alias in node.names)
     return [name for name in imports if name.startswith(('scripts', 'run_ml_lab_experiment')) or runtime and name.startswith('research.ml_lab')]
 
 
 def test_package_and_runtime_import_boundaries():
     assert forbidden_imports('from scripts import run_ml_lab_experiment_005')
     assert forbidden_imports('import research.ml_lab.experiments', runtime=True)
+    assert forbidden_imports('from research import ml_lab', runtime=True)
     for base in ['research/ml_lab', 'runtime']:
         for path in (ROOT / base).rglob('*.py'):
             assert not forbidden_imports(path.read_text(), runtime=base == 'runtime'), path

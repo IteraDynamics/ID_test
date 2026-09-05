@@ -34,6 +34,14 @@ def main():
     baseline = parser.parse_args().baseline_root.resolve()
     assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=baseline, text=True).strip() == BASELINE_SHA
     assert not subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=baseline, text=True).strip()
+    # Shared strategy/regime imports are valid comparison inputs only while their
+    # source remains byte-identical to the independent baseline.
+    root = Path(__file__).resolve().parents[1]
+    protected = [root / 'runtime/core_v1/allocation.py', root / 'research/harness/backtest_engine.py', root / 'research/harness/resampler.py']
+    protected += list((root / 'research/strategies').glob('*.py'))
+    protected += list((root / 'research/regimes').glob('*.py'))
+    for path in protected:
+        assert path.read_bytes() == (baseline / path.relative_to(root)).read_bytes(), path
     spec = importlib.util.spec_from_file_location('baseline_paper_runtime', baseline / 'scripts/run_core_v1_paper_live.py')
     old = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(old)

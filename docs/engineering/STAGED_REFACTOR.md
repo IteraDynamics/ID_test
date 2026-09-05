@@ -77,3 +77,20 @@ Cycle events match; state, signal, fill and market-data logs match byte-for-byte
 Runtime identity sidecars intentionally identify their actual checkout and are not
 compared as accounting evidence. Reproduce with
 `scripts/verify_refactor_runtime_parity.py --baseline-root <baseline-worktree>`.
+
+## Stage 5 — environment, CI and historical inventory
+
+The lock now includes the already-declared `lxml` dependency (6.1.3). Every
+previously locked package retains its version. `uv sync --locked --extra dev`
+succeeds. CI uses pinned uv 0.11.33 and the reviewed lock, retains Python 3.11/3.12,
+runs the complete suite once per interpreter, and adds independent baseline
+migration checks on 3.12. Existing synthetic backtest/paper smoke checks remain.
+These baseline gates intentionally protect this migration; a later governed
+behavioral change must explicitly supersede its baseline rather than bypass it.
+
+A characterization test records the existing backtest HOLD behavior without fixing
+it. `SCRIPT_INVENTORY.md` inventories static code/test/documentation references.
+No files are deleted or archived based solely on zero references; external schedules
+and operator workflows have not been inspected. Historical evidence and governance
+records remain unchanged. Source identity checks protect allocation, strategies,
+regimes, resampling and the existing backtest during runtime parity verification.
