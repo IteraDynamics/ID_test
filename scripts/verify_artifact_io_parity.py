@@ -50,6 +50,7 @@ def require_equal(before, after):
 
 
 def check_source_boundaries(baseline, entries):
+    """Constrain baseline-tracked existing Python files; additions need separate review."""
     grouped = {}
     for e in entries:
         grouped.setdefault(e['path'], set()).add(e['name'])

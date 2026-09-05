@@ -80,3 +80,53 @@ CI retains both original migration gates against `83e4e11` and adds this round's
 193-case gate against `f332255`. Full-suite and end-to-end synthetic ML/runtime
 results for the final head are recorded in the draft PR. No historical data or
 production state is used in this verification.
+
+## Independent review follow-up — 2026-09-05
+
+The operator supplied a PASS review of `304e69b` with R1–R4. The following is
+engineering evidence, not a campaign decision or authorization to merge/deploy.
+
+**R1 — measured historical digest verification.** Three existing artifacts were
+read without rerunning research or rewriting any artifact/manifest. Each actual
+migrated caller, the shared helper, and the independent `sha256sum` utility matched
+the digest recorded in that artifact's existing manifest:
+
+| Historical artifact | Size (bytes) | Result |
+| --- | ---: | --- |
+| Event-robustness JSON | 6,991 | Recorded SHA-256 matches |
+| Event-family membership CSV | 26,117 | Recorded SHA-256 matches |
+| Alpha-candidate CSV | 21,426 | Recorded SHA-256 matches |
+
+Exact paths, manifest keys, digests and caller names are in
+`HISTORICAL_ARTIFACT_DIGEST_CHECK_20260905.json`. The measured code was `304e69b`.
+Both each artifact and its manifest were also checked byte-for-byte against
+`83e4e11`, establishing that the expected digests predate either refactor round.
+These particular files are tracked despite the general artifact ignore rules;
+they were available in the checkout. The sleeve matrix and Campaign 52 artifacts
+were not present in the accessible workspace and were not checked. This is a
+three-artifact sample, not verification of every historical record or of copies
+on the operator's other machines. The earlier synthetic-only statements describe
+the migration gates, not this later read-only historical measurement.
+
+**R2 — precise source-boundary guarantee.** The gate constrains baseline-tracked
+existing Python files: no unlisted existing file may change, and listed files
+retain their non-extracted AST. New files are outside that comparison. They must
+be reviewed separately; this gate does not prove that nothing else was added.
+The new shared helper, inventory/verifier code and tests receive that separate
+review. Function parity and corruption canaries complement this limited boundary.
+
+**R3 — ordering.** Scripts packaging is the recommended next implementation round
+because shared dependencies otherwise keep adding import bootstraps. Deployment
+gate implementation follows unless deployment becomes the operator's immediate
+priority. Neither implementation is started by this review follow-up.
+
+**R4 — planned test transition.** The two characterized standalone failures now
+carry an explicit comment: replace their expected-failure assertions with the
+success assertion when packaging enables those entry points. Their present
+behavior and assertions are unchanged in this follow-up.
+
+Merge order, if later approved: integrate #47 into its working-branch target,
+then deliberately retarget/review #48 against that updated working branch before
+merging #48. Preserve availability of pinned baseline `f332255`; merging does not
+itself establish that a particular merge strategy preserved that commit's ancestry.
+No PR is merged or retargeted by this note.

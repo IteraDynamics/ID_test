@@ -109,6 +109,8 @@ print(namespace[name](value))
     completed = subprocess.run([sys.executable, '-I', '-c', program, str(parity.ROOT), str(source), entry['name'], entry['kind'], str(input_path)], cwd=tmp_path, text=True, capture_output=True, timeout=30)
     # These two baseline scripts already require the repo on PYTHONPATH before
     # importing scripts.*. Preserve that limitation; packaging is separate work.
+    # Packaging migration: replace these expected-failure assertions with the
+    # successful digest assertion below once both standalone entry points work.
     if entry['path'] in ('scripts/run_campaign50_development_validation.py', 'scripts/run_campaign52_governed_equivalence.py'):
         assert completed.returncode != 0
         assert "ModuleNotFoundError: No module named 'scripts'" in completed.stderr
