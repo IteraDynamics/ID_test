@@ -50,3 +50,13 @@ the original locked environment satisfies all project requirements.
   across Experiments 005–011, on identical synthetic inputs and environment.
   `scripts/verify_refactor_ml_parity.py` reproduces this check, including corruption
   canaries for the output comparator. No historical market data was available or used.
+
+## Stage 3 — acquisition and evidence helpers
+
+Macro acquisition/parsing is now separate from macro feature computation. Existing
+Experiment 009 cache-miss acquisition semantics remain available through aliases;
+transfer still reads saved macro state. File hashes and NumPy/pandas JSON scalar
+conversion share an implementation. Output names, CSV/JSON options and publication
+order are unchanged. Cache-hit/no-refresh, failed-acquisition and serialization
+checks pass. Atomic multi-file publication would change historical failure behavior
+and is intentionally not retrofitted into frozen runners.

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from research.ml_lab.evidence import sha256_file as _sha256, json_scalar as _json_default
+
 import argparse
 import hashlib
 import json
@@ -224,12 +226,6 @@ def _parity_check(
     }
 
 
-def _sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 def _asset_concentration(pred: pd.DataFrame) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
@@ -263,17 +259,6 @@ def _asset_concentration(pred: pd.DataFrame) -> tuple[pd.DataFrame, list[dict[st
     return pd.DataFrame(rows), summaries
 
 
-def _json_default(value: Any) -> Any:
-    """Convert numpy/pandas scalar values in report payloads to stdlib JSON types."""
-    if isinstance(value, np.integer):
-        return int(value)
-    if isinstance(value, np.floating):
-        return float(value)
-    if isinstance(value, np.bool_):
-        return bool(value)
-    if isinstance(value, (pd.Timestamp, np.datetime64)):
-        return str(pd.Timestamp(value))
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
 def main() -> None:
