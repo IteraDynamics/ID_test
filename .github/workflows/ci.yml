@@ -41,6 +41,9 @@ jobs:
           git worktree add --detach "$RUNNER_TEMP/itera-refactor-baseline" FETCH_HEAD
           uv run --locked python scripts/verify_refactor_ml_parity.py --baseline-root "$RUNNER_TEMP/itera-refactor-baseline"
           uv run --locked python scripts/verify_refactor_runtime_parity.py --baseline-root "$RUNNER_TEMP/itera-refactor-baseline"
+          git fetch --depth=1 origin f332255139b613af0ffa1d227585db47fb8a8fb4
+          git worktree add --detach "$RUNNER_TEMP/itera-io-baseline" FETCH_HEAD
+          uv run --locked python scripts/verify_artifact_io_parity.py --baseline-root "$RUNNER_TEMP/itera-io-baseline"
 
   smoke-backtest:
     name: Smoke Backtest (synthetic data)

@@ -82,3 +82,36 @@ def test_strict_json_rejects_nonfinite_values(value):
 
 def test_strict_json_rejects_unsupported_values():
     with pytest.raises(TypeError): v1.strict_json_text_v1({'value': object()})
+
+
+SCRIPT_ENTRIES = [e for e in json.loads((parity.ROOT / 'docs/engineering/ARTIFACT_IO_MIGRATIONS.json').read_text())['functions']
+                  if e['path'].startswith('scripts/') and e['kind'] in ('file', 'bytes')]
+
+
+@pytest.mark.parametrize('entry', SCRIPT_ENTRIES, ids=lambda e: e['path'])
+def test_standalone_script_digest_import_contract(tmp_path, entry):
+    import subprocess
+    import sys
+    source = parity.ROOT / entry['path']
+    input_path = tmp_path / 'input.bin'
+    input_path.write_bytes(b'abc')
+    # Keep third-party site-packages, but remove the editable checkout/PYTHONPATH.
+    # run_path must rely on the script's own standalone import compatibility.
+    program = '''import sys, runpy
+from pathlib import Path
+repo, script, name, kind, source = sys.argv[1:]
+sys.path[:] = [p for p in sys.path if Path(p).resolve() != Path(repo).resolve()]
+sys.path.insert(0, str(Path(script).parent))
+namespace = runpy.run_path(script)
+value = Path(source) if kind == 'file' else b'abc'
+print(namespace[name](value))
+'''
+    completed = subprocess.run([sys.executable, '-I', '-c', program, str(parity.ROOT), str(source), entry['name'], entry['kind'], str(input_path)], cwd=tmp_path, text=True, capture_output=True, timeout=30)
+    # These two baseline scripts already require the repo on PYTHONPATH before
+    # importing scripts.*. Preserve that limitation; packaging is separate work.
+    if entry['path'] in ('scripts/run_campaign50_development_validation.py', 'scripts/run_campaign52_governed_equivalence.py'):
+        assert completed.returncode != 0
+        assert "ModuleNotFoundError: No module named 'scripts'" in completed.stderr
+        return
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout.strip() == 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'

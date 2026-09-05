@@ -58,3 +58,25 @@ See `CORE_V1_DEPLOY_GATE_CHARTER.md` for the design-only deployment validation
 work item. No capture or shadow run has been performed. Scripts packaging and
 historical deletions are outside this round. Static zero-reference evidence is
 still insufficient grounds for deletion.
+
+## Stage 2: completed migrations and verification
+
+The file-digest extraction passed all 193 independent cases before its commit.
+The byte-digest/strict-JSON extraction passed the same gate before its commit.
+The common implementation now lives in `research/artifact_io/v1.py`; 23 legacy
+functions delegate to it. Raw constructor imports remain where needed to preserve
+monkeypatch targets; counting imports is not a count of independent implementations.
+
+Thirty-two new tests cover golden bytes/digests, chunk boundaries, constructor
+injection, non-finite rejection, deliberate shared-helper corruption, source-gate
+violations and twenty script import contracts outside the checkout. Eighteen
+script digest entry points work with repository PYTHONPATH removed; Campaign 50
+development validation and Campaign 52 governed equivalence retain their existing
+requirement for that import path. These limitations are characterized rather than
+silently fixed. Thirteen conditional root bootstraps preserve standalone access to
+the new shared dependency; they are temporary packaging debt, not a packaging win.
+
+CI retains both original migration gates against `83e4e11` and adds this round's
+193-case gate against `f332255`. Full-suite and end-to-end synthetic ML/runtime
+results for the final head are recorded in the draft PR. No historical data or
+production state is used in this verification.

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import ast
-import copy
 import hashlib
 import importlib.util
 import json
