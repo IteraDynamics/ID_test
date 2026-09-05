@@ -1,5 +1,9 @@
 # IteraDynamics
 
+For the current Core v1 / campaign / ML Lab architecture, start with the
+[repository map](docs/engineering/REPOSITORY_MAP.md). The original Argus walkthrough
+below remains available for its supported historical interfaces.
+
 > Institutional-grade quantitative investment research and execution infrastructure.
 
 Itera Dynamics is building a quantitative investment firm through deterministic research,
@@ -116,15 +120,9 @@ Components:
 git clone https://github.com/iteradynamics/id_test.git
 cd id_test
 
-# Create virtualenv
-python -m venv .venv
-# Windows PowerShell:
-.\.venv\Scripts\Activate.ps1
-# Linux/macOS:
-source .venv/bin/activate
-
-# Install
-pip install -e ".[dev]"
+# Install the reviewed dependency versions (Python 3.11 or 3.12 in CI)
+python -m pip install uv==0.11.33
+uv sync --locked --extra dev
 
 # Copy env config
 cp .env.example .env
@@ -139,20 +137,20 @@ Place your OHLCV CSV in the `data/` directory. Expected columns:
 
 ```bash
 # Single-strategy backtest
-python scripts/run_backtest.py --data data/btc_1h.csv --strategy trend_following
+uv run --locked python scripts/run_backtest.py --data data/btc_1h.csv --strategy trend_following
 
 # With date range
-python scripts/run_backtest.py \
+uv run --locked python scripts/run_backtest.py \
   --data data/btc_1h.csv \
   --strategy trend_following \
   --start 2022-01-01 \
   --end 2023-12-31
 
 # Volatility breakout strategy
-python scripts/run_backtest.py --data data/btc_1h.csv --strategy volatility_breakout
+uv run --locked python scripts/run_backtest.py --data data/btc_1h.csv --strategy volatility_breakout
 
 # Mean reversion
-python scripts/run_backtest.py --data data/btc_1h.csv --strategy mean_reversion
+uv run --locked python scripts/run_backtest.py --data data/btc_1h.csv --strategy mean_reversion
 
 # PowerShell
 python scripts\run_backtest.py --data data\btc_1h.csv --strategy trend_following
@@ -171,10 +169,10 @@ python scripts\run_backtest.py --data data\btc_1h.csv --strategy trend_following
 
 ```bash
 # All three sleeves, default weights 50/30/20
-python scripts/run_portfolio.py --data data/btc_1h.csv
+uv run --locked python scripts/run_portfolio.py --data data/btc_1h.csv
 
 # Custom weights (trend/vol/rev)
-python scripts/run_portfolio.py --data data/btc_1h.csv --weights "0.6,0.2,0.2"
+uv run --locked python scripts/run_portfolio.py --data data/btc_1h.csv --weights "0.6,0.2,0.2"
 ```
 
 ---
@@ -183,13 +181,13 @@ python scripts/run_portfolio.py --data data/btc_1h.csv --weights "0.6,0.2,0.2"
 
 ```bash
 # Step through a CSV bar-by-bar using the full Argus runtime
-python scripts/run_paper.py --data data/btc_1h.csv
+uv run --locked python scripts/run_paper.py --data data/btc_1h.csv
 
 # Run 200 cycles with $50k capital
-python scripts/run_paper.py --data data/btc_1h.csv --capital 50000 --cycles 200
+uv run --locked python scripts/run_paper.py --data data/btc_1h.csv --capital 50000 --cycles 200
 
 # With state persistence
-python scripts/run_paper.py \
+uv run --locked python scripts/run_paper.py \
   --data data/btc_1h.csv \
   --state-path runtime/argus/state/live_state.json
 ```
@@ -200,15 +198,15 @@ python scripts/run_paper.py \
 
 ```bash
 # All tests
-pytest
+uv run --locked python -m pytest
 
 # With coverage
-pytest --cov=research --cov=runtime --cov-report=term-missing
+uv run --locked python -m pytest --cov=research --cov=runtime --cov-report=term-missing
 
 # Specific suite
-pytest tests/unit/test_regime_engine.py -v
-pytest tests/unit/test_strategies.py -v
-pytest tests/integration/test_backtest_pipeline.py -v
+uv run --locked python -m pytest tests/unit/test_regime_engine.py -v
+uv run --locked python -m pytest tests/unit/test_strategies.py -v
+uv run --locked python -m pytest tests/integration/test_backtest_pipeline.py -v
 ```
 
 ---
@@ -308,17 +306,17 @@ IteraDynamics/
 
 ```bash
 # Backtest
-python scripts/run_backtest.py --data data/btc_1h.csv --strategy trend_following
+uv run --locked python scripts/run_backtest.py --data data/btc_1h.csv --strategy trend_following
 
 # Portfolio
-python scripts/run_portfolio.py --data data/btc_1h.csv
+uv run --locked python scripts/run_portfolio.py --data data/btc_1h.csv
 
 # Paper run
-python scripts/run_paper.py --data data/btc_1h.csv --cycles 500
+uv run --locked python scripts/run_paper.py --data data/btc_1h.csv --cycles 500
 
 # Tests
-pytest
+uv run --locked python -m pytest
 
 # Tests with coverage
-pytest --cov=research --cov=runtime
+uv run --locked python -m pytest --cov=research --cov=runtime
 ```

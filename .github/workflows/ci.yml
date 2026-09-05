@@ -28,17 +28,19 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-
-      - name: Run unit tests
-        run: pytest tests/unit/ -v --tb=short
-
-      - name: Run integration tests
-        run: pytest tests/integration/ -v --tb=short
+          python -m pip install uv==0.11.33
+          uv sync --locked --extra dev
 
       - name: Run full test suite with coverage
-        run: pytest --cov=research --cov=runtime --cov-report=term-missing
+        run: uv run --locked python -m pytest --cov=research --cov=runtime --cov-report=term-missing
+
+      - name: Compare refactor with independent baseline (synthetic only)
+        if: matrix.python-version == '3.12'
+        run: |
+          git fetch --depth=1 origin 83e4e119a2a7954c470a797a590e5d9c8213d353
+          git worktree add --detach "$RUNNER_TEMP/itera-refactor-baseline" FETCH_HEAD
+          uv run --locked python scripts/verify_refactor_ml_parity.py --baseline-root "$RUNNER_TEMP/itera-refactor-baseline"
+          uv run --locked python scripts/verify_refactor_runtime_parity.py --baseline-root "$RUNNER_TEMP/itera-refactor-baseline"
 
   smoke-backtest:
     name: Smoke Backtest (synthetic data)
@@ -57,12 +59,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          python -m pip install uv==0.11.33
+          uv sync --locked --extra dev
 
       - name: Generate synthetic data and run smoke backtest
         run: |
-          python - <<'EOF'
+          uv run --locked python - <<'EOF'
           import sys
           sys.path.insert(0, ".")
           from research.harness.data_loader import make_synthetic_ohlcv
@@ -76,7 +78,7 @@ jobs:
 
       - name: Run trend-following backtest
         run: |
-          python scripts/run_backtest.py \
+          uv run --locked python scripts/run_backtest.py \
             --data data/smoke_btc_1h.csv \
             --strategy trend_following \
             --capital 100000 \
@@ -86,7 +88,7 @@ jobs:
 
       - name: Run portfolio backtest
         run: |
-          python scripts/run_portfolio.py \
+          uv run --locked python scripts/run_portfolio.py \
             --data data/smoke_btc_1h.csv \
             --no-chart
         env:
@@ -94,6 +96,6 @@ jobs:
 
       - name: Run paper trading smoke test (50 cycles)
         run: |
-          python scripts/run_paper.py \
+          uv run --locked python scripts/run_paper.py \
             --data data/smoke_btc_1h.csv \
             --cycles 50
