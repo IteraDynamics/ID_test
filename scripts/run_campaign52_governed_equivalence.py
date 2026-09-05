@@ -23,6 +23,13 @@ from scripts.run_core_v1_sleeve_contribution_audit import (
 from scripts.run_multi_strategy_fund import _build_sleeves
 from scripts.run_multi_strategy_walkforward import _build_folds
 
+# Keep standalone script execution working until the separate packaging migration.
+import sys as _artifact_sys
+from pathlib import Path as _ArtifactPath
+if str(_ArtifactPath(__file__).resolve().parents[1]) not in _artifact_sys.path:
+    _artifact_sys.path.insert(0, str(_ArtifactPath(__file__).resolve().parents[1]))
+
+
 SOURCE_SHA256 = {
     "btc_data": "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079",
     "eth_data": "73721a1ef1dffbff64bf6ef2d92fb508a59b20d5c847684d96fdc7015912845f",
@@ -68,11 +75,8 @@ class RecordedIntentStrategy:
 
 
 def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
+    from research.artifact_io.v1 import sha256_file_v1
+    return sha256_file_v1(path, chunk_size=1048576, factory=hashlib.sha256)
 
 
 def canonical_json(path: Path, payload: Any) -> None:

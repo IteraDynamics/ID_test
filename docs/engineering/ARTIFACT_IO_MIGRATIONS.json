@@ -1,0 +1,162 @@
+{
+  "baseline": "f332255139b613af0ffa1d227585db47fb8a8fb4",
+  "functions": [
+    {
+      "path": "scripts/archive_reset_core_v1_paper_runtime.py",
+      "name": "sha256_file",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/export_core_v1_jump_risk_evidence.py",
+      "name": "_sha256",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/inventory_campaign50_equity_sources.py",
+      "name": "sha256_file",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/preflight_campaign51_source_variable_feasibility.py",
+      "name": "sha256_file",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/preflight_campaign52_sources_calendar.py",
+      "name": "sha256_bytes",
+      "kind": "bytes",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/prepare_ml_lab_experiment_009_sources.py",
+      "name": "_sha256",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/prepare_ml_lab_experiment_011_sources.py",
+      "name": "_sha256",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/probe_free_options_history.py",
+      "name": "sha256_file",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/reconcile_campaign50_equity_sessions.py",
+      "name": "sha256_file",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/reconcile_free_options_oi_with_occ.py",
+      "name": "sha256_bytes",
+      "kind": "bytes",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/review_campaign50_development_validation.py",
+      "name": "sha256_file",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/run_alpha_surface_discovery.py",
+      "name": "sha256_path",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "sha256"
+    },
+    {
+      "path": "scripts/run_campaign50_development_validation.py",
+      "name": "_sha256_bytes",
+      "kind": "bytes",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/run_campaign52_governed_equivalence.py",
+      "name": "sha256_file",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/run_campaign57_long_history_confirmation.py",
+      "name": "sha256_file",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/run_core_v1_event_robustness.py",
+      "name": "_sha256_path",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "sha256"
+    },
+    {
+      "path": "scripts/run_core_v1_event_robustness.py",
+      "name": "_strict_json",
+      "kind": "strict_json"
+    },
+    {
+      "path": "scripts/run_core_v1_historical_alpha_discovery.py",
+      "name": "sha256_path",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "sha256"
+    },
+    {
+      "path": "scripts/run_core_v1_historical_event_families.py",
+      "name": "_sha256_path",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "sha256"
+    },
+    {
+      "path": "scripts/run_core_v1_historical_event_families.py",
+      "name": "_strict_json",
+      "kind": "strict_json"
+    },
+    {
+      "path": "scripts/run_core_v1_jump_risk_replay.py",
+      "name": "_sha256_bytes",
+      "kind": "bytes",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "scripts/run_jump_risk_portfolio_integration.py",
+      "name": "_sha256",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    },
+    {
+      "path": "research/ml_lab/evidence.py",
+      "name": "_sha256",
+      "kind": "file",
+      "chunk_size": 1048576,
+      "factory": "hashlib.sha256"
+    }
+  ]
+}

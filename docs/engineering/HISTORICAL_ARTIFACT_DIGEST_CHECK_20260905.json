@@ -1,0 +1,37 @@
+{
+  "code_commit": "304e69b04eccbd87af623af833f97b17f6796b29",
+  "historical_provenance_commit": "83e4e119a2a7954c470a797a590e5d9c8213d353",
+  "checks": [
+    {
+      "artifact": "artifacts/core_v1_event_robustness/btc_extended_up_event_robustness.json",
+      "manifest": "artifacts/core_v1_event_robustness/btc_extended_up_event_robustness_manifest.json",
+      "manifest_key": "outputs.btc_extended_up_event_robustness.json",
+      "recorded_sha256": "578d8e7c0176489ff5b67761b48ece8bac3285ba06b70ae6ee5d8fe93abb0dc7",
+      "caller": "scripts.run_core_v1_event_robustness._sha256_path",
+      "bytes": 6991,
+      "status": "PASS",
+      "pre_refactor_artifact_and_manifest_bytes_unchanged": true
+    },
+    {
+      "artifact": "artifacts/core_v1_historical_event_families/btc_extended_up_event_family_membership.csv",
+      "manifest": "artifacts/core_v1_historical_event_families/btc_extended_up_event_family_manifest.json",
+      "manifest_key": "outputs.btc_extended_up_event_family_membership.csv",
+      "recorded_sha256": "6bba0128dac682194da20126e1c36c81a38e809c8f8867e1a5946747e692f744",
+      "caller": "scripts.run_core_v1_historical_event_families._sha256_path",
+      "bytes": 26117,
+      "status": "PASS",
+      "pre_refactor_artifact_and_manifest_bytes_unchanged": true
+    },
+    {
+      "artifact": "artifacts/core_v1_historical_alpha_discovery/btc_core_v1_alpha_candidates.csv",
+      "manifest": "artifacts/core_v1_historical_alpha_discovery/btc_core_v1_alpha_discovery_manifest.json",
+      "manifest_key": "canonical_file_hashes.btc_core_v1_alpha_candidates.csv",
+      "recorded_sha256": "9ee9503d6001c5eb5d16fc2e9ca9164d18f1ca2c3b367c12a9a3b7d89d12874b",
+      "caller": "scripts.run_core_v1_historical_alpha_discovery.sha256_path",
+      "bytes": 21426,
+      "status": "PASS",
+      "pre_refactor_artifact_and_manifest_bytes_unchanged": true
+    }
+  ],
+  "method": "Current migrated caller, shared helper, and independent sha256sum matched the pre-existing manifest; existing files were read only."
+}

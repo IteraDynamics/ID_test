@@ -34,6 +34,13 @@ import urllib.request
 
 import pandas as pd
 
+# Keep standalone script execution working until the separate packaging migration.
+import sys as _artifact_sys
+from pathlib import Path as _ArtifactPath
+if str(_ArtifactPath(__file__).resolve().parents[1]) not in _artifact_sys.path:
+    _artifact_sys.path.insert(0, str(_ArtifactPath(__file__).resolve().parents[1]))
+
+
 
 OCC_ENDPOINT = "https://marketdata.theocc.com/daily-open-interest"
 
@@ -49,7 +56,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def sha256_bytes(payload: bytes) -> str:
-    return hashlib.sha256(payload).hexdigest()
+    from research.artifact_io.v1 import sha256_bytes_v1
+    return sha256_bytes_v1(payload, factory=hashlib.sha256)
 
 
 def main() -> int:

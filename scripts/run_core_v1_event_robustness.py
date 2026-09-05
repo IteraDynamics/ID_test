@@ -42,11 +42,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def _sha256_path(path: Path) -> str:
-    digest = sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    from research.artifact_io.v1 import sha256_file_v1
+    return sha256_file_v1(path, chunk_size=1048576, factory=sha256)
 
 
 def _repo_identifier(path: Path) -> str:
@@ -60,10 +57,8 @@ def _repo_identifier(path: Path) -> str:
 
 
 def _strict_json(value: Any) -> str:
-    return json.dumps(
-        value, indent=2, sort_keys=True, allow_nan=False,
-        ensure_ascii=False, separators=(",", ": "),
-    ) + "\n"
+    from research.artifact_io.v1 import strict_json_text_v1
+    return strict_json_text_v1(value)
 
 
 def _write_lf(path: Path, text: str) -> None:

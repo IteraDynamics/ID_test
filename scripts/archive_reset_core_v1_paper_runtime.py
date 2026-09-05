@@ -40,6 +40,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+# Keep standalone script execution working until the separate packaging migration.
+import sys as _artifact_sys
+from pathlib import Path as _ArtifactPath
+if str(_ArtifactPath(__file__).resolve().parents[1]) not in _artifact_sys.path:
+    _artifact_sys.path.insert(0, str(_ArtifactPath(__file__).resolve().parents[1]))
+
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 RUNTIME_AND_LOG_TARGETS = [
@@ -61,11 +68,8 @@ ARTIFACT_TARGET_NAMES = [
 
 
 def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
+    from research.artifact_io.v1 import sha256_file_v1
+    return sha256_file_v1(path, chunk_size=1048576, factory=hashlib.sha256)
 
 
 def sha256_dir(path: Path) -> str:
