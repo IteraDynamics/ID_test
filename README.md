@@ -1,5 +1,9 @@
 # IteraDynamics
 
+For the current Core v1 / campaign / ML Lab architecture, start with the
+[repository map](docs/engineering/REPOSITORY_MAP.md). The original Argus walkthrough
+below remains available for its supported historical interfaces.
+
 > Institutional-grade quantitative investment research and execution infrastructure.
 
 Itera Dynamics is building a quantitative investment firm through deterministic research,
@@ -200,15 +204,15 @@ python scripts/run_paper.py \
 
 ```bash
 # All tests
-pytest
+python -m pytest
 
 # With coverage
-pytest --cov=research --cov=runtime --cov-report=term-missing
+python -m pytest --cov=research --cov=runtime --cov-report=term-missing
 
 # Specific suite
-pytest tests/unit/test_regime_engine.py -v
-pytest tests/unit/test_strategies.py -v
-pytest tests/integration/test_backtest_pipeline.py -v
+python -m pytest tests/unit/test_regime_engine.py -v
+python -m pytest tests/unit/test_strategies.py -v
+python -m pytest tests/integration/test_backtest_pipeline.py -v
 ```
 
 ---
@@ -317,8 +321,8 @@ python scripts/run_portfolio.py --data data/btc_1h.csv
 python scripts/run_paper.py --data data/btc_1h.csv --cycles 500
 
 # Tests
-pytest
+python -m pytest
 
 # Tests with coverage
-pytest --cov=research --cov=runtime
+python -m pytest --cov=research --cov=runtime
 ```
