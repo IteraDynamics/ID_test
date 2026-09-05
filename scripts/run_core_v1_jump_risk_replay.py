@@ -50,7 +50,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _sha256_bytes(payload: bytes) -> str:
-    return hashlib.sha256(payload).hexdigest()
+    from research.artifact_io.v1 import sha256_bytes_v1
+    return sha256_bytes_v1(payload, factory=hashlib.sha256)
 
 
 def _canonical_json(payload: Any) -> bytes:

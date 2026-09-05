@@ -66,3 +66,19 @@ def test_source_boundary_rejects_changes_outside_extraction(tmp_path, monkeypatc
     elif drift == 'signature': (new / 'scripts/a.py').write_text('def digest(other):\n    return 1\ndef logic():\n    return 2\n')
     else: (new / 'scripts/a.py').write_text('def logic():\n    return 2\n')
     with pytest.raises(AssertionError): parity.check_source_boundaries(old, entries)
+
+
+def test_strict_json_golden_bytes_and_byte_digest():
+    encoded = v1.strict_json_text_v1({'z': -0.0, 'a': 'é雪'}).encode('utf-8')
+    assert encoded == '{\n  "a": "é雪",\n  "z": -0.0\n}\n'.encode('utf-8')
+    assert v1.sha256_bytes_v1(b'abc') == 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
+    assert v1.sha256_bytes_v1(encoded) == hashlib.sha256(encoded).hexdigest()
+
+
+@pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf')])
+def test_strict_json_rejects_nonfinite_values(value):
+    with pytest.raises(ValueError): v1.strict_json_text_v1({'value': value})
+
+
+def test_strict_json_rejects_unsupported_values():
+    with pytest.raises(TypeError): v1.strict_json_text_v1({'value': object()})

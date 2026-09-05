@@ -36,6 +36,13 @@ from research.campaign50_equity_breadth import (
 )
 from scripts.reconcile_campaign50_equity_sessions import EXPECTED_SHA256
 
+# Keep standalone script execution working until the separate packaging migration.
+import sys as _artifact_sys
+from pathlib import Path as _ArtifactPath
+if str(_ArtifactPath(__file__).resolve().parents[1]) not in _artifact_sys.path:
+    _artifact_sys.path.insert(0, str(_ArtifactPath(__file__).resolve().parents[1]))
+
+
 
 CAMPAIGN_ID = "campaign50"
 STAGE_ID = "development_validation"
@@ -116,7 +123,8 @@ def _int_text(value: int | None) -> str:
 
 
 def _sha256_bytes(payload: bytes) -> str:
-    return hashlib.sha256(payload).hexdigest()
+    from research.artifact_io.v1 import sha256_bytes_v1
+    return sha256_bytes_v1(payload, factory=hashlib.sha256)
 
 
 def _write_bytes(path: Path, payload: bytes) -> None:
