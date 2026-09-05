@@ -36,3 +36,17 @@ declares `lxml>=5.0`, but the lock's project dependency metadata omits it. Basel
 verification initially uses `uv sync --frozen --extra dev`, retaining every locked
 version. Dependency reconciliation is a separate stage; this is not evidence that
 the original locked environment satisfies all project requirements.
+
+## Stage 2 — ML package verification
+
+- Unchanged baseline: 762 tests passed (89 warnings), Python 3.12.13, 242.41s.
+- Experiment 005–011 definitions/orchestration moved into `research/ml_lab`.
+  Historical scripts alias their implementation modules, preserving import and
+  patching identity as well as direct-script commands. Shared definitions are
+  explicitly versioned; experiment-specific metrics/tie handling remain distinct.
+- Existing Experiment 011 synthetic/replay tests: 5 passed.
+- Import/CLI, embargo and parity-failure checks: 10 passed.
+- Independent baseline/current CLI comparison: **61 artifact files byte-identical**
+  across Experiments 005–011, on identical synthetic inputs and environment.
+  `scripts/verify_refactor_ml_parity.py` reproduces this check, including corruption
+  canaries for the output comparator. No historical market data was available or used.
