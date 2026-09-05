@@ -8,6 +8,8 @@ from __future__ import annotations
 import argparse
 import ast
 import copy
+from contextlib import redirect_stderr, redirect_stdout
+import io
 import importlib.util
 import json
 from pathlib import Path
@@ -26,6 +28,74 @@ from scripts import run_core_v1_paper_live as current
 from scripts.run_core_v1_jump_risk_parity import FIXED_NOW, _args, frozen_market_snapshot
 
 BASELINE_SHA = '83e4e119a2a7954c470a797a590e5d9c8213d353'
+
+
+def runtime_output_paths(args):
+    paths = {key: Path(getattr(args, key)) for key in
+             ['state_path', 'signals_log', 'fills_log', 'market_data_log']}
+    paths['errors_log'] = Path(args.signals_log).with_name('core_v1_errors.jsonl')
+    return paths
+
+
+def compare_runtime_outputs(args_a, args_b):
+    before, after = runtime_output_paths(args_a), runtime_output_paths(args_b)
+    for key, p in before.items():
+        q = after[key]
+        if p.exists() != q.exists():
+            raise AssertionError(f'{key}: output presence differs')
+        if p.exists() and p.read_bytes() != q.read_bytes():
+            raise AssertionError(f'{key}: output bytes differ')
+
+
+def run_failure_cycle(module, args, snapshot, provenance):
+    # Corrupt only this temporary fixture's cash. The actual sleeve_nav function
+    # must raise; do not mock run_cycle, the accounting function or the logger.
+    state_path = Path(args.state_path)
+    state = json.loads(state_path.read_text())
+    state['sleeves'][module.SELECTED_CORE_V1_SLEEVES[0].label]['cash'] = 'synthetic invalid cash'
+    state_path.write_text(json.dumps(state, sort_keys=True), encoding='utf-8')
+    errors = runtime_output_paths(args)['errors_log']
+    if errors.exists():
+        raise AssertionError('Failure fixture requires a fresh error log')
+    output, stderr = io.StringIO(), io.StringIO()
+    with patch.object(module, 'parse_args', return_value=args), patch.object(module, 'utc_now', return_value=FIXED_NOW), patch.object(module, 'load_market_data', side_effect=lambda _: (copy.deepcopy(snapshot), copy.deepcopy(provenance))), patch('urllib.request.urlopen', side_effect=AssertionError('Network forbidden in synthetic parity')), redirect_stdout(output), redirect_stderr(stderr):
+        try:
+            module.main()
+        except ValueError as exc:
+            frames = []
+            tb = exc.__traceback__
+            while tb:
+                frames.append(tb.tb_frame.f_code)
+                tb = tb.tb_next
+            if module.sleeve_nav.__code__ not in frames:
+                raise AssertionError('Failure did not originate in accounting') from exc
+            failure = (type(exc).__module__, type(exc).__qualname__, str(exc))
+        else:
+            raise AssertionError('Expected accounting failure to propagate through main')
+    if not errors.exists() or not errors.read_bytes():
+        raise AssertionError('Expected a non-empty error log from main')
+    records = [json.loads(line) for line in errors.read_text().splitlines()]
+    expected = {'timestamp': FIXED_NOW.isoformat(), 'error': failure[2], 'version': module.STATE_VERSION}
+    if records != [expected]:
+        raise AssertionError('Expected exactly one accounting failure record')
+    return failure, output.getvalue(), stderr.getvalue()
+
+
+def load_baseline_chart(path):
+    # Execute only the baseline's literal constant and pure chart function.
+    # Loading the full Streamlit module would start the app and perform I/O.
+    tree = ast.parse(path.read_text())
+    declarations = [n for n in tree.body if isinstance(n, ast.Assign)
+                    and any(isinstance(t, ast.Name) and t.id == 'DRAWDOWN_AXIS_FLOOR' for t in n.targets)]
+    if len(declarations) != 1:
+        raise AssertionError('Expected one baseline drawdown floor declaration')
+    floor = ast.literal_eval(declarations[0].value)
+    if type(floor) not in (float, int):
+        raise AssertionError('Baseline drawdown floor must be numeric')
+    chart = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'nav_chart')
+    namespace = {'pd': pd, 'go': go, 'make_subplots': make_subplots, 'DRAWDOWN_AXIS_FLOOR': floor, 'Any': object}
+    exec(compile(ast.Module(body=[chart], type_ignores=[]), str(path), 'exec'), namespace)
+    return namespace['nav_chart']
 
 
 def main():
@@ -85,20 +155,18 @@ def main():
                 return data, copy.deepcopy(provenance)
             with patch.object(old, 'utc_now', return_value=FIXED_NOW), patch.object(current, 'utc_now', return_value=FIXED_NOW), patch.object(old, 'load_market_data', side_effect=loader), patch.object(current, 'load_market_data', side_effect=loader), patch('urllib.request.urlopen', side_effect=AssertionError('Network forbidden in synthetic parity')):
                 assert old.run_cycle(args_a) == current.run_cycle(args_b)
-            for key in ['state_path', 'signals_log', 'fills_log', 'market_data_log']:
-                p, q = Path(getattr(args_a, key)), Path(getattr(args_b, key))
-                assert (p.read_bytes() if p.exists() else b'') == (q.read_bytes() if q.exists() else b''), key
+            compare_runtime_outputs(args_a, args_b)
+        # Fourth attempted cycle exercises main's real exception handler/logger.
+        assert run_failure_cycle(old, args_a, snapshot, provenance) == run_failure_cycle(current, args_b, snapshot, provenance)
+        compare_runtime_outputs(args_a, args_b)
 
     # Load only the original pure chart function; do not start the baseline UI.
-    tree = ast.parse((baseline / 'scripts/core_v1_dashboard.py').read_text())
-    chart = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'nav_chart')
-    namespace = {'pd': pd, 'go': go, 'make_subplots': make_subplots, 'DRAWDOWN_AXIS_FLOOR': -.40, 'Any': object}
-    exec(compile(ast.Module(body=[chart], type_ignores=[]), '<baseline-chart>', 'exec'), namespace)
+    baseline_chart = load_baseline_chart(baseline / 'scripts/core_v1_dashboard.py')
     history = [{'timestamp': '2024-01-01', 'nav': 100000., 'ret': 0., 'drawdown': 0.}, {'timestamp': '2024-01-02', 'nav': 98000., 'ret': -.02, 'drawdown': -.02}]
     for fills in [[], [{'timestamp': '2024-01-02', 'side': 'BUY', 'sleeve': 'S', 'qty': 10., 'price': 100.}]]:
-        assert namespace['nav_chart'](history, fills).to_json() == nav_chart(history, fills).to_json()
-    assert namespace['nav_chart']([], []) is nav_chart([], []) is None
-    print(json.dumps({'status': 'PASS', 'accounting_cases': accounting_cases, 'cycles': 3, 'cycle_state_and_logs_byte_identical': True, 'chart_specifications_identical': True, 'baseline': BASELINE_SHA}, indent=2))
+        assert baseline_chart(history, fills).to_json() == nav_chart(history, fills).to_json()
+    assert baseline_chart([], []) is nav_chart([], []) is None
+    print(json.dumps({'status': 'PASS', 'accounting_cases': accounting_cases, 'successful_cycles': 3, 'induced_failure_cycles': 1, 'error_logs_nonempty_and_byte_identical': True, 'cycle_state_and_logs_byte_identical': True, 'chart_specifications_identical': True, 'baseline': BASELINE_SHA}, indent=2))
 
 
 if __name__ == '__main__':

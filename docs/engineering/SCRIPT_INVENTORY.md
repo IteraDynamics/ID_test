@@ -191,5 +191,5 @@ Historical scripts remain at their original paths for reproducibility.
 | `scripts/update_campaign49_coinbase_source.py` | 1 | 0 |
 | `scripts/validate_core_v1_candidate_stress.py` | 0 | 0 |
 | `scripts/validate_pead_oos_bootstrap.py` | 1 | 0 |
-| `scripts/verify_refactor_ml_parity.py` | 0 | 1 |
-| `scripts/verify_refactor_runtime_parity.py` | 0 | 1 |
+| `scripts/verify_refactor_ml_parity.py` | 1 | 1 |
+| `scripts/verify_refactor_runtime_parity.py` | 1 | 1 |

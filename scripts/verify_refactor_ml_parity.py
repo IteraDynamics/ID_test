@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 BASELINE_SHA = "83e4e119a2a7954c470a797a590e5d9c8213d353"
+EXPECTED_ARTIFACT_COUNT = 61
 SOURCE = "RSP MDY IWM IWD IWF XLB XLE XLF XLI XLK XLP XLU XLV XLY".split()
 DESTINATION = "EWA EWC EWG EWH EWI EWJ EWL EWM EWW EWP EWS EWT EWU EWZ".split()
 
@@ -43,11 +44,20 @@ def fixture(root: Path) -> None:
 
 
 def check_outputs_equal(before: dict[str, bytes], after: dict[str, bytes]) -> None:
+    if not before or not after:
+        raise AssertionError("Artifact comparison requires non-empty inventories")
     if before.keys() != after.keys():
         raise AssertionError(f"Artifact inventory changed: {before.keys() ^ after.keys()}")
     changed = [name for name in before if before[name] != after[name]]
     if changed:
         raise AssertionError(f"Artifact bytes changed: {changed}")
+
+
+def check_expected_inventory(outputs: dict[str, bytes]) -> None:
+    # Fixed baseline fixture inventory, including the three cached macro sources.
+    # Neither side may redefine successful execution by omitting its outputs.
+    if len(outputs) != EXPECTED_ARTIFACT_COUNT:
+        raise AssertionError(f"Expected {EXPECTED_ARTIFACT_COUNT} artifact files, found {len(outputs)}")
 
 
 def run(repo: Path, root: Path) -> dict[str, bytes]:
@@ -93,10 +103,12 @@ def main() -> None:
         root = Path(temp)
         fixture(root)
         before = run(baseline, root)
+        check_expected_inventory(before)
         for n in range(5, 12):
             shutil.rmtree(root / f"{n:03}")
         fixture(root)
         after = run(Path(__file__).resolve().parents[1], root)
+        check_expected_inventory(after)
         check_outputs_equal(before, after)
         print(json.dumps({"status": "PASS", "baseline": sha, "experiments": list(range(5,12)), "artifacts_byte_identical": len(before), "digest": hashlib.sha256(b"".join(before[k] for k in sorted(before))).hexdigest(), "scope": "Synthetic migration parity only; no historical market inputs"}, indent=2))
 

@@ -114,3 +114,56 @@ regimes, resampling and the existing backtest during runtime parity verification
 GitHub CI results are linked in the draft review. No merge or deployment is part
 of these commits. Historical cleanup concludes with an inventory; deletion/moves
 require evidence about external callers. The known HOLD discrepancy remains open.
+
+## Independent review follow-up — 2026-09-05
+
+The operator supplied a static Red Team review of `1c1663e`: PASS with F1–F4.
+This follow-up changes verifiers, regression tests and documentation only.
+
+- **F1:** The error log is written by `main()` after `run_cycle()` raises, not by
+  `run_cycle()` itself. Merely adding another direct cycle call would miss the
+  handler. The gate now compares `core_v1_errors.jsonl` along with the existing
+  outputs, including file presence. After three successful synthetic cycles, it
+  corrupts cash only in each temporary state copy and invokes each version's real
+  `main()`. A real `sleeve_nav` accounting exception must propagate, create exactly
+  one non-empty error record, and produce matching exception type/message, console
+  output, state and all five compared files. Regression canaries reject missing,
+  empty or changed error logs and suppressed logging. Runtime code is unchanged.
+- **F2:** Empty artifact comparisons now fail. Each independent ML execution must
+  produce exactly the frozen 61-file inventory before it can be accepted. That
+  inventory includes three cached synthetic macro source files; it is not a claim
+  that all 61 files are newly generated result outputs. Count and empty-inventory
+  regression tests exercise both successful and failing cases.
+- **F3:** The baseline chart's drawdown floor is read from its own source declaration
+  using AST literal evaluation. No constant is supplied from the candidate or typed
+  into the harness. Missing/ambiguous declarations fail; tests demonstrate that a
+  different baseline value is actually used without starting Streamlit.
+- **F4:** At the reviewed head `1c1663e`, full CI already ran all **776 tests** on each
+  interpreter; the earlier local section above records an earlier, split execution.
+  Python 3.11: 776 passed in 520.52s. Python 3.12: 776 passed, 89 warnings in 514.01s.
+  Independent execution records: [branch CI](https://github.com/IteraDynamics/ID_test/actions/runs/33987435279)
+  and [PR CI](https://github.com/IteraDynamics/ID_test/actions/runs/33987458150).
+  The review follow-up adds 12 guard tests. A fresh complete local run passed:
+  **788 passed, 89 warnings in 238.08s**. Both strengthened differential gates also
+  passed against the clean `83e4e11` worktree: exactly 61 byte-identical ML files;
+  20 accounting cases, three successful cycles plus one induced failure, identical
+  state/log bytes (including a non-empty error log), and identical chart JSON.
+  CI results for the follow-up commit are linked in the draft PR.
+
+### Scope clarification and remaining work
+
+This branch completes a bounded extraction/migration phase. It does **not** complete
+repository-wide refactoring. Canonical I/O/digest consolidation across the remaining
+scripts and making `scripts/` an installable package are separate, unfinished work.
+The compatibility shims preserve commands; they do not eliminate repository-wide
+`sys.path` manipulation. Those wider changes require their own inventory, migration
+plan and evidence-preservation checks. This follow-up does not implement them.
+
+A deploy validation gate is also **not built or executed** here. Before deployment,
+a separate plan should define N cycles and acceptance criteria, capture identical
+real inputs and immutable snapshots of accumulated state, then run isolated copies
+of both versions with every write redirected away from production and compare all
+state/log outputs. Running the shadow against a shared writable production state
+would invalidate that isolation. Cadence must be re-measured after an explicitly
+authorized deployment before using it as an operating/research constraint. Neither
+this review nor its PASS authorizes merge, deployment, or reopening retired research.
