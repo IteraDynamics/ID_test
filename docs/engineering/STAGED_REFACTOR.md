@@ -60,3 +60,20 @@ conversion share an implementation. Output names, CSV/JSON options and publicati
 order are unchanged. Cache-hit/no-refresh, failed-acquisition and serialization
 checks pass. Atomic multi-file publication would change historical failure behavior
 and is intentionally not retrofitted into frozen runners.
+
+## Stage 4 — dashboard and runtime extractions
+
+Dashboard snapshot loading, formatting and chart construction are importable
+without launching Streamlit. Existing trust rules and rendering remain in place.
+Core v1 accounting and JSON persistence moved verbatim into dedicated modules;
+cycle orchestration, clock use, market-data logic, strategies and allocation remain
+unchanged. Structural comparison confirms every extracted and retained runtime
+function has its original AST.
+
+Verification: 30 existing dashboard/runtime tests pass. The independent baseline
+comparison passes 20 fill/accounting cases, state migration, cash-yield replay,
+three complete synthetic cycles (including a price shock), and chart JSON parity.
+Cycle events match; state, signal, fill and market-data logs match byte-for-byte.
+Runtime identity sidecars intentionally identify their actual checkout and are not
+compared as accounting evidence. Reproduce with
+`scripts/verify_refactor_runtime_parity.py --baseline-root <baseline-worktree>`.

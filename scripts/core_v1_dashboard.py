@@ -3,6 +3,9 @@
 
 from __future__ import annotations
 
+
+
+
 import html
 import json
 import os
@@ -19,6 +22,17 @@ from plotly.subplots import make_subplots
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
+
+from runtime.core_v1.dashboard.charts import nav_chart, DRAWDOWN_AXIS_FLOOR
+
+from runtime.core_v1.dashboard.formatting import (
+    age_seconds, format_duration, age_text, money, signed_money, pct, signed_pct,
+    num, esc, css_class_for_value, status_badge, sleeve_status, friendly_ts, strategy_display,
+)
+
+from runtime.core_v1.dashboard.snapshots import (
+    read_json, read_jsonl, parse_ts, intraday_nav_baseline, latest_same_day_navs,
+)
 
 from runtime.core_v1.allocation import SELECTED_CORE_V1_SCENARIO, SELECTED_CORE_V1_SLEEVES
 from scripts.core_v1_dashboard_health import (
@@ -382,126 +396,32 @@ table.audit-table { border-collapse:collapse; width:100%; min-width:850px; font-
 )
 
 
-def read_json(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        return {}
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
 
 
-def read_jsonl(path: Path, n: int = 800) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-    rows: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines()[-n:]:
-        if line.strip():
-            try:
-                rows.append(json.loads(line))
-            except Exception:
-                pass
-    return rows
 
 
-def parse_ts(value: Any) -> pd.Timestamp | None:
-    if not value:
-        return None
-    ts = pd.to_datetime(value, utc=True, errors="coerce")
-    return None if pd.isna(ts) else ts
 
 
-def age_seconds(ts: pd.Timestamp | None) -> int | None:
-    if ts is None:
-        return None
-    return max(0, int((pd.Timestamp.now(tz="UTC") - ts).total_seconds()))
 
 
-def format_duration(seconds: int | None) -> str:
-    if seconds is None:
-        return "unknown"
-    seconds = abs(seconds)
-    if seconds < 90:
-        return f"{seconds}s"
-    minutes = seconds // 60
-    if minutes < 90:
-        return f"{minutes}m"
-    hours = minutes // 60
-    if hours < 48:
-        return f"{hours}h"
-    return f"{hours // 24}d"
 
 
-def age_text(ts: pd.Timestamp | None) -> str:
-    seconds = age_seconds(ts)
-    if seconds is None:
-        return "unknown"
-    return f"{format_duration(seconds)} ago"
 
 
-def money(v: Any) -> str:
-    try:
-        x = float(v)
-        if abs(x) < 0.005:
-            x = 0.0
-        return f"${x:,.2f}"
-    except Exception:
-        return "—"
 
 
-def signed_money(v: Any) -> str:
-    try:
-        x = float(v)
-        if abs(x) < 0.005:
-            x = 0.0
-        sign = "+" if x >= 0 else "-"
-        return f"{sign}${abs(x):,.2f}"
-    except Exception:
-        return "—"
 
 
-def pct(v: Any, d: int = 1) -> str:
-    try:
-        return f"{float(v):.{d}%}"
-    except Exception:
-        return "—"
 
 
-def signed_pct(v: Any, d: int = 2) -> str:
-    try:
-        x = float(v)
-        if abs(x) < 0.00005:
-            x = 0.0
-        sign = "+" if x >= 0 else ""
-        return f"{sign}{x:.{d}%}"
-    except Exception:
-        return "—"
 
 
-def num(v: Any, d: int = 4) -> str:
-    try:
-        x = float(v)
-        if abs(x) < 10 ** (-(d + 1)):
-            x = 0.0
-        return f"{x:,.{d}f}"
-    except Exception:
-        return "—"
 
 
-def esc(v: Any) -> str:
-    return html.escape("" if v is None else str(v))
 
 
-def css_class_for_value(value: float) -> str:
-    if value > 0:
-        return "good"
-    if value < 0:
-        return "bad"
-    return "muted"
 
 
-def status_badge(label: str, status: str) -> str:
-    return f'<span class="badge {status}">{esc(label)}</span>'
 
 
 def regime_badge(regime: str) -> str:
@@ -509,32 +429,10 @@ def regime_badge(regime: str) -> str:
     return f'<span class="regime {klass}">{esc(label)}</span>'
 
 
-def sleeve_status(action: str | None, position_open: bool) -> tuple[str, str, str]:
-    """Map raw strategy action + position state to an operator-facing status.
-
-    Returns (label, css_key, headline_verb).
-    """
-    a = (action or "").upper()
-    if "ENTER" in a:
-        return "ENTERING", "entering", "Entering"
-    if "EXIT" in a:
-        return "EXITING", "exiting", "Exiting"
-    if position_open:
-        return "HOLDING", "holding", "Holding"
-    return "FLAT", "flat", "Flat"
 
 
-def friendly_ts(value: Any) -> str:
-    ts = parse_ts(value)
-    if ts is None:
-        return "—"
-    return ts.strftime("%b %-d, %H:%M UTC")
 
 
-def strategy_display(name: str | None) -> str:
-    if not name:
-        return "—"
-    return name.replace("_", " ").title()
 
 
 def weighted_regime(rows: list[dict[str, Any]]) -> str:
@@ -620,25 +518,8 @@ def html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]], empty
     return f'<div class="audit-table-wrap"><table class="audit-table"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
-def intraday_nav_baseline(events: list[dict[str, Any]]) -> tuple[float | None, int]:
-    today = pd.Timestamp.now(tz="UTC").date()
-    today_events = []
-    for e in events:
-        ts = parse_ts(e.get("timestamp"))
-        if ts is not None and ts.date() == today and e.get("total_nav") is not None:
-            today_events.append(e)
-    if not today_events:
-        return None, 0
-    return float(today_events[0].get("total_nav")), len(today_events)
 
 
-def latest_same_day_navs(events: list[dict[str, Any]]) -> dict[str, float]:
-    today = pd.Timestamp.now(tz="UTC").date()
-    for e in events:
-        ts = parse_ts(e.get("timestamp"))
-        if ts is not None and ts.date() == today and e.get("sleeve_navs"):
-            return {k: float(v) for k, v in e.get("sleeve_navs", {}).items()}
-    return {}
 
 
 # Drawdown panel is drawn on a fixed scale so today's calm and a future real
@@ -646,86 +527,12 @@ def latest_same_day_navs(events: list[dict[str, Any]]) -> dict[str, float]:
 # band as drawn reference *lines* is Phase 2 item 11 (from the governed
 # degradation-band artifact, not hardcoded here) — the numbers below are
 # only quoted as caption text.
-DRAWDOWN_AXIS_FLOOR = -0.40
 # Pre-registered planning drawdown assumption. Source of truth:
 # docs/research/CORE_V1_LIVE_EXPECTATION_AND_DEGRADATION_BAND.md ("roughly
 # -26% to -35%"). Quoted as text only; keep in sync with that doc.
 DRAWDOWN_PLANNING_BAND = (-0.26, -0.35)
 
 
-def nav_chart(history: list[dict[str, Any]], fills: list[dict[str, Any]]) -> go.Figure | None:
-    """Row 1: % return vs. the $100k inception baseline. Row 2: worst-of-day
-    drawdown on a fixed scale. `history` is the daily series from
-    core_v1_dashboard_health.nav_history()."""
-    if not history:
-        return None
-    hist = pd.DataFrame(history)
-    hist["timestamp"] = pd.to_datetime(hist["timestamp"], utc=True, errors="coerce")
-    hist = hist.dropna(subset=["timestamp"]).sort_values("timestamp")
-    if hist.empty:
-        return None
-
-    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.72, 0.28], vertical_spacing=0.05)
-
-    # Row 1 — return since inception, baseline ($100k) = 0%. Anchoring the
-    # fill at 0 keeps every move proportional and keeps 0 in frame, so a
-    # future flat stretch reads flat rather than as autoranged noise.
-    fig.add_trace(
-        go.Scatter(
-            x=hist["timestamp"], y=hist["ret"], mode="lines", name="Return",
-            line=dict(color="#38bdf8", width=2.2), fill="tozeroy", fillcolor="rgba(56,189,248,0.10)",
-            customdata=hist["nav"],
-            hovertemplate="%{x|%b %-d}<br>%{y:+.2%} · $%{customdata:,.0f}<extra></extra>",
-        ),
-        row=1, col=1,
-    )
-
-    fill_df = pd.DataFrame(fills)
-    if not fill_df.empty and "timestamp" in fill_df:
-        fill_df["timestamp"] = pd.to_datetime(fill_df["timestamp"], utc=True, errors="coerce")
-        fill_df = fill_df.dropna(subset=["timestamp"]).sort_values("timestamp")
-        fill_df = fill_df[fill_df["timestamp"] >= hist["timestamp"].min()]
-        if not fill_df.empty:
-            merged = pd.merge_asof(fill_df, hist[["timestamp", "ret"]], on="timestamp", direction="nearest")
-            for side, color, symbol in (("BUY", "#22c55e", "triangle-up"), ("SELL", "#ef4444", "triangle-down")):
-                side_rows = merged[merged["side"].astype(str).str.upper() == side]
-                if side_rows.empty:
-                    continue
-                has_meta = {"sleeve", "qty", "price"}.issubset(side_rows.columns)
-                fig.add_trace(
-                    go.Scatter(
-                        x=side_rows["timestamp"], y=side_rows["ret"], mode="markers", name=side,
-                        marker=dict(color=color, size=9, symbol=symbol, line=dict(color="#05070c", width=1)),
-                        customdata=side_rows[["sleeve", "qty", "price"]].to_numpy() if has_meta else None,
-                        hovertemplate=(f"{side} %{{customdata[0]}}<br>qty %{{customdata[1]:.4f}} @ $%{{customdata[2]:,.2f}}<extra></extra>" if has_meta else f"{side}<extra></extra>"),
-                    ),
-                    row=1, col=1,
-                )
-
-    fig.add_trace(
-        go.Scatter(
-            x=hist["timestamp"], y=hist["drawdown"], mode="lines", name="Drawdown",
-            line=dict(color="#ef4444", width=1.4), fill="tozeroy", fillcolor="rgba(239,68,68,0.16)",
-            hovertemplate="%{x|%b %-d}<br>Drawdown %{y:.2%}<extra></extra>",
-        ),
-        row=2, col=1,
-    )
-
-    fig.update_layout(
-        showlegend=False,
-        margin=dict(l=6, r=6, t=10, b=6),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#94a3b8", size=11, family="ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace"),
-        hoverlabel=dict(bgcolor="#111827", font_size=12, font_color="#e5e7eb", bordercolor="#1f2a3d"),
-        hovermode="x unified",
-        height=380,
-    )
-    fig.update_xaxes(showgrid=False, showspikes=True, spikemode="across", spikecolor="#334155", spikethickness=1, row=1, col=1)
-    fig.update_xaxes(showgrid=False, row=2, col=1)
-    fig.update_yaxes(showgrid=True, gridcolor="#182235", zeroline=True, zerolinecolor="#475569", tickformat="+.0%", row=1, col=1)
-    fig.update_yaxes(showgrid=True, gridcolor="#182235", tickformat=".0%", range=[DRAWDOWN_AXIS_FLOOR, 0.02], dtick=0.1, row=2, col=1)
-    return fig
 
 
 state = read_json(STATE_PATH)
