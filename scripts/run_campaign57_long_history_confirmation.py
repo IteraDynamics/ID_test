@@ -46,6 +46,13 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+# Keep standalone script execution working until the separate packaging migration.
+import sys as _artifact_sys
+from pathlib import Path as _ArtifactPath
+if str(_ArtifactPath(__file__).resolve().parents[1]) not in _artifact_sys.path:
+    _artifact_sys.path.insert(0, str(_ArtifactPath(__file__).resolve().parents[1]))
+
+
 SEED = 20260957
 N_PERMUTATIONS = 10_000
 PRIMARY_WINDOW = 3
@@ -63,11 +70,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
+    from research.artifact_io.v1 import sha256_file_v1
+    return sha256_file_v1(path, chunk_size=1048576, factory=hashlib.sha256)
 
 
 def load_adjusted(path: Path, name: str) -> pd.DataFrame:

@@ -11,11 +11,8 @@ import numpy as np
 import pandas as pd
 
 def _sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
+    from research.artifact_io.v1 import sha256_file_v1
+    return sha256_file_v1(path, chunk_size=1048576, factory=hashlib.sha256)
 
 
 def _json_default(value: Any) -> Any:
