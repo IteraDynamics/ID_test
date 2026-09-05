@@ -56,4 +56,3 @@ def latest_same_day_navs(events: list[dict[str, Any]]) -> dict[str, float]:
         if ts is not None and ts.date() == today and e.get("sleeve_navs"):
             return {k: float(v) for k, v in e.get("sleeve_navs", {}).items()}
     return {}
-

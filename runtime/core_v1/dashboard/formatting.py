@@ -124,4 +124,3 @@ def strategy_display(name: str | None) -> str:
     if not name:
         return "—"
     return name.replace("_", " ").title()
-

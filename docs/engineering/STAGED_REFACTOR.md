@@ -94,3 +94,23 @@ No files are deleted or archived based solely on zero references; external sched
 and operator workflows have not been inspected. Historical evidence and governance
 records remain unchanged. Source identity checks protect allocation, strategies,
 regimes, resampling and the existing backtest during runtime parity verification.
+
+## Final local verification
+
+- Complete suite after extraction/evidence/lock changes: **775 passed, 89 warnings**
+  in 247.37s. The subsequently added HOLD characterization passed separately;
+  final test inventory is 776. Boundary tests were rerun after their final edit.
+- Final independent ML comparison: all **61 artifacts byte-identical** for the
+  baseline/refactor pair. Combined digests vary across invocations because original
+  reports include the temporary input paths; comparison within each invocation uses
+  identical paths and exact bytes, without normalizing away differences.
+- Final independent runtime comparison: **20 accounting cases, three full cycles,
+  byte-identical state/logs, and identical chart specifications**.
+- `git diff` confirms no changes to canonical strategies, regimes, allocation,
+  backtest/resampling, campaign records, ops state, market inputs or old artifacts.
+- Historical real-data replay and deployed-runtime validation were not performed;
+  operator-local inputs and production are outside this synthetic migration gate.
+
+GitHub CI results are linked in the draft review. No merge or deployment is part
+of these commits. Historical cleanup concludes with an inventory; deletion/moves
+require evidence about external callers. The known HOLD discrepancy remains open.

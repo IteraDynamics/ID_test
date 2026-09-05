@@ -81,4 +81,3 @@ def nav_chart(history: list[dict[str, Any]], fills: list[dict[str, Any]]) -> go.
     fig.update_yaxes(showgrid=True, gridcolor="#182235", zeroline=True, zerolinecolor="#475569", tickformat="+.0%", row=1, col=1)
     fig.update_yaxes(showgrid=True, gridcolor="#182235", tickformat=".0%", range=[DRAWDOWN_AXIS_FLOOR, 0.02], dtick=0.1, row=2, col=1)
     return fig
-

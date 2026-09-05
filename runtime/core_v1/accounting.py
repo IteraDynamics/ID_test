@@ -158,4 +158,3 @@ def mark_to_market(s: dict[str, Any], price: float) -> dict[str, float]:
         "unrealized_pnl": unrealized_pnl,
         "unrealized_return": unrealized_pnl / cost_basis if cost_basis > 0 else 0.0,
     }
-
