@@ -13,6 +13,7 @@ if __package__ in (None, ""):
 
 import argparse
 import json
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -65,6 +66,13 @@ with patch('urllib.request.urlopen', side_effect=AssertionError('Network forbidd
     fixture = Path('fixture.bin'); fixture.write_bytes(b'abc')
     expected = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
     assert c50._sha256_bytes(b'abc') == c52.sha256_file(fixture) == expected
+    from scripts import verify_refactor_runtime_parity as parity
+    import copy
+    args = parity._args(Path('paper'), is_candidate=False)
+    snapshot, provenance = parity.frozen_market_snapshot()
+    with patch.object(parity.current, 'utc_now', return_value=parity.FIXED_NOW), patch.object(parity.current, 'load_market_data', return_value=(copy.deepcopy(snapshot), copy.deepcopy(provenance))):
+        parity.current.run_cycle(args)
+    parity.run_failure_cycle(parity.current, args, snapshot, provenance)
 print(json.dumps({'status':'PASS', 'installed_imports':17, 'ml_alias_identities':7}))
 '''
         completed = subprocess.run([sys.executable, '-I', '-c', checks, str(target), str(ROOT)], cwd=root, text=True, capture_output=True, timeout=90)
@@ -83,6 +91,27 @@ print(json.dumps({'status':'PASS', 'installed_imports':17, 'ml_alias_identities'
             if command.returncode or 'usage:' not in command.stdout.lower():
                 raise AssertionError(f'Installed module CLI failed: {name}: {command.stderr}')
         result['module_help_commands'] = len(commands)
+        result['installed_paper_success_and_error_cycles'] = 2
+        # Exercise actual artifact production, not only imports/help. The original
+        # full ML gate separately proves checkout parity against the frozen baseline.
+        from scripts import verify_refactor_ml_parity as ml
+        fixture_root = root / 'ml-fixture'
+        fixture_root.mkdir()
+        ml.fixture(fixture_root)
+        output = fixture_root / '005'
+        execute = "import sys,runpy; from pathlib import Path; sys.path[:]=[sys.argv[1]]+[p for p in sys.path if Path(p).resolve()!=Path(sys.argv[2]).resolve()]; sys.argv=['experiment_005','--data-dir',sys.argv[3],'--output-dir',sys.argv[4]]; runpy.run_module('scripts.run_ml_lab_experiment_005',run_name='__main__')"
+        inventories = []
+        for code_root in (ROOT, target):
+            command = subprocess.run([sys.executable, '-I', '-c', execute, str(code_root), str(ROOT), str(fixture_root / 'source'), str(output)], cwd=root, text=True, capture_output=True, timeout=120)
+            if command.returncode:
+                raise AssertionError('Packaged ML execution failed: ' + command.stderr)
+            inventory = {str(p.relative_to(output)): p.read_bytes() for p in output.rglob('*') if p.is_file()}
+            if len(inventory) != 7:
+                raise AssertionError(f'Expected 7 Experiment 005 files, got {len(inventory)}')
+            inventories.append(inventory)
+            shutil.rmtree(output)
+        ml.check_outputs_equal(*inventories)
+        result['installed_ml_artifacts_byte_identical'] = len(inventories[0])
         return result
 
 

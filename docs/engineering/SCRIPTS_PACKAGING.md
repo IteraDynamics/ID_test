@@ -61,3 +61,27 @@ outside the checkout with checkout import paths removed. They check 17 installed
 imports, 17 fresh-process module help commands, seven ML alias identities, no
 package-import path mutation, and successful Campaign 50/52 digest calls. A separate
 `-I -S` subprocess verifies a bare checkout command without site-packages at all.
+
+## Stage 3: completed local verification and CI
+
+The fresh full suite passed: **831 passed, 89 warnings in 250.17s**. Eleven new
+packaging tests include unknown additions, missing new files, frozen-code drift,
+function/signature/import drift, altered bootstrap arguments, an altered I/O gate,
+an empty wheel and direct checkout execution with site-packages disabled.
+The older compatibility suite now requires both formerly broken commands to work.
+
+The final locally installed wheel passed all 17 imports, 17 fresh-process module
+help commands and seven alias-identity checks. It also completed one synthetic
+Core v1 cycle and its real accounting-error handler, and Experiment 005 produced
+seven byte-identical files compared with checkout execution. All execution occurred
+in temporary directories with synthetic inputs; no production state was accessed.
+
+All original gates passed: 61 ML files match `83e4e11`; Core v1 passes 20 accounting
+cases, three successful cycles and an induced failure with exact state/log/chart
+parity; the I/O gate passes 193 cases through the pinned containment chain.
+Research/runtime source files and `uv.lock` remain byte-identical to `e75fb88`.
+
+CI retains the full suite on Python 3.11 and 3.12 and adds the wheel and packaging
+checks after the existing gates on Python 3.12. Final-head CI links are recorded
+in the draft PR. No historical script has been deleted or relocated, no behavioral
+research correction is included, and no merge/deployment is authorized here.

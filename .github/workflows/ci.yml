@@ -43,7 +43,11 @@ jobs:
           uv run --locked python scripts/verify_refactor_runtime_parity.py --baseline-root "$RUNNER_TEMP/itera-refactor-baseline"
           git fetch --depth=1 origin f332255139b613af0ffa1d227585db47fb8a8fb4
           git worktree add --detach "$RUNNER_TEMP/itera-io-baseline" FETCH_HEAD
-          uv run --locked python scripts/verify_artifact_io_parity.py --baseline-root "$RUNNER_TEMP/itera-io-baseline"
+          git fetch --depth=1 origin e75fb88808ed9c7bc45cf2f8bc04a2a9e43ce8d9
+          git worktree add --detach "$RUNNER_TEMP/itera-packaging-baseline" FETCH_HEAD
+          uv run --locked python -m scripts.verify_artifact_io_parity --baseline-root "$RUNNER_TEMP/itera-io-baseline" --packaging-baseline-root "$RUNNER_TEMP/itera-packaging-baseline"
+          uv build --wheel --no-build-logs --out-dir "$RUNNER_TEMP/itera-wheel"
+          uv run --locked python -m scripts.verify_scripts_packaging --baseline-root "$RUNNER_TEMP/itera-packaging-baseline" --wheel "$RUNNER_TEMP/itera-wheel/iterad_ynamics-0.1.0-py3-none-any.whl"
 
   smoke-backtest:
     name: Smoke Backtest (synthetic data)
