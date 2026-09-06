@@ -45,6 +45,17 @@ than re-deriving it and re-risking the same bugs that script already found and f
 
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 import json
 import sys
@@ -54,14 +65,8 @@ import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from backtest_pairs_distance_method import (  # noqa: E402
-    US_EQUITY_TICKER_PATTERN,
-    eligible_slice,
-    generate_windows,
-    load_price_panel,
-)
+from scripts.backtest_pairs_distance_method import US_EQUITY_TICKER_PATTERN, eligible_slice, generate_windows, load_price_panel
 
 RNG_SEED = 20260901  # fixed for replay determinism, not tuned
 N_QUINTILES = 5

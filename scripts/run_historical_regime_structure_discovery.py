@@ -1,14 +1,23 @@
 """CLI for deterministic Campaign #47 regime-structure discovery."""
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 import json
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 from research.ml.validation.historical_regime_structure_discovery import (  # noqa: E402
     SourcePaths,

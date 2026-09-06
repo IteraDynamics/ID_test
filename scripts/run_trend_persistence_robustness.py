@@ -1,5 +1,16 @@
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 import json
 import sys
@@ -14,7 +25,6 @@ import pandas as pd
 from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT))
 
 import scripts.run_trend_persistence_research as discovery
 from research.jump_risk_engine.lab import read_ohlcv

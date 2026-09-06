@@ -3,6 +3,17 @@
 
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 
 
 
@@ -21,7 +32,6 @@ import streamlit.components.v1 as components
 from plotly.subplots import make_subplots
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT))
 
 from runtime.core_v1.dashboard.charts import nav_chart, DRAWDOWN_AXIS_FLOOR
 

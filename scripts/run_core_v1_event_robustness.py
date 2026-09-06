@@ -2,6 +2,17 @@ from __future__ import annotations
 
 """Generate deterministic Campaign #42 event-robustness artifacts."""
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 from hashlib import sha256
 import json
@@ -13,8 +24,6 @@ from typing import Any
 import pandas as pd
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-if str(REPOSITORY_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from research.ml.validation.event_robustness import (
     EventRobustnessValidationError,

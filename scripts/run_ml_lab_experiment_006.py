@@ -1,11 +1,20 @@
 """Compatibility entry point for ML Lab Experiment 006."""
+
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
 from pathlib import Path
 import sys
 
 # Direct-script execution starts with scripts/ on sys.path; package code never
 # adjusts import paths. Preserve both historical CLI and import entry points.
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from research.ml_lab.experiments import experiment_006 as _implementation
 
