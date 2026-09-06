@@ -35,6 +35,17 @@ Observation/analysis only. No trading signal, no economic claim.
 
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 import sys
 from datetime import timedelta
@@ -44,9 +55,8 @@ import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from analyze_vrp_defined_risk_backtest import DAYS_TO_EXPIRY, load_close_series  # noqa: E402
+from scripts.analyze_vrp_defined_risk_backtest import DAYS_TO_EXPIRY, load_close_series
 
 TRADING_DAYS_PER_YEAR = 252
 MIN_OBSERVATIONS_FOR_VOL = 10  # a window with fewer real closes than this can't give a usable vol

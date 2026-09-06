@@ -50,6 +50,17 @@ What this script deliberately does NOT do:
 
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 import json
 import sys
@@ -60,11 +71,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-if __package__ in (None, ""):
-    # Allows `python scripts/run_campaign53_discovery.py` (not just `python -m
-    # scripts.run_campaign53_discovery`) to resolve the cross-script import below -- running a
-    # file directly by path puts only its own directory on sys.path, not the repo root.
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.run_campaign53_power_analysis import (
     CONFIRMATION_TOP_K,

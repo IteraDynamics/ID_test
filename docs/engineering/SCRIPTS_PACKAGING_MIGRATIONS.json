@@ -1,0 +1,450 @@
+{
+  "baseline": "e75fb88808ed9c7bc45cf2f8bc04a2a9e43ce8d9",
+  "files": {
+    "scripts/analyze_trades.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/analyze_vrp_cash_secured_put.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 1
+    },
+    "scripts/analyze_vrp_premium_distribution.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 1
+    },
+    "scripts/archive_reset_core_v1_paper_runtime.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/audit_core_v1_prices.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/backtest_low_volatility_factor.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 1
+    },
+    "scripts/core_v1_dashboard.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/diagnose_crash_short_entry_episodes.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/diagnose_equity_derisk_reachability.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/diagnose_explicit_btc_state.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/diagnose_hedge_gates.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/diagnose_jump_risk_train_test_boundary_leakage.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/diagnose_sleeve_matrix_reconciliation.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/export_core_v1_canonical_sleeve_matrix.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/export_core_v1_jump_risk_evidence.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/finalize_core_v1_canonical_sleeve_matrix.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/inventory_campaign50_equity_sources.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/log_cde_basis_ladder.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/peek_parameter_sensitivity.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/preflight_campaign51_source_variable_feasibility.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/preflight_campaign52_sources_calendar.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/prepare_ml_lab_experiment_009_sources.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/prepare_ml_lab_experiment_011_sources.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 1
+    },
+    "scripts/probe_alternate_hedge_strategy.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/probe_deribit_universe_coverage.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/probe_free_options_history.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/reconcile_campaign50_equity_sessions.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/reconcile_free_options_oi_with_occ.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/register_jump_daily_champions.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/review_campaign50_development_validation.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_alpha_surface_discovery.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_backtest.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_campaign50_development_validation.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_campaign52_governed_equivalence.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_campaign53_discovery.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_campaign57_long_history_confirmation.py": {
+      "removed_path_or_alias_statements": 3,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_campaign58_grid_power_analysis.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_campaign58_phase1_power_analysis.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_campaign_54_sizing_sweep.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_candidate_wfo.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_cost_sensitivity.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_event_robustness.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_historical_alpha_discovery.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_historical_event_families.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_historical_regime_taxonomy.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_historical_regime_taxonomy_report.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_jump_risk_diagnosis.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_jump_risk_diagnosis_v2.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_jump_risk_drift.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_jump_risk_paper.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_jump_risk_parity.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_jump_risk_replay.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_live_benchmarks.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_live_comparison.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_paper_live.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_parameter_sensitivity.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_regime_attribution.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_sleeve_attribution_report.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_sleeve_contribution_audit.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_core_v1_sleeve_contribution_audit_parallel.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_cot_cross_sectional_discovery.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 1
+    },
+    "scripts/run_full_historical_regime_state_sequence.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_fund_portfolio.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_fund_walk_forward.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_historical_regime_structure_discovery.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_historical_regime_transition_discovery.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_ablation_research.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_candidate_robustness.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_cross_asset_validation.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_daily_asset_generalization.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_energy_research.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_horizon_research.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_risk_lag_realistic_sensitivity.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_risk_lag_sensitivity.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_risk_portfolio_candidate_audit.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_risk_portfolio_integration.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_risk_research.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_risk_timing_audit.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_jump_targeted_horizon_research.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_longshort_portfolio.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_001.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_002.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_003.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_004.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_005.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_006.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_007.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_008.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_009.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_010.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_ml_lab_experiment_011.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_multi_strategy_fund.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_multi_strategy_walkforward.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_multi_strategy_walkforward_explicit_btc.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_multiasset_portfolio.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_paper.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_paper_runtime_cadence_audit.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_portfolio.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_recovery_trust_experiment.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_recovery_trust_segmentation.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_simple_btc_price_state_predictive_baselines.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_trend_persistence_ablation.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_trend_persistence_horizon_refinement.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_trend_persistence_portfolio_integration.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_trend_persistence_portfolio_integration_safe.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_trend_persistence_research.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_trend_persistence_robustness.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/run_vrp_structure_robustness_sweep.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 1
+    },
+    "scripts/run_walk_forward.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/train_calibrator.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    },
+    "scripts/verify_refactor_runtime_parity.py": {
+      "removed_path_or_alias_statements": 1,
+      "qualified_sibling_imports": 0
+    }
+  },
+  "adapted_gate_sha256": "84cc17e2fa0d6dc1e569dc896fd60995931ef72904f938b293f82db68409bffc"
+}

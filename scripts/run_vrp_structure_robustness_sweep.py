@@ -33,6 +33,17 @@ frozen specification, no economic claim beyond what the printed distribution say
 
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 import sys
 from pathlib import Path
@@ -41,19 +52,8 @@ import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from analyze_vrp_defined_risk_backtest import (  # noqa: E402
-    COMMISSION_PER_CONTRACT_LEG,
-    CONTRACT_MULTIPLIER,
-    DAYS_TO_EXPIRY,
-    TARGET_SHORT_DELTA,
-    WING_WIDTH_PCT,
-    cost_per_cycle,
-    load_close_series,
-    one_sample_t_test,
-    run_backtest,
-)
+from scripts.analyze_vrp_defined_risk_backtest import COMMISSION_PER_CONTRACT_LEG, CONTRACT_MULTIPLIER, DAYS_TO_EXPIRY, TARGET_SHORT_DELTA, WING_WIDTH_PCT, cost_per_cycle, load_close_series, one_sample_t_test, run_backtest
 
 DTE_GRID = (21, 28, 35, 45, 60)
 SHORT_DELTA_GRID = (0.10, 0.16, 0.20, 0.30)

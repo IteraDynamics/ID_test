@@ -1,6 +1,16 @@
 """Independent, synthetic-only parity for the explicitly inventoried I/O extractions."""
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
 import argparse
 import ast
 import hashlib
@@ -49,8 +59,9 @@ def require_equal(before, after):
         raise AssertionError(f'I/O parity mismatch: {before!r} != {after!r}')
 
 
-def check_source_boundaries(baseline, entries):
+def check_source_boundaries(baseline, entries, *, candidate_root=None):
     """Constrain baseline-tracked existing Python files; additions need separate review."""
+    candidate_root = ROOT if candidate_root is None else candidate_root
     grouped = {}
     for e in entries:
         grouped.setdefault(e['path'], set()).add(e['name'])
@@ -60,7 +71,7 @@ def check_source_boundaries(baseline, entries):
         if not rel.endswith('.py'):
             continue
         original = (baseline / rel).read_bytes()
-        current = (ROOT / rel).read_bytes()
+        current = (candidate_root / rel).read_bytes()
         if rel not in grouped:
             if original != current:
                 raise AssertionError(f'Unlisted source changed: {rel}')
@@ -80,7 +91,7 @@ def check_source_boundaries(baseline, entries):
             raise AssertionError(f'Non-I/O source changed: {rel}')
 
 
-def verify(baseline):
+def verify(baseline, packaging_baseline=None):
     sha = subprocess.check_output(['git', '-C', str(baseline), 'rev-parse', 'HEAD'], text=True).strip()
     if sha != BASELINE_SHA or subprocess.check_output(['git', '-C', str(baseline), 'status', '--porcelain', '--untracked-files=no'], text=True):
         raise AssertionError('Expected clean pinned I/O baseline')
@@ -88,7 +99,14 @@ def verify(baseline):
     entries = manifest['functions']
     if manifest['baseline'] != BASELINE_SHA or len(entries) != 23 or len({(e['path'], e['name']) for e in entries}) != 23:
         raise AssertionError('Expected frozen, non-empty 23-function inventory')
-    check_source_boundaries(baseline, entries)
+    if packaging_baseline is None:
+        check_source_boundaries(baseline, entries)
+    else:
+        # Preserve the original I/O boundary through a pinned intermediate tree,
+        # then independently constrain all packaging changes to the candidate.
+        from scripts._packaging_contract import check_packaging_boundaries
+        check_packaging_boundaries(packaging_baseline, ROOT)
+        check_source_boundaries(baseline, entries, candidate_root=packaging_baseline)
     results = {}
     modules = {}
     with tempfile.TemporaryDirectory(prefix='itera-io-parity-') as temp, patch('urllib.request.urlopen', side_effect=AssertionError('Network forbidden in I/O parity')):
@@ -139,5 +157,6 @@ def verify(baseline):
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--baseline-root', required=True, type=Path)
+    p.add_argument('--packaging-baseline-root', type=Path)
     args = p.parse_args()
-    print(json.dumps(verify(args.baseline_root.resolve()), indent=2))
+    print(json.dumps(verify(args.baseline_root.resolve(), args.packaging_baseline_root.resolve() if args.packaging_baseline_root else None), indent=2))

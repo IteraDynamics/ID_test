@@ -36,6 +36,17 @@ modification of it -- the One Rule applies and nothing here proposes a change.
 
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 import sys
 from pathlib import Path
@@ -43,7 +54,6 @@ from pathlib import Path
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT))
 
 from research.harness.cross_asset_state import compute_btc_macro_state  # noqa: E402
 from research.strategies.equity_sma175_v3 import (  # noqa: E402

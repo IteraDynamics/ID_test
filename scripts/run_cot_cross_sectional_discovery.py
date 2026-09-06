@@ -55,6 +55,17 @@ Observation/analysis only. No trading signal, no economic claim, no frozen speci
 
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 import json
 import sys
@@ -66,16 +77,8 @@ import pandas as pd
 from scipy import stats
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from analyze_cot_positioning_signal import (  # noqa: E402
-    MIN_HISTORY_FOR_PERCENTILE,
-    ROLLING_PERCENTILE_WINDOW_WEEKS,
-    forward_return,
-    load_cot_market,
-    load_price,
-    rolling_percentile,
-)
+from scripts.analyze_cot_positioning_signal import MIN_HISTORY_FOR_PERCENTILE, ROLLING_PERCENTILE_WINDOW_WEEKS, forward_return, load_cot_market, load_price, rolling_percentile
 
 PRIMARY_HORIZON_WEEKS = 12
 SECONDARY_HORIZONS_WEEKS = (4, 26)

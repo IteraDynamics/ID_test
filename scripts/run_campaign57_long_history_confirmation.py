@@ -37,6 +37,17 @@ paper/live, sizing, or capital action.
 
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
+
 import argparse
 import hashlib
 import json
@@ -47,10 +58,6 @@ import pandas as pd
 from scipy import stats
 
 # Keep standalone script execution working until the separate packaging migration.
-import sys as _artifact_sys
-from pathlib import Path as _ArtifactPath
-if str(_ArtifactPath(__file__).resolve().parents[1]) not in _artifact_sys.path:
-    _artifact_sys.path.insert(0, str(_ArtifactPath(__file__).resolve().parents[1]))
 
 
 SEED = 20260957
