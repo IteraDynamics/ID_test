@@ -964,3 +964,28 @@ This authorization is confined to the separate exploratory ML Lab, not Campaign
 #58. All existing reserved-holdout, Core, runtime, and portfolio boundaries remain
 unchanged. The prescribed response to a negative primary result is to park this
 six-interaction simplification without tuning or replacing the primary memory.
+
+## 2026-09-08 — ML Lab Experiment 012 closed; refactor replay passed
+
+**Disposition: CLOSED — NO_STABLE_PRIMARY_SIMPLIFICATION.** The operator supplied
+the original real run at `e7c2704` and completed its refactor replay at `233b1f4`.
+All 17 frozen inputs verified, all 144 reference checks passed with zero deltas,
+and 36 candidate folds completed. A separate local comparison verified recorded
+hashes and byte equality for all 11 CSVs; parsed reports matched after excluding
+only code/environment provenance.
+
+Primary trailing-3y compact-minus-price-Ridge mean IC was -0.018024 pre-2022 and
+-0.032234 in 2022–2024; spread increments were -0.019950 and -0.036949 in raw
+volatility-adjusted target units. Annual IC lift was positive in 7/18 years.
+Expanding also failed stable lift (5/18 positive annual IC lift years). Neither
+memory matched macro GBM on both full-sample metrics.
+
+Park this six-interaction candidate under the frozen rule. No subset search,
+alpha change, alternate primary memory or target change within 012. This result
+does not reject every possible macro representation. Results remain exploratory,
+discovery-contaminated and non-confirmatory; 2025 remains unused and no Core,
+runtime, portfolio or capital change follows. Campaign #58 and Experiment 011
+dispositions remain unchanged.
+
+Evidence and interpretation: `docs/research/ML_LAB_EXPERIMENT_012_RESULTS.md`.
+Engineering completion: `docs/engineering/EXPERIMENT_012_INTEGRATION_20260908.md`.

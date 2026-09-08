@@ -14,7 +14,8 @@ The earlier readiness packet's NOT_IMPLEMENTED statement described the published
 checkout available then; the operator's unpublished implementation was subsequently
 located and supplied. This integration supersedes that implementation-availability
 blocker. The original input files are still absent from the remote execution workspace.
-No real Experiment 012 fit or result is claimed here.
+The operator subsequently completed the real local replay and supplied its report
+and byte-comparison output. See the completion entry below for that evidence.
 
 ## Adaptations and review
 
@@ -64,7 +65,7 @@ Linux; that result is not presented as validation of this new experiment revisio
 This is implementation review by the integrating assistant, not external scientific
 confirmation or independent Red Team sign-off.
 
-## PowerShell execution from the review worktree
+## Historical PowerShell execution handoff from the review worktree
 
 Fetch the integration branch and check it out in the separate review worktree.
 Leave the original `ID_test` checkout, local commit, lockfile and private files alone.
@@ -93,3 +94,31 @@ On success, the JSON report and 11 CSVs are in the specified original checkout's
 `artifacts/ml_lab_experiment_012/` directory. Share the report for interpretation.
 Results remain exploratory, discovery-contaminated and non-confirmatory. No merge,
 deployment, production access, reserved-2025 use or research promotion is authorized.
+
+## Completed real replay — 2026-09-08
+
+The original output directory already contained a completed real run at `e7c2704`
+(Python 3.14.6; files dated September 4). The runner correctly refused to overwrite
+it. The operator then ran `233b1f4466b0d0b3898e2c05b34329aaa0b192f7` with Python
+3.12.13 into `artifacts/ml_lab_experiment_012_refactor_233b1f4/` in the original
+input checkout. All 17 input hashes verified; all 144 reference checks passed with
+zero maximum deltas; 36 compact Ridge folds completed. The operator also reported
+16 Experiment 012 tests passing on Windows.
+
+A separate operator-executed comparison read every actual CSV in both directories,
+verified each SHA-256 against its report, asserted exactly 11 matching inventory
+entries and byte equality, and compared parsed reports after removing only `code`
+and `environment`. It printed PASS for all checks. This is local operator evidence,
+not an assistant-executed real-data run or a CI real-data test. Raw report bytes
+differ as expected because code and Python provenance changed.
+
+Both [PR CI](https://github.com/IteraDynamics/ID_test/actions/runs/34244741785) and
+[branch CI](https://github.com/IteraDynamics/ID_test/actions/runs/34244739637) passed
+at `233b1f4`. PR jobs passed for Linux Python 3.11/3.12, Windows Python 3.12 with
+installed-wheel checks, and synthetic smoke backtest. A subsequent documentation
+commit does not change the source revision used for the real replay.
+
+Research closure: `NO_STABLE_PRIMARY_SIMPLIFICATION`; park the fixed candidate
+without retuning. Full interpretation is in
+[Experiment 012 results](../research/ML_LAB_EXPERIMENT_012_RESULTS.md).
+No further real replay is needed to establish this revision's Experiment 012 parity.

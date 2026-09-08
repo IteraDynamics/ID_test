@@ -1,5 +1,9 @@
 # Refactor review and Experiment 012 readiness — 2026-09-08
 
+> Historical readiness snapshot. Experiment 012's implementation and local real
+> replay are now complete. See [stack completion](REFACTOR_STACK_COMPLETION_20260908.md)
+> and [results](../research/ML_LAB_EXPERIMENT_012_RESULTS.md) for the current state.
+
 ## Decision
 
 The reviewed stack has green final-revision CI and no newly identified blocking

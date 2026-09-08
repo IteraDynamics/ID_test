@@ -2,7 +2,11 @@
 
 **Specification date:** 2026-09-04
 
-**Status:** SPECIFICATION_FROZEN — NOT_IMPLEMENTED / NOT_RUN
+**Status:** CLOSED — NO_STABLE_PRIMARY_SIMPLIFICATION (results recorded 2026-09-08)
+
+**Results:** [Real run and refactor replay](ML_LAB_EXPERIMENT_012_RESULTS.md).
+The specification and historical transitions below retain their original scope;
+the completed run and closure supersede their earlier availability statements.
 
 **Branch:** `agent/ml-lab-exploration-20260903`
 
