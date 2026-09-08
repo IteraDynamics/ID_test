@@ -28,7 +28,7 @@ def verify_wheel(wheel: Path):
         root = Path(temp)
         target = root / 'installed'
         with zipfile.ZipFile(wheel) as archive:
-            expected = {str(p.relative_to(ROOT)) for p in (ROOT / 'scripts').glob('*.py')}
+            expected = {p.relative_to(ROOT).as_posix() for p in (ROOT / 'scripts').glob('*.py')}
             names = set(archive.namelist())
             if not expected or not expected <= names or any(n.endswith('.pyc') for n in names):
                 raise AssertionError(f'Wheel script inventory mismatch: {expected - names}')
@@ -105,7 +105,7 @@ print(json.dumps({'status':'PASS', 'installed_imports':17, 'ml_alias_identities'
             command = subprocess.run([sys.executable, '-I', '-c', execute, str(code_root), str(ROOT), str(fixture_root / 'source'), str(output)], cwd=root, text=True, capture_output=True, timeout=120)
             if command.returncode:
                 raise AssertionError('Packaged ML execution failed: ' + command.stderr)
-            inventory = {str(p.relative_to(output)): p.read_bytes() for p in output.rglob('*') if p.is_file()}
+            inventory = {p.relative_to(output).as_posix(): p.read_bytes() for p in output.rglob('*') if p.is_file()}
             if len(inventory) != 7:
                 raise AssertionError(f'Expected 7 Experiment 005 files, got {len(inventory)}')
             inventories.append(inventory)

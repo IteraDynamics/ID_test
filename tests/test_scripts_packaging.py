@@ -76,3 +76,15 @@ def test_bare_checkout_command_without_site_packages(tmp_path):
     result = subprocess.run([sys.executable, '-I', '-S', '-c', program, str(source), str(fixture)], cwd=tmp_path, text=True, capture_output=True, timeout=15)
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
+
+
+def test_windows_relative_paths_use_git_identifiers(boundary, monkeypatch):
+    from pathlib import PureWindowsPath
+    baseline, current = boundary
+    original = Path.relative_to
+
+    def windows_relative(path, *other, **kwargs):
+        return PureWindowsPath(original(path, *other, **kwargs))
+
+    monkeypatch.setattr(Path, 'relative_to', windows_relative)
+    assert contract.check_packaging_boundaries(baseline, current)['new_source_files'] == 4

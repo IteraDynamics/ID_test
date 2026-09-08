@@ -76,7 +76,7 @@ def check_packaging_boundaries(baseline: Path, current: Path = ROOT):
     if manifest['baseline'] != BASELINE_SHA or len(files) != EXPECTED_MIGRATION_FILES:
         raise AssertionError('Expected frozen 111-file packaging inventory')
     old_paths = set(subprocess.check_output(['git', '-C', str(baseline), 'ls-files', 'scripts', 'research', 'runtime'], text=True).splitlines())
-    new_paths = {str(p.relative_to(current)) for folder in ('scripts', 'research', 'runtime')
+    new_paths = {p.relative_to(current).as_posix() for folder in ('scripts', 'research', 'runtime')
                  for p in (current / folder).rglob('*.py') if '__pycache__' not in p.parts}
     if not set(files) <= old_paths:
         raise AssertionError("Packaging inventory contains unknown baseline files")
