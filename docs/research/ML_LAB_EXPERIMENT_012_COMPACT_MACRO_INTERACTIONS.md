@@ -222,3 +222,29 @@ No destination-country fit or reuse as a fresh holdout; no 2025 reserved holdout
 use; no Core v1/v2, runtime, strategy, threshold, order, execution, NAV, exposure,
 portfolio, paper/live, or capital change. A favorable exploratory result would
 require a separate governed confirmation design before any promotion claim.
+
+## Implementation transition — 2026-09-04
+
+The operator explicitly requested implementation, a real run, and interpretation.
+The frozen specification above is unchanged. The implementation is
+`scripts/run_ml_lab_experiment_012.py`; regression coverage is
+`tests/test_ml_lab_experiment_012.py`.
+
+All 13 tests passed in the operator's Python environment before any real 012 fit.
+Coverage includes frozen feature order/count, training-only scaling, strict target
+embargo, trailing memory, exclusion of future source/macro rows before panel
+computation, missing/changed inputs, duplicate or mismatched reference rows,
+target/metric parity failures, non-finite data, each disposition branch, strict
+majority/equality behavior, and two complete synthetic CLI runs with identical
+reports and CSV bytes. Failures publish no successful output directory; existing
+output directories are refused rather than overwritten.
+
+The runner fits only the one specified candidate. The four comparators are read
+from verified Experiment 009 predictions, not refitted. The two additional CSVs
+`experiment_012_yearly_comparisons.csv` and `experiment_012_slope_summary.csv` expose
+the specified annual paired differences and coefficient/regime interpretation.
+They add no candidate or decision rule. Source hashes are checked before loading
+and again before atomic publication of the output directory.
+
+The implementation and this transition are committed before the authorized real
+run. No real Experiment 012 result is claimed in this transition entry.

@@ -947,3 +947,20 @@ or reserved-holdout change is authorized by this transition.
 
 **Ops mirrors:** `ops/decisions.md` (2026-09-04 entry), `ops/status.md` (Needs-CEO cleared), `ops/campaign-log.md` (Phase 1 CLOSED_UNDERPOWERED).
 
+## 2026-09-04 — ML Lab Experiment 012 implemented; real run authorized
+
+The operator explicitly requested implementation of the frozen Experiment 012,
+execution on the existing U.S. inputs, and interpretation of the result.
+`scripts/run_ml_lab_experiment_012.py` implements the unchanged specification.
+All 13 regression checks passed in the operator's Python environment, including
+two complete synthetic CLI replays with identical reports and CSV outputs.
+
+The implementation is committed before the real run. It verifies all 17 frozen
+input hashes and reference row/target/metric/fold consistency before fitting the
+single 22-feature compact Ridge candidate. Saved comparators are not refitted.
+No real 012 outcome is claimed in this implementation transition.
+
+This authorization is confined to the separate exploratory ML Lab, not Campaign
+#58. All existing reserved-holdout, Core, runtime, and portfolio boundaries remain
+unchanged. The prescribed response to a negative primary result is to park this
+six-interaction simplification without tuning or replacing the primary memory.
