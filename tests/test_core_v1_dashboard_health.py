@@ -411,3 +411,14 @@ def test_dashboard_writes_nothing(dash_env):
     _render(dash_env)
     after = {k: (v.read_bytes() if v.exists() else None) for k, v in dash_env.items()}
     assert before == after
+
+
+@pytest.mark.parametrize('value, expected', [
+    ('2026-09-08T10:05:00Z', 'Sep 8, 10:05 UTC'),
+    ('2026-09-18T10:05:00Z', 'Sep 18, 10:05 UTC'),
+    ('2026-09-08T06:05:00-04:00', 'Sep 8, 10:05 UTC'),
+    (None, '—'),
+])
+def test_friendly_timestamp_portable_display(value, expected):
+    from runtime.core_v1.dashboard.formatting import friendly_ts
+    assert friendly_ts(value) == expected

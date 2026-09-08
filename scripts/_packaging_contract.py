@@ -66,6 +66,30 @@ def normalized_source(source):
     return ast.dump(tree)
 
 
+# Separately reviewed Windows display correction after the packaging migration.
+# Apply only these exact replacements to the baseline before containment checks;
+# every other byte/AST restriction still applies. This is not extraction parity.
+DISPLAY_PORTABILITY_CORRECTIONS = {
+    'runtime/core_v1/dashboard/formatting.py': (
+        'ts.strftime("%b %-d, %H:%M UTC")',
+        'ts.strftime("%b ") + str(ts.day) + ts.strftime(", %H:%M UTC")',
+    ),
+    'scripts/core_v1_dashboard.py': (
+        '_inception_ts.strftime("%b %-d, %Y")',
+        '_inception_ts.strftime("%b ") + str(_inception_ts.day) + _inception_ts.strftime(", %Y")',
+    ),
+}
+
+
+def corrected_display_baseline(rel, source):
+    if rel not in DISPLAY_PORTABILITY_CORRECTIONS:
+        return source
+    old, new = (x.encode() for x in DISPLAY_PORTABILITY_CORRECTIONS[rel])
+    if source.count(old) != 1:
+        raise AssertionError('Expected exactly one frozen date expression: ' + rel)
+    return source.replace(old, new)
+
+
 def check_packaging_boundaries(baseline: Path, current: Path = ROOT):
     sha = subprocess.check_output(['git', '-C', str(baseline), 'rev-parse', 'HEAD'], text=True).strip()
     dirty = subprocess.check_output(['git', '-C', str(baseline), 'status', '--porcelain', '--untracked-files=no'], text=True)
@@ -85,6 +109,7 @@ def check_packaging_boundaries(baseline: Path, current: Path = ROOT):
         raise AssertionError(f'Unexpected new/missing packaging source files: {additions ^ NEW_SOURCE_FILES}')
     for rel in sorted(p for p in old_paths if p.endswith('.py')):
         before, after = (baseline / rel).read_bytes(), (current / rel).read_bytes()
+        before = corrected_display_baseline(rel, before)
         if rel == ADAPTED_GATE:
             if hashlib.sha256(after).hexdigest() != manifest['adapted_gate_sha256']:
                 raise AssertionError('I/O gate adaptation changed outside reviewed manifest')

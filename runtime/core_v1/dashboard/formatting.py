@@ -117,7 +117,7 @@ def friendly_ts(value: Any) -> str:
     ts = parse_ts(value)
     if ts is None:
         return "—"
-    return ts.strftime("%b %-d, %H:%M UTC")
+    return ts.strftime("%b ") + str(ts.day) + ts.strftime(", %H:%M UTC")
 
 
 def strategy_display(name: str | None) -> str:
