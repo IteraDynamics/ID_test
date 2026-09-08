@@ -947,3 +947,45 @@ or reserved-holdout change is authorized by this transition.
 
 **Ops mirrors:** `ops/decisions.md` (2026-09-04 entry), `ops/status.md` (Needs-CEO cleared), `ops/campaign-log.md` (Phase 1 CLOSED_UNDERPOWERED).
 
+## 2026-09-04 — ML Lab Experiment 012 implemented; real run authorized
+
+The operator explicitly requested implementation of the frozen Experiment 012,
+execution on the existing U.S. inputs, and interpretation of the result.
+`scripts/run_ml_lab_experiment_012.py` implements the unchanged specification.
+All 13 regression checks passed in the operator's Python environment, including
+two complete synthetic CLI replays with identical reports and CSV outputs.
+
+The implementation is committed before the real run. It verifies all 17 frozen
+input hashes and reference row/target/metric/fold consistency before fitting the
+single 22-feature compact Ridge candidate. Saved comparators are not refitted.
+No real 012 outcome is claimed in this implementation transition.
+
+This authorization is confined to the separate exploratory ML Lab, not Campaign
+#58. All existing reserved-holdout, Core, runtime, and portfolio boundaries remain
+unchanged. The prescribed response to a negative primary result is to park this
+six-interaction simplification without tuning or replacing the primary memory.
+
+## 2026-09-08 — ML Lab Experiment 012 closed; refactor replay passed
+
+**Disposition: CLOSED — NO_STABLE_PRIMARY_SIMPLIFICATION.** The operator supplied
+the original real run at `e7c2704` and completed its refactor replay at `233b1f4`.
+All 17 frozen inputs verified, all 144 reference checks passed with zero deltas,
+and 36 candidate folds completed. A separate local comparison verified recorded
+hashes and byte equality for all 11 CSVs; parsed reports matched after excluding
+only code/environment provenance.
+
+Primary trailing-3y compact-minus-price-Ridge mean IC was -0.018024 pre-2022 and
+-0.032234 in 2022–2024; spread increments were -0.019950 and -0.036949 in raw
+volatility-adjusted target units. Annual IC lift was positive in 7/18 years.
+Expanding also failed stable lift (5/18 positive annual IC lift years). Neither
+memory matched macro GBM on both full-sample metrics.
+
+Park this six-interaction candidate under the frozen rule. No subset search,
+alpha change, alternate primary memory or target change within 012. This result
+does not reject every possible macro representation. Results remain exploratory,
+discovery-contaminated and non-confirmatory; 2025 remains unused and no Core,
+runtime, portfolio or capital change follows. Campaign #58 and Experiment 011
+dispositions remain unchanged.
+
+Evidence and interpretation: `docs/research/ML_LAB_EXPERIMENT_012_RESULTS.md`.
+Engineering completion: `docs/engineering/EXPERIMENT_012_INTEGRATION_20260908.md`.
