@@ -76,3 +76,45 @@ def test_bare_checkout_command_without_site_packages(tmp_path):
     result = subprocess.run([sys.executable, '-I', '-S', '-c', program, str(source), str(fixture)], cwd=tmp_path, text=True, capture_output=True, timeout=15)
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
+
+
+def test_windows_relative_paths_use_git_identifiers(boundary, monkeypatch):
+    from pathlib import PureWindowsPath
+    baseline, current = boundary
+    original = Path.relative_to
+
+    def windows_relative(path, *other, **kwargs):
+        return PureWindowsPath(original(path, *other, **kwargs))
+
+    monkeypatch.setattr(Path, 'relative_to', windows_relative)
+    assert contract.check_packaging_boundaries(baseline, current)['new_source_files'] == 4
+
+
+def test_display_correction_is_exact_and_rejects_unknown_baseline():
+    rel = 'runtime/core_v1/dashboard/formatting.py'
+    old, new = contract.DISPLAY_PORTABILITY_CORRECTIONS[rel]
+    assert contract.corrected_display_baseline(rel, old.encode()) == new.encode()
+    assert contract.corrected_display_baseline('runtime/frozen.py', b'WEIGHT = 1') == b'WEIGHT = 1'
+    for source in (b'unknown', (old + old).encode()):
+        with pytest.raises(AssertionError, match='exactly one'):
+            contract.corrected_display_baseline(rel, source)
+
+
+def test_display_correction_does_not_allow_other_file_changes(boundary, monkeypatch):
+    baseline, current = boundary
+    rel = 'runtime/core_v1/dashboard/formatting.py'
+    old, new = contract.DISPLAY_PORTABILITY_CORRECTIONS[rel]
+    for root, expression in ((baseline, old), (current, new)):
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('def friendly_ts(ts):\n    return ' + expression + '\n')
+    original_git = contract.subprocess.check_output
+    def git(args, **kwargs):
+        result = original_git(args, **kwargs)
+        return result + rel + '\n' if 'ls-files' in args else result
+    monkeypatch.setattr(contract.subprocess, 'check_output', git)
+    contract.check_packaging_boundaries(baseline, current)
+    path = current / rel
+    path.write_bytes(path.read_bytes() + b'UNREVIEWED = True\n')
+    with pytest.raises(AssertionError, match='Unlisted existing source'):
+        contract.check_packaging_boundaries(baseline, current)

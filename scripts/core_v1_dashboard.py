@@ -1178,7 +1178,7 @@ st.markdown(
 )
 
 _inception_ts = parse_ts(state.get("started_at"))
-inception_label = _inception_ts.strftime("%b %-d, %Y") if _inception_ts is not None else "inception"
+inception_label = _inception_ts.strftime("%b ") + str(_inception_ts.day) + _inception_ts.strftime(", %Y") if _inception_ts is not None else "inception"
 st.markdown(
     f'<div class="section-head"><div><div class="section-title">Portfolio NAV '
     f'<span class="live-pill">LIVE · PAPER</span></div>'
