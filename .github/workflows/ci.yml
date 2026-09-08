@@ -7,6 +7,28 @@ on:
     branches: ["**"]
 
 jobs:
+  windows-test:
+    name: Windows tests and installed wheel (Python 3.12)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install locked environment
+        run: |
+          python -m pip install uv==0.11.33
+          if ($LASTEXITCODE -ne 0) { throw "uv installation failed" }
+          uv sync --locked --extra dev --python 3.12
+          if ($LASTEXITCODE -ne 0) { throw "Environment setup failed" }
+      - name: Full Windows suite
+        run: uv run --locked --python 3.12 python -m pytest
+      - name: Build and verify installed wheel on Windows
+        run: |
+          uv build --wheel --out-dir "$env:RUNNER_TEMP/itera-wheel"
+          if ($LASTEXITCODE -ne 0) { throw "Wheel build failed" }
+          uv run --locked --python 3.12 python -c "import json,sys; from pathlib import Path; from scripts.verify_scripts_packaging import verify_wheel; print(json.dumps(verify_wheel(Path(sys.argv[1]))))" "$env:RUNNER_TEMP/itera-wheel/iterad_ynamics-0.1.0-py3-none-any.whl"
+
   test:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
