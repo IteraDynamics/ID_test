@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from scripts import run_ml_lab_experiment_012 as exp
-from test_ml_lab_experiment_011_transfer import synthetic_prices
+from tests.test_ml_lab_experiment_011_transfer import synthetic_prices
 
 
 def manifest_for(root):
@@ -34,7 +34,7 @@ class InputTests(unittest.TestCase):
                 path.write_text("synthetic fixture\n")
             manifest = manifest_for(root)
             exp.verify_inputs(root, manifest, synthetic=True)
-            with self.assertRaisesRegex(ValueError, "MODE_MISMATCH"):
+            with self.assertRaisesRegex(ValueError, "FROZEN_MANIFEST_HASH_MISMATCH"):
                 exp.verify_inputs(root, manifest, synthetic=False)
             path = root / exp.INPUT_PATHS[0]
             path.write_text("changed data\n")
@@ -236,7 +236,9 @@ class SyntheticRunnerTests(unittest.TestCase):
                 self.assertGreater(len(pd.read_csv(output / filename)), 0, filename)
                 self.assertEqual(exp.sha256(output / filename), report["artifact_sha256"][key])
         self.assertEqual(reports[0], reports[1])
-        for filename in reports[0]["artifact_files"].values():
+        self.assertEqual(len(reports[0]["artifact_files"]), 11)
+        self.assertEqual({p.name for p in (self.root / "run1").iterdir()}, set(reports[0]["artifact_files"].values()) | {"experiment_012_report.json"})
+        for filename in [*reports[0]["artifact_files"].values(), "experiment_012_report.json"]:
             self.assertEqual((self.root / "run1" / filename).read_bytes(), (self.root / "run2" / filename).read_bytes())
         self.assertNotEqual(self.command(self.root / "run1").returncode, 0)
 
@@ -277,3 +279,43 @@ class SyntheticRunnerTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_real_manifest_values_frozen_but_checkout_newlines_portable(tmp_path):
+    import pytest
+    original = exp.MANIFEST.read_text(encoding='utf-8')
+    path = tmp_path / 'manifest.json'
+    path.write_bytes(original.replace('\n', '\r\n').encode())
+    with pytest.raises(ValueError, match='MISSING_INPUT'):
+        exp.verify_inputs(tmp_path, path)
+    changed = json.loads(original)
+    changed['inputs'][0]['sha256'] = '0' * 64
+    path.write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match='FROZEN_MANIFEST_HASH_MISMATCH'):
+        exp.verify_inputs(tmp_path, path)
+
+
+def test_preflight_only_does_not_load_or_fit(tmp_path, monkeypatch, capsys):
+    from unittest.mock import Mock
+    verify = Mock(return_value={'inputs': [None] * 17})
+    load = Mock(side_effect=AssertionError('Preflight must not load observations'))
+    run = Mock(side_effect=AssertionError('Preflight must not fit'))
+    monkeypatch.setattr(exp, 'verify_inputs', verify)
+    monkeypatch.setattr(exp, 'load_panel', load)
+    monkeypatch.setattr(exp, 'run', run)
+    monkeypatch.setattr(sys, 'argv', ['experiment012', '--input-root', str(tmp_path), '--preflight-only'])
+    exp.main()
+    verify.assert_called_once_with(tmp_path.resolve(), exp.MANIFEST, False)
+    load.assert_not_called()
+    run.assert_not_called()
+    assert json.loads(capsys.readouterr().out)['status'] == 'INPUT_BYTES_VERIFIED_NO_FIT'
+
+
+def test_saved_target_end_corruption_rejected():
+    import pytest
+    fixture = ReferenceIntegrityTests()
+    fixture.setUp()
+    saved = fixture.saved.copy()
+    saved['target_end_date'] = pd.Timestamp('2020-02-01', tz='UTC')
+    with pytest.raises(ValueError, match='REFERENCE_TARGET_END_PARITY_FAILURE'):
+        exp.verify_references(fixture.expected, saved, fixture.anchor)

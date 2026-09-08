@@ -87,7 +87,7 @@ def test_windows_relative_paths_use_git_identifiers(boundary, monkeypatch):
         return PureWindowsPath(original(path, *other, **kwargs))
 
     monkeypatch.setattr(Path, 'relative_to', windows_relative)
-    assert contract.check_packaging_boundaries(baseline, current)['new_source_files'] == 4
+    assert contract.check_packaging_boundaries(baseline, current)['new_source_files'] == len(contract.NEW_SOURCE_FILES)
 
 
 def test_display_correction_is_exact_and_rejects_unknown_baseline():

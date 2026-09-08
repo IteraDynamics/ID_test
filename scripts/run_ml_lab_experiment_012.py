@@ -1,5 +1,15 @@
 from __future__ import annotations
 
+# Preserve direct-file execution; package imports use normal discovery.
+if __package__ in (None, ""):
+    try:
+        from _checkout_bootstrap import bootstrap as _bootstrap_checkout
+    except ModuleNotFoundError as _bootstrap_error:
+        if _bootstrap_error.name != "_checkout_bootstrap":
+            raise
+        from scripts._checkout_bootstrap import bootstrap as _bootstrap_checkout
+    _bootstrap_checkout(__file__)
+
 import argparse
 import hashlib
 import json
@@ -18,14 +28,14 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-import run_ml_lab_experiment_005 as exp5
-import run_ml_lab_experiment_009 as exp9
-import run_ml_lab_experiment_010 as exp10
+from scripts import run_ml_lab_experiment_005 as exp5
+from scripts import run_ml_lab_experiment_009 as exp9
+from scripts import run_ml_lab_experiment_010 as exp10
+from research.artifact_io.v1 import sha256_file_v1
 
 ROOT = SCRIPTS_DIR.parent
 MANIFEST = ROOT / "docs/research/evidence/ML_LAB_EXPERIMENT_012_INPUT_MANIFEST.json"
+FROZEN_MANIFEST_SHA256 = '87c600b9bbd90bfb446f1aaaad8083e5559e631df07396e5ef657dd8af4a97e6'
 MODEL = "compact_macro_ridge"
 BASELINES = ("price_ridge", "price_gbm", "macro_ridge", "macro_gbm")
 MEMORIES = {"expanding": None, "trailing_3y": 3}
@@ -56,15 +66,17 @@ def require(condition, message):
 
 
 def sha256(path):
-    h = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            h.update(block)
-    return h.hexdigest()
+    return sha256_file_v1(Path(path), chunk_size=1024 * 1024, factory=hashlib.sha256)
 
 
 def verify_inputs(root, manifest_path, synthetic=False):
     manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
+    if not synthetic:
+        # Freeze manifest values independently of Git checkout line endings.
+        # Input artifact bytes themselves are always hashed without normalization.
+        contract_bytes = json.dumps(manifest, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+        require(hashlib.sha256(contract_bytes).hexdigest() == FROZEN_MANIFEST_SHA256,
+                "FROZEN_MANIFEST_HASH_MISMATCH")
     require(bool(manifest.get("synthetic", False)) == synthetic, "MANIFEST_MODE_MISMATCH")
     require(manifest.get("last_allowed_date") == "2024-12-31", "MANIFEST_CUTOFF_MISMATCH")
     items = manifest["inputs"]
@@ -164,6 +176,10 @@ def verify_references(expected, saved, saved_anchor):
     left, right = align_exact(expected, saved, KEYS, "saved_predictions")
     deltas = (left[["target_raw", "target_rank"]] - right[["target_raw", "target_rank"]]).abs()
     require((deltas.to_numpy() <= TOLERANCE).all(), "REFERENCE_TARGET_PARITY_FAILURE")
+    if "target_end_date" in right.columns:
+        ends = pd.to_datetime(right["target_end_date"], utc=True, errors="raise")
+        require(ends.notna().all() and ends.equals(left["target_end_date"]),
+                "REFERENCE_TARGET_END_PARITY_FAILURE")
     restored = right.copy()
     restored["target_end_date"] = left["target_end_date"]
     restored = restored.reset_index()
@@ -389,8 +405,15 @@ def run(root, manifest_path, output_dir, synthetic=False):
         "reference_parity": {"checks": len(parity), "all_passed": bool(parity.passed.all()),
                              "tolerance": TOLERANCE, "max_deltas": parity.filter(like="max_").max().to_dict()},
         "inputs": manifest["inputs"], "manifest_sha256": manifest_hash,
-        "code": {"commit": commit, "files": {f"scripts/{name}": sha256(SCRIPTS_DIR / name) for name in
-                 ("run_ml_lab_experiment_005.py", "run_ml_lab_experiment_009.py", "run_ml_lab_experiment_010.py", Path(__file__).name)}},
+        "code": {"commit": commit, "files": {
+            path.relative_to(ROOT).as_posix(): sha256(path)
+            for path in sorted(set(
+                [Path(__file__), SCRIPTS_DIR / "_checkout_bootstrap.py"]
+                + [SCRIPTS_DIR / f"run_ml_lab_experiment_{n:03}.py" for n in (5, 9, 10)]
+                + list((ROOT / "research/ml_lab").rglob("*.py"))
+                + list((ROOT / "research/artifact_io").rglob("*.py"))
+            ))
+        }},
         "environment": {"python": platform.python_version(), "numpy": np.__version__, "pandas": pd.__version__,
                         "scipy": scipy.__version__, "scikit_learn": sklearn.__version__},
         "model_summary": model_summary.to_dict(orient="records"),
@@ -420,14 +443,22 @@ def run(root, manifest_path, output_dir, synthetic=False):
 def main():
     parser = argparse.ArgumentParser(description="Frozen ML Lab Experiment 012; one compact Ridge candidate")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "artifacts/ml_lab_experiment_012")
+    parser.add_argument("--input-root", type=Path, help="Original data/artifact checkout; frozen manifest is always read from this code checkout")
+    parser.add_argument("--preflight-only", action="store_true", help="Verify input bytes only; do not load observations or fit")
     parser.add_argument("--synthetic-input-root", type=Path)
     parser.add_argument("--synthetic-manifest", type=Path)
     args = parser.parse_args()
     synthetic = args.synthetic_input_root is not None
     require(synthetic == (args.synthetic_manifest is not None), "SYNTHETIC_ARGUMENTS_MUST_BE_PAIRED")
-    root = args.synthetic_input_root.resolve() if synthetic else ROOT
+    require(not (synthetic and args.input_root), "INPUT_ROOT_MODES_EXCLUSIVE")
+    root = args.synthetic_input_root.resolve() if synthetic else (args.input_root.resolve() if args.input_root else ROOT)
     require(not synthetic or root != ROOT, "SYNTHETIC_ROOT_MUST_BE_ISOLATED")
-    run(root, args.synthetic_manifest if synthetic else MANIFEST, args.output_dir.resolve(), synthetic)
+    manifest_path = args.synthetic_manifest if synthetic else MANIFEST
+    if args.preflight_only:
+        checked = verify_inputs(root, manifest_path, synthetic)
+        print(json.dumps({"status": "INPUT_BYTES_VERIFIED_NO_FIT", "inputs": len(checked["inputs"]), "synthetic": synthetic}))
+        return
+    run(root, manifest_path, args.output_dir.resolve(), synthetic)
 
 
 if __name__ == "__main__":
