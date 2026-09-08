@@ -1,0 +1,151 @@
+{
+  "date": "2026-09-08",
+  "source_commit": "b343bf0f1bb560a1247af75294725f7830340c0c",
+  "status": "BLOCKED_MISSING_FROZEN_INPUTS",
+  "manifest_path": "docs/research/evidence/ML_LAB_EXPERIMENT_012_INPUT_MANIFEST.json",
+  "manifest_sha256": "c1d4af0324d9d36515d3b744d8b698c2a4a382d2f5e947337ceb2fac5c40204e",
+  "expected_inputs": 17,
+  "matched_inputs": 0,
+  "missing_inputs": 17,
+  "fitting_performed": false,
+  "acquisition_performed": false,
+  "holdout_observations_loaded": false,
+  "checks": [
+    {
+      "path": "data/RSP_1D.csv",
+      "sha256": "9cf41b9eaa50ee49a8e28153ac2240fc4fbb62bf2eaa678b439a481f0d54fbdd",
+      "bytes": 497816,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/MDY_1D.csv",
+      "sha256": "0d314431aff35303893a31f5eed4fba1fa4320a0064441b70ec989a96cbda53c",
+      "bytes": 501298,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/IWM_1D.csv",
+      "sha256": "e6cafc5ba4de5749770d439859e024b8e8026686c8e4f420da3d5f11743cea12",
+      "bytes": 507817,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/IWD_1D.csv",
+      "sha256": "c609169db6f6d6220f64877da52fd707c78308af67bf793422d87c8c777e2d29",
+      "bytes": 500154,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/IWF_1D.csv",
+      "sha256": "b5c1b73bcb75deac3329dd6e089071a8b2ecfb189240acb259617d29509b3788",
+      "bytes": 504619,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/XLB_1D.csv",
+      "sha256": "e85d3d0107eb8ed8d8044c00e5bdbddd4cf0ef64ba6a1d82b5541d2f2ef64087",
+      "bytes": 508055,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/XLE_1D.csv",
+      "sha256": "18547a4e322f75f2ab6b1f1b79418f6bbe240880eb9ee60b4cfe009c67c2e4a6",
+      "bytes": 511576,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/XLF_1D.csv",
+      "sha256": "205026d65898a823681b768213032bb89a7ea37f474251807d3d3e6f92b87d73",
+      "bytes": 509340,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/XLI_1D.csv",
+      "sha256": "e6b9f3abdbe83c4561d8bb03fe6dd6a924e9a7dfb9d3da8e9f3aadc929d76d4e",
+      "bytes": 503351,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/XLK_1D.csv",
+      "sha256": "1c63e414fac5090059d684b0736fc046517ae377b79887ffb0d5686d06fba874",
+      "bytes": 504398,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/XLP_1D.csv",
+      "sha256": "a4ccb5e2d5cd8c191133f9977afaa70ddbfceb422767dd70ce81b4ef9ff75536",
+      "bytes": 503001,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/XLU_1D.csv",
+      "sha256": "930b10eed5679c1acd2f9dc8329242f0510a97b1c23cbff692c700e59be00471",
+      "bytes": 508000,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/XLV_1D.csv",
+      "sha256": "346d1f5f43e7bd357d041276914db95a539e1906549898102c8a387ac918e902",
+      "bytes": 504168,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "data/XLY_1D.csv",
+      "sha256": "1a7b600eced3e741a56d0c98012f8163256848aeefb471e3aab2c6ecbaf1ec34",
+      "bytes": 504167,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "artifacts/ml_lab_experiment_009/experiment_009_oos_predictions.csv",
+      "sha256": "7b47c06e317dace8e5b186eb43ee56127d4bdc16c902d796de9bc9ed475bb005",
+      "bytes": 11484731,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "artifacts/ml_lab_experiment_009/experiment_009_anchor_metrics.csv",
+      "sha256": "93bd4cd314587fcf1e6e8290a5962c14ff50b2fff58b7642fb3c7ef2abf44680",
+      "bytes": 697822,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    },
+    {
+      "path": "artifacts/ml_lab_experiment_009/experiment_009_macro_state.csv",
+      "sha256": "8410129b665b45e5bf2be52a8604085c1d1c12fe6dbfd5442b0b8d13e96fa365",
+      "bytes": 673698,
+      "status": "MISSING",
+      "observed_bytes": null,
+      "observed_sha256": null
+    }
+  ]
+}
