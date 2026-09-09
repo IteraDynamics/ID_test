@@ -1044,3 +1044,14 @@ replay and future-revision canaries passed; six Tesla statement values matched;
 remain review-only; broad-universe prices/identity/delistings are unresolved.
 See `research/ML_PIT_FEATURE_PILOT_20260909.md` and its recorded JSON evidence.
 Next distinct item: reconcile the supported historical universe and price coverage.
+
+### 2026-09-09 — Historical universe reconciliation completed
+
+Supplied inventory/sample audit: 246 pre-2025 event tickers; 166 manifest ranges
+overlap events, 72 have no exact matching price file/manifest, and 8 begin after
+an event (9 event gaps). Full initial membership is absent; calendar begins in
+2019 and includes a weekend pair requiring verification. Current local-data
+feasibility attempt for the proposed broad-stock design is unsupported. Zero fits.
+Exact CSVs, hashes and repair requirements are committed with
+`research/ML_UNIVERSE_COVERAGE_20260909.md`. 21 focused tests passed and actual
+output replay matched. No surviving-stock or event-union substitute was adopted.
