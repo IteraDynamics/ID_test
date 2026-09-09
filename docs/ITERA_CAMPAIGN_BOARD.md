@@ -1093,3 +1093,13 @@ fixed SPY/QQQ/GLD screen card, downside-event label, weekly policy, five simple
 controls, two fixed models and 14-fit budget. Zero fits so far. Full SPY is already
 available and its overlapping return ratios checked; existing QQQ/GLD CSVs are
 the next local input. See `research/ML_ETF_RISK_SCREEN_20260909.md`.
+
+### 2026-09-09 — ETF risk screen closed negative
+
+Completed the authorized SPY/QQQ/GLD screen: 14 annual fits, 361 weekly forecast
+dates, 360 holding intervals. Primary logistic Brier skill is negative in both
+subperiods; full net CE trails the best of five controls by 2.68 percentage points.
+Secondary GBM does not rescue the result. Cost, delay and all year-exclusion
+diagnostics retain negative primary CE lift. SCREEN_NEGATIVE; no tuning or Core
+changes. 26 checks passed; cached replay is exact with zero additional fits.
+See `research/ML_ETF_RISK_SCREEN_RESULT_20260909.md`. No local action needed.

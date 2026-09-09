@@ -164,3 +164,14 @@ new entry that references the old one._
 - **Scope note:** Does **not** close Campaign #58 Phase 0 (cross-sectional COT census), which remains OPEN and blocked on data/network access. No Core v1/runtime/capital implication. ML Lab Experiment 012 remains a separate exploratory thread.
 - **Full records:** `docs/research/CAMPAIGN_58_PHASE1_FROZEN_STATISTICAL_SPECIFICATION.md` §15; `docs/research/CAMPAIGN_58_GRID_POWER_CALIBRATION_IMPLEMENTATION_REVIEW.md`; `ops/decisions.md` (2026-09-04).
 
+
+## 2026-09-09 — ETF risk-allocation exploration screen
+
+- Amendment 6 screen, separate from Campaign #58 and closed Experiments 012/013.
+- Result: SCREEN_NEGATIVE. 14 fits; logistic Brier skill -11.04% / -1.14% across
+  the two declared halves. Net CE lift -2.68 percentage points against the best
+  simple control; higher costs, delay and year exclusions do not rescue it.
+- Closed the fixed price-only ETF timing hypothesis; no post-result tuning,
+  reserved 2025 holdout use, Core/runtime/portfolio or capital changes.
+- 26 tests passed and cached replay reproduced output bytes without refitting.
+- Full record: docs/research/ML_ETF_RISK_SCREEN_RESULT_20260909.md.
