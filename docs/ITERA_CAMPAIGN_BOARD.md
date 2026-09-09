@@ -1074,3 +1074,13 @@ probe with SPY controls, explicit access/rate-limit stops, raw hashes, offline
 replay and automatic review ZIP. 35 focused tests passed. Remote HTTP 404/429
 responses leave price recovery unresolved; one operator-local run is needed.
 See `research/ML_EXIT_PRICE_PROBE_20260909.md`. Zero model fits.
+
+### 2026-09-09 — Operator exit-price results reviewed
+
+Four Yahoo raw files verified and exact report replay passed. FRCB and LHX
+recover candidate older histories; APC/NFX/LLL remain absent and SBNY starts too
+late. FRCB includes two zero-volume repeated-price days and two inconsistent OHLC
+rows. Stooq's automated control failed; its website requests browser verification.
+One manual local Stooq control/target download check remains before deciding
+whether to close this historical-stock source route. No model fits or new downloads
+requested from the unchanged Python probe. See `research/ML_EXIT_PRICE_LOCAL_REVIEW_20260909.md`.

@@ -1,0 +1,52 @@
+{
+  "all_four_raw_hashes_verified": true,
+  "model_fits": 0,
+  "next_local_action": "Manual Stooq SPY control then APC/NFX historical CSV attempt after ordinary browser verification; do not rerun the existing Python probe.",
+  "offline_report_byte_identical": true,
+  "raw_checks": {
+    "FRCB": {
+      "ohlc_inconsistent_rows": [
+        {
+          "Close": "186.49000549316406",
+          "Date": "2021-05-05 00:00:00-04:00",
+          "High": "186.89999389648438",
+          "Low": "185.22000122070312",
+          "Open": "184.27000427246094"
+        },
+        {
+          "Close": "0.011099999770522118",
+          "Date": "2023-12-11 00:00:00-05:00",
+          "High": "0.01600000075995922",
+          "Low": "0.011099999770522118",
+          "Open": "0.01054999977350235"
+        }
+      ],
+      "rows": 1761,
+      "zero_volume_dates": [
+        "2023-05-01",
+        "2023-05-02"
+      ]
+    },
+    "LHX": {
+      "ohlc_inconsistent_rows": [],
+      "rows": 1761,
+      "zero_volume_dates": []
+    },
+    "SBNY": {
+      "ohlc_inconsistent_rows": [],
+      "rows": 96,
+      "zero_volume_dates": [
+        "2024-10-29",
+        "2024-11-01"
+      ]
+    },
+    "SPY": {
+      "ohlc_inconsistent_rows": [],
+      "rows": 1761,
+      "zero_volume_dates": []
+    }
+  },
+  "ready_for_modeling": false,
+  "status": "PARTIAL_RECOVERY_STOOQ_ACCESS_UNRESOLVED",
+  "zip_sha256": "c7ae74ec21b46b016233c46c8d963d14b26028bb43c8db3156e8471fcc27d424"
+}
