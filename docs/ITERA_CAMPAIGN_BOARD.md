@@ -1055,3 +1055,13 @@ feasibility attempt for the proposed broad-stock design is unsupported. Zero fit
 Exact CSVs, hashes and repair requirements are committed with
 `research/ML_UNIVERSE_COVERAGE_20260909.md`. 21 focused tests passed and actual
 output replay matched. No surviving-stock or event-union substitute was adopted.
+
+### 2026-09-09 — Free membership source and named identity repairs
+
+Pinned a community historical membership source and saved the 505-string dated
+candidate baseline. Restored the January 2, 2019 SCG/FRC change and corrected
+HRS/LHX to July 1 using primary sources. Recorded FB/META continuity and separate
+LLL merger conversion. 264 actions reconcile with zero set-transition errors;
+98 upstream snapshots match and 3 differ only by the expected date correction.
+Baseline completeness and historical exit prices remain unresolved. No universe
+amendment or fits. See `research/ML_MEMBERSHIP_SOURCE_REPAIR_20260909.md`.
