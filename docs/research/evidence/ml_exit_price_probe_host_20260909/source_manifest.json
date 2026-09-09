@@ -1,0 +1,78 @@
+{
+  "acquired_at_utc": "2026-09-09T17:59:54.347934+00:00",
+  "attempts": [
+    {
+      "error_type": "HTTPError",
+      "http_status": 404,
+      "provider": "stooq",
+      "status": "ERROR",
+      "symbol": "SPY"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "APC"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "NFX"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "FRC"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "FRCB"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "SBNY"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "HRS"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "LHX"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "LLL"
+    }
+  ],
+  "end_exclusive": "2025-01-01",
+  "providers": [
+    "stooq"
+  ],
+  "start": "2018-01-01",
+  "symbols": [
+    "SPY",
+    "APC",
+    "NFX",
+    "FRC",
+    "FRCB",
+    "SBNY",
+    "HRS",
+    "LHX",
+    "LLL"
+  ],
+  "version": 1,
+  "yfinance": null
+}
