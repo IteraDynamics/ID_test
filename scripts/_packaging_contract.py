@@ -44,7 +44,8 @@ NEW_SOURCE_FILES = {'scripts/__init__.py', 'scripts/_checkout_bootstrap.py',
                     'scripts/run_ml_data_acquisition_pilot.py',
                     'scripts/run_ml_pit_feature_pilot.py',
                     'scripts/reconcile_ml_universe_coverage.py',
-                    'scripts/run_ml_exit_price_probe.py'}
+                    'scripts/run_ml_exit_price_probe.py',
+                    'scripts/run_ml_etf_risk_screen.py'}
 ADAPTED_GATE = 'scripts/verify_artifact_io_parity.py'
 EXPECTED_MIGRATION_FILES = 111
 

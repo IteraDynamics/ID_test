@@ -1,0 +1,65 @@
+{
+  "artifact_sha256": {
+    "asset_contributions.csv": "3b0912bf2a6abe7c7a39e9a2e5fcbdfb7d3b01a5346fa93ae2570be48fc58610",
+    "calibration.csv": "6cbed1cde911c42f50c21385ec5eb04860deee199ea05e52f17eef3499362cef",
+    "daily_ledger.csv": "cdda381bd3bd63c596bc9bf1917fe0568ba1c204170b36502b8a9a2b07be5f27",
+    "economic_metrics.csv": "58705dc0586c3d4177cf1b19dc021d721663f295fabc2cff9b88552fec6bc7d8",
+    "fold_support.csv": "91012359feb2f2ad7e30fc0ab6bbc0716e17824bfb2271b831124f88ae977880",
+    "forecast_metrics.csv": "d8a8268c006ae52a3b8774a004171c106d0ba7e2594326b36e8d4dbf9034aa8c",
+    "predictions.csv": "4fc85e04d63eca8a2b9a9ce1223c32f79b8932d88eccaa0bd50ba2f005316d84"
+  },
+  "checks": {
+    "brier_skill_2018_2020": -0.11036567788064189,
+    "brier_skill_2021_2024": -0.011393249608823597,
+    "brier_skill_exclude2020": -0.02766393954786639,
+    "ce_lift_2018_2020": -0.0386130913744224,
+    "ce_lift_2021_2024": -0.017847577259493208,
+    "ce_lift_all": -0.026844233645395787,
+    "ce_lift_cost25": -0.028318543953446934,
+    "ce_lift_delay1": -0.023687622452280302,
+    "ce_lift_exclude2020": -0.0196534790781476
+  },
+  "classification": "SCREEN_NEGATIVE",
+  "code": {
+    "base_commit": "c2d7d1bf79b8f2de8853f9f0a2fcd9dc2b497ab7",
+    "runner_sha256": "d384b3e69333da03856a88107b7871096222f980ea3270927b43e9d3c5d64d80"
+  },
+  "contribution_definition": "Additive daily return contributions including allocated trading fees; not standalone ETF CE.",
+  "environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "python": "3.12.14",
+    "sklearn": "1.9.0"
+  },
+  "exclusion_definition": "Remove daily observations from continuous original ledger; no refit or reoptimized counterfactual. No CAGR/drawdown on disconnected exclusion samples.",
+  "first_signal": "2018-01-05 00:00:00+00:00",
+  "fits": 14,
+  "forecast_dates": 361,
+  "forecast_rows": 1083,
+  "last_signal": "2024-11-29 00:00:00+00:00",
+  "limitations": "Exploratory, overlapping labels, correlated ETFs, retrospective fund selection; adjusted synthetic units; cash zero; assumed costs; no significance or deployment claim.",
+  "replay": "Ledger and report can be recomputed from cached predictions without additional fits.",
+  "sources": [
+    {
+      "asset": "SPY",
+      "csv_sha256": "83df8fb4ae2123fb7b25da6e72149678c86469e1dd3de4c2e1e1efa1c0078714",
+      "manifest_sha256": "011348e6c241bfa2962a120636493f1ed43ab2d24bf1fc7d8df8207500e61659",
+      "source_rows": 3199,
+      "used_rows": 2789
+    },
+    {
+      "asset": "QQQ",
+      "csv_sha256": "984edd17a462d9d13d2d08b6b811af9ecd2a46dbbe31f58c66c6b4bdb7a70cb9",
+      "manifest_sha256": "ef204e9d9badf8f3223e777e5988ebfbe70940df4e96c13fb9f7e5530d216e52",
+      "source_rows": 3199,
+      "used_rows": 2789
+    },
+    {
+      "asset": "GLD",
+      "csv_sha256": "5fae32a2c4bd7070502a0ae9401bf57571502a7fc5d306e3303b14d5d70a203f",
+      "manifest_sha256": "39eccdd65655420fb3dbb2075b37cf47c5ec756dd90b804548fa58662a2f3369",
+      "source_rows": 5473,
+      "used_rows": 2789
+    }
+  ]
+}

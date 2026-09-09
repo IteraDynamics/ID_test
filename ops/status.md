@@ -2,7 +2,7 @@
 
 _Overwrite this file each session. This is a snapshot, not a log — history lives in campaign-log.md and decisions.md._
 
-**Last updated:** 2026-09-04
+**Last updated:** 2026-09-09 (ML screen update; other campaign entries retained)
 
 ## 🔴 Needs CEO decision
 - [ ] none currently
@@ -16,7 +16,7 @@ _Overwrite this file each session. This is a snapshot, not a log — history liv
 
 ## 🟢 In motion (no action needed)
 - **Campaign #58 Phase 1 — CLOSED_UNDERPOWERED (CEO 2026-09-04).** Grid-level power FAIL at 45.8% vs 50% floor on the frozen 144-candidate grid (central IC 0.065; Family R 54.9%, M 41.8%, V 40.6%) remains binding after independent review `ORIGINAL_POWER_FAIL_VALID`. Time-series track closed; no model fit authorized. Phase 0 remains open (see blocked). Full record: `ops/decisions.md` (2026-09-04), `docs/research/CAMPAIGN_58_GRID_POWER_CALIBRATION_IMPLEMENTATION_REVIEW.md`.
-- **ML Lab (branch `agent/ml-lab-exploration-20260903`):** Experiment 011 closed `EXPLORATORY_TRANSFER_FAILURE`; Experiment 012 specification frozen, not implemented/not run. Separate from Campaign #58. See `docs/ITERA_CAMPAIGN_BOARD.md` (2026-09-04 ML Lab note).
+- **ML exploration:** ETF risk screen `SCREEN_NEGATIVE` after 14 fixed fits. Forecast and economic hurdles failed; no local action or tuning. Experiments 012/013 remain closed; broad-stock historical design paused after exit-price recovery. Separate from Campaign #58. See `docs/research/ML_ETF_RISK_SCREEN_RESULT_20260909.md`.
 - **Recovery Trust Gate retroactively closed** 2026-09-03 — documentation-only: `docs/research/RECOVERY_TRUST_GATE_RETROACTIVE_CLOSURE.md`.
 - **Campaign #57 — Month-End Equity/Bond Rebalancing Pressure:** `HISTORICAL_CONFIRMATION_CONDITIONAL`; independent Red Team `CONDITIONAL_PASS_TO_VTI_BND_REPLICATION`; VTI/BND sealed pending binding conditions (see blocked).
 - Exploration sandbox adopted 2026-09-01. Month-end screen promoted to #57. Dealer-gamma SCREEN_NEGATIVE. Distance-method pairs and low-vol factor CLOSED_NEGATIVE.
@@ -41,4 +41,4 @@ _Overwrite this file each session. This is a snapshot, not a log — history liv
 2. Campaign #57: independent Red Team conditional pass; next step requires real network/data access (VFINX/VBMFX artifacts, unit tests, pre-register VTI/BND band) before any VTI/BND returns are read.
 3. Run Campaign #56's real-data regime census and Amendment 1 power simulation in a later session under its charter.
 4. Let Campaign #53 and VRP external clocks accumulate without peeking/routing around their gates.
-5. ML Lab Experiment 012 (implement frozen compact-macro-interactions spec) only when it does not interfere with the governed queue above; remains exploratory / non-confirmatory.
+5. ML ETF risk screen closed negative. A further ML screen needs a distinct information/decision hypothesis; no rerun or tuning of this candidate is queued.

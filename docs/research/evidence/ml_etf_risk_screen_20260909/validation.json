@@ -1,0 +1,18 @@
+{
+  "tests_passed": 26,
+  "additional_model_fits": 0,
+  "recorded_artifact_hashes_verified": 7,
+  "byte_identical_cached_replay": [
+    "forecast_metrics.csv",
+    "calibration.csv",
+    "daily_ledger.csv",
+    "economic_metrics.csv"
+  ],
+  "classification_and_checks_exact_replay": true,
+  "source_hashes_exact_replay": true,
+  "ledger_first_date": "2018-01-08 00:00:00+00:00",
+  "ledger_last_date": "2024-12-02 00:00:00+00:00",
+  "weekly_forecast_dates": 361,
+  "holding_intervals": 360,
+  "note": "The last eligible weekly signal is liquidation only; its forecast is still scored. No additional model fits."
+}
