@@ -1033,3 +1033,14 @@ META/FB and APC prices/actions plus three SEC filing entities. Ten pilot tests a
 fourteen packaging tests pass. Live acquisition remains pending the operator's SEC
 contact header and Windows run. This is data feasibility only: no model fitting,
 performance screen, historical-universe approval or Core v1 change.
+
+### 2026-09-09 — Offline point-in-time issuer feature pilot
+
+Built and ran a saved-source follow-up to the acquisition pilot on a separate
+`research/ml-pit-feature-pilot-20260909` branch. 2,724 filing versions, 146 filing
+snapshots, 8,176 quarter rows and 2,336 feature rows across TSLA/META/APC. Exact
+replay and future-revision canaries passed; six Tesla statement values matched;
+40 focused tests passed. Zero fits. Cross-filing calculations and tag equivalence
+remain review-only; broad-universe prices/identity/delistings are unresolved.
+See `research/ML_PIT_FEATURE_PILOT_20260909.md` and its recorded JSON evidence.
+Next distinct item: reconcile the supported historical universe and price coverage.

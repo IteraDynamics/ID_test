@@ -1,0 +1,181 @@
+{
+  "artifact_sha256": {
+    "fact_versions.csv": "34f3adb1483d8efb6d7e2d1f453d816399f316fc21fee72839edfab1d4541215",
+    "feature_snapshots.csv": "d37419357c78b42a7317d028ce922c13736866d0482603f5dffc20a9a0e34c9f",
+    "quarterly_snapshots.csv": "4b0878dd24c59726516850f0c48ee269fd82526c6886c14a1a7c015e02160cd1"
+  },
+  "availability_policy": "Later of SEC acceptance UTC plus 24 hours and midnight UTC after filed date; consume only at a later actual decision timestamp",
+  "candidate_fits": 0,
+  "cutoff": "2024-12-31",
+  "filing_spot_checks": [
+    {
+      "actual_usd": [
+        264804000
+      ],
+      "expected_usd": 264804000,
+      "source": "https://www.sec.gov/Archives/edgar/data/1318605/000156459016013195/tsla-10k_20151231.htm",
+      "status": "PASS",
+      "tag": "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+      "year": 2013
+    },
+    {
+      "actual_usd": [
+        -57337000
+      ],
+      "expected_usd": -57337000,
+      "source": "https://www.sec.gov/Archives/edgar/data/1318605/000156459016013195/tsla-10k_20151231.htm",
+      "status": "PASS",
+      "tag": "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+      "year": 2014
+    },
+    {
+      "actual_usd": [
+        -524499000
+      ],
+      "expected_usd": -524499000,
+      "source": "https://www.sec.gov/Archives/edgar/data/1318605/000156459016013195/tsla-10k_20151231.htm",
+      "status": "PASS",
+      "tag": "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+      "year": 2015
+    },
+    {
+      "actual_usd": [
+        -74014000
+      ],
+      "expected_usd": -74014000,
+      "source": "https://www.sec.gov/Archives/edgar/data/1318605/000156459016013195/tsla-10k_20151231.htm",
+      "status": "PASS",
+      "tag": "NetIncomeLoss",
+      "year": 2013
+    },
+    {
+      "actual_usd": [
+        -294040000
+      ],
+      "expected_usd": -294040000,
+      "source": "https://www.sec.gov/Archives/edgar/data/1318605/000156459016013195/tsla-10k_20151231.htm",
+      "status": "PASS",
+      "tag": "NetIncomeLoss",
+      "year": 2014
+    },
+    {
+      "actual_usd": [
+        -888663000
+      ],
+      "expected_usd": -888663000,
+      "source": "https://www.sec.gov/Archives/edgar/data/1318605/000156459016013195/tsla-10k_20151231.htm",
+      "status": "PASS",
+      "tag": "NetIncomeLoss",
+      "year": 2015
+    }
+  ],
+  "fiscal_scope": "Calendar quarters only; exact Jan/Apr/Jul/Oct starts, exact quarter ends; USD",
+  "future_revision_canary_passed": true,
+  "implementation_hash_policy": "UTF-8 source bytes with CRLF normalized to LF",
+  "implementation_sha256": {
+    "run_ml_data_acquisition_pilot.py": "841e990e158dd2dd05c7756e376ae98b4c6ca4f882480298457e9f43f7c9b8f4",
+    "run_ml_pit_feature_pilot.py": "93ffee55da84744349af25cb7cade5d1e650413c32076e58e35380a35e1447cb"
+  },
+  "issuers": {
+    "APC": {
+      "changed_value_periods": 17,
+      "conflict_versions": 0,
+      "exclusions": {
+        "outside_filing_contract": 20
+      },
+      "populated_features": {
+        "Assets": 41,
+        "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations_ttm": 3,
+        "NetCashProvidedByUsedInOperatingActivities_ttm": 36,
+        "NetIncomeLoss_ttm": 39,
+        "OperatingIncomeLoss_ttm": 39,
+        "RevenueFromContractWithCustomerExcludingAssessedTax_ttm": 3,
+        "Revenues_ttm": 39,
+        "SalesRevenueNet_ttm": 1,
+        "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": 40,
+        "accruals_ttm_to_end_assets": 36,
+        "assets_minus_total_equity_DIAGNOSTIC": 40,
+        "continuing_cash_flow_ttm_to_end_assets": 3,
+        "net_income_ttm_to_end_assets": 39,
+        "operating_cash_flow_ttm_to_end_assets": 36
+      },
+      "snapshots": 41,
+      "versions": 706
+    },
+    "META": {
+      "changed_value_periods": 24,
+      "conflict_versions": 0,
+      "exclusions": {
+        "after_cutoff": 115
+      },
+      "populated_features": {
+        "Assets": 50,
+        "Liabilities": 50,
+        "NetCashProvidedByUsedInOperatingActivities_ttm": 48,
+        "NetIncomeLoss_ttm": 48,
+        "OperatingIncomeLoss_ttm": 48,
+        "RevenueFromContractWithCustomerExcludingAssessedTax_ttm": 24,
+        "Revenues_ttm": 24,
+        "accruals_ttm_to_end_assets": 48,
+        "liabilities_to_assets": 50,
+        "net_income_ttm_to_end_assets": 48,
+        "operating_cash_flow_ttm_to_end_assets": 48
+      },
+      "snapshots": 50,
+      "versions": 826
+    },
+    "TSLA": {
+      "changed_value_periods": 48,
+      "conflict_versions": 0,
+      "exclusions": {
+        "after_cutoff": 169
+      },
+      "populated_features": {
+        "Assets": 55,
+        "Liabilities": 55,
+        "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations_ttm": 14,
+        "NetCashProvidedByUsedInOperatingActivities_ttm": 35,
+        "NetIncomeLoss_ttm": 53,
+        "OperatingIncomeLoss_ttm": 53,
+        "RevenueFromContractWithCustomerExcludingAssessedTax_ttm": 4,
+        "Revenues_ttm": 53,
+        "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": 26,
+        "accruals_ttm_to_end_assets": 35,
+        "assets_minus_total_equity_DIAGNOSTIC": 26,
+        "continuing_cash_flow_ttm_to_end_assets": 14,
+        "liabilities_to_assets": 55,
+        "net_income_ttm_to_end_assets": 53,
+        "operating_cash_flow_ttm_to_end_assets": 35
+      },
+      "snapshots": 55,
+      "versions": 1192
+    }
+  },
+  "limitations": [
+    "Companyfacts contexts and tag equivalence are not comprehensively filing-validated",
+    "Cross-filing differences and TTM sums may mix accounting bases; explicitly marked for review",
+    "Continuing operating cash flow is never silently substituted for total operating cash flow",
+    "Assets minus total equity is diagnostic only, not reconstructed liabilities",
+    "Snapshot time is not a trading session; price adjustment, identity, delistings and universe remain unresolved"
+  ],
+  "ready_for_model": false,
+  "source_acquisition_errors": [
+    {
+      "error_type": "YFPricesMissingError",
+      "http_status": null,
+      "item": "FB",
+      "reason_code": null,
+      "source": "yfinance"
+    },
+    {
+      "error_type": "YFPricesMissingError",
+      "http_status": null,
+      "item": "APC",
+      "reason_code": null,
+      "source": "yfinance"
+    }
+  ],
+  "source_manifest_sha256": "80153824ae7e736271d98301628076cadeea3d166c7df6cea4c80deb711befa4",
+  "status": "PIT_FEATURE_PILOT_REVIEW_REQUIRED",
+  "version": 1
+}
