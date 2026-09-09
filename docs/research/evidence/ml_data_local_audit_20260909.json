@@ -1,0 +1,264 @@
+{
+  "adjustment_counts": {
+    "False": 273,
+    "True": 6
+  },
+  "candidate_fits": 0,
+  "cutoff": "2024-12-31",
+  "earnings": {
+    "conflicting_groups": 36,
+    "duplicate_groups": 37,
+    "rows_through_2024": 13950,
+    "tickers": 206
+  },
+  "kind": "LOCAL_DATA_FEASIBILITY_ONLY",
+  "limitations": [
+    "Eight selected price samples only; all other prices inspected via manifests only.",
+    "Ticker identity unresolved; no company reassignment inferred.",
+    "No performance calculation; historical findings do not invalidate unrelated experiments automatically."
+  ],
+  "manifest_count": 279,
+  "price_checks": {
+    "APC": {
+      "columns": [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "coverage_status": "REJECTED",
+      "duplicate_dates": 0,
+      "first": null,
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": null,
+      "missing_columns": [],
+      "required_date": "2019-08-08",
+      "required_date_missing": true,
+      "rows_through_2024": 0,
+      "sha256": "5158662e10b17c631f289535a65b6cb98b8c33c75d5a4c5d925442d97ab3dbc5",
+      "years": {}
+    },
+    "FB": {
+      "columns": [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "coverage_status": "REJECTED",
+      "duplicate_dates": 0,
+      "first": null,
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": null,
+      "missing_columns": [],
+      "required_date": "2022-06-08",
+      "required_date_missing": true,
+      "rows_through_2024": 0,
+      "sha256": "788a6c46cdfc0a08eb3e8b0e36b08276cedd252dacdf5ff82b151db931749192",
+      "years": {}
+    },
+    "META": {
+      "columns": [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "coverage_status": "STRUCTURE_ONLY",
+      "duplicate_dates": 0,
+      "first": "2019-01-02",
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": "2024-12-31",
+      "missing_columns": [],
+      "required_date": "2022-06-08",
+      "required_date_missing": false,
+      "rows_through_2024": 1510,
+      "sha256": "263fcf8b2ae8ab9fe1d189042b5feaef7b2d5e0d665e6e5bf99781990843876f",
+      "years": {
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252
+      }
+    },
+    "NFX": {
+      "columns": [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "coverage_status": "REJECTED",
+      "duplicate_dates": 0,
+      "first": null,
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": null,
+      "missing_columns": [],
+      "required_date": "2019-02-14",
+      "required_date_missing": true,
+      "rows_through_2024": 0,
+      "sha256": "d48e5e1f26a09d7e49e69dbce9b1967e51b16cdb239e683df64af7ed819865a3",
+      "years": {}
+    },
+    "SBNY": {
+      "columns": [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "coverage_status": "REJECTED",
+      "duplicate_dates": 0,
+      "first": "2024-08-15",
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": "2024-12-31",
+      "missing_columns": [],
+      "required_date": "2023-03-10",
+      "required_date_missing": true,
+      "rows_through_2024": 96,
+      "sha256": "24f86e92fb677613262e7c2945a0f186c2ac7de234d89296690b539552985520",
+      "years": {
+        "2024": 96
+      }
+    },
+    "SMCI": {
+      "columns": [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "coverage_status": "STRUCTURE_ONLY",
+      "duplicate_dates": 0,
+      "first": "2019-01-02",
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": "2024-12-31",
+      "missing_columns": [],
+      "required_date": null,
+      "required_date_missing": false,
+      "rows_through_2024": 1510,
+      "sha256": "72ee916540785c8bfea2c767dba751dcd912ea1622af999189389d6f7d4711e5",
+      "years": {
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252
+      }
+    },
+    "SPY": {
+      "columns": [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "coverage_status": "STRUCTURE_ONLY",
+      "duplicate_dates": 0,
+      "first": "2013-12-02",
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": "2024-12-31",
+      "missing_columns": [],
+      "required_date": null,
+      "required_date_missing": false,
+      "rows_through_2024": 2789,
+      "sha256": "83df8fb4ae2123fb7b25da6e72149678c86469e1dd3de4c2e1e1efa1c0078714",
+      "years": {
+        "2013": 21,
+        "2014": 252,
+        "2015": 252,
+        "2016": 252,
+        "2017": 251,
+        "2018": 251,
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252
+      }
+    },
+    "TSLA": {
+      "columns": [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "coverage_status": "STRUCTURE_ONLY",
+      "duplicate_dates": 0,
+      "first": "2019-01-02",
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": "2024-12-31",
+      "missing_columns": [],
+      "required_date": "2019-01-02",
+      "required_date_missing": false,
+      "rows_through_2024": 1510,
+      "sha256": "9036edb6723c589edc2031e0cfff548ca21db5362120dacc33ae407a1b503ac3",
+      "years": {
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252
+      }
+    }
+  },
+  "request_start_counts": {
+    "2000-01-01": 20,
+    "2003-01-01": 1,
+    "2004-11-01": 1,
+    "2005-01-01": 34,
+    "2013-12-01": 4,
+    "2019-01-01": 217,
+    "2020-05-01": 1,
+    "2024-01-01": 1
+  },
+  "source_zip_sha256": "5c4b4267fc60838e8a2fe58a4fad47fbb9d4445f33b0461a638e7edcf8006a57",
+  "stock_batch_actual_start_years": {
+    "2019": 186,
+    "2020": 6,
+    "2021": 6,
+    "2022": 3,
+    "2023": 2,
+    "2024": 6,
+    "2025": 4,
+    "2026": 4
+  }
+}

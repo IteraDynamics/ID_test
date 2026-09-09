@@ -40,7 +40,8 @@ NEW_SOURCE_FILES = {'scripts/__init__.py', 'scripts/_checkout_bootstrap.py',
                     'scripts/_packaging_contract.py', 'scripts/verify_scripts_packaging.py',
                     # Additive Experiment 012 integration; existing sources stay constrained.
                     'scripts/run_ml_lab_experiment_012.py',
-                    'scripts/run_ml_lab_experiment_013.py'}
+                    'scripts/run_ml_lab_experiment_013.py',
+                    'scripts/run_ml_data_acquisition_pilot.py'}
 ADAPTED_GATE = 'scripts/verify_artifact_io_parity.py'
 EXPECTED_MIGRATION_FILES = 111
 

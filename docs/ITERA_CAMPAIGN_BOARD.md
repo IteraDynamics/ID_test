@@ -1023,3 +1023,13 @@ Living design: `docs/research/ML_DECISION_REDESIGN_20260909.md`.
 No Core v1/Core v2, runtime, paper/live, capital or reserved-2025 action is taken.
 Existing campaign closures and the separate refactor review/merge queue remain
 unchanged. The new draft PR is stacked on #54; this does not merge that stack.
+
+### 2026-09-09 — ML data feasibility pilot
+
+The operator's local stock samples expose historical coverage and ticker-identity
+problems; earnings caches also contain conflicting ticker/date duplicates. A bounded
+[acquisition pilot](research/ML_DATA_ACQUISITION_PILOT_20260909.md) now probes TSLA,
+META/FB and APC prices/actions plus three SEC filing entities. Ten pilot tests and
+fourteen packaging tests pass. Live acquisition remains pending the operator's SEC
+contact header and Windows run. This is data feasibility only: no model fitting,
+performance screen, historical-universe approval or Core v1 change.
