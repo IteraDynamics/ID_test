@@ -989,3 +989,37 @@ dispositions remain unchanged.
 
 Evidence and interpretation: `docs/research/ML_LAB_EXPERIMENT_012_RESULTS.md`.
 Engineering completion: `docs/engineering/EXPERIMENT_012_INTEGRATION_20260908.md`.
+
+## 2026-09-09 — Experiment 013 closed; ML research redesigned around a decision
+
+**013 disposition: CLOSED — NO_STABLE_PRIMARY_BASELINE_INCREMENT.** The operator's
+real run at `d0971a3` records zero fits and 144 reference checks. Primary Ridge
+passes the two momentum comparisons but fails low volatility (8/18 positive
+annual IC increments). Uploaded score-agreement and asset-contribution CSV hashes
+match the report; all 336 spread summaries reconcile from asset contributions.
+Only those two CSVs were independently hash-checked here. The recent relative
+advantage is concentrated, and normalized-target strength does not establish net
+portfolio returns. Full dated closure is appended to the original 013 document.
+
+The operator explicitly requested proceeding with the decision-focused research
+reset and authorized a new branch if useful. New branch:
+`research/ml-decision-redesign-20260909`, based on the 013 implementation, with
+design/evidence documentation only. End further variants of the 14-ETF normalized
+ranking setup. The proposed new task is monthly bounded allocation within a
+separate liquid-stock research sleeve using historically available issuer
+information, measured against simple allocations after costs. Four learned
+candidates separate information value from nonlinear-model value.
+
+Current status is DESIGN DRAFT / FEASIBILITY UNRESOLVED, not a new positive screen
+or an implemented portfolio. Data coverage, corporate actions, filing versions,
+broker/access, execution timing and dollar materiality must be resolved before
+fitting. The bounded source review found possible partial inputs but no accepted
+complete source. Sandbox authority permits cheap exploration without inventing
+a campaign-level freeze or power gate; missing evidence is the actual blocker.
+One source-feasibility session and one fixed model comparison are proposed, with
+explicit negative/inconclusive stopping rules.
+
+Living design: `docs/research/ML_DECISION_REDESIGN_20260909.md`.
+No Core v1/Core v2, runtime, paper/live, capital or reserved-2025 action is taken.
+Existing campaign closures and the separate refactor review/merge queue remain
+unchanged. The new draft PR is stacked on #54; this does not merge that stack.
