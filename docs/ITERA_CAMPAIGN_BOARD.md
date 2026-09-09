@@ -1084,3 +1084,12 @@ rows. Stooq's automated control failed; its website requests browser verificatio
 One manual local Stooq control/target download check remains before deciding
 whether to close this historical-stock source route. No model fits or new downloads
 requested from the unchanged Python probe. See `research/ML_EXIT_PRICE_LOCAL_REVIEW_20260909.md`.
+
+### 2026-09-09 — Operator-authorized ETF risk pivot
+
+Manual Stooq download returned access denied. Operator authorized pausing the
+broad-stock historical design and moving to ETF risk allocation. Recorded the
+fixed SPY/QQQ/GLD screen card, downside-event label, weekly policy, five simple
+controls, two fixed models and 14-fit budget. Zero fits so far. Full SPY is already
+available and its overlapping return ratios checked; existing QQQ/GLD CSVs are
+the next local input. See `research/ML_ETF_RISK_SCREEN_20260909.md`.

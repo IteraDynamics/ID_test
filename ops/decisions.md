@@ -472,3 +472,9 @@ ones — this is what makes "brief me" informative over time._
 - **CEO decision:** "Yes, close Campaign #58 Phase 1 time-series track as underpowered"
 - **Follow-up (done):** Phase 1 recorded `CLOSED_UNDERPOWERED` in `ops/status.md`, `ops/campaign-log.md`, and `docs/ITERA_CAMPAIGN_BOARD.md`. Phase 0 (cross-sectional COT census) remains open and blocked on data/network access — Campaign #58 as a whole is not closed. No model fit, Core v1 change, runtime/portfolio/paper/live/capital action, or ML Lab Experiment 012 execution is authorized by this decision. Binding power record unchanged: `docs/research/CAMPAIGN_58_GRID_POWER_CALIBRATION_IMPLEMENTATION_REVIEW.md`.
 
+
+## 2026-09-09 — ETF risk-allocation exploration pivot
+- Operator decision: "Proceed with the pivot" after manual Stooq download returned access denied.
+- Pause broad-stock historical allocation and end its current data-recovery effort. Preserve prior evidence and experiment conclusions.
+- Proceed with an isolated SPY/QQQ/GLD downside-risk and weekly-exposure exploration screen; card: `docs/research/ML_ETF_RISK_SCREEN_20260909.md`.
+- Existing full QQQ/GLD CSVs remain required; zero fits at this entry. No Core, paper/live, capital or production change.
