@@ -1,0 +1,146 @@
+{
+  "acquired_at_utc": "2026-09-09T18:21:53.446119+00:00",
+  "attempts": [
+    {
+      "bytes": 238963,
+      "name": "yahoo_SPY.csv",
+      "provider": "yahoo",
+      "sha256": "a39bd668019d4cfeccda72c5e4e0c9a9c6566c93a626e0441b7e380d02193d03",
+      "status": "RESPONSE_SAVED",
+      "symbol": "SPY"
+    },
+    {
+      "error_type": "YFPricesMissingError",
+      "http_status": null,
+      "provider": "yahoo",
+      "status": "ERROR",
+      "symbol": "APC"
+    },
+    {
+      "error_type": "YFPricesMissingError",
+      "http_status": null,
+      "provider": "yahoo",
+      "status": "ERROR",
+      "symbol": "NFX"
+    },
+    {
+      "error_type": "YFTzMissingError",
+      "http_status": null,
+      "provider": "yahoo",
+      "status": "ERROR",
+      "symbol": "FRC"
+    },
+    {
+      "bytes": 234969,
+      "name": "yahoo_FRCB.csv",
+      "provider": "yahoo",
+      "sha256": "4b8ebffe8a82bdb13fd8e6e30a1bdfdf1b4b4cd12a76d6bee6128d17a92de144",
+      "status": "RESPONSE_SAVED",
+      "symbol": "FRCB"
+    },
+    {
+      "bytes": 11489,
+      "name": "yahoo_SBNY.csv",
+      "provider": "yahoo",
+      "sha256": "900835f91e4b8087645d82684fbd4ed8f8c527c93000efaf3b4ee24cdd488f78",
+      "status": "RESPONSE_SAVED",
+      "symbol": "SBNY"
+    },
+    {
+      "error_type": "YFTzMissingError",
+      "http_status": null,
+      "provider": "yahoo",
+      "status": "ERROR",
+      "symbol": "HRS"
+    },
+    {
+      "bytes": 230696,
+      "name": "yahoo_LHX.csv",
+      "provider": "yahoo",
+      "sha256": "48fa515eaff8706c591befa3b08abff80eba215d18877a083394f53d00fc82a1",
+      "status": "RESPONSE_SAVED",
+      "symbol": "LHX"
+    },
+    {
+      "error_type": "YFTzMissingError",
+      "http_status": null,
+      "provider": "yahoo",
+      "status": "ERROR",
+      "symbol": "LLL"
+    },
+    {
+      "error_type": "HTTPError",
+      "http_status": 404,
+      "provider": "stooq",
+      "status": "ERROR",
+      "symbol": "SPY"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "APC"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "NFX"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "FRC"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "FRCB"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "SBNY"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "HRS"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "LHX"
+    },
+    {
+      "provider": "stooq",
+      "reason": "CONTROL_REQUEST_FAILED",
+      "status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "LLL"
+    }
+  ],
+  "end_exclusive": "2025-01-01",
+  "providers": [
+    "yahoo",
+    "stooq"
+  ],
+  "start": "2018-01-01",
+  "symbols": [
+    "SPY",
+    "APC",
+    "NFX",
+    "FRC",
+    "FRCB",
+    "SBNY",
+    "HRS",
+    "LHX",
+    "LLL"
+  ],
+  "version": 1,
+  "yfinance": "1.5.2"
+}

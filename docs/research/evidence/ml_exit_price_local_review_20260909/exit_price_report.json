@@ -1,0 +1,259 @@
+{
+  "implementation_sha256": {
+    "run_ml_data_acquisition_pilot.py": "841e990e158dd2dd05c7756e376ae98b4c6ca4f882480298457e9f43f7c9b8f4",
+    "run_ml_exit_price_probe.py": "369090056bee8b413c5f4aff81bbac18f4bd36165f6bca31d11bf75abbcc2a7c"
+  },
+  "model_fits": 0,
+  "ready_for_modeling": false,
+  "results": [
+    {
+      "adjustment_basis": "UNVERIFIED",
+      "columns": [
+        "Date",
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Adj Close",
+        "Volume",
+        "Dividends",
+        "Stock Splits",
+        "Capital Gains"
+      ],
+      "coverage_status": "STRUCTURE_ONLY",
+      "duplicate_dates": 0,
+      "first": "2018-01-02",
+      "gaps_over_7_calendar_days": [],
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": "2024-12-31",
+      "missing_check_dates": [],
+      "missing_columns": [],
+      "provider": "yahoo",
+      "request_status": "RESPONSE_SAVED",
+      "required_date": null,
+      "required_date_missing": false,
+      "rows_outside_requested_window": 0,
+      "rows_through_2024": 1761,
+      "symbol": "SPY",
+      "terminal_outcome_status": "UNVERIFIED",
+      "years": {
+        "2018": 251,
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252
+      }
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "yahoo",
+      "request_status": "ERROR",
+      "symbol": "APC"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "yahoo",
+      "request_status": "ERROR",
+      "symbol": "NFX"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "yahoo",
+      "request_status": "ERROR",
+      "symbol": "FRC"
+    },
+    {
+      "adjustment_basis": "UNVERIFIED",
+      "columns": [
+        "Date",
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Adj Close",
+        "Volume",
+        "Dividends",
+        "Stock Splits"
+      ],
+      "coverage_status": "STRUCTURE_ONLY",
+      "duplicate_dates": 0,
+      "first": "2018-01-02",
+      "gaps_over_7_calendar_days": [],
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": "2024-12-31",
+      "missing_check_dates": [],
+      "missing_columns": [],
+      "provider": "yahoo",
+      "request_status": "RESPONSE_SAVED",
+      "required_date": null,
+      "required_date_missing": false,
+      "rows_outside_requested_window": 0,
+      "rows_through_2024": 1761,
+      "symbol": "FRCB",
+      "terminal_outcome_status": "UNVERIFIED",
+      "years": {
+        "2018": 251,
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252
+      }
+    },
+    {
+      "adjustment_basis": "UNVERIFIED",
+      "columns": [
+        "Date",
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Adj Close",
+        "Volume",
+        "Dividends",
+        "Stock Splits"
+      ],
+      "coverage_status": "REJECTED",
+      "duplicate_dates": 0,
+      "first": "2024-08-15",
+      "gaps_over_7_calendar_days": [],
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": "2024-12-31",
+      "missing_check_dates": [
+        "2021-12-20",
+        "2023-03-10",
+        "2023-03-28"
+      ],
+      "missing_columns": [],
+      "provider": "yahoo",
+      "request_status": "RESPONSE_SAVED",
+      "required_date": null,
+      "required_date_missing": false,
+      "rows_outside_requested_window": 0,
+      "rows_through_2024": 96,
+      "symbol": "SBNY",
+      "terminal_outcome_status": "UNVERIFIED",
+      "years": {
+        "2024": 96
+      }
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "yahoo",
+      "request_status": "ERROR",
+      "symbol": "HRS"
+    },
+    {
+      "adjustment_basis": "UNVERIFIED",
+      "columns": [
+        "Date",
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Adj Close",
+        "Volume",
+        "Dividends",
+        "Stock Splits"
+      ],
+      "coverage_status": "STRUCTURE_ONLY",
+      "duplicate_dates": 0,
+      "first": "2018-01-02",
+      "gaps_over_7_calendar_days": [],
+      "identity_status": "UNVERIFIED",
+      "invalid_dates": 0,
+      "invalid_numeric_rows": 0,
+      "last": "2024-12-31",
+      "missing_check_dates": [],
+      "missing_columns": [],
+      "provider": "yahoo",
+      "request_status": "RESPONSE_SAVED",
+      "required_date": null,
+      "required_date_missing": false,
+      "rows_outside_requested_window": 0,
+      "rows_through_2024": 1761,
+      "symbol": "LHX",
+      "terminal_outcome_status": "UNVERIFIED",
+      "years": {
+        "2018": 251,
+        "2019": 252,
+        "2020": 253,
+        "2021": 252,
+        "2022": 251,
+        "2023": 250,
+        "2024": 252
+      }
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "yahoo",
+      "request_status": "ERROR",
+      "symbol": "LLL"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "ERROR",
+      "symbol": "SPY"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "APC"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "NFX"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "FRC"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "FRCB"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "SBNY"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "HRS"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "LHX"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "LLL"
+    }
+  ],
+  "source_manifest_sha256": "bd87176fecb2ab713f504ca8814f98c171a23e2899d7cbae2586bfd3317a40b1",
+  "status": "SOURCE_PROBE_REVIEW_REQUIRED"
+}

@@ -1,0 +1,66 @@
+{
+  "implementation_sha256": {
+    "run_ml_data_acquisition_pilot.py": "841e990e158dd2dd05c7756e376ae98b4c6ca4f882480298457e9f43f7c9b8f4",
+    "run_ml_exit_price_probe.py": "369090056bee8b413c5f4aff81bbac18f4bd36165f6bca31d11bf75abbcc2a7c"
+  },
+  "model_fits": 0,
+  "ready_for_modeling": false,
+  "results": [
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "ERROR",
+      "symbol": "SPY"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "APC"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "NFX"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "FRC"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "FRCB"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "SBNY"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "HRS"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "LHX"
+    },
+    {
+      "coverage_status": "NOT_RETRIEVED",
+      "provider": "stooq",
+      "request_status": "SKIPPED_PROVIDER_STOP",
+      "symbol": "LLL"
+    }
+  ],
+  "source_manifest_sha256": "ffa1675d7dc361b56f8c7878d37d86b60123de5686586e043d90bbf323449bfb",
+  "status": "SOURCE_PROBE_REVIEW_REQUIRED"
+}

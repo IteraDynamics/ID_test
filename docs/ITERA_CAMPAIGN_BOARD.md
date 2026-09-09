@@ -1065,3 +1065,22 @@ LLL merger conversion. 264 actions reconcile with zero set-transition errors;
 98 upstream snapshots match and 3 differ only by the expected date correction.
 Baseline completeness and historical exit prices remain unresolved. No universe
 amendment or fits. See `research/ML_MEMBERSHIP_SOURCE_REPAIR_20260909.md`.
+
+### 2026-09-09 — Exit-price recovery probe ready for local execution
+
+Recovered primary-source APC and NFX merger terms and separated bank depositor
+protection from shareholder exit accounting. Added a bounded Yahoo/Stooq history
+probe with SPY controls, explicit access/rate-limit stops, raw hashes, offline
+replay and automatic review ZIP. 35 focused tests passed. Remote HTTP 404/429
+responses leave price recovery unresolved; one operator-local run is needed.
+See `research/ML_EXIT_PRICE_PROBE_20260909.md`. Zero model fits.
+
+### 2026-09-09 — Operator exit-price results reviewed
+
+Four Yahoo raw files verified and exact report replay passed. FRCB and LHX
+recover candidate older histories; APC/NFX/LLL remain absent and SBNY starts too
+late. FRCB includes two zero-volume repeated-price days and two inconsistent OHLC
+rows. Stooq's automated control failed; its website requests browser verification.
+One manual local Stooq control/target download check remains before deciding
+whether to close this historical-stock source route. No model fits or new downloads
+requested from the unchanged Python probe. See `research/ML_EXIT_PRICE_LOCAL_REVIEW_20260909.md`.
