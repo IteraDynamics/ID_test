@@ -1,0 +1,32 @@
+[
+  {
+    "old": "FB",
+    "new": "META",
+    "effective_date": "2022-06-09",
+    "event_type": "SAME_CLASS_TICKER_CHANGE",
+    "source": "https://investor.atmeta.com/investor-news/press-release-details/2022/Meta-Platforms-Inc.-to-Change-Ticker-Symbol-to-META-on-June-9/default.aspx",
+    "price_use": "Existing META pilot history is a candidate for historical FB. Do not use the unrelated late-start FB download.",
+    "ledger_note": "Same Class A security; issuer says unchanged CUSIP."
+  },
+  {
+    "old": "HRS",
+    "new": "LHX",
+    "effective_date": "2019-07-01",
+    "event_type": "CONTINUING_HARRIS_SHARES_AFTER_MERGER",
+    "source": "https://investors.l3harris.com/news/news-details/2019/L3Harris-Technologies-Merger-Successfully-Completed-Board-of-Directors-Leadership-and-Organization-Structure-Announced-07-01-2019/default.aspx",
+    "price_use": "Verify provider history before any join.",
+    "ledger_note": "Correct local June 1 date. Merger completed June 29."
+  },
+  {
+    "old": "LLL",
+    "new": "LHX",
+    "effective_date": "2019-06-29",
+    "event_type": "STOCK_MERGER_CONVERSION",
+    "last_trading_date": "2019-06-28",
+    "successor_first_trading_date": "2019-07-01",
+    "successor_shares_per_old_share": 1.3,
+    "source": "https://investors.l3harris.com/news/news-details/2019/L3Harris-Technologies-Merger-Successfully-Completed-Board-of-Directors-Leadership-and-Organization-Structure-Announced-07-01-2019/default.aspx",
+    "price_use": "Not a ticker alias; do not concatenate LLL and LHX histories.",
+    "ledger_note": "Explicit conversion accounting required; fractional-share settlement still requires review."
+  }
+]

@@ -1,0 +1,2114 @@
+[
+  {
+    "source_date": "2019-01-02",
+    "effective_date": "2019-01-02",
+    "action": "add",
+    "ticker": "FRC",
+    "primary_source_url": "https://press.spglobal.com/2018-12-27-First-Republic-Bank-Set-to-Join-S-P-500",
+    "review_status": "PRIMARY_SOURCE_VERIFIED"
+  },
+  {
+    "source_date": "2019-01-02",
+    "effective_date": "2019-01-02",
+    "action": "remove",
+    "ticker": "SCG",
+    "primary_source_url": "https://press.spglobal.com/2018-12-27-First-Republic-Bank-Set-to-Join-S-P-500",
+    "review_status": "PRIMARY_SOURCE_VERIFIED"
+  },
+  {
+    "source_date": "2019-01-18",
+    "effective_date": "2019-01-18",
+    "action": "add",
+    "ticker": "TFX",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-01-18",
+    "effective_date": "2019-01-18",
+    "action": "remove",
+    "ticker": "PCG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-02-15",
+    "effective_date": "2019-02-15",
+    "action": "add",
+    "ticker": "ATO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-02-15",
+    "effective_date": "2019-02-15",
+    "action": "remove",
+    "ticker": "NFX",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-02-27",
+    "effective_date": "2019-02-27",
+    "action": "add",
+    "ticker": "WAB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-02-27",
+    "effective_date": "2019-02-27",
+    "action": "remove",
+    "ticker": "GT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-04-02",
+    "effective_date": "2019-04-02",
+    "action": "add",
+    "ticker": "DOW",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-04-02",
+    "effective_date": "2019-04-02",
+    "action": "remove",
+    "ticker": "BHF",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-06-03",
+    "effective_date": "2019-06-03",
+    "action": "add",
+    "ticker": "CTVA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-06-03",
+    "effective_date": "2019-06-03",
+    "action": "add",
+    "ticker": "DD",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-06-03",
+    "effective_date": "2019-06-03",
+    "action": "remove",
+    "ticker": "DWDP",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-06-03",
+    "effective_date": "2019-06-03",
+    "action": "remove",
+    "ticker": "FLR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-06-07",
+    "effective_date": "2019-06-07",
+    "action": "add",
+    "ticker": "AMCR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-06-07",
+    "effective_date": "2019-06-07",
+    "action": "remove",
+    "ticker": "MAT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-06-01",
+    "effective_date": "2019-07-01",
+    "action": "add",
+    "ticker": "LHX",
+    "primary_source_url": "https://investors.l3harris.com/news/news-details/2019/L3Harris-Technologies-Merger-Successfully-Completed-Board-of-Directors-Leadership-and-Organization-Structure-Announced-07-01-2019/default.aspx",
+    "review_status": "PRIMARY_SOURCE_VERIFIED"
+  },
+  {
+    "source_date": "2019-07-01",
+    "effective_date": "2019-07-01",
+    "action": "add",
+    "ticker": "MKTX",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-06-01",
+    "effective_date": "2019-07-01",
+    "action": "remove",
+    "ticker": "HRS",
+    "primary_source_url": "https://investors.l3harris.com/news/news-details/2019/L3Harris-Technologies-Merger-Successfully-Completed-Board-of-Directors-Leadership-and-Organization-Structure-Announced-07-01-2019/default.aspx",
+    "review_status": "PRIMARY_SOURCE_VERIFIED"
+  },
+  {
+    "source_date": "2019-07-01",
+    "effective_date": "2019-07-01",
+    "action": "remove",
+    "ticker": "LLL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-07-15",
+    "effective_date": "2019-07-15",
+    "action": "add",
+    "ticker": "TMUS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-07-15",
+    "effective_date": "2019-07-15",
+    "action": "remove",
+    "ticker": "RHT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-08-08",
+    "effective_date": "2019-08-08",
+    "action": "add",
+    "ticker": "GL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-08-08",
+    "effective_date": "2019-08-08",
+    "action": "remove",
+    "ticker": "TMK",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-08-09",
+    "effective_date": "2019-08-09",
+    "action": "add",
+    "ticker": "IEX",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-08-09",
+    "effective_date": "2019-08-09",
+    "action": "add",
+    "ticker": "LDOS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-08-09",
+    "effective_date": "2019-08-09",
+    "action": "remove",
+    "ticker": "APC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-08-09",
+    "effective_date": "2019-08-09",
+    "action": "remove",
+    "ticker": "FL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-09-23",
+    "effective_date": "2019-09-23",
+    "action": "add",
+    "ticker": "CDW",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-09-23",
+    "effective_date": "2019-09-23",
+    "action": "remove",
+    "ticker": "TSS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-09-26",
+    "effective_date": "2019-09-26",
+    "action": "add",
+    "ticker": "NVR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-09-26",
+    "effective_date": "2019-09-26",
+    "action": "remove",
+    "ticker": "JEF",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-10-03",
+    "effective_date": "2019-10-03",
+    "action": "add",
+    "ticker": "LVS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-10-03",
+    "effective_date": "2019-10-03",
+    "action": "remove",
+    "ticker": "NKTR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-10-18",
+    "effective_date": "2019-10-18",
+    "action": "add",
+    "ticker": "BKR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-10-18",
+    "effective_date": "2019-10-18",
+    "action": "remove",
+    "ticker": "BHGE",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-11-05",
+    "effective_date": "2019-11-05",
+    "action": "add",
+    "ticker": "NLOK",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-11-05",
+    "effective_date": "2019-11-05",
+    "action": "add",
+    "ticker": "PEAK",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-11-05",
+    "effective_date": "2019-11-05",
+    "action": "remove",
+    "ticker": "HCP",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-11-05",
+    "effective_date": "2019-11-05",
+    "action": "remove",
+    "ticker": "SYMC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-11-21",
+    "effective_date": "2019-11-21",
+    "action": "add",
+    "ticker": "NOW",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-11-21",
+    "effective_date": "2019-11-21",
+    "action": "remove",
+    "ticker": "CELG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-05",
+    "effective_date": "2019-12-05",
+    "action": "add",
+    "ticker": "VIAC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-05",
+    "effective_date": "2019-12-05",
+    "action": "add",
+    "ticker": "WRB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-05",
+    "effective_date": "2019-12-05",
+    "action": "remove",
+    "ticker": "CBS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-05",
+    "effective_date": "2019-12-05",
+    "action": "remove",
+    "ticker": "VIAB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-09",
+    "effective_date": "2019-12-09",
+    "action": "add",
+    "ticker": "ODFL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-09",
+    "effective_date": "2019-12-09",
+    "action": "add",
+    "ticker": "TFC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-09",
+    "effective_date": "2019-12-09",
+    "action": "remove",
+    "ticker": "BBT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-09",
+    "effective_date": "2019-12-09",
+    "action": "remove",
+    "ticker": "STI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-10",
+    "effective_date": "2019-12-10",
+    "action": "add",
+    "ticker": "J",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-10",
+    "effective_date": "2019-12-10",
+    "action": "remove",
+    "ticker": "JEC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-23",
+    "effective_date": "2019-12-23",
+    "action": "add",
+    "ticker": "LYV",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-23",
+    "effective_date": "2019-12-23",
+    "action": "add",
+    "ticker": "STE",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-23",
+    "effective_date": "2019-12-23",
+    "action": "add",
+    "ticker": "ZBRA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-23",
+    "effective_date": "2019-12-23",
+    "action": "remove",
+    "ticker": "AMG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-23",
+    "effective_date": "2019-12-23",
+    "action": "remove",
+    "ticker": "MAC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2019-12-23",
+    "effective_date": "2019-12-23",
+    "action": "remove",
+    "ticker": "TRIP",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-01-28",
+    "effective_date": "2020-01-28",
+    "action": "add",
+    "ticker": "PAYC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-01-28",
+    "effective_date": "2020-01-28",
+    "action": "remove",
+    "ticker": "WCG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-03-03",
+    "effective_date": "2020-03-03",
+    "action": "add",
+    "ticker": "TT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-03-03",
+    "effective_date": "2020-03-03",
+    "action": "remove",
+    "ticker": "XEC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-04-03",
+    "effective_date": "2020-04-03",
+    "action": "add",
+    "ticker": "CARR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-04-03",
+    "effective_date": "2020-04-03",
+    "action": "add",
+    "ticker": "OTIS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-04-03",
+    "effective_date": "2020-04-03",
+    "action": "add",
+    "ticker": "RTX",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-04-03",
+    "effective_date": "2020-04-03",
+    "action": "remove",
+    "ticker": "UTX",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-04-06",
+    "effective_date": "2020-04-06",
+    "action": "add",
+    "ticker": "HWM",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-04-06",
+    "effective_date": "2020-04-06",
+    "action": "remove",
+    "ticker": "ARNC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-04-06",
+    "effective_date": "2020-04-06",
+    "action": "remove",
+    "ticker": "M",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-04-06",
+    "effective_date": "2020-04-06",
+    "action": "remove",
+    "ticker": "RTN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-05-12",
+    "effective_date": "2020-05-12",
+    "action": "add",
+    "ticker": "DPZ",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-05-12",
+    "effective_date": "2020-05-12",
+    "action": "add",
+    "ticker": "DXCM",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-05-12",
+    "effective_date": "2020-05-12",
+    "action": "remove",
+    "ticker": "AGN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-05-12",
+    "effective_date": "2020-05-12",
+    "action": "remove",
+    "ticker": "CPRI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-05-22",
+    "effective_date": "2020-05-22",
+    "action": "add",
+    "ticker": "WST",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-05-22",
+    "effective_date": "2020-05-22",
+    "action": "remove",
+    "ticker": "HP",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-06-22",
+    "effective_date": "2020-06-22",
+    "action": "add",
+    "ticker": "BIO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-06-22",
+    "effective_date": "2020-06-22",
+    "action": "add",
+    "ticker": "TDY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-06-22",
+    "effective_date": "2020-06-22",
+    "action": "add",
+    "ticker": "TYL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-06-22",
+    "effective_date": "2020-06-22",
+    "action": "remove",
+    "ticker": "ADS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-06-22",
+    "effective_date": "2020-06-22",
+    "action": "remove",
+    "ticker": "HOG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-06-22",
+    "effective_date": "2020-06-22",
+    "action": "remove",
+    "ticker": "JWN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-09-18",
+    "effective_date": "2020-09-18",
+    "action": "add",
+    "ticker": "LUMN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-09-18",
+    "effective_date": "2020-09-18",
+    "action": "remove",
+    "ticker": "CTL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-09-21",
+    "effective_date": "2020-09-21",
+    "action": "add",
+    "ticker": "CTLT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-09-21",
+    "effective_date": "2020-09-21",
+    "action": "add",
+    "ticker": "ETSY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-09-21",
+    "effective_date": "2020-09-21",
+    "action": "add",
+    "ticker": "TER",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-09-21",
+    "effective_date": "2020-09-21",
+    "action": "remove",
+    "ticker": "COTY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-09-21",
+    "effective_date": "2020-09-21",
+    "action": "remove",
+    "ticker": "HRB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-09-21",
+    "effective_date": "2020-09-21",
+    "action": "remove",
+    "ticker": "KSS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-10-07",
+    "effective_date": "2020-10-07",
+    "action": "add",
+    "ticker": "POOL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-10-07",
+    "effective_date": "2020-10-07",
+    "action": "remove",
+    "ticker": "ETFC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-10-12",
+    "effective_date": "2020-10-12",
+    "action": "add",
+    "ticker": "VNT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-10-12",
+    "effective_date": "2020-10-12",
+    "action": "remove",
+    "ticker": "NBL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-11-17",
+    "effective_date": "2020-11-17",
+    "action": "add",
+    "ticker": "VTRS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-11-17",
+    "effective_date": "2020-11-17",
+    "action": "remove",
+    "ticker": "MYL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-12-21",
+    "effective_date": "2020-12-21",
+    "action": "add",
+    "ticker": "TSLA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2020-12-21",
+    "effective_date": "2020-12-21",
+    "action": "remove",
+    "ticker": "AIV",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-01-07",
+    "effective_date": "2021-01-07",
+    "action": "add",
+    "ticker": "ENPH",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-01-07",
+    "effective_date": "2021-01-07",
+    "action": "remove",
+    "ticker": "TIF",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-01-21",
+    "effective_date": "2021-01-21",
+    "action": "add",
+    "ticker": "TRMB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-01-21",
+    "effective_date": "2021-01-21",
+    "action": "remove",
+    "ticker": "CXO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-02-12",
+    "effective_date": "2021-02-12",
+    "action": "add",
+    "ticker": "MPWR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-02-12",
+    "effective_date": "2021-02-12",
+    "action": "remove",
+    "ticker": "FTI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-03-22",
+    "effective_date": "2021-03-22",
+    "action": "add",
+    "ticker": "CZR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-03-22",
+    "effective_date": "2021-03-22",
+    "action": "add",
+    "ticker": "GNRC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-03-22",
+    "effective_date": "2021-03-22",
+    "action": "add",
+    "ticker": "NXPI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-03-22",
+    "effective_date": "2021-03-22",
+    "action": "add",
+    "ticker": "PENN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-03-22",
+    "effective_date": "2021-03-22",
+    "action": "remove",
+    "ticker": "FLS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-03-22",
+    "effective_date": "2021-03-22",
+    "action": "remove",
+    "ticker": "SLG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-03-22",
+    "effective_date": "2021-03-22",
+    "action": "remove",
+    "ticker": "VNT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-03-22",
+    "effective_date": "2021-03-22",
+    "action": "remove",
+    "ticker": "XRX",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-04-20",
+    "effective_date": "2021-04-20",
+    "action": "add",
+    "ticker": "PTC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-04-20",
+    "effective_date": "2021-04-20",
+    "action": "remove",
+    "ticker": "VAR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-05-14",
+    "effective_date": "2021-05-14",
+    "action": "add",
+    "ticker": "CRL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-05-14",
+    "effective_date": "2021-05-14",
+    "action": "remove",
+    "ticker": "FLIR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-06-04",
+    "effective_date": "2021-06-04",
+    "action": "add",
+    "ticker": "OGN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-06-04",
+    "effective_date": "2021-06-04",
+    "action": "remove",
+    "ticker": "HFC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-07-21",
+    "effective_date": "2021-07-21",
+    "action": "add",
+    "ticker": "MRNA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-07-21",
+    "effective_date": "2021-07-21",
+    "action": "remove",
+    "ticker": "ALXN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-08-03",
+    "effective_date": "2021-08-03",
+    "action": "add",
+    "ticker": "BBWI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-08-03",
+    "effective_date": "2021-08-03",
+    "action": "remove",
+    "ticker": "LB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-08-30",
+    "effective_date": "2021-08-30",
+    "action": "add",
+    "ticker": "TECH",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-08-30",
+    "effective_date": "2021-08-30",
+    "action": "remove",
+    "ticker": "MXIM",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-09-20",
+    "effective_date": "2021-09-20",
+    "action": "add",
+    "ticker": "BRO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-09-20",
+    "effective_date": "2021-09-20",
+    "action": "add",
+    "ticker": "CDAY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-09-20",
+    "effective_date": "2021-09-20",
+    "action": "add",
+    "ticker": "MTCH",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-09-20",
+    "effective_date": "2021-09-20",
+    "action": "remove",
+    "ticker": "NOV",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-09-20",
+    "effective_date": "2021-09-20",
+    "action": "remove",
+    "ticker": "PRGO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-09-20",
+    "effective_date": "2021-09-20",
+    "action": "remove",
+    "ticker": "UNM",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-10-04",
+    "effective_date": "2021-10-04",
+    "action": "add",
+    "ticker": "CTRA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-10-04",
+    "effective_date": "2021-10-04",
+    "action": "remove",
+    "ticker": "COG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-12-14",
+    "effective_date": "2021-12-14",
+    "action": "add",
+    "ticker": "EPAM",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-12-14",
+    "effective_date": "2021-12-14",
+    "action": "remove",
+    "ticker": "KSU",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-12-20",
+    "effective_date": "2021-12-20",
+    "action": "add",
+    "ticker": "FDS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-12-20",
+    "effective_date": "2021-12-20",
+    "action": "add",
+    "ticker": "SBNY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-12-20",
+    "effective_date": "2021-12-20",
+    "action": "add",
+    "ticker": "SEDG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-12-20",
+    "effective_date": "2021-12-20",
+    "action": "remove",
+    "ticker": "HBI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-12-20",
+    "effective_date": "2021-12-20",
+    "action": "remove",
+    "ticker": "LEG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2021-12-20",
+    "effective_date": "2021-12-20",
+    "action": "remove",
+    "ticker": "WU",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-01-10",
+    "effective_date": "2022-01-10",
+    "action": "add",
+    "ticker": "WTW",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-01-10",
+    "effective_date": "2022-01-10",
+    "action": "remove",
+    "ticker": "WLTW",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-02-02",
+    "effective_date": "2022-02-02",
+    "action": "add",
+    "ticker": "CEG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-02-02",
+    "effective_date": "2022-02-02",
+    "action": "remove",
+    "ticker": "GPS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-02-15",
+    "effective_date": "2022-02-15",
+    "action": "add",
+    "ticker": "NDSN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-02-15",
+    "effective_date": "2022-02-15",
+    "action": "remove",
+    "ticker": "XLNX",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-02-17",
+    "effective_date": "2022-02-17",
+    "action": "add",
+    "ticker": "PARA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-02-17",
+    "effective_date": "2022-02-17",
+    "action": "remove",
+    "ticker": "VIAC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-03-02",
+    "effective_date": "2022-03-02",
+    "action": "add",
+    "ticker": "MOH",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-03-02",
+    "effective_date": "2022-03-02",
+    "action": "remove",
+    "ticker": "INFO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-04-04",
+    "effective_date": "2022-04-04",
+    "action": "add",
+    "ticker": "CPT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-04-04",
+    "effective_date": "2022-04-04",
+    "action": "remove",
+    "ticker": "PBCT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-04-11",
+    "effective_date": "2022-04-11",
+    "action": "add",
+    "ticker": "WBD",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-04-11",
+    "effective_date": "2022-04-11",
+    "action": "remove",
+    "ticker": "DISCA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-04-11",
+    "effective_date": "2022-04-11",
+    "action": "remove",
+    "ticker": "DISCK",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-05-10",
+    "effective_date": "2022-05-10",
+    "action": "add",
+    "ticker": "BALL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-05-10",
+    "effective_date": "2022-05-10",
+    "action": "remove",
+    "ticker": "BLL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-08",
+    "effective_date": "2022-06-08",
+    "action": "add",
+    "ticker": "VICI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-08",
+    "effective_date": "2022-06-08",
+    "action": "remove",
+    "ticker": "CERN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-09",
+    "effective_date": "2022-06-09",
+    "action": "add",
+    "ticker": "META",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-09",
+    "effective_date": "2022-06-09",
+    "action": "remove",
+    "ticker": "FB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-21",
+    "effective_date": "2022-06-21",
+    "action": "add",
+    "ticker": "KDP",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-21",
+    "effective_date": "2022-06-21",
+    "action": "add",
+    "ticker": "ON",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-21",
+    "effective_date": "2022-06-21",
+    "action": "remove",
+    "ticker": "IPGP",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-21",
+    "effective_date": "2022-06-21",
+    "action": "remove",
+    "ticker": "UA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-21",
+    "effective_date": "2022-06-21",
+    "action": "remove",
+    "ticker": "UAA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-28",
+    "effective_date": "2022-06-28",
+    "action": "add",
+    "ticker": "ELV",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-06-28",
+    "effective_date": "2022-06-28",
+    "action": "remove",
+    "ticker": "ANTM",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-09-19",
+    "effective_date": "2022-09-19",
+    "action": "add",
+    "ticker": "CSGP",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-09-19",
+    "effective_date": "2022-09-19",
+    "action": "add",
+    "ticker": "INVH",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-09-19",
+    "effective_date": "2022-09-19",
+    "action": "remove",
+    "ticker": "PENN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-09-19",
+    "effective_date": "2022-09-19",
+    "action": "remove",
+    "ticker": "PVH",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-10-03",
+    "effective_date": "2022-10-03",
+    "action": "add",
+    "ticker": "EQT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-10-03",
+    "effective_date": "2022-10-03",
+    "action": "add",
+    "ticker": "PCG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-10-03",
+    "effective_date": "2022-10-03",
+    "action": "remove",
+    "ticker": "CTXS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-10-03",
+    "effective_date": "2022-10-03",
+    "action": "remove",
+    "ticker": "DRE",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-10-12",
+    "effective_date": "2022-10-12",
+    "action": "add",
+    "ticker": "TRGP",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-10-12",
+    "effective_date": "2022-10-12",
+    "action": "remove",
+    "ticker": "NLSN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-11-01",
+    "effective_date": "2022-11-01",
+    "action": "add",
+    "ticker": "ACGL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-11-01",
+    "effective_date": "2022-11-01",
+    "action": "remove",
+    "ticker": "TWTR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-11-08",
+    "effective_date": "2022-11-08",
+    "action": "add",
+    "ticker": "GEN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-11-08",
+    "effective_date": "2022-11-08",
+    "action": "remove",
+    "ticker": "NLOK",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-12-19",
+    "effective_date": "2022-12-19",
+    "action": "add",
+    "ticker": "FSLR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-12-19",
+    "effective_date": "2022-12-19",
+    "action": "remove",
+    "ticker": "FBHS",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-12-22",
+    "effective_date": "2022-12-22",
+    "action": "add",
+    "ticker": "STLD",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2022-12-22",
+    "effective_date": "2022-12-22",
+    "action": "remove",
+    "ticker": "ABMD",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-01-04",
+    "effective_date": "2023-01-04",
+    "action": "add",
+    "ticker": "GEHC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-01-04",
+    "effective_date": "2023-01-04",
+    "action": "remove",
+    "ticker": "VNO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-03-15",
+    "effective_date": "2023-03-15",
+    "action": "add",
+    "ticker": "BG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-03-15",
+    "effective_date": "2023-03-15",
+    "action": "add",
+    "ticker": "PODD",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-03-15",
+    "effective_date": "2023-03-15",
+    "action": "remove",
+    "ticker": "SBNY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-03-15",
+    "effective_date": "2023-03-15",
+    "action": "remove",
+    "ticker": "SIVB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-03-20",
+    "effective_date": "2023-03-20",
+    "action": "add",
+    "ticker": "FICO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-03-20",
+    "effective_date": "2023-03-20",
+    "action": "remove",
+    "ticker": "LUMN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-05-04",
+    "effective_date": "2023-05-04",
+    "action": "add",
+    "ticker": "AXON",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-05-04",
+    "effective_date": "2023-05-04",
+    "action": "remove",
+    "ticker": "FRC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-05-16",
+    "effective_date": "2023-05-16",
+    "action": "add",
+    "ticker": "RVTY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-05-16",
+    "effective_date": "2023-05-16",
+    "action": "remove",
+    "ticker": "PKI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-06-07",
+    "effective_date": "2023-06-07",
+    "action": "add",
+    "ticker": "FI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-06-07",
+    "effective_date": "2023-06-07",
+    "action": "remove",
+    "ticker": "FISV",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-06-20",
+    "effective_date": "2023-06-20",
+    "action": "add",
+    "ticker": "PANW",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-06-20",
+    "effective_date": "2023-06-20",
+    "action": "remove",
+    "ticker": "DISH",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-07-10",
+    "effective_date": "2023-07-10",
+    "action": "add",
+    "ticker": "EG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-07-10",
+    "effective_date": "2023-07-10",
+    "action": "remove",
+    "ticker": "RE",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-08-25",
+    "effective_date": "2023-08-25",
+    "action": "add",
+    "ticker": "KVUE",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-08-25",
+    "effective_date": "2023-08-25",
+    "action": "remove",
+    "ticker": "AAP",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-08-30",
+    "effective_date": "2023-08-30",
+    "action": "add",
+    "ticker": "COR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-08-30",
+    "effective_date": "2023-08-30",
+    "action": "remove",
+    "ticker": "ABC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-09-18",
+    "effective_date": "2023-09-18",
+    "action": "add",
+    "ticker": "ABNB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-09-18",
+    "effective_date": "2023-09-18",
+    "action": "add",
+    "ticker": "BX",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-09-18",
+    "effective_date": "2023-09-18",
+    "action": "remove",
+    "ticker": "LNC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-09-18",
+    "effective_date": "2023-09-18",
+    "action": "remove",
+    "ticker": "NWL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-10-02",
+    "effective_date": "2023-10-02",
+    "action": "add",
+    "ticker": "VLTO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-10-02",
+    "effective_date": "2023-10-02",
+    "action": "remove",
+    "ticker": "DXC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-10-18",
+    "effective_date": "2023-10-18",
+    "action": "add",
+    "ticker": "HUBB",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-10-18",
+    "effective_date": "2023-10-18",
+    "action": "add",
+    "ticker": "LULU",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-10-18",
+    "effective_date": "2023-10-18",
+    "action": "remove",
+    "ticker": "ATVI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-10-18",
+    "effective_date": "2023-10-18",
+    "action": "remove",
+    "ticker": "OGN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-12-18",
+    "effective_date": "2023-12-18",
+    "action": "add",
+    "ticker": "BLDR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-12-18",
+    "effective_date": "2023-12-18",
+    "action": "add",
+    "ticker": "JBL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-12-18",
+    "effective_date": "2023-12-18",
+    "action": "add",
+    "ticker": "UBER",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-12-18",
+    "effective_date": "2023-12-18",
+    "action": "remove",
+    "ticker": "ALK",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-12-18",
+    "effective_date": "2023-12-18",
+    "action": "remove",
+    "ticker": "SEDG",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2023-12-18",
+    "effective_date": "2023-12-18",
+    "action": "remove",
+    "ticker": "SEE",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-02-01",
+    "effective_date": "2024-02-01",
+    "action": "add",
+    "ticker": "DAY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-02-01",
+    "effective_date": "2024-02-01",
+    "action": "remove",
+    "ticker": "CDAY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-03-04",
+    "effective_date": "2024-03-04",
+    "action": "add",
+    "ticker": "DOC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-03-04",
+    "effective_date": "2024-03-04",
+    "action": "remove",
+    "ticker": "PEAK",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-03-18",
+    "effective_date": "2024-03-18",
+    "action": "add",
+    "ticker": "DECK",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-03-18",
+    "effective_date": "2024-03-18",
+    "action": "add",
+    "ticker": "SMCI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-03-18",
+    "effective_date": "2024-03-18",
+    "action": "remove",
+    "ticker": "WHR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-03-18",
+    "effective_date": "2024-03-18",
+    "action": "remove",
+    "ticker": "ZION",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-03-25",
+    "effective_date": "2024-03-25",
+    "action": "add",
+    "ticker": "CPAY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-03-25",
+    "effective_date": "2024-03-25",
+    "action": "remove",
+    "ticker": "FLT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-04-01",
+    "effective_date": "2024-04-01",
+    "action": "add",
+    "ticker": "SOLV",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-04-01",
+    "effective_date": "2024-04-01",
+    "action": "remove",
+    "ticker": "VFC",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-04-02",
+    "effective_date": "2024-04-02",
+    "action": "add",
+    "ticker": "GEV",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-04-02",
+    "effective_date": "2024-04-02",
+    "action": "remove",
+    "ticker": "XRAY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-05-08",
+    "effective_date": "2024-05-08",
+    "action": "add",
+    "ticker": "VST",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-05-08",
+    "effective_date": "2024-05-08",
+    "action": "remove",
+    "ticker": "PXD",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-06-24",
+    "effective_date": "2024-06-24",
+    "action": "add",
+    "ticker": "CRWD",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-06-24",
+    "effective_date": "2024-06-24",
+    "action": "add",
+    "ticker": "GDDY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-06-24",
+    "effective_date": "2024-06-24",
+    "action": "add",
+    "ticker": "KKR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-06-24",
+    "effective_date": "2024-06-24",
+    "action": "remove",
+    "ticker": "CMA",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-06-24",
+    "effective_date": "2024-06-24",
+    "action": "remove",
+    "ticker": "ILMN",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-06-24",
+    "effective_date": "2024-06-24",
+    "action": "remove",
+    "ticker": "RHI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-07-08",
+    "effective_date": "2024-07-08",
+    "action": "add",
+    "ticker": "SW",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-07-08",
+    "effective_date": "2024-07-08",
+    "action": "remove",
+    "ticker": "WRK",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-09-23",
+    "effective_date": "2024-09-23",
+    "action": "add",
+    "ticker": "DELL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-09-23",
+    "effective_date": "2024-09-23",
+    "action": "add",
+    "ticker": "ERIE",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-09-23",
+    "effective_date": "2024-09-23",
+    "action": "add",
+    "ticker": "PLTR",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-09-23",
+    "effective_date": "2024-09-23",
+    "action": "remove",
+    "ticker": "AAL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-09-23",
+    "effective_date": "2024-09-23",
+    "action": "remove",
+    "ticker": "BIO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-09-23",
+    "effective_date": "2024-09-23",
+    "action": "remove",
+    "ticker": "ETSY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-09-30",
+    "effective_date": "2024-09-30",
+    "action": "add",
+    "ticker": "AMTM",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-10-01",
+    "effective_date": "2024-10-01",
+    "action": "remove",
+    "ticker": "BBWI",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-11-26",
+    "effective_date": "2024-11-26",
+    "action": "add",
+    "ticker": "TPL",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-11-26",
+    "effective_date": "2024-11-26",
+    "action": "remove",
+    "ticker": "MRO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-12-23",
+    "effective_date": "2024-12-23",
+    "action": "add",
+    "ticker": "APO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-12-23",
+    "effective_date": "2024-12-23",
+    "action": "add",
+    "ticker": "LII",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-12-23",
+    "effective_date": "2024-12-23",
+    "action": "add",
+    "ticker": "WDAY",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-12-23",
+    "effective_date": "2024-12-23",
+    "action": "remove",
+    "ticker": "AMTM",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-12-23",
+    "effective_date": "2024-12-23",
+    "action": "remove",
+    "ticker": "CTLT",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  },
+  {
+    "source_date": "2024-12-23",
+    "effective_date": "2024-12-23",
+    "action": "remove",
+    "ticker": "QRVO",
+    "primary_source_url": null,
+    "review_status": "COMMUNITY_SOURCE_UNVERIFIED"
+  }
+]

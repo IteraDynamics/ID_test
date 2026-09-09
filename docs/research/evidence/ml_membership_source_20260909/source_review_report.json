@@ -1,0 +1,429 @@
+{
+  "status": "CANDIDATE_MEMBERSHIP_RECONCILED_PRICES_UNRESOLVED",
+  "source_repository": "https://github.com/fja05680/sp500",
+  "source_commit": "a2430f2af0c79ddf0748e91de11bdeb1616ab5a7",
+  "source_files": {
+    "S&P 500 Historical Components & Changes.csv": {
+      "bytes": 7791584,
+      "sha256": "bd2745939a709f316a74a550253d21f3fd5b72aa223e3a0137c790d2e54b7d5e"
+    },
+    "S&P 500 Historical Components & Changes (Updated).csv": {
+      "bytes": 5530907,
+      "sha256": "36326709d46d6cd25834de5df457b16f5f96fad3a06b9beac28f7b88aa0b0d54"
+    },
+    "sp500_changes_since_2019.csv": {
+      "bytes": 3389,
+      "sha256": "1fb4ec6641324ca71153189ee18e2b4b13753e8f9296569717eaca802de882f1"
+    },
+    "sp500_historical.ipynb": {
+      "bytes": 53395,
+      "sha256": "515692b0a7c5ca1a2de920d297a2cbd6330b2b851b45f892acd10d93ae72d106"
+    },
+    "LICENSE": {
+      "bytes": 1100,
+      "sha256": "a0a71da320f7c856f189569ddb5c46a576cf02caae28ead6c40a27c0de006992"
+    }
+  },
+  "cutoff": "2024-12-31",
+  "baseline_original_count": 504,
+  "baseline_cleaned_count": 505,
+  "event_actions": 264,
+  "effective_dates": 95,
+  "minimum_members": 503,
+  "maximum_members": 507,
+  "end_members": 503,
+  "distinct_ticker_strings_seen": 635,
+  "membership_transition_errors": 0,
+  "model_fits": 0,
+  "ready_for_modeling": false,
+  "scope_amended": false,
+  "counts_by_change_date": [
+    {
+      "date": "2019-01-02",
+      "members": 505
+    },
+    {
+      "date": "2019-01-18",
+      "members": 505
+    },
+    {
+      "date": "2019-02-15",
+      "members": 505
+    },
+    {
+      "date": "2019-02-27",
+      "members": 505
+    },
+    {
+      "date": "2019-04-02",
+      "members": 505
+    },
+    {
+      "date": "2019-06-03",
+      "members": 505
+    },
+    {
+      "date": "2019-06-07",
+      "members": 505
+    },
+    {
+      "date": "2019-07-01",
+      "members": 505
+    },
+    {
+      "date": "2019-07-15",
+      "members": 505
+    },
+    {
+      "date": "2019-08-08",
+      "members": 505
+    },
+    {
+      "date": "2019-08-09",
+      "members": 505
+    },
+    {
+      "date": "2019-09-23",
+      "members": 505
+    },
+    {
+      "date": "2019-09-26",
+      "members": 505
+    },
+    {
+      "date": "2019-10-03",
+      "members": 505
+    },
+    {
+      "date": "2019-10-18",
+      "members": 505
+    },
+    {
+      "date": "2019-11-05",
+      "members": 505
+    },
+    {
+      "date": "2019-11-21",
+      "members": 505
+    },
+    {
+      "date": "2019-12-05",
+      "members": 505
+    },
+    {
+      "date": "2019-12-09",
+      "members": 505
+    },
+    {
+      "date": "2019-12-10",
+      "members": 505
+    },
+    {
+      "date": "2019-12-23",
+      "members": 505
+    },
+    {
+      "date": "2020-01-28",
+      "members": 505
+    },
+    {
+      "date": "2020-03-03",
+      "members": 505
+    },
+    {
+      "date": "2020-04-03",
+      "members": 507
+    },
+    {
+      "date": "2020-04-06",
+      "members": 505
+    },
+    {
+      "date": "2020-05-12",
+      "members": 505
+    },
+    {
+      "date": "2020-05-22",
+      "members": 505
+    },
+    {
+      "date": "2020-06-22",
+      "members": 505
+    },
+    {
+      "date": "2020-09-18",
+      "members": 505
+    },
+    {
+      "date": "2020-09-21",
+      "members": 505
+    },
+    {
+      "date": "2020-10-07",
+      "members": 505
+    },
+    {
+      "date": "2020-10-12",
+      "members": 505
+    },
+    {
+      "date": "2020-11-17",
+      "members": 505
+    },
+    {
+      "date": "2020-12-21",
+      "members": 505
+    },
+    {
+      "date": "2021-01-07",
+      "members": 505
+    },
+    {
+      "date": "2021-01-21",
+      "members": 505
+    },
+    {
+      "date": "2021-02-12",
+      "members": 505
+    },
+    {
+      "date": "2021-03-22",
+      "members": 505
+    },
+    {
+      "date": "2021-04-20",
+      "members": 505
+    },
+    {
+      "date": "2021-05-14",
+      "members": 505
+    },
+    {
+      "date": "2021-06-04",
+      "members": 505
+    },
+    {
+      "date": "2021-07-21",
+      "members": 505
+    },
+    {
+      "date": "2021-08-03",
+      "members": 505
+    },
+    {
+      "date": "2021-08-30",
+      "members": 505
+    },
+    {
+      "date": "2021-09-20",
+      "members": 505
+    },
+    {
+      "date": "2021-10-04",
+      "members": 505
+    },
+    {
+      "date": "2021-12-14",
+      "members": 505
+    },
+    {
+      "date": "2021-12-20",
+      "members": 505
+    },
+    {
+      "date": "2022-01-10",
+      "members": 505
+    },
+    {
+      "date": "2022-02-02",
+      "members": 505
+    },
+    {
+      "date": "2022-02-15",
+      "members": 505
+    },
+    {
+      "date": "2022-02-17",
+      "members": 505
+    },
+    {
+      "date": "2022-03-02",
+      "members": 505
+    },
+    {
+      "date": "2022-04-04",
+      "members": 505
+    },
+    {
+      "date": "2022-04-11",
+      "members": 504
+    },
+    {
+      "date": "2022-05-10",
+      "members": 504
+    },
+    {
+      "date": "2022-06-08",
+      "members": 504
+    },
+    {
+      "date": "2022-06-09",
+      "members": 504
+    },
+    {
+      "date": "2022-06-21",
+      "members": 503
+    },
+    {
+      "date": "2022-06-28",
+      "members": 503
+    },
+    {
+      "date": "2022-09-19",
+      "members": 503
+    },
+    {
+      "date": "2022-10-03",
+      "members": 503
+    },
+    {
+      "date": "2022-10-12",
+      "members": 503
+    },
+    {
+      "date": "2022-11-01",
+      "members": 503
+    },
+    {
+      "date": "2022-11-08",
+      "members": 503
+    },
+    {
+      "date": "2022-12-19",
+      "members": 503
+    },
+    {
+      "date": "2022-12-22",
+      "members": 503
+    },
+    {
+      "date": "2023-01-04",
+      "members": 503
+    },
+    {
+      "date": "2023-03-15",
+      "members": 503
+    },
+    {
+      "date": "2023-03-20",
+      "members": 503
+    },
+    {
+      "date": "2023-05-04",
+      "members": 503
+    },
+    {
+      "date": "2023-05-16",
+      "members": 503
+    },
+    {
+      "date": "2023-06-07",
+      "members": 503
+    },
+    {
+      "date": "2023-06-20",
+      "members": 503
+    },
+    {
+      "date": "2023-07-10",
+      "members": 503
+    },
+    {
+      "date": "2023-08-25",
+      "members": 503
+    },
+    {
+      "date": "2023-08-30",
+      "members": 503
+    },
+    {
+      "date": "2023-09-18",
+      "members": 503
+    },
+    {
+      "date": "2023-10-02",
+      "members": 503
+    },
+    {
+      "date": "2023-10-18",
+      "members": 503
+    },
+    {
+      "date": "2023-12-18",
+      "members": 503
+    },
+    {
+      "date": "2024-02-01",
+      "members": 503
+    },
+    {
+      "date": "2024-03-04",
+      "members": 503
+    },
+    {
+      "date": "2024-03-18",
+      "members": 503
+    },
+    {
+      "date": "2024-03-25",
+      "members": 503
+    },
+    {
+      "date": "2024-04-01",
+      "members": 503
+    },
+    {
+      "date": "2024-04-02",
+      "members": 503
+    },
+    {
+      "date": "2024-05-08",
+      "members": 503
+    },
+    {
+      "date": "2024-06-24",
+      "members": 503
+    },
+    {
+      "date": "2024-07-08",
+      "members": 503
+    },
+    {
+      "date": "2024-09-23",
+      "members": 503
+    },
+    {
+      "date": "2024-09-30",
+      "members": 504
+    },
+    {
+      "date": "2024-10-01",
+      "members": 503
+    },
+    {
+      "date": "2024-11-26",
+      "members": 503
+    },
+    {
+      "date": "2024-12-23",
+      "members": 503
+    }
+  ],
+  "output_sha256": {
+    "candidate_baseline.json": "f997538d9f5a7a2104a9e31ba711f5e827ba5add8dc86e3d7f499b7b9ec32fa4",
+    "candidate_events.json": "6a1c2230ceebe947e64fb331eae6d98b1616d63fd50903a6a704f62528c7a632",
+    "reviewed_identity_events.json": "da48b9a553483128e2e25450af61b78c855d2d59948acde7012d1035509633bb"
+  },
+  "upstream_snapshot_exact_matches": 98,
+  "upstream_snapshots_with_only_expected_HRS_LHX_date_correction": 3
+}
