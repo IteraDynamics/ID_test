@@ -2,7 +2,7 @@
 
 _Overwrite this file each session. This is a snapshot, not a log — history lives in campaign-log.md and decisions.md._
 
-**Last updated:** 2026-09-09 (ML screen update; other campaign entries retained)
+**Last updated:** 2026-09-10 (ML development update; other campaign entries retained)
 
 ## 🔴 Needs CEO decision
 - [ ] none currently
@@ -41,4 +41,4 @@ _Overwrite this file each session. This is a snapshot, not a log — history liv
 2. Campaign #57: independent Red Team conditional pass; next step requires real network/data access (VFINX/VBMFX artifacts, unit tests, pre-register VTI/BND band) before any VTI/BND returns are read.
 3. Run Campaign #56's real-data regime census and Amendment 1 power simulation in a later session under its charter.
 4. Let Campaign #53 and VRP external clocks accumulate without peeking/routing around their gates.
-5. ML ETF risk screen closed negative. A further ML screen needs a distinct information/decision hypothesis; no rerun or tuning of this candidate is queued.
+5. ML development lab implemented: 168 corrected comparison + 18 diagnostic fits; no economic verdict. Await existing IWM/EFA/EEM/IEF/TLT files for supported breadth review. Neural optimization protocol is the next development revision; 2025 remains reserved.

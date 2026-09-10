@@ -478,3 +478,12 @@ ones — this is what makes "brief me" informative over time._
 - Pause broad-stock historical allocation and end its current data-recovery effort. Preserve prior evidence and experiment conclusions.
 - Proceed with an isolated SPY/QQQ/GLD downside-risk and weekly-exposure exploration screen; card: `docs/research/ML_ETF_RISK_SCREEN_20260909.md`.
 - Existing full QQQ/GLD CSVs remain required; zero fits at this entry. No Core, paper/live, capital or production change.
+
+### 2026-09-10 — Operator authorizes substantive ML development
+
+User requested modeling the research process after professional quant shops and
+ending isolated toy screens. Implement bounded chronological model development,
+including neural models and diagnostic comparisons, under the exploratory boundary.
+This authorization does not open Campaign #50's reserved 2025 holdout or mutate
+Core/runtime/capital. Prior screens retain their original classifications.
+See docs/research/ML_DEVELOPMENT_PROGRAM_20260910.md.

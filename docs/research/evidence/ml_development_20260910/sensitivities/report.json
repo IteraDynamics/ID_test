@@ -1,0 +1,8 @@
+{
+  "status": "DIAGNOSTICS_NO_RESELECTION",
+  "fits": 18,
+  "source_report_sha256": "539c34b78b91c02f8bbd95b3e09fc2f4d0bbea071655759f8da4f2ac32ca1062",
+  "artifact_sha256": "026ab0cfc74577ffe7c1b94f721af94d4758edd4ca446d78512bd712a88c2e41",
+  "runner_sha256": "91f3b9cd15756f35e2e18762eda4cd5873ba36b98b3bdbc629b2e9dd1122c92e",
+  "limitations": "Read-only candidate selection; bounded learning-size and seed diagnostics.\n\nNever changes a selection or the original forecast artifacts. Learning-size\ncomparisons use the most recent 25%/50% of training dates: size and recency are\nconfounded, so these are sensitivity diagnostics, not causal sample-size effects.\n"
+}

@@ -1,0 +1,144 @@
+{
+  "artifacts": {
+    "fit_diagnostics.csv": "28e0f200e8a45c587a1f339c62ca1414c55bdf9d41d7342e929bc3d2fe8aa9a9",
+    "forecast_metrics.csv": "d2ad96a0821b0d2c81f8cd43d447f8750c957387c6f21116cf4e52ee9b756872",
+    "forecasts.csv": "b8b92a261d4514ae9dd2986ffd211feabc52fcf9fe121e3776351e9127b2d5e1"
+  },
+  "dependency_runner_sha256": "d384b3e69333da03856a88107b7871096222f980ea3270927b43e9d3c5d64d80",
+  "environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "python": "3.12.14",
+    "sklearn": "1.9.0"
+  },
+  "fits": 168,
+  "limitations": "Previously inspected data. Outer results are diagnostic, not confirmation. No allocation or economic claim.",
+  "reserved_2025_used": false,
+  "runner_sha256": "cd870f9e2ab8651cad7c3ca621172cb994b7258ce72b4ad11b7419402e6689cf",
+  "selections": [
+    {
+      "candidate": "gbm2",
+      "inner_mse": {
+        "gbm2": 0.00033447693118768984,
+        "gbm3": 0.0003462460399789799,
+        "mlp16": 0.00048214216565005126,
+        "mlp32": 0.0007652519477943755,
+        "ridge1": 0.0003754744746161121,
+        "ridge100": 0.0003488540787389277,
+        "sequence16": 0.0003875984537856176,
+        "sequence32": 0.0005524478718739969
+      },
+      "outer_year": 2018
+    },
+    {
+      "candidate": "ridge100",
+      "inner_mse": {
+        "gbm2": 0.00040197264553035997,
+        "gbm3": 0.00041532467216430686,
+        "mlp16": 0.0005351212234033109,
+        "mlp32": 0.0007241353512454624,
+        "ridge1": 0.00040255304126705774,
+        "ridge100": 0.00039873179691379666,
+        "sequence16": 0.0005001359326934433,
+        "sequence32": 0.0006445807606183592
+      },
+      "outer_year": 2019
+    },
+    {
+      "candidate": "ridge100",
+      "inner_mse": {
+        "gbm2": 0.0004305725188060275,
+        "gbm3": 0.00043540089786213123,
+        "mlp16": 0.0004767076030472554,
+        "mlp32": 0.0005540696319431535,
+        "ridge1": 0.0004285909701249135,
+        "ridge100": 0.00042642263986368605,
+        "sequence16": 0.0005216891514898867,
+        "sequence32": 0.000634233710553116
+      },
+      "outer_year": 2020
+    },
+    {
+      "candidate": "ridge100",
+      "inner_mse": {
+        "gbm2": 0.000897480019711522,
+        "gbm3": 0.0009125344846861268,
+        "mlp16": 0.0009088772033449025,
+        "mlp32": 0.0011933824331396157,
+        "ridge1": 0.0008656171104516702,
+        "ridge100": 0.0008647369898938692,
+        "sequence16": 0.001034948778767529,
+        "sequence32": 0.0010619169350914478
+      },
+      "outer_year": 2021
+    },
+    {
+      "candidate": "ridge100",
+      "inner_mse": {
+        "gbm2": 0.0009511230903343491,
+        "gbm3": 0.0009651717797277726,
+        "mlp16": 0.0009441072809346943,
+        "mlp32": 0.0012245747577882184,
+        "ridge1": 0.0009206600820317152,
+        "ridge100": 0.0009197038940728971,
+        "sequence16": 0.0011200945242216855,
+        "sequence32": 0.0011412618326680076
+      },
+      "outer_year": 2022
+    },
+    {
+      "candidate": "mlp16",
+      "inner_mse": {
+        "gbm2": 0.0007504842172459575,
+        "gbm3": 0.0007635376359489841,
+        "mlp16": 0.0007121708930159444,
+        "mlp32": 0.0008036351617712221,
+        "ridge1": 0.0007244922887283873,
+        "ridge100": 0.0007238275969560406,
+        "sequence16": 0.0008836787145116928,
+        "sequence32": 0.0010045760825365569
+      },
+      "outer_year": 2023
+    },
+    {
+      "candidate": "ridge100",
+      "inner_mse": {
+        "gbm2": 0.0007495262747713947,
+        "gbm3": 0.0007636999112366294,
+        "mlp16": 0.0007336800500830988,
+        "mlp32": 0.0008337770243515076,
+        "ridge1": 0.0007211402327697603,
+        "ridge100": 0.0007199302527283921,
+        "sequence16": 0.0008460373083280895,
+        "sequence32": 0.0009874594345147226
+      },
+      "outer_year": 2024
+    }
+  ],
+  "smoke": false,
+  "sources": [
+    {
+      "asset": "SPY",
+      "csv_sha256": "83df8fb4ae2123fb7b25da6e72149678c86469e1dd3de4c2e1e1efa1c0078714",
+      "manifest_sha256": "011348e6c241bfa2962a120636493f1ed43ab2d24bf1fc7d8df8207500e61659",
+      "source_rows": 3199,
+      "used_rows": 2789
+    },
+    {
+      "asset": "QQQ",
+      "csv_sha256": "984edd17a462d9d13d2d08b6b811af9ecd2a46dbbe31f58c66c6b4bdb7a70cb9",
+      "manifest_sha256": "ef204e9d9badf8f3223e777e5988ebfbe70940df4e96c13fb9f7e5530d216e52",
+      "source_rows": 3199,
+      "used_rows": 2789
+    },
+    {
+      "asset": "GLD",
+      "csv_sha256": "5fae32a2c4bd7070502a0ae9401bf57571502a7fc5d306e3303b14d5d70a203f",
+      "manifest_sha256": "39eccdd65655420fb3dbb2075b37cf47c5ec756dd90b804548fa58662a2f3369",
+      "source_rows": 5473,
+      "used_rows": 2789
+    }
+  ],
+  "spec_sha256": "db4903a294fa82cb33365edf88a0091a72a6e66ee94f69cb4f00a2afb1bde3d9",
+  "status": "DEVELOPMENT_DIAGNOSTIC_ONLY"
+}
