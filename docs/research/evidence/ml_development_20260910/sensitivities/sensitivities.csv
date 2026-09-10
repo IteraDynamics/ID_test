@@ -1,0 +1,19 @@
+outer_year,candidate,diagnostic,seed,training_dates,validation_mse,warnings
+2018,gbm2,recent25,17,206,0.000557219013056007,
+2018,gbm2,recent50,17,412,0.0006078613428009642,
+2018,gbm2,seed29,29,825,0.0005508246085430864,
+2018,gbm2,seed43,43,825,0.0005508246085430864,
+2019,ridge100,recent25,17,268,0.00034040939715507745,
+2019,ridge100,recent50,17,537,0.0003323438837958679,
+2020,ridge100,recent25,17,331,0.0014131380156688273,
+2020,ridge100,recent50,17,663,0.001449154568065927,
+2021,ridge100,recent25,17,395,0.00046593198599680655,
+2021,ridge100,recent50,17,791,0.00043700023704970674,
+2022,ridge100,recent25,17,458,0.0011057758790718568,
+2022,ridge100,recent50,17,917,0.001017630170738275,
+2023,mlp16,recent25,17,521,0.00045253573529736326,Stochastic Optimizer: Maximum iterations (150) reached and the optimization hasn't converged yet.
+2023,mlp16,recent50,17,1042,0.00045302993133342393,Stochastic Optimizer: Maximum iterations (150) reached and the optimization hasn't converged yet.
+2023,mlp16,seed29,29,2084,0.0004674384731783811,Stochastic Optimizer: Maximum iterations (150) reached and the optimization hasn't converged yet.
+2023,mlp16,seed43,43,2084,0.00046155884279096195,Stochastic Optimizer: Maximum iterations (150) reached and the optimization hasn't converged yet.
+2024,ridge100,recent25,17,583,0.0004927574691191032,
+2024,ridge100,recent50,17,1167,0.0004702422301908428,

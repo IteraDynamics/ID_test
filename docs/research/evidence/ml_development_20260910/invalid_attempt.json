@@ -1,0 +1,7 @@
+{
+  "status": "INVALID_DO_NOT_USE",
+  "fits": 168,
+  "reason": "Inner validation labels extending into the outer period were not purged. Entire run rejected, no candidate accepted.",
+  "correction": "Require all inner validation label ends strictly before the outer first signal. Add New Year boundary test.",
+  "authorized_repair_budget": 168
+}

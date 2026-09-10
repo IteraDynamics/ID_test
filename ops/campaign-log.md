@@ -175,3 +175,14 @@ new entry that references the old one._
   reserved 2025 holdout use, Core/runtime/portfolio or capital changes.
 - 26 tests passed and cached replay reproduced output bytes without refitting.
 - Full record: docs/research/ML_ETF_RISK_SCREEN_RESULT_20260909.md.
+
+### 2026-09-10 — ML development lab implemented
+
+Operator authorized a professional-style exploratory development process. Added
+eight linear/tree/neural candidates with purged nested chronological selection.
+168 corrected comparison fits + 18 sensitivity fits; initial 168-fit attempt
+invalidated for inner-label crossing and preserved. 33 tests pass. No investment
+verdict: selected procedure trails past-mean forecast; neural optimization warnings
+require development diagnosis. 2025 remains reserved, Core unchanged. Next input:
+existing IWM/EFA/EEM/IEF/TLT files and available manifests for breadth/source review.
+See `docs/research/ML_DEVELOPMENT_FIRST_DIAGNOSTIC_20260910.md` (repo-root path).
