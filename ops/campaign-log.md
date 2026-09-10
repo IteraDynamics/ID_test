@@ -209,3 +209,8 @@ common portfolio mapping. No2025/Core/runtime/capital changes. See
 ### 2026-09-10 — Common cash-permitted ML portfolio diagnostic
 
 Adjusted BIL verified; zero refits, 14 policies / 42 ledgers, 17 tests. All ML policies trail historical-mean and risk-managed equal-weight controls on full-period CAGR and CE in all three execution scenarios. Rank Ridge baseline CAGR 5.39%, historical mean 6.34%, risk-managed equal weights 5.48%. Turnover and realized risk remain weaknesses. Fixed ranking allocation does not test learned cash abstention. No promotion or 2025/Core/runtime/capital changes. See `docs/research/ML_PORTFOLIO_DIAGNOSTIC_RESULT_20260910.md`.
+
+
+### 2026-09-10 — Incremental information and cost-aware abstention
+
+Completed42 fixed residual Ridge/GBM fits and30 ledgers. Neither model meets the recorded prediction/economic consistency criteria. Small full-period forecast improvements reverse excluding2020; calibration often disables the residual. True BIL abstention executes, but neither calibrated policy establishes an advantage over controls. Stop this feature/target probe; next decision is a new information/economic hypothesis or pausing this line, not another architecture sweep. No2025/Core/runtime/capital changes. See `docs/research/ML_INCREMENTAL_INFORMATION_RESULT_20260910.md`.
