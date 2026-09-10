@@ -41,4 +41,4 @@ _Overwrite this file each session. This is a snapshot, not a log — history liv
 2. Campaign #57: independent Red Team conditional pass; next step requires real network/data access (VFINX/VBMFX artifacts, unit tests, pre-register VTI/BND band) before any VTI/BND returns are read.
 3. Run Campaign #56's real-data regime census and Amendment 1 power simulation in a later session under its charter.
 4. Let Campaign #53 and VRP external clocks accumulate without peeking/routing around their gates.
-5. ML design audit completed:70 real +8 synthetic fits,13 tests. Cash-permitted objective approved. Await adjusted BIL input for the common portfolio diagnostic; see ML_DESIGN_AUDIT_RESULT_20260910.md.2025 remains reserved.
+5. ML cash-permitted portfolio diagnostic completed: BIL verified, zero refits, 42 ledgers, 17 tests. All ML policies trail historical-mean and risk-managed equal-weight controls on full-period CAGR and CE in all execution scenarios. No promotion. Next research question: incremental time-varying information and cost-aware abstention, not an architecture sweep. See ML_PORTFOLIO_DIAGNOSTIC_RESULT_20260910.md. 2025 remains reserved.
