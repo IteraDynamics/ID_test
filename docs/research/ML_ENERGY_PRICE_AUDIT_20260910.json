@@ -1,0 +1,65 @@
+{
+  "prices": {
+    "BIL_1D.csv": {
+      "sha256": "76ac154a147c526f4d17140cc9141a2ec215b5dcb1b140f5b191a7809c8f2ee3",
+      "rows": 4026,
+      "start": "2009-01-02 00:00:00+00:00",
+      "end": "2024-12-31 00:00:00+00:00",
+      "duplicates": 0,
+      "sorted": true,
+      "nonfinite": 0,
+      "nonpositive_prices": 0,
+      "negative_volume": 0,
+      "zero_volume": 0,
+      "ohlc_errors": 0,
+      "post2024": 0
+    },
+    "USO_1D.csv": {
+      "sha256": "ba8ee748588aa697ba9343d44ad986b0389a487010a2a80826ae216f60a6c765",
+      "rows": 4026,
+      "start": "2009-01-02 00:00:00+00:00",
+      "end": "2024-12-31 00:00:00+00:00",
+      "duplicates": 0,
+      "sorted": true,
+      "nonfinite": 0,
+      "nonpositive_prices": 0,
+      "negative_volume": 0,
+      "zero_volume": 0,
+      "ohlc_errors": 0,
+      "post2024": 0
+    }
+  },
+  "coverage_and_power": {
+    "archive_issue_links_by_year": {
+      "2011": 22,
+      "2012": 52,
+      "2013": 52,
+      "2014": 53,
+      "2015": 52,
+      "2016": 52,
+      "2017": 52,
+      "2018": 52,
+      "2019": 52,
+      "2020": 53,
+      "2021": 52,
+      "2022": 52,
+      "2023": 52,
+      "2024": 52
+    },
+    "matching_price_calendars": true,
+    "power_assumptions": {
+      "test": "two-sided correlation, Fisher-z normal approximation",
+      "alpha": 0.05,
+      "independent_observations": 96,
+      "note": "Optimistic illustrative count: eight years times twelve nonoverlapping monthly observations, before held-out testing and dependence. Not an empirical effective sample-size estimate."
+    },
+    "power": {
+      "0.05": 0.07707900880832518,
+      "0.1": 0.16221791854133033,
+      "0.15": 0.3080026021225028,
+      "0.2": 0.49809755091712016,
+      "0.3": 0.8473034474381734
+    },
+    "minimum_abs_correlation_approx_50pct_power": 0.2004859445017382
+  }
+}

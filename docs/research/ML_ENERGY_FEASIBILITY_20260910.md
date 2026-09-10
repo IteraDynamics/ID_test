@@ -39,3 +39,13 @@ Run DOWNLOAD_ML_ENERGY_PRICES.ps1 using the existing repository downloader. It c
 - https://www.eia.gov/petroleum/supply/weekly/archive/2022/2022_06_17_data/wpsr_2022_06_17_data.php
 - https://www.eia.gov/petroleum/supply/weekly/archive/2024/2024_01_04/wpsr_2024_01_04.php
 - https://www.uscfinvestments.com/uso
+
+## Follow-up: local prices received, 2026-09-10
+
+The supplied ml_energy_prices_20260910_101410.zip contains USO and BIL CSVs and manifests. Both manifests specify yfinance auto_adjust=true. Both price files have 4,026 matching, sorted dates from 2009-01-02 through 2024-12-31. No duplicate dates, nonfinite numeric values, nonpositive OHLC, negative/zero volume, or OHLC range violations were found. No 2025 rows exist. USO's April 24–30, 2020 prices show no artificial eightfold split discontinuity; this is a consistency check, not independent certification of vendor adjustments. Full exchange-calendar comparison and historical fund exposure review remain outstanding. Price file hashes and coverage diagnostics are in ML_ENERGY_PRICE_AUDIT_20260910.json.
+
+The current EIA archive index links 22 issues in 2011 (starting August) and 52–53 issues per year in 2012–2024. It does not link 2009–2010 issues. That establishes the coverage of this index, not the nonexistence of older archives elsewhere. Full CSV download/validation has not been completed. The earlier 2009 acquisition intention is therefore not yet supported by this route.
+
+With five prior years required for seasonality, roughly 2017–2024 remains. An illustrative eight-year sample of 96 independent monthly observations yields only 16.2% power for correlation 0.10 and 30.8% for 0.15 in a two-sided 5% Fisher-z approximation. Around 0.20 is needed for 50% power. These are assumed effect sizes, not observed correlations or a measured effective sample size. Weekly overlapping labels cannot be treated as independent; this calculation is a planning diagnostic, not a formal bound. Training/test separation and serial dependence need explicit simulation before a campaign can pass power review. Predictive correlation alone does not establish profitable net trades.
+
+Status: PRICE_STRUCTURE_PASS; SOURCE_COVERAGE_PARTIAL; CAMPAIGN_POWER_NOT_ESTABLISHED. No fits or signal/return correlations calculated. The repository's mandatory power gate prevents presenting an ordinary small-edge campaign as ready. Decision needed: authorize a limited exploratory diagnostic explicitly aimed at a large effect (which cannot rule out smaller edges), or broaden the research design/data history before fitting. This does not amend the 21-session choice or lower the campaign power requirement.
