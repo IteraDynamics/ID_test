@@ -159,3 +159,23 @@ Build and run the actual dealer-gamma sandbox screen using:
 - no parameter tuning after outcome inspection.
 
 A `SCREEN_POSITIVE` result only earns a governed campaign. It authorizes no Core v1 change, no Core v2 inclusion, no portfolio weight, and no paper/live action.
+
+## Subsequent operator result and correction — 2026-09-10
+
+The operator supplied `dealer_gamma_review_20260910_152124.zip`, containing the
+completed negative primary screen and a supplemental reversed-sign check. The
+previous "not yet run" status above is historical. Primary signed gates: 0/3;
+movement gates: 3/3; final classification SCREEN_NEGATIVE. Supplemental reversal
+contradicts the primary assumed dealer sign and does not promote the candidate.
+
+Panel inspection found all total-gamma categories low throughout 2021--2024.
+The expanding raw-level categories and within-year permutation cannot establish
+contemporary separation in those single-state years. Code inspection also found
+that returns begin at observation-day close despite the stated full-session lag.
+The sample includes 2025 and cannot support an untouched-2025 claim.
+
+The original runner and results are preserved. The separate replacement design
+and preparation implementation are documented in
+`ML_OPTIONS_VARIANCE_CORRECTION_20260910.md`. It tests incremental variance
+forecasting with price and implied-volatility controls, not a rescued dealer-sign
+story. Preparation results are not model results or trading evidence.
