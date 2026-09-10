@@ -1,0 +1,63 @@
+{
+  "status": "SYNTHETIC_LINEAR_ALTERNATIVE_CALIBRATION_ONLY",
+  "input_zip_sha256": "d6aecb3034fd36262865e0f275d90cdb9b1b7d75dba622466e74ca223d52e730",
+  "training_anchors": 377,
+  "evaluation_anchors": 351,
+  "evaluation_years": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "training_log_residual_sd": 0.8666029449277571,
+  "real_oos_target_values_used_for_calibration": false,
+  "real_outcome_model_comparison_performed": false,
+  "seed": 20260910,
+  "block_length_anchors": 13,
+  "bootstrap_repetitions": 999,
+  "gate": ">=5% QLIKE reduction, positive in >=4/7 years, paired block 95% lower bound >0",
+  "limitations": [
+    "Only a constructed linear geometry alternative; not a nonlinear learning-power claim",
+    "Effect sizes are scenarios, not empirically established plausible effects",
+    "Noise assumes pre-2018 residual blocks represent future uncertainty",
+    "Missing feature dates limit the inference to complete anchors",
+    "Does not establish a campaign power gate without a justified central effect"
+  ],
+  "scenarios": [
+    {
+      "signal_sd_in_training_noise_units": 0,
+      "repetitions": 200,
+      "gate_passes": 0,
+      "gate_pass_fraction": 0.0,
+      "monte_carlo_standard_error": 0.0,
+      "median_relative_qlike_improvement": -0.016273370579603295
+    },
+    {
+      "signal_sd_in_training_noise_units": 0.25,
+      "repetitions": 200,
+      "gate_passes": 19,
+      "gate_pass_fraction": 0.095,
+      "monte_carlo_standard_error": 0.020733427116615334,
+      "median_relative_qlike_improvement": 0.025685132814945718
+    },
+    {
+      "signal_sd_in_training_noise_units": 0.5,
+      "repetitions": 200,
+      "gate_passes": 165,
+      "gate_pass_fraction": 0.825,
+      "monte_carlo_standard_error": 0.02686773157525585,
+      "median_relative_qlike_improvement": 0.1427911117589594
+    },
+    {
+      "signal_sd_in_training_noise_units": 1.0,
+      "repetitions": 200,
+      "gate_passes": 200,
+      "gate_pass_fraction": 1.0,
+      "monte_carlo_standard_error": 0.0,
+      "median_relative_qlike_improvement": 0.43735955279929417
+    }
+  ]
+}

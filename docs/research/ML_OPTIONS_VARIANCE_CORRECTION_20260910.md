@@ -118,3 +118,55 @@ small ZIP. No data download is attempted. Raw options remain local.
 Five unit tests cover exact target timing and daily squared-return arithmetic,
 future-mutation leakage canary, nonoverlapping anchor intervals, invalid quotes
 and duplicate rejection, and delta features with missing-side behavior.
+
+## Operator preparation and sensitivity calibration — 2026-09-10
+
+Received ml_options_variance_20260910_160826.zip. Both CSV SHA-256 values match
+the manifest. The recorded runner hash is exactly the published runner with
+Windows CRLF line endings. Reconstructing the sum of future squared daily log
+returns from the daily close column reproduces the supplied target; execution
+is the next supplied session; anchor intervals do not overlap; target ends do
+not exceed 2024-12-31. Exchange-calendar/source-adjustment verification remains
+separate from this arithmetic consistency check.
+
+4,279 daily rows; 728 complete anchors, comprising 377 before 2018 and 351 in
+2018--2024. Only three complete anchors in 2008 and none in 2009. In 2009 near
+IV is available on 101 days and skew on 12, despite geometry on 251 days.
+Full-model coverage does not include a usable 2008--2009 crisis sample. Do not
+broaden filters after outcomes to restore it or claim 17 complete years.
+Evaluation-year anchors: 51,50,51,50,50,50,49. All supplied complete targets are
+positive. IV/geometry values are finite on the matched sample; finite values
+alone do not establish correct vendor units or economic interpretation.
+
+`scripts/calibrate_ml_options_variance.py` performs a reproducible, synthetic
+linear-alternative calibration. Only real PRE-2018 targets calibrate log-noise
+and a baseline. Evaluation labels are entirely synthetic. Training-only geometry
+residualization defines one linear direction; residual blocks of 13 anchors
+are resampled from the training period. Annual purged Ridge comparisons use
+training-only scaling and log-to-level smearing. The criterion is the proposed
+5% QLIKE reduction, majority-year improvement, and positive lower paired 95%
+block bound. 200 draws per scenario, 999 bootstrap samples, fixed seed20260910.
+
+| Injected signal SD / training log-noise SD | Full criterion passes | Median QLIKE improvement |
+| --- | --- | --- |
+| 0 | 0/200 | -1.63% |
+| 0.25 | 19/200 (9.5%) | 2.57% |
+| 0.50 | 165/200 (82.5%) | 14.28% |
+| 1.00 | 200/200 (100%) | 43.74% |
+
+These are alternative-specific sensitivities, not actual forecast results.
+Zero passes in 200 trials does not imply a zero false-positive probability.
+The injected direction is linear and supplied among the augmented features;
+this does not certify nonlinear learnability or a general upper/lower bound.
+The weaker scenario's median gain is below the 5% materiality threshold, so
+its low full-gate rate mixes limited detection with the deliberate effect-size
+hurdle. Do not describe it solely as statistical power at a 5% true improvement.
+No scenario has been empirically established as a plausible market effect.
+Therefore the campaign power prerequisite is satisfied conditionally for the
+0.5-noise scenario, not unconditionally for the research idea. A decision to
+proceed must explicitly accept limited sensitivity to smaller effects. No real
+OOS model comparison or portfolio mapping was performed in this review.
+
+Results saved in ML_OPTIONS_VARIANCE_CALIBRATION_20260910.json. Tests include
+changing every real evaluation label without changing any calibration result,
+deterministic replay, and rejection of a hash-corrupted input ZIP.
