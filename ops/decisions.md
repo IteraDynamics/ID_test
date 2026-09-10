@@ -487,3 +487,11 @@ including neural models and diagnostic comparisons, under the exploratory bounda
 This authorization does not open Campaign #50's reserved 2025 holdout or mutate
 Core/runtime/capital. Prior screens retain their original classifications.
 See docs/research/ML_DEVELOPMENT_PROGRAM_20260910.md.
+
+### 2026-09-10 — Eight-ETF ML breadth and chronological neural stopping
+
+Adjusted input audit complete.252 optimizer fits,22 targeted tests, cached metrics
+byte replay. Selected forecast error improves0.44% over historical mean overall
+but worsens1.90% excluding2020. No economic verdict or Core/2025 changes.
+Next: operator objective choice, cash-permitted absolute allocation versus fully
+invested relative allocation. See `docs/research/ML_BREADTH_TRAINING_RESULT_20260910.md`.

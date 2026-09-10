@@ -41,4 +41,4 @@ _Overwrite this file each session. This is a snapshot, not a log — history liv
 2. Campaign #57: independent Red Team conditional pass; next step requires real network/data access (VFINX/VBMFX artifacts, unit tests, pre-register VTI/BND band) before any VTI/BND returns are read.
 3. Run Campaign #56's real-data regime census and Amendment 1 power simulation in a later session under its charter.
 4. Let Campaign #53 and VRP external clocks accumulate without peeking/routing around their gates.
-5. ML development lab implemented: 168 corrected comparison + 18 diagnostic fits; no economic verdict. Await existing IWM/EFA/EEM/IEF/TLT files for supported breadth review. Neural optimization protocol is the next development revision; 2025 remains reserved.
+5. Eight-ETF ML development completed:252 optimizer fits,22 tests, no economic verdict. Selected forecast advantage disappears excluding2020. Await portfolio-objective choice before constructing the trading layer. See ML_BREADTH_TRAINING_RESULT_20260910.md;2025 remains reserved.

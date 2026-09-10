@@ -186,3 +186,11 @@ verdict: selected procedure trails past-mean forecast; neural optimization warni
 require development diagnosis. 2025 remains reserved, Core unchanged. Next input:
 existing IWM/EFA/EEM/IEF/TLT files and available manifests for breadth/source review.
 See `docs/research/ML_DEVELOPMENT_FIRST_DIAGNOSTIC_20260910.md` (repo-root path).
+
+### 2026-09-10 — Eight-ETF ML breadth and chronological neural stopping
+
+Adjusted input audit complete.252 optimizer fits,22 targeted tests, cached metrics
+byte replay. Selected forecast error improves0.44% over historical mean overall
+but worsens1.90% excluding2020. No economic verdict or Core/2025 changes.
+Next: operator objective choice, cash-permitted absolute allocation versus fully
+invested relative allocation. See `docs/research/ML_BREADTH_TRAINING_RESULT_20260910.md`.

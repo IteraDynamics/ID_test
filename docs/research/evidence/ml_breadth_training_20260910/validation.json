@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "forecast_rows": 2912,
+  "dates": 364,
+  "assets": 8,
+  "optimizer_fits": 252,
+  "tests_passed": 22,
+  "recorded_hashes_verified": true,
+  "metrics_byte_replay": true,
+  "training_and_stopping_boundaries_verified": true,
+  "additional_real_fits": 0
+}
