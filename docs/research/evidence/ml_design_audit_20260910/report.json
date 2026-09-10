@@ -1,0 +1,83 @@
+{
+  "status": "DEVELOPMENT_DESIGN_DIAGNOSTIC",
+  "real_optimizer_fits": 70,
+  "synthetic_optimizer_fits": 8,
+  "sources": [
+    {
+      "asset": "SPY",
+      "csv_sha256": "83df8fb4ae2123fb7b25da6e72149678c86469e1dd3de4c2e1e1efa1c0078714",
+      "manifest_sha256": "011348e6c241bfa2962a120636493f1ed43ab2d24bf1fc7d8df8207500e61659",
+      "source_rows": 3199,
+      "used_rows": 2789
+    },
+    {
+      "asset": "QQQ",
+      "csv_sha256": "984edd17a462d9d13d2d08b6b811af9ecd2a46dbbe31f58c66c6b4bdb7a70cb9",
+      "manifest_sha256": "ef204e9d9badf8f3223e777e5988ebfbe70940df4e96c13fb9f7e5530d216e52",
+      "source_rows": 3199,
+      "used_rows": 2789
+    },
+    {
+      "asset": "GLD",
+      "csv_sha256": "5fae32a2c4bd7070502a0ae9401bf57571502a7fc5d306e3303b14d5d70a203f",
+      "manifest_sha256": "39eccdd65655420fb3dbb2075b37cf47c5ec756dd90b804548fa58662a2f3369",
+      "source_rows": 5473,
+      "used_rows": 2789
+    },
+    {
+      "asset": "IWM",
+      "csv_sha256": "3176cc4f459227abcb30a3324052b4cceee28addf0b62c28b7fe40f0fd79728a",
+      "manifest_sha256": "572e1de021f52c9f4388c258a9135140067f71499025ff856a089f139c7c583d",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "EFA",
+      "csv_sha256": "657dc1c258ae52e6464967f9654f778c5a17ae578436d5a445b49c4d97f76f86",
+      "manifest_sha256": "c9005b1e572280fd117664f34c7d5a1b1a73ac99f3b2b7ba52817a1579b87d6c",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "EEM",
+      "csv_sha256": "561a9cd061f7914b374d8aa6178db689cc2caf9116207e94fc8485e13ff752fb",
+      "manifest_sha256": "e33160dc5d66fd46fc6fcd9442bfda2709d93591a2417c8babf229ba3692b8d7",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "IEF",
+      "csv_sha256": "5df7aceabadea7e674d2a94b8fec5e1339c0b8f3f9a58a38cae586425890d38e",
+      "manifest_sha256": "a2fa52915a7616130767474ebe1218394b53a4bf9489e3bb2b1a6716ba03a9ed",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "TLT",
+      "csv_sha256": "ba6d2def5a02becdbc0730fa81a0fb09c1aeeb7d3d9d7b6ab414e65f4d02f953",
+      "manifest_sha256": "15c0a20d27c276cf8b50f717181cc03bfab69436d79383a6a0ce26cbaa51a87e",
+      "source_rows": 2789,
+      "used_rows": 2789
+    }
+  ],
+  "reserved_2025_used": false,
+  "files": {
+    "prior_training_curve_audit.csv": "17a0f9d1f8cf941e871cdf44ad3b402272f4c00e436ded7584f232e366bbe5ca",
+    "prior_year_error_shares.csv": "ac5919d601b684a7fc263ef0cff9ab566e49c4d70523d8569ff9279bf3b38904",
+    "synthetic.json": "5429344d32cdb35fd21badd7dffa5f55a1ec2d0f67d81cbb53aed029b2750883",
+    "executed_runner.py": "ef167d87dce78c6086a0709d442f4296769ef1204c3bd044e39afe8dc547f356",
+    "metrics.csv": "98fb645084d25cfe440f70535bb0ce3a96927d9450e508bb3226a00ff1123c31",
+    "error_contributions.csv": "944e5a6772cb4c68533ece423a17551cd32963c48d6e406b3e57a18e643c43da",
+    "rank_ic.csv": "505e3ec5336fd24226073ba343e2cc85cf84ccdafa5339a3c6e8175a24b08bf0",
+    "forecasts.csv": "5b0e8c3ff32e423c99be35aa53808a10e9617913c87ae705c2f8c1338f2b26ee",
+    "fits.csv": "69d603bc93160558f7958db05ba77403a43d5a224ae6114bbfd01ee30ad5cb5f"
+  },
+  "code": {
+    "/workspace/scratch/de43a4fd2c0a/ID_test/research/ml_development/design_audit.py": "ef167d87dce78c6086a0709d442f4296769ef1204c3bd044e39afe8dc547f356",
+    "/workspace/scratch/de43a4fd2c0a/ID_test/research/ml_development/breadth.py": "61f48a8408fc7c6d4e208b518e8f0f97cec58b7c5db43f626819d1ce82419a47",
+    "research/ml_development/breadth_inputs.py": "05a88612dfedae51f00a48dc901a3ac95faba4f3f8a7926405f94f31ae42c2c5"
+  },
+  "spec_sha256": "59727009da4dce298d4e70e601ad730dfd7e4b2d7bb8dbb0a7d9d4ebe3614260",
+  "reporting_correction": "Explicit model inventory excludes risk_scale metadata; cached metrics regenerated, no additional fits. Original executed runner preserved.",
+  "postprocessor_sha256": "e31e9de7a33f2d26b8e3157d2e6816837f76bd1f6e6fb0ee6d7d917686f57cbb"
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "condition": "signal",
+    "model": "ridge100",
+    "mse": 9.279156280284395e-07,
+    "skill": 0.9922696631176147,
+    "passed": true,
+    "optimizer_fits": 1
+  },
+  {
+    "condition": "signal",
+    "model": "gbm2",
+    "mse": 3.047783401173493e-06,
+    "skill": 0.9746093376122219,
+    "passed": true,
+    "optimizer_fits": 1
+  },
+  {
+    "condition": "signal",
+    "model": "mlp16",
+    "mse": 1.0466927161496077e-06,
+    "skill": 0.9912801476084985,
+    "passed": true,
+    "optimizer_fits": 2
+  },
+  {
+    "condition": "shuffled",
+    "model": "ridge100",
+    "mse": 0.00012005260433716482,
+    "skill": -0.00014165846719937925,
+    "passed": true,
+    "optimizer_fits": 1
+  },
+  {
+    "condition": "shuffled",
+    "model": "gbm2",
+    "mse": 0.00011838468404265319,
+    "skill": 0.013753555041530308,
+    "passed": true,
+    "optimizer_fits": 1
+  },
+  {
+    "condition": "shuffled",
+    "model": "mlp16",
+    "mse": 0.00012120600375367081,
+    "skill": -0.00975046963517423,
+    "passed": true,
+    "optimizer_fits": 2
+  }
+]
