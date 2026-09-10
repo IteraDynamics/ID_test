@@ -73,3 +73,39 @@ A separate known-signal simulation uses 82 eligible 2018–2024 release events, 
 The supplied prices are sufficient for the current source pilot; no replacement download is requested. Next, record the operator's equity broker and confirmed access to CORN, WEAT, SOYB and BIL. This is required by the repository's tradeability-before-specification amendment; public price availability and U.S. residency are insufficient. No account numbers or credentials are needed. Capital scale in CLAUDE is approximately $100,000, but no allocation is authorized by this audit.
 
 Once broker access is established, complete the same-crop-year feature builder and release deduplication, validate historical fund adjustments/mandates and realistic execution scenarios, and run the full null/injected-signal learning-and-trading simulation. Only then draft a campaign for a later freeze review. The prior 2025 reservation and frozen Core remain intact. The purpose of broadening is to test a distinct physical-supply hypothesis across related markets, not to keep searching price-only models until one looks good.
+
+## Authorized testing update — 2026-09-10
+
+The user does not yet know their execution broker and explicitly requested proceeding with testing. Broker access is not a blocker for source, leakage or synthetic-label feasibility tests. It remains unresolved for executable-strategy claims. This update supersedes the earlier ordering that placed all further feature work behind broker confirmation.
+
+Built `crop_learning_test_20260910.py`: 507 vintage-aware crop feature rows, of which 456 rows form 152 complete three-crop price events. The annual expanding evaluation covers 82 releases in 2018–2024; the first eligible entry is 2012-01-17 and the last exit is 2024-12-12. Forty-five feature rows have missing revisions, explicitly flagged and zero-filled only for the numerical model input. The ratio compares U.S. projected ending stocks to projected total use. Select the latest projected crop year; no substitution of an older valid year when the latest projection is missing. Revisions require that same crop year in the previous usable vintage within 62 days. May's new crop cannot be subtracted from April's old crop. Differing same-month versions fail; identical selected-field versions retain the earliest date. Intraday publication availability is not asserted.
+
+Feature construction passed future-release truncation and adversarial future-value tests. Price controls use information through release-day close; entry waits until the open after one full subsequent common trading session. Labels span 21 sessions. Annual folds train only on labels whose exit precedes the first test release, keeping each release's three assets together. No 2025 prices are accessed.
+
+The learner is fixed Ridge alpha 10 with training-only scaling and an unpenalized intercept. Baseline controls are asset identity, seasonal sine/cosine, 21-/63-session momentum and 63-session volatility. The augmented learner adds stocks/use, same-year revision and a missing-revision indicator. Its linear prediction operator matches an independent scikit-learn implementation to numerical tolerance. No real-label model fits, observed feature/return correlations, strategy returns or break-even costs have been calculated.
+
+### Synthetic incremental-signal results
+
+Noise consists of centered, scaled actual joint three-crop return vectors, resampled in three-/six-event calendar blocks. The synthetic linear shortage signal is formed from stocks/use and revision, residualized against nuisance controls and standardized using the full design matrix solely to define the data-generating process. This global calibration never supplies model training transforms. Thus the injected information is additional to the baseline, rather than mostly asset or seasonal differences. Effect 0.05 is the central planning amplitude, motivated by the repository's small-effect research guidance; it is not an estimated market correlation. Effects 0.02–0.20 are sensitivity cases; 0.50 and 0.80 are deliberately unrealistic implementation canaries.
+
+For each block setting, 1,000 null draws calibrate a one-sided 95% threshold for out-of-sample squared-error improvement, floored at zero; disjoint 1,000 draws estimate detection. Every draw uses the actual annual training/test structure. A separate known-signal score test directly observes the injected signal and estimates no coefficients; it is an optimistic comparator, not an executable strategy or a universal upper bound.
+
+| Injected amplitude | Learned incremental model detection | Known-signal comparator detection |
+| --- | --- | --- |
+| 0 (null) | 4.8–5.3% | 4.2–4.9% |
+| 0.02 | 5.5–5.9% | 8.5–8.7% |
+| 0.05 (central) | 7.5–8.5% | 18.9–19.7% |
+| 0.10 | 21.5% | 44.4–46.8% |
+| 0.15 | 43.4–44.2% | 74.4–75.0% |
+| 0.20 | 68.1–69.6% | 91.5–91.7% |
+| 0.50 / 0.80 (canaries) | 100% | 100% |
+
+These are simulation frequencies with 1,000 evaluation draws per setting, not confidence levels on a real strategy. The synthetic strong-signal check and independent implementation comparison argue against a grossly broken learner. They do not establish optimal model design. Both the available sample and the need to estimate the relationship limit detection under the stated assumptions.
+
+Ten targeted tests passed. A second deterministic run reproduced all three output artifacts byte-for-byte. Raw inputs are hash-checked against the prior audit, and parsed-cell/cash-file hashes accompany this result. Outputs are `crop_features.csv`, `crop_panel.csv`, and `learning_power_report.json` under `artifacts/ml_crop_learning_test_20260910/`. The small JSON result is retained in Git; data remain local.
+
+### Consequence for real-outcome testing
+
+Status: NECESSARY_PREDICTIVE_POWER_GATE_FAILED_UNDER_TESTED_DGP. This is not a negative crop-alpha result. The model would usually miss an injected modest effect. Amendment 1's approximately 50% power requirement therefore prevents advancing this design to a real-outcome campaign. Adding transaction-cost and economic gates cannot improve the probability of passing this same necessary predictive gate as part of a conjunction, though this is not a universal statement about every possible alternative objective or design.
+
+Cost scenarios and break-even friction were not computed because doing so would require real fitted trading outcomes after this failed prerequisite. Do not increase the central assumed effect to 0.20 merely to pass, shorten labels merely to inflate observations, or interpret the three assets as independent. The next design decision is whether to invest in a substantially broader economic panel/longer tradable history, or explicitly change the research objective to a descriptive pilot that cannot establish a modest edge. No broker choice, price re-download, neural-network sweep or Core change solves the measured limitation by itself.
