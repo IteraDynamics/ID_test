@@ -1,0 +1,219 @@
+{
+  "status": "SYNTHETIC_LEARNING_POWER_ONLY",
+  "actual_label_model_fits": 0,
+  "feature_rows": 507,
+  "panel_rows": 456,
+  "events": 152,
+  "test_events": 82,
+  "first_entry": "2012-01-17T00:00:00+00:00",
+  "last_exit": "2024-12-12T00:00:00+00:00",
+  "missing_revisions": 45,
+  "folds": [
+    {
+      "year": 2018,
+      "train_rows": 207,
+      "test_rows": 36,
+      "latest_training_exit": "2017-12-13T00:00:00+00:00",
+      "cutoff": "2018-01-12T00:00:00+00:00"
+    },
+    {
+      "year": 2019,
+      "train_rows": 246,
+      "test_rows": 33,
+      "latest_training_exit": "2019-01-15T00:00:00+00:00",
+      "cutoff": "2019-02-08T00:00:00+00:00"
+    },
+    {
+      "year": 2020,
+      "train_rows": 276,
+      "test_rows": 36,
+      "latest_training_exit": "2019-12-12T00:00:00+00:00",
+      "cutoff": "2020-01-10T00:00:00+00:00"
+    },
+    {
+      "year": 2021,
+      "train_rows": 312,
+      "test_rows": 36,
+      "latest_training_exit": "2020-12-14T00:00:00+00:00",
+      "cutoff": "2021-01-12T00:00:00+00:00"
+    },
+    {
+      "year": 2022,
+      "train_rows": 348,
+      "test_rows": 36,
+      "latest_training_exit": "2021-12-13T00:00:00+00:00",
+      "cutoff": "2022-01-12T00:00:00+00:00"
+    },
+    {
+      "year": 2023,
+      "train_rows": 384,
+      "test_rows": 36,
+      "latest_training_exit": "2022-12-13T00:00:00+00:00",
+      "cutoff": "2023-01-12T00:00:00+00:00"
+    },
+    {
+      "year": 2024,
+      "train_rows": 420,
+      "test_rows": 33,
+      "latest_training_exit": "2023-12-13T00:00:00+00:00",
+      "cutoff": "2024-01-12T00:00:00+00:00"
+    }
+  ],
+  "future_release_invariance_passed": true,
+  "seed": 29011,
+  "alpha": 10,
+  "central_effect": 0.05,
+  "necessary_gate_power_passed": false,
+  "results": [
+    {
+      "block_events": 3,
+      "injected_effect": 0.0,
+      "detection_fraction": 0.053,
+      "null_threshold": 0.013657277377924345,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.049
+    },
+    {
+      "block_events": 3,
+      "injected_effect": 0.02,
+      "detection_fraction": 0.055,
+      "null_threshold": 0.013657277377924345,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.087
+    },
+    {
+      "block_events": 3,
+      "injected_effect": 0.05,
+      "detection_fraction": 0.085,
+      "null_threshold": 0.013657277377924345,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.197
+    },
+    {
+      "block_events": 3,
+      "injected_effect": 0.1,
+      "detection_fraction": 0.215,
+      "null_threshold": 0.013657277377924345,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.468
+    },
+    {
+      "block_events": 3,
+      "injected_effect": 0.15,
+      "detection_fraction": 0.442,
+      "null_threshold": 0.013657277377924345,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.75
+    },
+    {
+      "block_events": 3,
+      "injected_effect": 0.2,
+      "detection_fraction": 0.696,
+      "null_threshold": 0.013657277377924345,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.915
+    },
+    {
+      "block_events": 3,
+      "injected_effect": 0.5,
+      "detection_fraction": 1.0,
+      "null_threshold": 0.013657277377924345,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 1.0
+    },
+    {
+      "block_events": 3,
+      "injected_effect": 0.8,
+      "detection_fraction": 1.0,
+      "null_threshold": 0.013657277377924345,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 1.0
+    },
+    {
+      "block_events": 6,
+      "injected_effect": 0.0,
+      "detection_fraction": 0.048,
+      "null_threshold": 0.013591739632689401,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.042
+    },
+    {
+      "block_events": 6,
+      "injected_effect": 0.02,
+      "detection_fraction": 0.059,
+      "null_threshold": 0.013591739632689401,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.085
+    },
+    {
+      "block_events": 6,
+      "injected_effect": 0.05,
+      "detection_fraction": 0.075,
+      "null_threshold": 0.013591739632689401,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.189
+    },
+    {
+      "block_events": 6,
+      "injected_effect": 0.1,
+      "detection_fraction": 0.215,
+      "null_threshold": 0.013591739632689401,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.444
+    },
+    {
+      "block_events": 6,
+      "injected_effect": 0.15,
+      "detection_fraction": 0.434,
+      "null_threshold": 0.013591739632689401,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.744
+    },
+    {
+      "block_events": 6,
+      "injected_effect": 0.2,
+      "detection_fraction": 0.681,
+      "null_threshold": 0.013591739632689401,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 0.917
+    },
+    {
+      "block_events": 6,
+      "injected_effect": 0.5,
+      "detection_fraction": 1.0,
+      "null_threshold": 0.013591739632689401,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 1.0
+    },
+    {
+      "block_events": 6,
+      "injected_effect": 0.8,
+      "detection_fraction": 1.0,
+      "null_threshold": 0.013591739632689401,
+      "evaluation_draws": 1000,
+      "known_signal_detection_fraction": 1.0
+    }
+  ],
+  "limitations": [
+    "Necessary predictive gate only. Full joint economic-gate power cannot exceed its power under this DGP.",
+    "No real-label fitted predictions, feature-return correlations, strategy backtest or break-even costs computed.",
+    "Synthetic signal is residualized against nuisance controls over the full design matrix, then standardized solely to define an incremental DGP. Model scaling remains train-only.",
+    "Injected effect is a DGP amplitude, not a measured market IC. Noise calibration is a simulation assumption.",
+    "Joint calendar-block noise preserves within-block serial and cross-asset dependence, not all regimes.",
+    "Annual expanding folds purge training labels ending on/after first test release.",
+    "Entry after one full post-release session; 21-session overlapping targets retained jointly. No 2025 prices.",
+    "Zero-volume endpoints excluded, but historical fills, spreads, mandates and broker access remain unverified.",
+    "No estimated market-consensus surprise: revisions compare identical crop years across source vintages.",
+    "Known-signal comparator uses the injected signal directly with a separate score test; optimistic diagnostic, not a fitted strategy or formal universal upper bound.",
+    "Passing this preliminary necessary gate alone would not authorize or validate an economic campaign."
+  ],
+  "artifact_sha256": {
+    "crop_features.csv": "72e0c6cfc9b4277795285ea43785efe67799285b0c9ae71f3950bf8dd2e458ca",
+    "crop_panel.csv": "d87b676a4af8c4698f3ba401d480bca5ab346d8f2d49b9461d694a3b5432a450"
+  },
+  "input_sha256": {
+    "artifacts/ml_crop_feasibility_20260910/parsed_cells.json": "f353a342f213aa2a033ccbe10f75e4cf8127c7e2240aef153561d396dc3a3eda",
+    "artifacts/ml_energy_feasibility_20260910/BIL_1D.csv": "76ac154a147c526f4d17140cc9141a2ec215b5dcb1b140f5b191a7809c8f2ee3"
+  },
+  "strong_signal_canary_passed": true
+}
