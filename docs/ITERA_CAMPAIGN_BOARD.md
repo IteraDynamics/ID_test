@@ -1122,3 +1122,13 @@ byte replay. Selected forecast error improves0.44% over historical mean overall
 but worsens1.90% excluding2020. No economic verdict or Core/2025 changes.
 Next: operator objective choice, cash-permitted absolute allocation versus fully
 invested relative allocation. See `docs/research/ML_BREADTH_TRAINING_RESULT_20260910.md`.
+
+### 2026-09-10 — Learning-design audit and cash-permitted objective
+
+Operator approved cash permitted with explicit risk limits.70 real optimizer fits
+plus8 synthetic checks; planted signals recover and shuffled labels do not. Rank
+targets improve ordering but remain below historical-mean control. Earlier neural
+checkpoints do not improve error. Reporting metadata inventory fixed without
+refits;13 tests and cached metric replay pass. Next: BIL adjusted data for the
+common portfolio mapping. No2025/Core/runtime/capital changes. See
+`docs/research/ML_DESIGN_AUDIT_RESULT_20260910.md`.

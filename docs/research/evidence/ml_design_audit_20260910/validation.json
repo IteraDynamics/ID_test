@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "tests_passed": 13,
+  "market_fits": 70,
+  "synthetic_fits": 8,
+  "forecast_rows": 2912,
+  "hashes_verified": true,
+  "metrics_and_rank_ic_byte_replay": true,
+  "stopping_boundaries_verified": true,
+  "reserved_2025_used": false
+}
