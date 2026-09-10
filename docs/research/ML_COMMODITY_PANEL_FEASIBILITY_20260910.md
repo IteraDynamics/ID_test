@@ -45,3 +45,31 @@ Run DOWNLOAD_ML_CROP_PRICES.ps1. It uses the existing downloader and creates a n
 - https://teucrium.com/corn
 - https://teucrium.com/weat
 - https://teucrium.com/soyb
+
+## Crop upload and source audit update — 2026-09-10
+
+Current status supersedes the earlier pending-price status: CROP_PRICES_RECEIVED; XML_EXTRACTION_PILOT_COMPLETE; TRADEABILITY_AND_FULL_POWER_UNRESOLVED. No predictive model has been fitted. The price-only correlation diagnostic and synthetic known-signal planning exercise below are not feature/return discovery or evidence for a profitable strategy.
+
+The uploaded `ml_crop_prices_20260910_104514.zip` contains adjusted CORN, WEAT and SOYB daily prices and request manifests. All stop at 2024-12-31 and pass duplicate-date, finite-value, positive-price and OHLC consistency checks. CORN has 3,666 rows beginning 2010-06-09; WEAT and SOYB each have 3,343 beginning 2011-09-19. WEAT has seven zero-volume sessions and SOYB nineteen, concentrated in early history. Retain these records but never assume an executable fill on a zero-volume session. Historical adjusted price times reported volume is not an established historical dollar-liquidity measure without adjustment-factor validation. Spread and execution-cost data remain absent.
+
+### Source coverage and fail-closed extraction
+
+The 2005–2024 archive index contains 249 entries across formats, including announcements, supplements and multiple versions. It is not 249 independent forecast releases. There are 175 XML entries, all now downloaded with URL, byte count and SHA-256 preserved. The XML collection begins July 2010; older text/PDF availability does not mean the extraction pilot covers 2005 onward. Earlier text samples were inspected but no complete text parser is claimed.
+
+The pilot accepts 172 XML files, yielding 6,192 selected cells from October 2010 through December 2024. Three July–September 2010 files fail the corn-table unit check: matrix2 contains metric-ton unit descriptors rather than the required bushel marker. They remain quarantined, with no guessed conversion or unit override. The accepted data pass 2,022 supply-minus-use-minus-ending-stocks checks at a two-million-bushel rounding tolerance. Forty-two groups contain missing values and are excluded from that arithmetic check; NA remains missing, never zero. There are no accepted-cell report-month/date mismatches or incomplete three-field groups.
+
+Two December 2018 XML versions and three November 2019 versions have identical selected-cell digests within each month. This supports deduplicating these selected fields, not claiming entire reports are identical or establishing intraday publication timing. The index retains every source. October 2013 and January 2019 have no entries in the bounded index; no release is manufactured for either month. Crop years and forecast months remain separate. Source parsing is not yet the final vintage-aware predictor builder.
+
+Five targeted parser tests pass: crop-year separation, missing-value preservation, rejection of duplicate semantic cells, acceptance of the observed `{wasde}` namespace, and rejection of unknown namespaces. Dated probes live under `scripts/research_probes/`; they are explicit feasibility tools, not production runners. The downloader expects the recorded all-format index under `artifacts/ml_crop_feasibility_20260910/`. Raw market/source data remain outside Git.
+
+### Dependence and preliminary planning
+
+Across 143 monthly returns in 2013–2024, crop pair correlations are 0.49–0.71. Three funds therefore cannot be counted as three independent histories. These are calendar-month price diagnostics, not release-aligned predictive correlations or an effective-sample-size estimate.
+
+A separate known-signal simulation uses 82 eligible 2018–2024 release events, joint three-asset return vectors, three-/six-month circular blocks, and synthetic persistent predictors with varying common components. It does not fit a model or implement costs. At injected standardized effect 0.10, rejection rates range 13.5–34.6%; at 0.15 they range 27.3–66.9%. Null rejection ranges 3.8–5.3% on 1,000 evaluation draws per scenario, separate from threshold calibration. These are sensitivity scenarios, not empirically estimated alpha, not full model power, and not a pass/fail campaign decision. In particular, learned coefficients, feature persistence, actual folds, missingness and trade thresholds still need to enter the mandatory power analysis. No neural-network or broad model search has begun.
+
+### Concrete next requirements
+
+The supplied prices are sufficient for the current source pilot; no replacement download is requested. Next, record the operator's equity broker and confirmed access to CORN, WEAT, SOYB and BIL. This is required by the repository's tradeability-before-specification amendment; public price availability and U.S. residency are insufficient. No account numbers or credentials are needed. Capital scale in CLAUDE is approximately $100,000, but no allocation is authorized by this audit.
+
+Once broker access is established, complete the same-crop-year feature builder and release deduplication, validate historical fund adjustments/mandates and realistic execution scenarios, and run the full null/injected-signal learning-and-trading simulation. Only then draft a campaign for a later freeze review. The prior 2025 reservation and frozen Core remain intact. The purpose of broadening is to test a distinct physical-supply hypothesis across related markets, not to keep searching price-only models until one looks good.
