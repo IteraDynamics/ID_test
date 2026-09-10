@@ -505,3 +505,8 @@ checkpoints do not improve error. Reporting metadata inventory fixed without
 refits;13 tests and cached metric replay pass. Next: BIL adjusted data for the
 common portfolio mapping. No2025/Core/runtime/capital changes. See
 `docs/research/ML_DESIGN_AUDIT_RESULT_20260910.md`.
+
+
+### 2026-09-10 — Common cash-permitted ML portfolio diagnostic
+
+Adjusted BIL verified; zero refits, 14 policies / 42 ledgers, 17 tests. All ML policies trail historical-mean and risk-managed equal-weight controls on full-period CAGR and CE in all three execution scenarios. Rank Ridge baseline CAGR 5.39%, historical mean 6.34%, risk-managed equal weights 5.48%. Turnover and realized risk remain weaknesses. Fixed ranking allocation does not test learned cash abstention. No promotion or 2025/Core/runtime/capital changes. See `docs/research/ML_PORTFOLIO_DIAGNOSTIC_RESULT_20260910.md`.

@@ -1,0 +1,17 @@
+{
+  "tests_passed": 17,
+  "source_and_artifact_hashes_verified": true,
+  "daily_contributions_reconciled": true,
+  "nonnegative_cash": true,
+  "target_risk_limits": true,
+  "weights_and_metrics_byte_replay": true,
+  "representative_ledger_exact_replay": true,
+  "higher_cost_reduces_all_14_cagrs": true,
+  "first_date": "2018-01-08 00:00:00+00:00",
+  "last_date": "2024-12-24 00:00:00+00:00",
+  "daily_rows": 73584,
+  "target_rows": 5082,
+  "code_dependencies": {
+    "research/ml_development/design_audit.py": "e31e9de7a33f2d26b8e3157d2e6816837f76bd1f6e6fb0ee6d7d917686f57cbb"
+  }
+}
