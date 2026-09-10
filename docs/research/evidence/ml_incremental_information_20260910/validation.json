@@ -1,0 +1,13 @@
+{
+  "tests_passed": 11,
+  "real_fits": 42,
+  "artifact_hashes_verified": true,
+  "source_snapshot_identical_to_prior": true,
+  "fold_boundaries_verified": true,
+  "means_targets_calibrated_forecasts_verified": true,
+  "forecast_and_economic_metrics_byte_replay": true,
+  "representative_ledger_exact_replay": true,
+  "prior_ungated_controls_exact_nav_parity": true,
+  "daily_contributions_cash_and_risk_verified": true,
+  "reserved_2025_used": false
+}
