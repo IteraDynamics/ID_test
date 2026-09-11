@@ -1,0 +1,81 @@
+{
+  "status": "CONTINUE_QUOTE_RESEARCH_NOT_A_BACKTEST",
+  "bundle_sha256": "981d7485757710ed3bb6688db228fbe508b75090744fdd3003529a5663a725dc",
+  "windows": [
+    {
+      "file": "quotes_2017.csv",
+      "rows": 25330,
+      "days": 11,
+      "id_mismatches": 0,
+      "duplicates": 0,
+      "itm_nonzero": 0,
+      "zero_bid": 2971,
+      "crossed": 0,
+      "mark_mid_disagreement_over_cent": 1
+    },
+    {
+      "file": "quotes_2018.csv",
+      "rows": 33870,
+      "days": 11,
+      "id_mismatches": 0,
+      "duplicates": 0,
+      "itm_nonzero": 0,
+      "zero_bid": 2036,
+      "crossed": 0,
+      "mark_mid_disagreement_over_cent": 370
+    },
+    {
+      "file": "quotes_2020.csv",
+      "rows": 63368,
+      "days": 11,
+      "id_mismatches": 0,
+      "duplicates": 0,
+      "itm_nonzero": 0,
+      "zero_bid": 4712,
+      "crossed": 0,
+      "mark_mid_disagreement_over_cent": 337
+    },
+    {
+      "file": "quotes_2022.csv",
+      "rows": 60892,
+      "days": 11,
+      "id_mismatches": 0,
+      "duplicates": 0,
+      "itm_nonzero": 0,
+      "zero_bid": 5480,
+      "crossed": 0,
+      "mark_mid_disagreement_over_cent": 0
+    },
+    {
+      "file": "quotes_2024.csv",
+      "rows": 64988,
+      "days": 11,
+      "id_mismatches": 0,
+      "duplicates": 0,
+      "itm_nonzero": 0,
+      "zero_bid": 5943,
+      "crossed": 0,
+      "mark_mid_disagreement_over_cent": 140
+    }
+  ],
+  "aggregate": {
+    "rows": 248448,
+    "candidate_days": 55,
+    "selected": 46,
+    "median_midpoint_credit": 1.6625,
+    "median_bid_ask_credit": 1.3850000000000002,
+    "median_spread_roundtrip": 0.2200000000000002,
+    "positive_credit": 46,
+    "all_sides_positive_size": 46,
+    "next_observations": 42,
+    "next_contracts_present": 42
+  },
+  "units": "Option price per share; multiply by assumed standard 100-share deliverable for contract dollars. Deliverables not independently certified.",
+  "limitations": [
+    "Purpose-selected overlapping quote samples; no P&L, annualization or significance claim.",
+    "Same-day quotes are diagnostics only; next-session contracts selected from previous session.",
+    "Vendor end-of-day timestamp claim is not independent timestamp verification.",
+    "Bid/ask snapshots and sizes do not certify simultaneous executable fills."
+  ],
+  "diagnostics_sha256": "2f95dd4528ca1db478b13763e6e108d109a6ceee9f2112d3e29c1294869ca1c5"
+}
