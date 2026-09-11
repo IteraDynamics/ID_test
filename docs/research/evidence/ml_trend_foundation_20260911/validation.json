@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "artifact_hashes": 4,
+  "ledgers": 20,
+  "assets": 13,
+  "signals": 83,
+  "maximum_nav_error": 2.1316282072803006e-14,
+  "maximum_ce_error": 0.0,
+  "maximum_path_metric_error": 0.0,
+  "common_start": "2018-02-01 00:00:00+00:00",
+  "common_end": "2024-12-31 00:00:00+00:00",
+  "mechanical_tests_passed": 4
+}
