@@ -1,0 +1,34 @@
+{
+  "status": "DESCRIPTIVE_QUOTE_ACCOUNTING_ONLY",
+  "bundle_sha256": "92ded2805d762c74f868dd81be6fd49708eb7dadeba9c16575c7918436edcd17",
+  "candidate_status_counts": {
+    "CLOSED": 78,
+    "NO_GEOMETRY": 67,
+    "UNRESOLVED_EXIT_QUOTES": 59
+  },
+  "closed_trades": 78,
+  "net_dollars": -4524.5999999999985,
+  "gross_dollars": -4119.0,
+  "midpoint_pnl_dollars": -3105.0,
+  "win_fraction": 0.5128205128205128,
+  "mean_net_dollars": -58.00769230769229,
+  "median_net_dollars": 2.2999999999999954,
+  "worst_trade_dollars": -583.1999999999999,
+  "best_trade_dollars": 181.80000000000004,
+  "closed_trades_missing_marks": 8,
+  "fee_sensitivity": {
+    "0": -4119.0,
+    "0.65": -4524.6,
+    "1": -4743.0,
+    "2": -5367.0
+  },
+  "assumptions": [
+    "Standard 100-share multiplier; one contract per leg per candidate.",
+    "Commission assumption $0.65 per contract per side; eight fills = $5.20 roundtrip; other fees excluded.",
+    "Source-observed session calendar; not independently verified exchange calendar.",
+    "No early assignment, exercise, dividends, partial fills or intraday quotes modeled.",
+    "No cash yield, financing, annualization or specified capital base.",
+    "Open or unresolved trades excluded from closed-trade statistics and explicitly counted.",
+    "Purpose-selected geometry and inspected history; not OOS confirmation."
+  ]
+}

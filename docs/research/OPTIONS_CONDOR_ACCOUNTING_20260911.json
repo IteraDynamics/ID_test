@@ -1,0 +1,38 @@
+{
+  "status": "DESCRIPTIVE_QUOTE_ACCOUNTING_ONLY",
+  "zero_salvage_long_options": true,
+  "bundle_sha256": "92ded2805d762c74f868dd81be6fd49708eb7dadeba9c16575c7918436edcd17",
+  "candidate_status_counts": {
+    "CLOSED": 137,
+    "NO_GEOMETRY": 67
+  },
+  "closed_trades": 137,
+  "net_dollars": -5332.4,
+  "gross_dollars": -4620.0,
+  "midpoint_pnl_dollars": -2735.5,
+  "put_net_dollars": 549.7999999999993,
+  "call_net_dollars": -5882.199999999999,
+  "zero_size_long_exits": 59,
+  "win_fraction": 0.583941605839416,
+  "mean_net_dollars": -38.92262773722627,
+  "median_net_dollars": 15.79999999999999,
+  "worst_trade_dollars": -583.1999999999999,
+  "best_trade_dollars": 181.80000000000004,
+  "closed_trades_missing_marks": 1,
+  "fee_sensitivity": {
+    "0": -4620.0,
+    "0.65": -5332.4,
+    "1": -5716.0,
+    "2": -6812.0
+  },
+  "assumptions": [
+    "Standard 100-share multiplier; one contract per leg per candidate.",
+    "Commission assumption $0.65 per contract per side; eight fills = $5.20 roundtrip; other fees excluded.",
+    "Source-observed session calendar; not independently verified exchange calendar.",
+    "No early assignment, exercise, dividends, partial fills or intraday quotes modeled.",
+    "If zero-salvage enabled, zero-size long bids receive zero value without claiming a fill; residual optionality is discarded. The full $5.20 fee reserve is retained.",
+    "No cash yield, financing, annualization or specified capital base.",
+    "Open or unresolved trades excluded from closed-trade statistics and explicitly counted.",
+    "Purpose-selected geometry and inspected history; not OOS confirmation."
+  ]
+}
