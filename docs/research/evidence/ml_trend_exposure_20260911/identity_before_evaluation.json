@@ -1,0 +1,112 @@
+{
+  "spec_sha256": "1db9db7324d28210a54d1c848fd591f17dbe11e59542778849bc975fd9ab3d8d",
+  "sources": [
+    {
+      "asset": "SPY",
+      "csv_sha256": "83df8fb4ae2123fb7b25da6e72149678c86469e1dd3de4c2e1e1efa1c0078714",
+      "manifest_sha256": "011348e6c241bfa2962a120636493f1ed43ab2d24bf1fc7d8df8207500e61659",
+      "source_rows": 3199,
+      "used_rows": 2789
+    },
+    {
+      "asset": "QQQ",
+      "csv_sha256": "984edd17a462d9d13d2d08b6b811af9ecd2a46dbbe31f58c66c6b4bdb7a70cb9",
+      "manifest_sha256": "ef204e9d9badf8f3223e777e5988ebfbe70940df4e96c13fb9f7e5530d216e52",
+      "source_rows": 3199,
+      "used_rows": 2789
+    },
+    {
+      "asset": "GLD",
+      "csv_sha256": "5fae32a2c4bd7070502a0ae9401bf57571502a7fc5d306e3303b14d5d70a203f",
+      "manifest_sha256": "39eccdd65655420fb3dbb2075b37cf47c5ec756dd90b804548fa58662a2f3369",
+      "source_rows": 5473,
+      "used_rows": 2789
+    },
+    {
+      "asset": "IWM",
+      "csv_sha256": "3176cc4f459227abcb30a3324052b4cceee28addf0b62c28b7fe40f0fd79728a",
+      "manifest_sha256": "572e1de021f52c9f4388c258a9135140067f71499025ff856a089f139c7c583d",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "EFA",
+      "csv_sha256": "657dc1c258ae52e6464967f9654f778c5a17ae578436d5a445b49c4d97f76f86",
+      "manifest_sha256": "c9005b1e572280fd117664f34c7d5a1b1a73ac99f3b2b7ba52817a1579b87d6c",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "EEM",
+      "csv_sha256": "561a9cd061f7914b374d8aa6178db689cc2caf9116207e94fc8485e13ff752fb",
+      "manifest_sha256": "e33160dc5d66fd46fc6fcd9442bfda2709d93591a2417c8babf229ba3692b8d7",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "IEF",
+      "csv_sha256": "5df7aceabadea7e674d2a94b8fec5e1339c0b8f3f9a58a38cae586425890d38e",
+      "manifest_sha256": "a2fa52915a7616130767474ebe1218394b53a4bf9489e3bb2b1a6716ba03a9ed",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "TLT",
+      "csv_sha256": "ba6d2def5a02becdbc0730fa81a0fb09c1aeeb7d3d9d7b6ab414e65f4d02f953",
+      "manifest_sha256": "15c0a20d27c276cf8b50f717181cc03bfab69436d79383a6a0ce26cbaa51a87e",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "BIL",
+      "csv_sha256": "3ab73c7905431b6b9469c184c46d2e9612be20fcd175a20fd93b69ebbbb9fcad",
+      "manifest_sha256": "886d7d2ab8394bdf697e8bbd38342be6c37b5a82d7805531f6c7bafa15402ea3",
+      "source_rows": 2789,
+      "used_rows": 2789
+    },
+    {
+      "asset": "USO",
+      "csv_sha256": "ba8ee748588aa697ba9343d44ad986b0389a487010a2a80826ae216f60a6c765",
+      "manifest_sha256": "a065b229d3d0ce81f67c07ba8924f0a21199440b265023433afa2c3d85adec40",
+      "source_rows": 4026,
+      "used_rows": 2789
+    },
+    {
+      "asset": "CORN",
+      "csv_sha256": "fd500bc0c65cacac760765959d7a1a267dc4d0300ddc9a16c0e84f975cdb2941",
+      "manifest_sha256": "f09eb3bc848cbea28ec7331ee517b0fc5985df4a70b4ef783651862c5baa8d3d",
+      "source_rows": 3666,
+      "used_rows": 2789
+    },
+    {
+      "asset": "SOYB",
+      "csv_sha256": "4bc42fb5c781063730f7aa0f39ac47e738540013d15681210e1542c9e8d41fcc",
+      "manifest_sha256": "0d20b8cc4374160f089431a342880b1fa55874a5971ba53ff7f1313593f2fbee",
+      "source_rows": 3343,
+      "used_rows": 2789
+    },
+    {
+      "asset": "WEAT",
+      "csv_sha256": "f0d42cf21386efe024dbaf522507148c6725b7c0514b64932bfd679ef1c4bd5c",
+      "manifest_sha256": "a652bcd675a041f20ecc577eccba09048c8f415bd5391b34bf4821799bafdb83",
+      "source_rows": 3343,
+      "used_rows": 2789
+    }
+  ],
+  "archives": {
+    "ml_energy_prices_20260910_101410.zip": "02470e6fb2f39e2643986bc38b7a0aad78e79795eeb05c33d5a5a70a53b0404e",
+    "ml_crop_prices_20260910_104514.zip": "09b38cb1689ccfbe43f969be289bcc1b1eca9c06e0968b12e47616af7f8cbc76"
+  },
+  "code": {
+    "/workspace/scratch/de43a4fd2c0a/ID_test/research/ml_development/trend_exposure.py": "b0337dd233d8d23e833f3b1e27ae7087865e3396850258bea86e66044f10dcdf",
+    "/workspace/scratch/de43a4fd2c0a/ID_test/research/ml_development/trend_foundation.py": "1bf51fdd2b3b3086ec121a4bb72f8ba2be17ae01da187d082855e59478a5633b",
+    "/workspace/scratch/de43a4fd2c0a/ID_test/research/ml_development/portfolio.py": "fea5cd6cc81b0aa83fd0f0a93a0d9a80fb3a5c1b1f3be44e14f3663d222a7ddf",
+    "scripts/run_ml_etf_risk_screen.py": "d384b3e69333da03856a88107b7871096222f980ea3270927b43e9d3c5d64d80"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3"
+  },
+  "parent_commit": "f138891b21c93895a49d6d15ea6351bc4eed433d"
+}

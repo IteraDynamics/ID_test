@@ -1,0 +1,15 @@
+{
+  "independent_primary_paths": 7,
+  "solver": "scipy brentq",
+  "max_nav_deltas": {
+    "1x": 1.1102230246251565e-15,
+    "1.5x": 8.881784197001252e-16,
+    "2x": 1.3322676295501878e-15,
+    "2.5x": 1.1102230246251565e-15,
+    "3x": 1.7763568394002505e-15,
+    "4x": 2.6645352591003757e-15,
+    "2x_cashcap": 1.1102230246251565e-15
+  },
+  "financing_totals_match": true,
+  "terminal_positions_zero": true
+}
