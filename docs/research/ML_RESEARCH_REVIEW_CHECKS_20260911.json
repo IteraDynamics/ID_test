@@ -1,0 +1,164 @@
+{
+  "status": "EXISTING_EVIDENCE_AUDIT",
+  "new_model_fits": 0,
+  "new_strategy_backtests": 0,
+  "incremental_artifact_hashes_verified": 7,
+  "forecast_metrics": [
+    {
+      "scope": "all",
+      "forecast": "mean",
+      "mse": 0.0006426405018752151,
+      "skill_vs_mean": 0.0
+    },
+    {
+      "scope": "all",
+      "forecast": "raw_ridge100",
+      "mse": 0.0006360169556784956,
+      "skill_vs_mean": 0.010306767434346331
+    },
+    {
+      "scope": "all",
+      "forecast": "cal_ridge100",
+      "mse": 0.0006392444300895725,
+      "skill_vs_mean": 0.0052845592142618525
+    },
+    {
+      "scope": "all",
+      "forecast": "static_ridge100",
+      "mse": 0.0006426422437500899,
+      "skill_vs_mean": -2.710496568081311e-06
+    },
+    {
+      "scope": "all",
+      "forecast": "raw_gbm2",
+      "mse": 0.0006364024145191058,
+      "skill_vs_mean": 0.009706962660938179
+    },
+    {
+      "scope": "all",
+      "forecast": "cal_gbm2",
+      "mse": 0.0006424895107071289,
+      "skill_vs_mean": 0.00023495432927989057
+    },
+    {
+      "scope": "all",
+      "forecast": "static_gbm2",
+      "mse": 0.0006412167596280903,
+      "skill_vs_mean": 0.0022154567646613943
+    },
+    {
+      "scope": "excluding_2020",
+      "forecast": "mean",
+      "mse": 0.0004906274108936855,
+      "skill_vs_mean": 0.0
+    },
+    {
+      "scope": "excluding_2020",
+      "forecast": "raw_ridge100",
+      "mse": 0.0004957076887741158,
+      "skill_vs_mean": -0.010354655625898435
+    },
+    {
+      "scope": "excluding_2020",
+      "forecast": "cal_ridge100",
+      "mse": 0.0004968439141628758,
+      "skill_vs_mean": -0.012670517649771895
+    },
+    {
+      "scope": "excluding_2020",
+      "forecast": "static_ridge100",
+      "mse": 0.0004906315404995297,
+      "skill_vs_mean": -8.416989659698615e-06
+    },
+    {
+      "scope": "excluding_2020",
+      "forecast": "raw_gbm2",
+      "mse": 0.0004941153710657224,
+      "skill_vs_mean": -0.007109183251061024
+    },
+    {
+      "scope": "excluding_2020",
+      "forecast": "cal_gbm2",
+      "mse": 0.0004926921905913765,
+      "skill_vs_mean": -0.004208447493649015
+    },
+    {
+      "scope": "excluding_2020",
+      "forecast": "static_gbm2",
+      "mse": 0.0004888907160843115,
+      "skill_vs_mean": 0.003539742726992312
+    }
+  ],
+  "max_mse_recompute_delta": 0.0,
+  "fit_boundaries_verified": 42,
+  "ledgers_nav_and_ce_reconciled": 30,
+  "max_ce_recompute_delta": 6.938893903907228e-18,
+  "etf_sessions_between_weekly_rebalances": {
+    "4": 64,
+    "5": 299
+  },
+  "five_session_label_vs_next_rebalance_mismatches": 64,
+  "weekly_transition_count": 363,
+  "options_prediction_hash_verified": true,
+  "max_qlike_recompute_delta": 0.0,
+  "lab013_primary_all_period": [
+    {
+      "anchors": 902,
+      "mean_ic": 0.0006307544019497753,
+      "mean_spread": -0.0007469393247112971,
+      "median_ic": 0.004395604395604396,
+      "median_spread": 0.0005477296133337972,
+      "memory_scheme": "trailing_3y",
+      "model": "low_vol_60d",
+      "outcome": "forward_return",
+      "period": "all",
+      "positive_ic_fraction": 0.5044345898004434
+    },
+    {
+      "anchors": 902,
+      "mean_ic": 0.08030717554178556,
+      "mean_spread": 0.06979708130673509,
+      "median_ic": 0.06813186813186813,
+      "median_spread": 0.08498254728731552,
+      "memory_scheme": "trailing_3y",
+      "model": "low_vol_60d",
+      "outcome": "target_raw",
+      "period": "all",
+      "positive_ic_fraction": 0.5853658536585366
+    },
+    {
+      "anchors": 902,
+      "mean_ic": 0.009268208736470772,
+      "mean_spread": 0.0011114984485778286,
+      "median_ic": 0.006593406593406593,
+      "median_spread": 0.0010237738599472579,
+      "memory_scheme": "trailing_3y",
+      "model": "price_ridge",
+      "outcome": "forward_return",
+      "period": "all",
+      "positive_ic_fraction": 0.508869179600887
+    },
+    {
+      "anchors": 902,
+      "mean_ic": 0.05767346201977283,
+      "mean_spread": 0.06535129494120942,
+      "median_ic": 0.06373626373626373,
+      "median_spread": 0.055723164475993125,
+      "memory_scheme": "trailing_3y",
+      "model": "price_ridge",
+      "outcome": "target_raw",
+      "period": "all",
+      "positive_ic_fraction": 0.5665188470066519
+    }
+  ],
+  "inputs": {
+    "ml_incremental_information_20260910_review.zip": "5745b46c1ea0eaa1a79c5a468ea71ca379aa8be8b4507ec686811be47a9f9397",
+    "ml_options_variance_20260910_160826.zip": "d6aecb3034fd36262865e0f275d90cdb9b1b7d75dba622466e74ca223d52e730"
+  },
+  "scope_limits": [
+    "No raw options-chain or complete acquisition re-audit",
+    "No independent refit of old models",
+    "Calendar diagnostic uses supplied SPY sessions, not independent exchange calendar",
+    "No claim of full repository or production-system audit"
+  ]
+}
