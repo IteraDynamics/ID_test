@@ -170,3 +170,59 @@ OOS model comparison or portfolio mapping was performed in this review.
 Results saved in ML_OPTIONS_VARIANCE_CALIBRATION_20260910.json. Tests include
 changing every real evaluation label without changing any calibration result,
 deterministic replay, and rejection of a hash-corrupted input ZIP.
+
+## Authorized real comparison — 2026-09-11, before fitting
+
+User explicitly approved proceeding with limited sensitivity to smaller effects.
+This authorizes an exploratory actual-outcome comparison, not a claim that
+plausible-effect power has been established. Keep the documented 5%/majority-year/
+positive-block-bound criterion unchanged. Ridge C versus B is primary; all other
+comparisons are descriptive. Ridge alpha10, training-only standardization and
+smearing reproduce calibration. Secondary GBM uses 200 trees, depth2, learning
+rate0.04, minimum leaf20, squared log-target loss, seed20260911; no search.
+Use 9,999 paired circular moving-block bootstrap samples of length13 anchors,
+seed20260911. Six learned specifications across seven purged annual folds =42
+fits. Include direct RV21*5 and nearIV^2*5/252 benchmarks. No outcome clipping,
+no zero-target flooring, no model chosen after comparing results. Source
+semantics remain exploratory limitations; economics is not evaluated here.
+
+## Actual exploratory result — 2026-09-11
+
+Completed 42 fits, seven purged annual folds, 351 matched OOS anchors. Primary
+Ridge C versus B failed: 0.4515% mean QLIKE improvement, 3/7 positive years,
+mean loss difference 0.002189, paired block95 interval [-0.019925,0.032888].
+Secondary GBM C versus B improved 9.303%, 4/7 positive years, but block95 interval
+[-0.015303,0.161506] includes no improvement. No full augmented model passes.
+
+Adding near IV alone improves Ridge15.0% and GBM20.6%, each in 7/7 years.
+These secondary exploratory findings support additional volatility information
+in near IV, not incremental geometry/skew/term information beyond IV. Raw near-IV
+variance has the lowest observed mean QLIKE among the eight specifications:
+0.448424, versus Ridge B0.484878, Ridge C0.482689 and GBM C0.520616. This ranking
+is descriptive; it is not proof of statistically significant dominance over all
+alternatives and does not authorize deployment or profit claims.
+
+Ridge C has a material extrapolation failure on 2020-03-18: predicts five-session
+variance0.249970 versus realized0.013575. Its MSE0.000172681 is much worse than
+Ridge B0.000008072, despite the tiny average QLIKE improvement. No clipping or
+retuning was added after seeing this. Log-variance regression positivity does
+not guarantee sensible forecasts under extreme feature values.
+
+Disposition: no evidence meeting the specified criterion for a substantial,
+stable incremental contribution from the added options features. Smaller effects
+remain unresolved; nonlinear power was not calibrated. Stop this fixed comparison
+without selecting a favorable alternate horizon or retuning the models. Do not
+advance the augmented models to portfolio/cost testing on these results. Keep IV
+as an explicit benchmark in any future, separately justified risk-sizing study.
+
+Nine tests pass including evaluation-label mutation, a known-answer QLIKE/gate
+canary, prior preparation tests, and calibration label isolation. Final runner
+replayed to byte-identical CSV and JSON. The current runtime uses pandas2.2.3 and
+scikit-learn1.8.0 (full versions recorded in results), different from the operator's
+preparation environment. Input CSV hashes were verified. This is a computation on
+the supplied prepared data, not a claim of replay in the operator's locked runtime.
+A zero-baseline-loss reporting guard and environment metadata were added after
+the first run; final predictions remain byte-identical to that first run.
+
+Full results and dated predictions are stored alongside this document as
+ML_OPTIONS_VARIANCE_RESULTS_20260911.json and ML_OPTIONS_VARIANCE_OOS_20260911.csv.
