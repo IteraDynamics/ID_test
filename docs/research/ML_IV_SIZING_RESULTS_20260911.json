@@ -1,0 +1,235 @@
+{
+  "status": "EXPLORATORY_SIZING_TEST",
+  "calibration": {
+    "constant": {
+      "scale": 0.8356004022061825,
+      "training_volatility": 0.100000001003063,
+      "target_attained": true
+    },
+    "rv": {
+      "scale": 1.0554583184421062,
+      "training_volatility": 0.10000000002803858,
+      "target_attained": true
+    },
+    "iv": {
+      "scale": 1.1734111048281193,
+      "training_volatility": 0.10000000002815092,
+      "target_attained": true
+    }
+  },
+  "metrics": [
+    {
+      "cagr": 0.12056562383931424,
+      "volatility": 0.16240734281254648,
+      "max_drawdown": -0.28741465701432756,
+      "excess_sharpe": 0.6475570938715065,
+      "certainty_equivalent": 0.06560634567719839,
+      "strategy": "constant",
+      "cost_bps": 1,
+      "annual_traded_fraction": 0.2630015886098187,
+      "average_spy_weight": 0.8357554421508598,
+      "annual_cost_fraction": 2.6300158860981877e-05
+    },
+    {
+      "cagr": 0.12044739646643055,
+      "volatility": 0.16240933282709066,
+      "max_drawdown": -0.28744527615525894,
+      "excess_sharpe": 0.6469014773808944,
+      "certainty_equivalent": 0.0655001715450539,
+      "strategy": "constant",
+      "cost_bps": 5,
+      "annual_traded_fraction": 0.26300941228496627,
+      "average_spy_weight": 0.83575544215086,
+      "annual_cost_fraction": 0.00013150470614248314
+    },
+    {
+      "cagr": 0.12029961987172744,
+      "volatility": 0.16241181995040976,
+      "max_drawdown": -0.2874835277088278,
+      "excess_sharpe": 0.6460819262039674,
+      "certainty_equivalent": 0.06536744520059791,
+      "strategy": "constant",
+      "cost_bps": 10,
+      "annual_traded_fraction": 0.2630192452031144,
+      "average_spy_weight": 0.8357554421508598,
+      "annual_cost_fraction": 0.00026301924520311446
+    },
+    {
+      "cagr": 0.09447791719890697,
+      "volatility": 0.11401695284941751,
+      "max_drawdown": -0.1541882972706714,
+      "excess_sharpe": 0.6571619032762033,
+      "certainty_equivalent": 0.05539198555592814,
+      "strategy": "rv",
+      "cost_bps": 1,
+      "annual_traded_fraction": 5.6214979263267155,
+      "average_spy_weight": 0.7408607198516317,
+      "annual_cost_fraction": 0.0005621497926326716
+    },
+    {
+      "cagr": 0.09201797856131555,
+      "volatility": 0.11403680371446781,
+      "max_drawdown": -0.1546246865524894,
+      "excess_sharpe": 0.6373236950642971,
+      "certainty_equivalent": 0.05313674415437561,
+      "strategy": "rv",
+      "cost_bps": 5,
+      "annual_traded_fraction": 5.621201195333376,
+      "average_spy_weight": 0.7408607198516316,
+      "annual_cost_fraction": 0.0028106005976666886
+    },
+    {
+      "cagr": 0.0889508027288528,
+      "volatility": 0.11406448081583442,
+      "max_drawdown": -0.1551698257627172,
+      "excess_sharpe": 0.6125229522862166,
+      "certainty_equivalent": 0.05031704386743874,
+      "strategy": "rv",
+      "cost_bps": 10,
+      "annual_traded_fraction": 5.620831111043368,
+      "average_spy_weight": 0.7408607198516317,
+      "annual_cost_fraction": 0.005620831111043369
+    },
+    {
+      "cagr": 0.08124000628183836,
+      "volatility": 0.11858886297671832,
+      "max_drawdown": -0.20113612722101637,
+      "excess_sharpe": 0.5336301006343142,
+      "certainty_equivalent": 0.042163059925336505,
+      "strategy": "iv",
+      "cost_bps": 1,
+      "annual_traded_fraction": 6.701137849788047,
+      "average_spy_weight": 0.7735111574384469,
+      "annual_cost_fraction": 0.0006701137849788047
+    },
+    {
+      "cagr": 0.07834100425785828,
+      "volatility": 0.11863148431046903,
+      "max_drawdown": -0.20166213555964962,
+      "excess_sharpe": 0.5108376841262888,
+      "certainty_equivalent": 0.03946764547782835,
+      "strategy": "iv",
+      "cost_bps": 5,
+      "annual_traded_fraction": 6.700724522191317,
+      "average_spy_weight": 0.7735111574384469,
+      "annual_cost_fraction": 0.0033503622610956585
+    },
+    {
+      "cagr": 0.0747281666865156,
+      "volatility": 0.11868837340439224,
+      "max_drawdown": -0.20231923763599868,
+      "excess_sharpe": 0.4823592589378184,
+      "certainty_equivalent": 0.036097547498427585,
+      "strategy": "iv",
+      "cost_bps": 10,
+      "annual_traded_fraction": 6.70020887298315,
+      "average_spy_weight": 0.7735111574384469,
+      "annual_cost_fraction": 0.006700208872983149
+    }
+  ],
+  "comparisons": [
+    {
+      "baseline": "rv",
+      "cost_bps": 5,
+      "annual_ce_improvement": -0.013669098676547259,
+      "block95_interval": [
+        -0.03317422331979267,
+        0.003293166134988124
+      ],
+      "yearly_ce_improvement": {
+        "2018": -0.03958060308290431,
+        "2019": 0.026335029535137774,
+        "2020": -0.05827456045076684,
+        "2021": -0.0037968555034341477,
+        "2022": -0.02608314137410492,
+        "2023": -0.0011207010203662013,
+        "2024": 0.007096251489646298
+      },
+      "gate_passed": false
+    },
+    {
+      "baseline": "rv",
+      "cost_bps": 10,
+      "annual_ce_improvement": -0.014219496369011143,
+      "block95_interval": [
+        -0.03384067087448407,
+        0.0029437457460553366
+      ],
+      "yearly_ce_improvement": {
+        "2018": -0.04039063665005638,
+        "2019": 0.026043077723077342,
+        "2020": -0.05808595682787017,
+        "2021": -0.005540022461113804,
+        "2022": -0.02666962626894684,
+        "2023": -0.0013226676400068737,
+        "2024": 0.0066864963206751706
+      },
+      "gate_passed": false
+    },
+    {
+      "baseline": "constant",
+      "cost_bps": 5,
+      "annual_ce_improvement": -0.02603252606722555,
+      "block95_interval": [
+        -0.05893309663886275,
+        0.004957577644493837
+      ],
+      "yearly_ce_improvement": {
+        "2018": -0.044038389198222457,
+        "2019": -0.031497498108748814,
+        "2020": -0.08324303228855488,
+        "2021": -0.033724222618749036,
+        "2022": 0.03684864482546989,
+        "2023": -0.020430980985579914,
+        "2024": -0.005279179335654062
+      },
+      "gate_passed": false
+    },
+    {
+      "baseline": "constant",
+      "cost_bps": 10,
+      "annual_ce_improvement": -0.02926989770217031,
+      "block95_interval": [
+        -0.06226686456627014,
+        0.0018159505127112604
+      ],
+      "yearly_ce_improvement": {
+        "2018": -0.047428392228683995,
+        "2019": -0.03496040541490514,
+        "2020": -0.08633120371771018,
+        "2021": -0.03813467266837837,
+        "2022": 0.03415577954933381,
+        "2023": -0.02302069129579775,
+        "2024": -0.008302993215364192
+      },
+      "gate_passed": false
+    }
+  ],
+  "primary_gate_passed": false,
+  "assumptions": [
+    "SPY supplied close is treated as adjusted total-return proxy; not independently certified",
+    "BIL source manifest specifies auto_adjust true",
+    "Hypothetical next-session closing fills; costs are scenarios not measured broker estimates",
+    "Fractional shares; no taxes, leverage, or terminal liquidation",
+    "Common rebalance eligibility requires IV and RV; missing signal means hold all strategies",
+    "Initial BIL acquisition before training omitted equally; warm positions at evaluation start",
+    "No cost-free daily weight reset; weights drift between rebalances"
+  ],
+  "limitations": [
+    "Discovery-contaminated; economic sensitivity not power-calibrated",
+    "Prior permission for limited-power exploration retained; no confirmation claim",
+    "In-sample risk calibration does not ensure equal out-of-sample risk",
+    "No Core/runtime/portfolio changes"
+  ],
+  "input_hashes": {
+    "ml_options_variance_20260910_160826.zip": "d6aecb3034fd36262865e0f275d90cdb9b1b7d75dba622466e74ca223d52e730",
+    "ml_cash_proxy_20260910_085630.zip": "b66eec6eff406d8517f80958ed143cb24fa0d5909e30cc0d3caf94306bd6337b"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3"
+  },
+  "daily_sha256": "3e0e4fd44c856257f693d2bd88f5511493f156ae34c4b4c709021a208470e5ca",
+  "runner_sha256": "8f443e6772d30324a5b1b4322dbebfe2572fca75921a759ece02560d523383d6"
+}
