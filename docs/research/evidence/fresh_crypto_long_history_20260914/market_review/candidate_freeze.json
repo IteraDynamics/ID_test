@@ -1,0 +1,234 @@
+{
+  "allow_new_models_or_parameter_search": false,
+  "candidate_selection_is_independent": false,
+  "choose_risk_profile_using_forward_results": false,
+  "higher_return_higher_risk_research_candidate": "state_rule_vol40_band2",
+  "historical_forward": {
+    "2025_prior_research_access": "CONFIRMED_BY_REPOSITORY_PERIOD_USAGE_METADATA",
+    "2026_prior_research_access": "UNRESOLVED_FILE_PRESENCE_ALONE_IS_NOT_EVIDENCE",
+    "end_date": "TO_BE_FIXED_FROM_COMMON_LOCAL_FILE_COVERAGE_BEFORE_PERFORMANCE_ACCESS",
+    "globally_pristine_oos_claim": false,
+    "inventory_boundary_protocol": "TO_BE_SPECIFIED_BEFORE_EVALUATION",
+    "post_2024_prices_read_in_this_audit": false,
+    "proposed_start_year": 2025,
+    "status": "PROPOSED_NOT_IMPLEMENTED_OR_EVALUATED"
+  },
+  "monte_carlo": {
+    "next_design": "PREDECLARE_PAIRED_DEPENDENCE_PRESERVING_RESAMPLING",
+    "status": "NOT_SPECIFIED_OR_RUN"
+  },
+  "preserve_all_existing_controls_and_scenarios": true,
+  "primary_risk_adjusted_research_candidate": "state_rule_vol20_band2",
+  "recorded_date_utc": "2026-09-14",
+  "review_evidence_sha256": {
+    "annual_returns.csv": "13777c38ce390f021e89394f28a7245dcc3008470eb8d2615935f3684becab6d",
+    "annual_state_comparisons.csv": "f71bb487998cf5bb087046b76b40066025af50ccb280edbd39f8046bbe13b880",
+    "cost_attribution.csv": "0f9511d7dd5b580a328d80f88b82755114440fdf9e3afedf7371f1af35375342",
+    "influence_diagnostics.csv": "4c2e341144b7248da39e496bdeffe277fc20a0c7de8d80709f07df094c033f26",
+    "matched_comparisons.csv": "9beac1468272b3e28aac782fd9fc21a47b84491a285c05d98fcc7badc606068c",
+    "metrics.csv": "d31ea8b0d29d0d44ab112ceb83e40635ce8fb981918efac888708bdb86520c44",
+    "review_audit.json": "23faaea737c407b803dd8a48df813312446634de32ae13cb67a62fe31f5397c1"
+  },
+  "selection_archive_sha256": "1e760e98447d1544cce5f8be4d93953ce6026e12cc2dc6002c5358f0a1a600fb",
+  "source_code_sha256": {
+    "docs/research/FRESH_CRYPTO_LONG_HISTORY_20260914.md": "54e4c5cba971e13787abf1fc5af146ca949a79433fe7637e39c01bb59f47899a",
+    "pyproject.toml": "cf2847ef879780460b3ded80d9216192522ae86c0654ab575dd5028b2a6c611c",
+    "research/fresh_crypto/data.py": "107f5a526db59b9029c05dbd6ac9f50db0fa0c8b2649239cf5d9037a76b95d97",
+    "research/fresh_crypto/engine.py": "d70741d183045b308846c5b8e76b5adc487284407991cece29ac4a903bbd0bb8",
+    "research/fresh_crypto_long_history.py": "f54480f60e130c4cb4f11ed7d086ce704d4ff0171211aaeb74b581cc801ff2cd",
+    "research/fresh_crypto_ml/design.py": "e15b71df57d800cefd5cde4804468522dcbfff6a5eade096a2713631371e463a",
+    "research/fresh_crypto_ml/features.py": "bdd0d24129e422966581417eac356ba350874cd066d95fb14aad67af21bfebb6",
+    "research/fresh_crypto_ml/models.py": "be598a36bc94807222dba89798e25677b8ef59cf33070416335aae3c0174e6c5",
+    "research/fresh_crypto_ml/portfolio.py": "d271b562c3fb59b70871ddb3e148a32864d0c429e7ce569a39168e7e26639687",
+    "research/fresh_discovery/accounting.py": "659af50e35d53c5366257fb6d9a7f5e4e9cd1601ffbcb3d3afda671193cb21af",
+    "research/fresh_discovery/data.py": "ab42dfcdaa24b557b7d74d74156e7ce26fae99c173f9b2fe572e7bf5a2e40075",
+    "scripts/local/run_fresh_crypto_long_history.ps1": "b278929bb92d0f3aa7cb138548b1255d9552c70a15da5d2824b67c491b667da0",
+    "tests/test_fresh_crypto_long_history.py": "2dbb381ec9a824c9e8e273b0d5c619c5ffdea8893d1ea52e9546b1765f18132d",
+    "uv.lock": "0f739fe539dae5eedc709a87f5d9a2180c88b28002d75ca156488e434b74deeb"
+  },
+  "source_commit": "535453e3a7499c00111f7f90a587c36dea9a1a7a",
+  "status": "DEVELOPMENT_SELECTION_FOR_LOCKED_HISTORICAL_FORWARD_VALIDATION",
+  "strategy_definition": {
+    "band_total_absolute_risky_weight_deviation": 0.02,
+    "cash_yield": 0.0,
+    "first_evaluation_date": "2018-01-03",
+    "first_signal": "2018-01-01",
+    "fixed_blend_coefficient": 0.5,
+    "last_evaluation_date": "2024-12-31",
+    "leverage": false,
+    "model_fits": 0,
+    "parameter_search": false,
+    "policies": [
+      {
+        "band": 0.0,
+        "family": "trend",
+        "name": "trend_vol20_exact",
+        "role": "control",
+        "target": 0.2
+      },
+      {
+        "band": 0.0,
+        "family": "allocation",
+        "name": "allocation_vol20_exact",
+        "role": "control",
+        "target": 0.2
+      },
+      {
+        "band": 0.0,
+        "family": "fixed_blend",
+        "name": "fixed_blend_vol20_exact",
+        "role": "candidate",
+        "target": 0.2
+      },
+      {
+        "band": 0.0,
+        "family": "state_rule",
+        "name": "state_rule_vol20_exact",
+        "role": "candidate",
+        "target": 0.2
+      },
+      {
+        "band": 0.02,
+        "family": "trend",
+        "name": "trend_vol20_band2",
+        "role": "control",
+        "target": 0.2
+      },
+      {
+        "band": 0.02,
+        "family": "allocation",
+        "name": "allocation_vol20_band2",
+        "role": "control",
+        "target": 0.2
+      },
+      {
+        "band": 0.02,
+        "family": "fixed_blend",
+        "name": "fixed_blend_vol20_band2",
+        "role": "candidate",
+        "target": 0.2
+      },
+      {
+        "band": 0.02,
+        "family": "state_rule",
+        "name": "state_rule_vol20_band2",
+        "role": "candidate",
+        "target": 0.2
+      },
+      {
+        "band": 0.0,
+        "family": "trend",
+        "name": "trend_vol40_exact",
+        "role": "control",
+        "target": 0.4
+      },
+      {
+        "band": 0.0,
+        "family": "allocation",
+        "name": "allocation_vol40_exact",
+        "role": "control",
+        "target": 0.4
+      },
+      {
+        "band": 0.0,
+        "family": "fixed_blend",
+        "name": "fixed_blend_vol40_exact",
+        "role": "candidate",
+        "target": 0.4
+      },
+      {
+        "band": 0.0,
+        "family": "state_rule",
+        "name": "state_rule_vol40_exact",
+        "role": "candidate",
+        "target": 0.4
+      },
+      {
+        "band": 0.02,
+        "family": "trend",
+        "name": "trend_vol40_band2",
+        "role": "control",
+        "target": 0.4
+      },
+      {
+        "band": 0.02,
+        "family": "allocation",
+        "name": "allocation_vol40_band2",
+        "role": "control",
+        "target": 0.4
+      },
+      {
+        "band": 0.02,
+        "family": "fixed_blend",
+        "name": "fixed_blend_vol40_band2",
+        "role": "candidate",
+        "target": 0.4
+      },
+      {
+        "band": 0.02,
+        "family": "state_rule",
+        "name": "state_rule_vol40_band2",
+        "role": "candidate",
+        "target": 0.4
+      },
+      {
+        "band": 0.0,
+        "family": "btc_buy_hold",
+        "name": "btc_buy_hold",
+        "role": "benchmark",
+        "target": null
+      },
+      {
+        "band": 0.0,
+        "family": "eth_buy_hold",
+        "name": "eth_buy_hold",
+        "role": "benchmark",
+        "target": null
+      },
+      {
+        "band": 0.0,
+        "family": "mix_buy_hold",
+        "name": "mix_buy_hold",
+        "role": "benchmark",
+        "target": null
+      },
+      {
+        "band": 0.0,
+        "family": "usd_cash",
+        "name": "usd_cash",
+        "role": "benchmark",
+        "target": null
+      }
+    ],
+    "scenarios": [
+      [
+        "frictionless",
+        0.0,
+        0
+      ],
+      [
+        "base",
+        30.0,
+        0
+      ],
+      [
+        "cost_stress",
+        75.0,
+        0
+      ],
+      [
+        "delay_one_day",
+        30.0,
+        1
+      ]
+    ],
+    "state_decisions": "initial_signal_then_Monday_base_fills",
+    "state_rule": {
+      "agreement_below": 0.6666666666666666,
+      "volatility_ratio_above": 1.25
+    },
+    "subperiod_inventory": "carried_from_continuous_full_run"
+  },
+  "strategy_definition_dates_describe_development_only": true,
+  "strategy_definition_reference": "docs/research/FRESH_CRYPTO_LONG_HISTORY_20260914.md"
+}

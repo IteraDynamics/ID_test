@@ -1308,3 +1308,32 @@ and runs `scripts/local/run_fresh_crypto_long_history.ps1`, then shares its prin
 Specification: `docs/research/FRESH_CRYPTO_LONG_HISTORY_20260914.md`. Engineering evidence:
 `docs/research/evidence/fresh_crypto_long_history_20260914/engineering_verification.json`.
 No OOS/Monte Carlo, Core/runtime/paper/live or capital change.
+
+### 2026-09-14 — Longer-history crypto result audited; state rule advances in research
+
+The operator supplied `fresh_crypto_long_history_20260914_142341_250.zip` from
+`535453e`. All 14 artifact hashes and 14 code/specification hashes verify. All 80
+ledgers / 204,400 daily rows replay to numerical precision; independent reconstruction
+of wealth, 400 metric rows and 12 buy-and-hold identities passes. No model was fitted,
+no new strategy variant was introduced and no post-2024 prices were evaluated.
+
+On the 2018-2024 development window, banded state-20/state-40 return 18.11%/30.29%
+CAGR, 0.956/0.921 Sharpe and -26.02%/-39.34% maximum drawdown after base costs. Both
+reduce bear-market losses relative to allocation and buy-and-hold, but lag recoveries.
+State-40 still loses 17.11% cumulatively in 2018-2019. Its incremental benefit over
+plain trend is modest and partly comes from lower trading costs; its drawdown is
+slightly deeper than plain trend-40. Cost and delay stress preserve a useful trade-off
+without preserving the highest raw return across benchmarks.
+
+Decision: freeze state_rule_vol20_band2 as the primary risk-adjusted research profile
+and state_rule_vol40_band2 as the higher-risk alternative for a fixed historical
+forward test. Keep the blend and endpoint portfolios as comparators. Prior repo
+period-usage metadata confirms earlier BTC/ETH research included 2025; call the next
+step locked historical forward validation, not globally pristine final OOS. 2026
+prior-access status remains unresolved. No next-stage runner or Monte Carlo is yet
+implemented; no rerun is required of the operator now.
+
+Result: `docs/research/FRESH_CRYPTO_LONG_HISTORY_RESULT_20260914.md`. Audit reproducer:
+`scripts/review_fresh_crypto_long_history.py`. Evidence and candidate freeze:
+`docs/research/evidence/fresh_crypto_long_history_20260914/market_review/`.
+No Core/runtime/paper/live or capital change.

@@ -1,0 +1,133 @@
+{
+  "archive_files_verified": 14,
+  "archive_sha256": "1e760e98447d1544cce5f8be4d93953ce6026e12cc2dc6002c5358f0a1a600fb",
+  "code_hash_modes": {
+    "docs/research/FRESH_CRYPTO_LONG_HISTORY_20260914.md": "CRLF",
+    "pyproject.toml": "CRLF",
+    "research/fresh_crypto/data.py": "CRLF",
+    "research/fresh_crypto/engine.py": "CRLF",
+    "research/fresh_crypto_long_history.py": "CRLF",
+    "research/fresh_crypto_ml/design.py": "CRLF",
+    "research/fresh_crypto_ml/features.py": "CRLF",
+    "research/fresh_crypto_ml/models.py": "CRLF",
+    "research/fresh_crypto_ml/portfolio.py": "CRLF",
+    "research/fresh_discovery/accounting.py": "CRLF",
+    "research/fresh_discovery/data.py": "CRLF",
+    "scripts/local/run_fresh_crypto_long_history.ps1": "CRLF",
+    "tests/test_fresh_crypto_long_history.py": "CRLF",
+    "uv.lock": "CRLF"
+  },
+  "daily_rows": 204400,
+  "first_evaluation_date": "2018-01-03",
+  "holdout_evaluations": 0,
+  "independent_buy_hold_checks": 12,
+  "independent_statistic_rows": 400,
+  "influence_diagnostic": "Saved daily returns with calendar years omitted; no refit, inference or OOS claim",
+  "last_evaluation_date": "2024-12-31",
+  "ledgers_replayed": 80,
+  "model_fits": 0,
+  "monte_carlo_runs": 0,
+  "new_strategy_variants": 0,
+  "numerical_corruption_canary_passed": true,
+  "replay_differences": {
+    "annual_returns": {
+      "days": 0.0,
+      "total_return": 8.215650382226158e-15,
+      "year": 0.0
+    },
+    "buy_hold_identities": {
+      "expected_nav": 0.0,
+      "reported_nav": 0.0,
+      "residual": 0.0
+    },
+    "daily_ledger": {
+      "BTC_pnl": 6.591949208711867e-16,
+      "BTC_weight": 1.4099832412739488e-14,
+      "ETH_pnl": 6.487865800153259e-16,
+      "ETH_weight": 1.304512053934559e-14,
+      "USD_weight": 2.646494134950217e-14,
+      "accounting_residual": 5.298753193214943e-16,
+      "executed": 0.0,
+      "execution_cost": 1.8157675883700986e-16,
+      "gross_market_pnl": 9.71445146547012e-16,
+      "mixture": 0.0,
+      "nav": 2.930988785010413e-14,
+      "return": 8.881784197001252e-16,
+      "risky_exposure": 2.6423307986078726e-14,
+      "terminal_liquidation": 0.0,
+      "turnover": 2.6270652320192767e-14
+    },
+    "features": {
+      "acceleration": 0.0,
+      "annual_volatility": 0.0,
+      "btc_eth_correlation": 0.0,
+      "btc_momentum180": 0.0,
+      "btc_momentum365": 0.0,
+      "btc_momentum90": 0.0,
+      "downside_fraction": 0.0,
+      "eth_momentum180": 0.0,
+      "eth_momentum365": 0.0,
+      "eth_momentum90": 0.0,
+      "recent_drawdown": 0.0,
+      "relative_strength14": 0.0,
+      "relative_volume": 0.0,
+      "signal_index": 0.0,
+      "trend_agreement": 0.0,
+      "volatility_ratio": 0.0
+    },
+    "matched_comparisons": {
+      "cagr_difference": 7.771561172376096e-15,
+      "drawdown_difference": 3.552713678800501e-15,
+      "sharpe_difference": 1.1546319456101628e-14,
+      "volatility_difference": 2.7755575615628914e-16
+    },
+    "metrics": {
+      "annual_arithmetic_execution_drag": 1.1102230246251565e-16,
+      "annual_one_way_turnover": 1.687538997430238e-14,
+      "annual_volatility": 2.220446049250313e-16,
+      "band": 0.0,
+      "cagr": 4.6629367034256575e-15,
+      "calmar": 2.7533531010703882e-14,
+      "cash_excess_sharpe": 8.854028621385623e-15,
+      "certainty_equivalent_gamma3": 2.3592239273284576e-15,
+      "executed_rebalances": 0.0,
+      "longest_underwater_days": 0.0,
+      "max_drawdown": 3.1086244689504383e-15,
+      "mean_risky_exposure": 2.220446049250313e-16,
+      "profile": 0.0,
+      "skipped_rebalances": 0.0,
+      "terminal_nav": 1.270095140171179e-13,
+      "worst_day": 3.3306690738754696e-16
+    },
+    "mixture_decisions": {
+      "mixture": 0.0,
+      "signal_index": 0.0,
+      "trend_agreement": 0.0,
+      "volatility_ratio": 0.0
+    },
+    "target_weights": {
+      "BTC": 1.1102230246251565e-16,
+      "ETH": 8.326672684688674e-17,
+      "USD": 2.220446049250313e-16,
+      "mixture": 0.0,
+      "signal_index": 0.0
+    }
+  },
+  "reviewer_environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "python": "3.12.14"
+  },
+  "source_calendar_days": 2922,
+  "source_commit": "535453e3a7499c00111f7f90a587c36dea9a1a7a",
+  "source_environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "python": "3.12.13",
+    "scikit-learn": "1.9.0",
+    "scipy": "1.17.1",
+    "threadpoolctl": "3.6.0"
+  },
+  "source_vendor_and_acquisition_provenance_verified": false,
+  "status": "FIXED_LONG_HISTORY_DEVELOPMENT_AUDITED_NOT_OOS"
+}
