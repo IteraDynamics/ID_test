@@ -1,0 +1,62 @@
+{
+  "actual_input_only_checks": [
+    {
+      "archive": "fresh_crypto_ml_20260914_134645_379.zip",
+      "btc_daily_rows": 2922,
+      "downloads": 0,
+      "eth_daily_rows": 2922,
+      "pinned_hashes_passed": true
+    },
+    {
+      "archive": "fresh_crypto_20260914_110447_621.zip",
+      "btc_daily_rows": 2922,
+      "downloads": 0,
+      "eth_daily_rows": 2922,
+      "pinned_hashes_passed": true
+    }
+  ],
+  "environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "pytest": "9.0.3",
+    "python": "3.12.14",
+    "scikit-learn": "1.9.0",
+    "scipy": "1.17.1",
+    "threadpoolctl": "3.6.0"
+  },
+  "full_synthetic_run": {
+    "daily_rows": 204400,
+    "exact_replay_passed": true,
+    "first_evaluation_date": "2018-01-03",
+    "independent_buy_hold_checks": 12,
+    "last_evaluation_date": "2024-12-31",
+    "ledger_count": 80,
+    "maximum_accounting_residual": 5.192675631291006e-16,
+    "model_fits": 0,
+    "monte_carlo_run": false,
+    "policy_count": 20,
+    "reserved_2025_used": false,
+    "status": "SYNTHETIC_MECHANICS_ONLY"
+  },
+  "market_model_fits": 0,
+  "market_strategy_runs": 0,
+  "output_integrity": {
+    "directory_hashes_verified": 12,
+    "zip_crc_passed": true,
+    "zip_hashes_verified": 12
+  },
+  "performance_claim": "None. Full synthetic economics are not market evidence.",
+  "powershell": "Static inspection only; no PowerShell runtime available in reviewer environment.",
+  "status": "SYNTHETIC_ENGINEERING_EVIDENCE_ONLY",
+  "tests": {
+    "command": "uv run --locked --python 3.12 --extra dev python -m pytest tests/test_fresh_crypto_long_history.py -q -W error",
+    "passed": 17
+  },
+  "verification_date": "2026-09-14",
+  "verified_files_sha256": {
+    "docs/research/FRESH_CRYPTO_LONG_HISTORY_20260914.md": "842be88fa5dbbf453fc42fbb33365dd0dec63e2b202db374c560649b9ed79442",
+    "research/fresh_crypto_long_history.py": "1d332234ef139ac7db0dbee1bbeda5c10de9adf3d560b928ed7e91ba7b965726",
+    "scripts/local/run_fresh_crypto_long_history.ps1": "a879fb8e57e5e205f353b327816a9d785f819b4ca4708422336e95726199b966",
+    "tests/test_fresh_crypto_long_history.py": "4d739bef48f9014354536bbc5e8360aa4f1c5330ab2e57f51542c4a909f22a9e"
+  }
+}

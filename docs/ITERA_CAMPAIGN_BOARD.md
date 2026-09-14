@@ -1286,3 +1286,25 @@ The higher headline returns use 2020–2024, not the previous 2018–2024 window
 not establish an ML gain or forward return expectation. Full findings, limitations
 and evidence: `docs/research/FRESH_CRYPTO_ML_RESULT_20260914.md`. Audit reproducer:
 `scripts/review_fresh_crypto_ml.py`. No Core/runtime/paper/live/capital change.
+
+### 2026-09-14 — Unchanged crypto rules ready for longer-history operator run
+
+The operator approved the recommended 2018–2024 development comparison. Implemented
+the unchanged state rule and fixed blend with trend/allocation controls and spot/cash
+benchmarks: 20 policies, four execution scenarios, 80 ledgers. First base entry remains
+January 3, 2018 after the original warm-up and execution delay. Report 2018–2019,
+2020–2021, 2022–2024 and a clearly labelled 2020–2024 carried-inventory slice.
+
+17 focused tests passed with warnings as errors, including exact schedule equivalence
+with the previous fixed rules, causal perturbation, state thresholds, source recovery
+and corruption rejection. The full synthetic workflow replayed 80 ledgers / 204,400
+rows exactly and verified 12 closed-form benchmark identities plus ZIP/file hashes.
+No new market strategy run or model fit occurred. Both operator-uploaded crypto and ML
+result archives passed the input-only preflight. PowerShell was inspected statically.
+
+The runner reuses either known results directory or ZIP; the data check precedes tests.
+The previous research modules remain unchanged. Next action: operator pulls this branch
+and runs `scripts/local/run_fresh_crypto_long_history.ps1`, then shares its printed ZIP.
+Specification: `docs/research/FRESH_CRYPTO_LONG_HISTORY_20260914.md`. Engineering evidence:
+`docs/research/evidence/fresh_crypto_long_history_20260914/engineering_verification.json`.
+No OOS/Monte Carlo, Core/runtime/paper/live or capital change.
