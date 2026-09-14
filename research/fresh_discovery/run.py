@@ -45,13 +45,25 @@ def mechanics_canary() -> dict:
     raise RuntimeError("Accounting rejection canary failed")
 
 
+def is_synthetic_identity(value: dict) -> bool:
+    """Read explicit labels, never the occurrence of 'synthetic' in JSON keys."""
+    if "synthetic_data_used" in value:
+        flag = value["synthetic_data_used"]
+        if not isinstance(flag, bool):
+            raise ValueError("synthetic_data_used must be a boolean")
+        return flag
+    labels = (value.get("status", ""), value.get("status_label", ""),
+              value.get("data", {}).get("status", ""))
+    return any(isinstance(label, str) and label.upper().startswith("SYNTHETIC") for label in labels)
+
+
 def run_screen(frames: dict[str, pd.DataFrame], out: Path, identity: dict) -> dict:
     """Also used by synthetic integration tests; they must label their identity."""
     if out.exists():
         raise FileExistsError(f"Refusing to overwrite run: {out}")
     out.mkdir(parents=True)
     first = first_signal(frames)
-    synthetic = "SYNTHETIC" in json.dumps(identity).upper()
+    synthetic = is_synthetic_identity(identity)
     identity = dict(identity, status="SYNTHETIC_MECHANICS_ONLY" if synthetic else "EXPLORATORY_SCREEN_NOT_OOS",
                     synthetic_data_used=synthetic,
                     candidate_registry=registry(), scenarios=[asdict(s) for s in SCENARIOS],

@@ -11,7 +11,7 @@ import pytest
 from research.fresh_discovery.accounting import Scenario, rebalance, simulate
 from research.fresh_discovery.data import ASSETS, REQUEST, load_snapshot, normalize, sha, write_json
 from research.fresh_discovery.metrics import metrics, pareto_flags
-from research.fresh_discovery.run import first_signal, mechanics_canary, run_screen
+from research.fresh_discovery.run import first_signal, is_synthetic_identity, mechanics_canary, run_screen
 from research.fresh_discovery.strategies import Features, make_schedules, policies, size_target
 
 
@@ -209,6 +209,19 @@ def test_metrics_include_initial_loss_and_benchmark_excess():
     assert result["longest_underwater_sessions"] == 3
     assert result["excess_sharpe"] < 0
     assert result["spy_beta"] == pytest.approx(2.)
+
+    frame["return"] = [2e-16, -2e-16, .01]
+    flat = metrics(frame, np.zeros(3), np.array([-.05, 0, .05]))
+    assert flat["positive_day_fraction"] == pytest.approx(1 / 3)
+
+
+def test_real_replay_metadata_does_not_trigger_synthetic_label():
+    assert not is_synthetic_identity({"synthetic_data_used": False, "status": "EXPLORATORY_SCREEN_NOT_OOS"})
+    assert not is_synthetic_identity({"data": {"status": "REAL_DOWNLOADED_PRICES"}})
+    assert is_synthetic_identity({"synthetic_data_used": True})
+    assert is_synthetic_identity({"data": {"status": "SYNTHETIC_MECHANICS_ONLY_NOT_MARKET_EVIDENCE"}})
+    with pytest.raises(ValueError, match="must be a boolean"):
+        is_synthetic_identity({"synthetic_data_used": "false"})
 
 
 def test_pareto_uses_all_three_objectives():

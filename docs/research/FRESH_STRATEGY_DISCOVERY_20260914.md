@@ -222,3 +222,19 @@ in the final implementation entry below, after execution.
 - PowerShell is not installed in this Linux environment; the wrapper is statically
   checked and awaits execution on the operator's Windows machine. Yahoo market-data
   acquisition and all market backtests in this new suite remain unrun here.
+
+## Market-results transition — September 14, 2026
+
+The operator subsequently completed the market run at `b23a0ea` and supplied its full
+review ZIP. Its data, code, outputs and accounting were checked and the fixed screen was
+replayed. None of the current configurations is recommended for OOS/Monte Carlo promotion.
+The 63-session momentum comparator is modestly profitable; the tested reversal/pullback
+and fixed-blend mappings do not justify continuation as standalone candidates.
+Full results, retained evidence and the nuanced control comparison are in
+`docs/research/FRESH_STRATEGY_DISCOVERY_RESULT_20260914.md`.
+
+Two reporting defects found during replay are corrected: economically flat returns need
+a `1e-12` tolerance when counting positive days, and false-valued synthetic metadata must
+not set the synthetic presentation label. Neither fix changes strategy/accounting logic,
+daily returns or headline economic metrics. The original summary tables are preserved;
+the corrected positive-day diagnostic is a separate evidence file. 26 focused tests pass.

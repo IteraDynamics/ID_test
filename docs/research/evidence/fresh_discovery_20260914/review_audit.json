@@ -1,0 +1,268 @@
+{
+  "all_submitted_output_hashes_verified": true,
+  "archive_crc_valid": true,
+  "code_identity": "All ten recorded file hashes match the pinned commit with Windows CRLF checkout encoding; source text unchanged.",
+  "common_source_rows": 4427,
+  "economic_replay_status": "Numerically equivalent across Windows/Linux; not globally byte-identical.",
+  "evaluation_end": "2024-12-31",
+  "evaluation_start": "2008-07-01",
+  "evidence_files": {
+    "annual_returns.csv": "80e5a5d59d28d41af1407967ca06346cf2abec564dd150a7e76320bb8eef4a0a",
+    "asset_attribution_base.csv": "f647b9117a4d6bc83900844f4483377d2f503efdccac21292ab85f9768e7c028",
+    "base_return_correlations.csv": "4e962a20d00b5e5f18ac0b294863f13672334ad2f1eddd682f67641832d43214",
+    "leave_one_year_out.csv": "f33f67a26c7140ec85fc1d0cdad5d2fb555ff885947ba66c6ca05b9cc8b5a0ef",
+    "metrics.csv": "0c83aed6faf39eeeb4cc2f6ebb83c3d97a84c3fae75dd6938baabf4c9886f7c4",
+    "positive_day_diagnostic_correction.csv": "7f3f9a96e24a0fe8c8f87eab3d093fa7a15020845fb6dfa3658448e4f9d2248d",
+    "report.json": "2994130c2976a8797c50d66c3f0f7c181e3cbcf2f7b9238453c838cacf3de2a3",
+    "robustness.csv": "e21619011806c7f4ffa32402bd21eda3074c4cf285eaf199838b266bc4b2501b"
+  },
+  "holdout_used": false,
+  "independent_closed_form_benchmark_checks": 8,
+  "independent_ledger_metric_checks": 112,
+  "local_replay_environment": {
+    "numpy": "2.4.4",
+    "os": "Linux",
+    "pandas": "3.0.2",
+    "python": "3.12.14"
+  },
+  "max_independent_cagr_error": 5.124511925913566e-13,
+  "max_independent_mdd_error": 7.745470931297405e-13,
+  "max_independent_nav_error": 1.2103651414463457e-11,
+  "new_strategy_variants_evaluated": 0,
+  "original_source_files_modified": false,
+  "replay_checks": [
+    {
+      "columns": 6,
+      "exact_bytes": false,
+      "file": "annual_returns.csv",
+      "numeric_differences": [
+        {
+          "column": "total_return",
+          "different_rows": 31,
+          "max_abs_delta": 1.0000056338554941e-12
+        },
+        {
+          "column": "excess_mean_annual",
+          "different_rows": 19,
+          "max_abs_delta": 1.0000333894311098e-13
+        }
+      ],
+      "rows": 1904
+    },
+    {
+      "columns": 5,
+      "exact_bytes": true,
+      "file": "asset_attribution_base.csv",
+      "numeric_differences": [],
+      "rows": 560
+    },
+    {
+      "columns": 29,
+      "exact_bytes": false,
+      "file": "base_return_correlations.csv",
+      "numeric_differences": [
+        {
+          "column": "dual_momentum_63_g100",
+          "different_rows": 1,
+          "max_abs_delta": 9.999867687376929e-16
+        },
+        {
+          "column": "sector_reversal_10_g100",
+          "different_rows": 1,
+          "max_abs_delta": 1.9999735374753858e-15
+        },
+        {
+          "column": "sector_reversal_3_g150",
+          "different_rows": 1,
+          "max_abs_delta": 9.999867687376929e-16
+        },
+        {
+          "column": "trend_only_g100",
+          "different_rows": 1,
+          "max_abs_delta": 1.9999735374753858e-15
+        }
+      ],
+      "rows": 28
+    },
+    {
+      "columns": 20,
+      "exact_bytes": false,
+      "file": "daily_ledger.csv",
+      "numeric_differences": [
+        {
+          "column": "nav",
+          "different_rows": 121,
+          "max_abs_delta": 1.000000082740371e-11
+        },
+        {
+          "column": "return",
+          "different_rows": 13247,
+          "max_abs_delta": 1.00001604219635e-13
+        },
+        {
+          "column": "gross_market_pnl",
+          "different_rows": 1204,
+          "max_abs_delta": 1.0000680839006293e-14
+        },
+        {
+          "column": "execution_cost",
+          "different_rows": 3159,
+          "max_abs_delta": 1.0000680839006293e-15
+        },
+        {
+          "column": "funding_cost",
+          "different_rows": 19928,
+          "max_abs_delta": 1.0000409788463172e-16
+        },
+        {
+          "column": "borrow_cost",
+          "different_rows": 12,
+          "max_abs_delta": 1.000013873792005e-15
+        },
+        {
+          "column": "turnover",
+          "different_rows": 4260,
+          "max_abs_delta": 1.000000082740371e-11
+        },
+        {
+          "column": "gross_risky_exposure",
+          "different_rows": 26,
+          "max_abs_delta": 1.000000082740371e-11
+        },
+        {
+          "column": "net_risky_exposure",
+          "different_rows": 210,
+          "max_abs_delta": 1.000000082740371e-11
+        },
+        {
+          "column": "cash_weight",
+          "different_rows": 117151,
+          "max_abs_delta": 1.000088900582341e-12
+        },
+        {
+          "column": "bil_weight",
+          "different_rows": 29,
+          "max_abs_delta": 1.000088900582341e-12
+        },
+        {
+          "column": "restricted_short_proceeds",
+          "different_rows": 18,
+          "max_abs_delta": 1.000088900582341e-12
+        },
+        {
+          "column": "long_financing_debit",
+          "different_rows": 20729,
+          "max_abs_delta": 1.000088900582341e-12
+        },
+        {
+          "column": "accounting_residual",
+          "different_rows": 227472,
+          "max_abs_delta": 9.24978981083e-16
+        }
+      ],
+      "rows": 465248
+    },
+    {
+      "columns": 7,
+      "exact_bytes": false,
+      "file": "leave_one_year_out.csv",
+      "numeric_differences": [
+        {
+          "column": "annualized_geometric_return",
+          "different_rows": 27,
+          "max_abs_delta": 1.0000333894311098e-13
+        },
+        {
+          "column": "excess_sharpe",
+          "different_rows": 15,
+          "max_abs_delta": 1.0000056338554941e-12
+        }
+      ],
+      "rows": 1904
+    },
+    {
+      "columns": 30,
+      "exact_bytes": false,
+      "file": "metrics.csv",
+      "numeric_differences": [
+        {
+          "column": "cagr",
+          "different_rows": 1,
+          "max_abs_delta": 9.999640004920707e-14
+        },
+        {
+          "column": "annualized_mean_return",
+          "different_rows": 3,
+          "max_abs_delta": 9.998946115530316e-14
+        },
+        {
+          "column": "excess_sharpe",
+          "different_rows": 3,
+          "max_abs_delta": 1.0000333894311098e-13
+        },
+        {
+          "column": "calmar",
+          "different_rows": 2,
+          "max_abs_delta": 9.999778782798785e-13
+        },
+        {
+          "column": "max_drawdown",
+          "different_rows": 1,
+          "max_abs_delta": 1.0000333894311098e-13
+        },
+        {
+          "column": "certainty_equivalent_gamma3",
+          "different_rows": 1,
+          "max_abs_delta": 9.999813477268304e-15
+        },
+        {
+          "column": "spy_beta",
+          "different_rows": 1,
+          "max_abs_delta": 1.0000030317702802e-14
+        },
+        {
+          "column": "descriptive_alpha_annual",
+          "different_rows": 9,
+          "max_abs_delta": 1.0000680839006293e-14
+        },
+        {
+          "column": "positive_day_fraction",
+          "different_rows": 64,
+          "max_abs_delta": 0.004473161034000084
+        },
+        {
+          "column": "annual_funding_drag",
+          "different_rows": 46,
+          "max_abs_delta": 4.833264846999984e-18
+        }
+      ],
+      "rows": 336
+    },
+    {
+      "columns": 5,
+      "exact_bytes": true,
+      "file": "robustness.csv",
+      "numeric_differences": [],
+      "rows": 28
+    },
+    {
+      "columns": 23,
+      "exact_bytes": true,
+      "file": "target_weights.csv",
+      "numeric_differences": [],
+      "rows": 43428
+    }
+  ],
+  "reporting_corrections": [
+    "Positive-day fraction now uses return > 1e-12; all 360 platform sign discrepancies were <= 4.441e-16.",
+    "Synthetic label reads explicit boolean/status values; a false-valued metadata key cannot set it."
+  ],
+  "source_end": "2024-12-31",
+  "source_pairs_verified": 20,
+  "source_start": "2007-06-01",
+  "status": "REVIEWED_EXPLORATORY_SCREEN_NO_OOS_PROMOTION",
+  "supplied_archive_name": "fresh_discovery_20260914_090006_675.zip",
+  "supplied_archive_sha256": "9cb9bd23f9921de9f9cae5d1758c8f15cef7dc9a9559c53fb5d9ab564654a2e3",
+  "tested_commit": "b23a0ea76c4ab8a69ed8416dd624180817d43738",
+  "valuation_sessions": 4154
+}

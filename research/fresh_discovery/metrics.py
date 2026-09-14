@@ -39,7 +39,9 @@ def metrics(frame: pd.DataFrame, cash_returns: np.ndarray,
                   certainty_equivalent_gamma3=float(252 * (r.mean() - 1.5 * r.var(ddof=1))),
                   spy_beta=beta,
                   descriptive_alpha_annual=float(252 * (excess.mean() - beta * market.mean())) if beta is not None else None,
-                  positive_day_fraction=float((r > 0).mean()),
+                  # Ledger rounding can turn economically flat returns into +/- eps.
+                  # This reporting tolerance does not alter returns or trading logic.
+                  positive_day_fraction=float((r > 1e-12).mean()),
                   annual_one_way_turnover=float(frame.turnover.sum() / years),
                   mean_gross_exposure=float(frame.gross_risky_exposure.mean()),
                   max_gross_exposure=float(frame.gross_risky_exposure.max()),

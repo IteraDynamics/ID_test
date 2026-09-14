@@ -1166,3 +1166,24 @@ or evaluated. No Core, runtime, orders, NAV/exposure implementation or capital c
 
 Full design, assumptions, runnable procedure and verification:
 `docs/research/FRESH_STRATEGY_DISCOVERY_20260914.md`.
+
+### 2026-09-14 — Fresh discovery first market screen reviewed
+
+The operator supplied the complete run at `b23a0ea`. All 20 input manifests/calendars,
+source/output hashes and pinned code identity verified. Full local replay: 112 ledgers,
+465,248 daily rows; target weights byte-identical and headline economics match to numerical
+precision. Eight independent buy-and-hold identities and all saved wealth/CAGR/drawdown
+paths reconcile. No new variant or holdout was evaluated.
+
+Best candidate by base Sharpe: 63-session momentum at gross target ceiling 1.0, CAGR
+6.75%, excess Sharpe 0.513, max drawdown -23.49%. Its static macro control earns 5.96%,
+Sharpe 0.541, drawdown -21.74%; the candidate improves CAGR modestly with more risk.
+All sector-reversal candidates lose after costs; pullbacks and the fixed blend have weak
+net economics. **No current configuration recommended for OOS/Monte Carlo promotion.**
+Retain momentum as a comparator and possible diversification hypothesis, not a validated
+new sleeve. Its possible SPY allocation benefit is a separate, untested next question.
+
+Reporting-only rounding/metadata-label fixes added with 26 passing tests. Original
+summaries are preserved, and the positive-day correction has a separate table. No strategy,
+accounting, Core, runtime, paper/live or capital change. Full findings and audit:
+`docs/research/FRESH_STRATEGY_DISCOVERY_RESULT_20260914.md`.
