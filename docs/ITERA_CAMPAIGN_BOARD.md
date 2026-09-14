@@ -1266,3 +1266,23 @@ No OOS/Monte Carlo, Core, runtime, paper/live parameters or capital change.
 
 Specification: `docs/research/FRESH_CRYPTO_ML_ALLOCATION_20260914.md`.
 Engineering record: `docs/research/evidence/fresh_crypto_ml_20260914/engineering_verification.json`.
+
+### 2026-09-14 — First crypto ML development result audited; learned layer not promoted
+
+The operator supplied `fresh_crypto_ml_20260914_134645_379.zip` from `682b605`. All
+18 artifact hashes, 17 code/spec hashes, 120 archived training sets and input calendars
+verify. All 80 existing learned fits and 128 ledgers / 233,856 rows reproduce to numerical
+precision; 12 independent buy-and-hold identities and two corruption canaries pass.
+No new model variant or reserved-period evaluation occurred.
+
+Both ridge and boosted models have higher forecast RMSE/MAE than the training-mean
+predictor. The fixed state rule beats ridge-20 on return/Sharpe under base and stressed
+costs; ridge has only a modest extra-day-delay advantage. Ridge-40 performs badly in
+2022. Decision: reject promotion of this ML setup and retain the simpler controls.
+Recommend an unchanged-rule 2018–2024 development check before any OOS design. That
+next experiment has not run. No ML rerun is required of the operator now.
+
+The higher headline returns use 2020–2024, not the previous 2018–2024 window; they do
+not establish an ML gain or forward return expectation. Full findings, limitations
+and evidence: `docs/research/FRESH_CRYPTO_ML_RESULT_20260914.md`. Audit reproducer:
+`scripts/review_fresh_crypto_ml.py`. No Core/runtime/paper/live/capital change.
