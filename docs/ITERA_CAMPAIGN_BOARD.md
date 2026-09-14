@@ -1142,3 +1142,27 @@ Adjusted BIL verified; zero refits, 14 policies / 42 ledgers, 17 tests. All ML p
 ### 2026-09-10 — Incremental information and cost-aware abstention
 
 Completed42 fixed residual Ridge/GBM fits and30 ledgers. Neither model meets the recorded prediction/economic consistency criteria. Small full-period forecast improvements reverse excluding2020; calibration often disables the residual. True BIL abstention executes, but neither calibrated policy establishes an advantage over controls. Stop this feature/target probe; next decision is a new information/economic hypothesis or pausing this line, not another architecture sweep. No2025/Core/runtime/capital changes. See `docs/research/ML_INCREMENTAL_INFORMATION_RESULT_20260910.md`.
+
+### 2026-09-14 — Fresh strategy discovery implemented for operator-local screening
+
+The operator explicitly authorized a fresh exploratory strategy exercise, setting aside
+prior charter performance goals and research gates, with a new branch, committed code,
+and Windows execution/results review. Branch `research/fresh-strategy-discovery-20260914`
+starts at `8869dfc` on the operator-specified economic-opportunity review branch.
+
+Implemented three independent hypotheses: cross-asset dual momentum, sector residual
+reversal with a market hedge, and trend-conditioned pullbacks; plus a fixed blend.
+20 candidates, eight controls, four execution scenarios, 112 accounting ledgers. New
+20-ETF snapshots, causal next-open execution, mark-to-market full-equity accounting,
+cost/borrow/financing, both exposure ceilings, all-period/annual/era diagnostics and
+automatic review ZIP. No prior model or old performance gate enters the screen.
+
+25 focused synthetic tests passed, including exact screen replay. A full-length synthetic
+integration reconciled 482,272 daily rows and verified ZIP contents. This is engineering
+evidence only: **no market result is claimed**. Next action is the operator's local run via
+`scripts/local/run_fresh_strategy_discovery.ps1`, then review the returned ZIP before
+freezing any OOS/Monte Carlo design. Pre-2025 history is development; 2025 is not requested
+or evaluated. No Core, runtime, orders, NAV/exposure implementation or capital change.
+
+Full design, assumptions, runnable procedure and verification:
+`docs/research/FRESH_STRATEGY_DISCOVERY_20260914.md`.
