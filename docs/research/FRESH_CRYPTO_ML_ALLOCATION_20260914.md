@@ -219,3 +219,18 @@ moved or removed. There is no data-root selection or download switch. The wrappe
 the focused correctness tests, executes the complete development experiment, then prints
 the results ZIP to share for review. PowerShell is statically inspected here; actual
 Windows execution happens on the operator's machine.
+
+### Source-path recovery — 2026-09-14
+
+If the requested results directory is missing, the PowerShell wrapper also checks the
+same path with `.zip` appended. Its default therefore accepts either the original
+`artifacts/fresh_crypto_20260914_110447_621` directory or the ZIP beside it. It prints
+the resolved source path before testing. A missing source now reports the checked paths
+and explains how to restore the original results ZIP. Git does not restore ignored
+local result artifacts. `-SourceRun` expects the earlier results directory or archive,
+not the raw `ID_test/data` directory. Input hashes and the experiment remain unchanged.
+
+Verification: wrapper reviewed statically; PowerShell execution remains Windows-local.
+The uploaded original ZIP was accepted by the production input loader, with 2,922 daily
+rows each for BTC and ETH and matching pinned hashes. No ML fit or market backtest ran
+as part of this source-path fix.

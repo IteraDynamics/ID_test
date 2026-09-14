@@ -5,9 +5,15 @@ $ErrorActionPreference = 'Stop'
 $codeRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 if (-not $SourceRun) { $SourceRun = Join-Path $codeRoot 'artifacts\fresh_crypto_20260914_110447_621' }
 if (-not (Test-Path -LiteralPath $SourceRun)) {
-    throw 'Source run not found. Supply -SourceRun with your completed fresh_crypto_20260914_110447_621 directory or ZIP.'
+    $zipPath = $SourceRun.TrimEnd([char[]]'\/') + '.zip'
+    if (Test-Path -LiteralPath $zipPath -PathType Leaf) {
+        $SourceRun = $zipPath
+    } else {
+        throw "Previous results not found at '$SourceRun' or '$zipPath'. Git does not restore local result files. Restore fresh_crypto_20260914_110447_621.zip to the artifacts folder, or pass its absolute path with -SourceRun. This argument expects the prior results, not the raw data folder."
+    }
 }
 $sourcePath = (Resolve-Path -LiteralPath $SourceRun).ProviderPath
+Write-Host "Reusing crypto inputs from: $sourcePath"
 $outputPath = Join-Path $codeRoot ("artifacts\fresh_crypto_ml_{0}" -f (Get-Date -Format 'yyyyMMdd_HHmmss_fff'))
 Push-Location $codeRoot
 try {
