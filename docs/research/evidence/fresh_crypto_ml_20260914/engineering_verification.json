@@ -1,0 +1,61 @@
+{
+  "actual_input_check": {
+    "btc_daily_rows": 2922,
+    "downloads": 0,
+    "eth_daily_rows": 2922,
+    "hash_pinned_inputs_passed": true,
+    "ml_fits": 0,
+    "uploaded_archive": "fresh_crypto_20260914_110447_621.zip"
+  },
+  "environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "pytest": "9.0.3",
+    "python": "3.12.14",
+    "scikit-learn": "1.9.0",
+    "scipy": "1.17.1",
+    "threadpoolctl": "3.6.0"
+  },
+  "full_synthetic_run": {
+    "constant_estimates": 40,
+    "daily_rows": 233856,
+    "distinct_learned_fits": 80,
+    "exact_replay_passed": true,
+    "first_evaluation_date": "2020-01-01",
+    "immature_label_canary_passed": true,
+    "last_evaluation_date": "2024-12-31",
+    "learned_fit_executions_including_replay": 160,
+    "ledger_count": 128,
+    "maximum_accounting_residual": 5.924248930717959e-16,
+    "monte_carlo_run": false,
+    "policy_count": 32,
+    "reserved_2025_used": false,
+    "status": "SYNTHETIC_MECHANICS_ONLY"
+  },
+  "hash_validation": {
+    "directory_file_hashes_passed": 16,
+    "zip_crc_passed": true,
+    "zip_file_hashes_passed": 16
+  },
+  "market_ml_fits_run": 0,
+  "performance_claim": "None. Synthetic values are not market evidence.",
+  "powershell": "Static inspection only; Windows runtime is the operator machine.",
+  "status": "SYNTHETIC_ENGINEERING_EVIDENCE_ONLY",
+  "tested_python_sha256": {
+    "research/fresh_crypto_ml/__init__.py": "4b8ac4b7e1a631adec22c88c1667c06457758900ad540d91909d331f0c41c9e5",
+    "research/fresh_crypto_ml/data.py": "57e6aad8413e0480ae4a9616e24577ed2b733bbd0572bb0d5c4d3995e350d240",
+    "research/fresh_crypto_ml/design.py": "82ba5b2800981e499759f709abf545713ed9982ef29dc620fbd00f4f94a0c218",
+    "research/fresh_crypto_ml/features.py": "a7af3f0901d8d8d4d448a74da796c26dff9d5ef639c76cd4361e0605183a9078",
+    "research/fresh_crypto_ml/labels.py": "c3b12ad772e360d5b505d27fc1ea550416335f10544f92a1aa9f4c17c5439069",
+    "research/fresh_crypto_ml/models.py": "22c431eeffd283a6a6aaea430d6fe10e10bf7fd07b3ee5aeba11f9e8f7f7663b",
+    "research/fresh_crypto_ml/portfolio.py": "68b70c8a0536cdc00f96dfd0aa73d8714d7d010b10a9bfc0a5981e63cd303c4a",
+    "research/fresh_crypto_ml/run.py": "fea95e3498e2fd4107132b67fd745db8c57c14b5a9f9f232ba690e0e79db2411"
+  },
+  "tests": {
+    "command": "uv run --locked --python 3.12 --extra dev python -m pytest tests/test_fresh_crypto_ml.py tests/test_fresh_crypto_discovery.py -q -W error",
+    "existing_crypto_tests": 24,
+    "ml_tests": 21,
+    "passed": 45
+  },
+  "verification_date": "2026-09-14"
+}

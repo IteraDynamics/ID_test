@@ -1237,3 +1237,32 @@ implementation and any OOS/Monte Carlo step remain future work. No Core/runtime 
 
 Audit reproducer: `scripts/review_fresh_crypto_discovery.py`. Full evidence and proposed
 experiment: `docs/research/FRESH_CRYPTO_REVIEW_AND_ML_DIRECTION_20260914.md`.
+
+### 2026-09-14 — Bounded crypto ML allocation implemented for operator-local evaluation
+
+Implemented the proposed weekly allocator using regularized ridge and shallow boosted
+regression. Fifteen causal features predict 14-day net relative log wealth of the fixed
+trend and allocation portfolios. Quarterly expanding fits use only fully matured labels;
+clipping and scaling fit inside each training window. A fixed cost-sensitive hurdle
+maps predictions to trend/allocation mixtures. No architecture or hyperparameter search.
+
+Two risk profiles and exact/2% band execution create eight learned candidates, twenty
+matched controls and four spot/cash benchmarks: 32 policies across four scenarios,
+128 continuous portfolio ledgers. Costs, labels, terminal liquidation, fit/decision
+timestamps and all distinct/repeated learned-fit counts are explicit. The original
+result directory or ZIP supplies hash-pinned BTC/ETH inputs; no download is implemented.
+2020–2024 remains already-inspected development history, not final OOS evidence.
+
+45 tests passed with warnings as errors (21 new ML tests and 24 existing crypto tests).
+The full 2017–2024 synthetic workflow exercised 80 distinct learned fits, replayed all
+128 ledgers / 233,856 daily rows exactly, and passed output-hash/ZIP checks. This is
+engineering evidence only. Actual uploaded normalized inputs passed an input-only check;
+no model was fitted to market data here. PowerShell was inspected statically.
+
+Next action: operator runs `scripts/local/run_fresh_crypto_ml.ps1 -SourceRun` against
+`artifacts/fresh_crypto_20260914_110447_621`, then shares the printed ZIP. Review learned
+value beyond fixed mixtures and execution controls before choosing any further research.
+No OOS/Monte Carlo, Core, runtime, paper/live parameters or capital change.
+
+Specification: `docs/research/FRESH_CRYPTO_ML_ALLOCATION_20260914.md`.
+Engineering record: `docs/research/evidence/fresh_crypto_ml_20260914/engineering_verification.json`.

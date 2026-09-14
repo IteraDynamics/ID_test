@@ -195,3 +195,11 @@ Counterfactual labels and simulator fills remain research assumptions to audit.
 mixture and no-trade-band controls, then the two small supervised models. Do not fit a
 large model to optimize the full-period Sharpe, and do not consume the reserved period
 to choose among versions. No numerical improvement from ML is claimed or forecast.
+
+## Implementation follow-up — 2026-09-14
+
+The bounded experiment is now implemented for an operator-local run. Its fixed model,
+feature, label, allocation and execution choices are recorded in
+[the implementation specification](FRESH_CRYPTO_ML_ALLOCATION_20260914.md).
+This follow-up does not alter the original reviewed market results above. ML market
+results and any OOS/Monte Carlo decision remain pending the operator's new results ZIP.
