@@ -1212,3 +1212,28 @@ tests also passed. Synthetic checks cover fee identities, causality, weekends, c
 intraday aggregation, offline reuse, download boundaries and complete screen replay.
 PowerShell was reviewed statically. No OOS/Monte Carlo, Core, runtime or capital change.
 Procedure and complete trial list: `docs/research/FRESH_CRYPTO_DISCOVERY_20260914.md`.
+
+### 2026-09-14 — Fresh crypto market screen audited; bounded ML direction proposed
+
+The operator supplied `fresh_crypto_20260914_110447_621.zip` and asked where ML could
+improve the result. Archive/spec/code identities and normalized daily calendars verify;
+all 64 ledgers / 163,520 rows replay to numerical precision, all full/era metrics
+reconstruct, and 12 independent buy-and-hold fee/price identities pass. Source-vendor
+provenance remains unverified because the ZIP contains normalized inputs, not original
+full history files. No new strategy, ML fit, or reserved-period evaluation occurred.
+
+The capped trend ensembles improve base Sharpe and drawdown versus allocation controls.
+At 75 bps one way their Sharpe advantage reverses, although drawdown protection remains.
+Annual relative returns improve in 2018/2022 and trail in all five positive years;
+excluding 2022 also reverses both capped profiles' Sharpe advantage. These are reasons
+to investigate costs and conditional allocation value, not a claim of forecastable regimes.
+
+Decision: continue research. Proposed first ML experiment is a small weekly model choosing
+the mixture of the fixed trend and risk-controlled allocation portfolios. Compare a
+regularized linear model and shallow boosted model against endpoints, fixed mixtures,
+constant predictions, and a simple no-trade-band execution control. Use matured labels,
+chronological development evaluation and the same costs/risk treatment. A full ML
+implementation and any OOS/Monte Carlo step remain future work. No Core/runtime change.
+
+Audit reproducer: `scripts/review_fresh_crypto_discovery.py`. Full evidence and proposed
+experiment: `docs/research/FRESH_CRYPTO_REVIEW_AND_ML_DIRECTION_20260914.md`.

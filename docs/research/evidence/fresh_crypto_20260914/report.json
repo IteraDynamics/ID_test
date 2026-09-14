@@ -1,0 +1,202 @@
+{
+  "annualization_days": 365,
+  "candidate_count": 9,
+  "candidate_registry": [
+    {
+      "family": "trend_ensemble",
+      "name": "trend_ensemble_vol20",
+      "role": "candidate",
+      "vol_target": 0.2
+    },
+    {
+      "family": "trend_ensemble",
+      "name": "trend_ensemble_vol40",
+      "role": "candidate",
+      "vol_target": 0.4
+    },
+    {
+      "family": "trend_ensemble",
+      "name": "trend_ensemble_uncapped",
+      "role": "candidate",
+      "vol_target": null
+    },
+    {
+      "family": "breakout",
+      "name": "breakout_vol20",
+      "role": "candidate",
+      "vol_target": 0.2
+    },
+    {
+      "family": "breakout",
+      "name": "breakout_vol40",
+      "role": "candidate",
+      "vol_target": 0.4
+    },
+    {
+      "family": "breakout",
+      "name": "breakout_uncapped",
+      "role": "candidate",
+      "vol_target": null
+    },
+    {
+      "family": "rotation",
+      "name": "rotation_vol20",
+      "role": "candidate",
+      "vol_target": 0.2
+    },
+    {
+      "family": "rotation",
+      "name": "rotation_vol40",
+      "role": "candidate",
+      "vol_target": 0.4
+    },
+    {
+      "family": "rotation",
+      "name": "rotation_uncapped",
+      "role": "candidate",
+      "vol_target": null
+    },
+    {
+      "family": "equal_weight",
+      "name": "equal_weight_vol20",
+      "role": "control",
+      "vol_target": 0.2
+    },
+    {
+      "family": "equal_weight",
+      "name": "equal_weight_vol40",
+      "role": "control",
+      "vol_target": 0.4
+    },
+    {
+      "family": "equal_weight",
+      "name": "equal_weight_uncapped",
+      "role": "control",
+      "vol_target": null
+    },
+    {
+      "family": "btc_buy_hold",
+      "name": "btc_buy_hold",
+      "role": "benchmark",
+      "vol_target": null
+    },
+    {
+      "family": "eth_buy_hold",
+      "name": "eth_buy_hold",
+      "role": "benchmark",
+      "vol_target": null
+    },
+    {
+      "family": "mix_buy_hold",
+      "name": "mix_buy_hold",
+      "role": "benchmark",
+      "vol_target": null
+    },
+    {
+      "family": "usd_cash",
+      "name": "usd_cash",
+      "role": "benchmark",
+      "vol_target": null
+    }
+  ],
+  "cash_yield": 0.0,
+  "code_sha256": {
+    "docs/research/FRESH_CRYPTO_DISCOVERY_20260914.md": "80b2c3620880f9181da77c69cb4c8040402d21af4ab5416892e8ebd2a779aa50",
+    "pyproject.toml": "cf2847ef879780460b3ded80d9216192522ae86c0654ab575dd5028b2a6c611c",
+    "research/fresh_crypto/__init__.py": "c6f57ace55ca765ec3b10a8ab6dddf833322603521df2a999bc162a43f7203e5",
+    "research/fresh_crypto/data.py": "107f5a526db59b9029c05dbd6ac9f50db0fa0c8b2649239cf5d9037a76b95d97",
+    "research/fresh_crypto/engine.py": "d70741d183045b308846c5b8e76b5adc487284407991cece29ac4a903bbd0bb8",
+    "research/fresh_crypto/run.py": "4d8f41ae89a285d0555c87e76aa81d37164b04efa1764ae4682ff039985d5881",
+    "research/fresh_discovery/accounting.py": "659af50e35d53c5366257fb6d9a7f5e4e9cd1601ffbcb3d3afda671193cb21af",
+    "research/fresh_discovery/data.py": "ab42dfcdaa24b557b7d74d74156e7ce26fae99c173f9b2fe572e7bf5a2e40075",
+    "scripts/local/run_fresh_crypto_discovery.ps1": "3aea4ac8638471deefb9b433a9930a041ddf846cbae5c9246b5825fa87acde31",
+    "tests/test_fresh_crypto_discovery.py": "984dce03b2ecad262534bdf13e91fc6ef875c95806cb00093202afed6a0fc8e6",
+    "uv.lock": "0f739fe539dae5eedc709a87f5d9a2180c88b28002d75ca156488e434b74deeb"
+  },
+  "commit": "62cc0f1e110aa4f83e9502198e43105368fbc89e",
+  "daily_rows": 163520,
+  "data": {
+    "BTC": {
+      "asset": "BTC",
+      "assumed_timestamp_semantics": "UTC_bar_start",
+      "daily_rows": 2922,
+      "excluded_outside_development_rows": 1134,
+      "first_date": "2017-01-01",
+      "incomplete_boundary_days_removed": 0,
+      "last_date": "2024-12-31",
+      "leading_days_trimmed_for_common_window": 0,
+      "normalized_sha256": "9864fb4539fd8199f2c4eab855e7dd8db4aa4e368a5eb670c0f870082a1f58d6",
+      "source_bar_seconds": 86400,
+      "source_label": "operator_local_unverified",
+      "source_path": "C:\\Dev\\IteraDynamics\\ID_test\\data\\btcusd_86400s_2015-07-15_to_2026-08-26.csv",
+      "source_sha256": "e28f510eb3422b373119e657fad4d41a53c7dced30ea979aae6e29764a44ce5f"
+    },
+    "ETH": {
+      "asset": "ETH",
+      "assumed_timestamp_semantics": "UTC_bar_start",
+      "daily_rows": 2922,
+      "excluded_outside_development_rows": 829,
+      "first_date": "2017-01-01",
+      "incomplete_boundary_days_removed": 0,
+      "last_date": "2024-12-31",
+      "leading_days_trimmed_for_common_window": 0,
+      "normalized_sha256": "993cb7d7b63161181dfa245add3a146fef85a473173038103a8f94de44d4ece5",
+      "source_bar_seconds": 86400,
+      "source_label": "operator_local_unverified",
+      "source_path": "C:\\Dev\\IteraDynamics\\ID_test\\data\\ethusd_86400s_2016-05-13_to_2026-08-26.csv",
+      "source_sha256": "8fc79210c248f5902017a733d4bc2fde8cd97c4584fdf9ddda6d5219fae49872"
+    }
+  },
+  "environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "python": "3.12.13"
+  },
+  "evaluation_first_date": "2018-01-03",
+  "evaluation_last_date": "2024-12-31",
+  "exact_replay_passed": true,
+  "files": {
+    "BTC-USD.csv": "9864fb4539fd8199f2c4eab855e7dd8db4aa4e368a5eb670c0f870082a1f58d6",
+    "ETH-USD.csv": "993cb7d7b63161181dfa245add3a146fef85a473173038103a8f94de44d4ece5",
+    "README.md": "a14726ff6a86c28032e8e17b9f22f8553e8065350c12d06491d91c36cea376f0",
+    "annual_returns.csv": "a3acbeffbffa6dbba982c22d48d6a9583162dd706f5dc76ef372e7184827cd3c",
+    "base_return_correlations.csv": "a96b8bb74486c781fbc1f5d413ffacc88bb01dc96eaf8d5b399a7d5489c7cae5",
+    "daily_ledger.csv": "f364afcbcf19a94f6876afa0b9a3c94f8982c3091928dec8286bf6c03ff4ad34",
+    "data_inventory.json": "91f077dd66753dcfeee4f6f4af40e9c5ebe7474bf16990269abc5c11bfe22d89",
+    "data_manifest.json": "6d24e1fe63f3cc8ea9b3ee2e950c0f7e1277d3a9e3766d61b1a4172b9a27dd6c",
+    "identity_before_evaluation.json": "069cde737b29536f266fd69475d19b85f31754db0157eb564c89e5660ddea6a5",
+    "matched_control_comparisons.csv": "42223b59e514ba4caf054648caeecf37504d3e2c28cf2367aea3b19266e9fea8",
+    "metrics.csv": "8682109b07549a32848faf4076c22d96f4eb8260d0616d9e950b8866404a4c08",
+    "target_weights.csv": "1d396933f65da66845e3215a390ebf23d3230da8ca332ae13ef749d74baf8c56"
+  },
+  "full_day_signal_latency": true,
+  "ledger_count": 64,
+  "maximum_accounting_residual": 5.814838241883055e-16,
+  "monte_carlo_run": false,
+  "policy_count": 16,
+  "reserved_2025_used": false,
+  "scenarios": [
+    [
+      "frictionless",
+      0.0,
+      0
+    ],
+    [
+      "base",
+      30.0,
+      0
+    ],
+    [
+      "cost_stress",
+      75.0,
+      0
+    ],
+    [
+      "delay_one_day",
+      30.0,
+      1
+    ]
+  ],
+  "status": "EXPLORATORY_CRYPTO_SCREEN_NOT_OOS",
+  "synthetic_data_used": false
+}

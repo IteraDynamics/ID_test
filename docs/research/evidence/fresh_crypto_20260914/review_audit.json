@@ -1,0 +1,62 @@
+{
+  "archive_files_verified": 12,
+  "archive_sha256": "4cad6e73c19b24eeda7e8e0ae7d9ca2c9666306633fd76c67144790499d3a684",
+  "code_hash_modes": {
+    "docs/research/FRESH_CRYPTO_DISCOVERY_20260914.md": "CRLF",
+    "pyproject.toml": "CRLF",
+    "research/fresh_crypto/__init__.py": "CRLF",
+    "research/fresh_crypto/data.py": "CRLF",
+    "research/fresh_crypto/engine.py": "CRLF",
+    "research/fresh_crypto/run.py": "CRLF",
+    "research/fresh_discovery/accounting.py": "CRLF",
+    "research/fresh_discovery/data.py": "CRLF",
+    "scripts/local/run_fresh_crypto_discovery.ps1": "CRLF",
+    "tests/test_fresh_crypto_discovery.py": "CRLF",
+    "uv.lock": "CRLF"
+  },
+  "corruption_canary_passed": true,
+  "daily_rows": 163520,
+  "deletion_diagnostic": "Historical sensitivity; days are omitted, no refit or Monte Carlo inference",
+  "holdout_evaluations": 0,
+  "independent_buy_hold_checks": 12,
+  "ledgers_replayed": 64,
+  "maximum_replay_differences": {
+    "BTC_pnl": 6.591949208711867e-16,
+    "BTC_weight": 1.432187701766452e-14,
+    "ETH_pnl": 4.0592529337857286e-16,
+    "ETH_weight": 1.2656542480726785e-14,
+    "USD_weight": 2.525757381022231e-14,
+    "accounting_residual": 4.938259206737261e-16,
+    "execution_cost": 9.061219656547603e-17,
+    "gross_market_pnl": 9.645062526431047e-16,
+    "nav": 2.1316282072803006e-14,
+    "return": 6.661338147750939e-16,
+    "risky_exposure": 2.531308496145357e-14,
+    "terminal_liquidation": 0.0,
+    "turnover": 2.5042468099201187e-14
+  },
+  "metric_reconstruction_passed": true,
+  "model_fits": 0,
+  "new_strategy_variants": 0,
+  "normalized_prices_and_calendars_verified": true,
+  "original_full_source_files_available": false,
+  "original_vendor_and_acquisition_provenance_independently_verified": false,
+  "reviewer_environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "python": "3.12.14"
+  },
+  "source_calendar_days": 2922,
+  "source_commit": "62cc0f1e110aa4f83e9502198e43105368fbc89e",
+  "source_environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "python": "3.12.13"
+  },
+  "status": "FIXED_DEVELOPMENT_SCREEN_AUDITED_NOT_OOS",
+  "target_replay_differences": {
+    "BTC": 1.1102230246251565e-16,
+    "ETH": 1.1102230246251565e-16,
+    "USD": 2.220446049250313e-16
+  }
+}
