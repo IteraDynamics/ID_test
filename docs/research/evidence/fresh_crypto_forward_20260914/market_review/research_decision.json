@@ -1,0 +1,35 @@
+{
+  "automatic_paper_live_promotion": false,
+  "benefits_retained": [
+    "Lower drawdown and higher full-period CAGR than crypto buy-and-hold",
+    "Higher full-period CAGR than matched plain trend across all execution scenarios"
+  ],
+  "candidate_freeze_changed": false,
+  "candidates": [
+    "state_rule_vol20_band2",
+    "state_rule_vol40_band2"
+  ],
+  "evidence_sha256": {
+    "annual_returns.csv": "0a47a3baaed841469f237cf308a036e4bb605506961be5030d98b87a47b72ffe",
+    "cost_attribution.csv": "6f537d3c27c31c74b99a6ec4f0f8110035a3877b7eb882ee757cf9a97571a3f5",
+    "influence_diagnostics.csv": "0ae5e03c962e171ebc4cd5276906f2fbbed9c11315acc10bc4895ef9afaa65fb",
+    "matched_comparisons.csv": "23968ab6ccf271490c6eed58ac7150f52d2d19f58c49ef5d6f93420c459a9845",
+    "metrics.csv": "3415d1e9fa35eecda6e6819160ed393e1d26ff7c3f48b21791a489276b3d1d42",
+    "monthly_relative_performance.csv": "485d8383faac480eafdc2708d0f022e3b1bd846afbb72bb4802a28465339abde",
+    "review_audit.json": "b0c180bbaf5ebfa0f57e435d62171e02bd5208e4aa72c76bfd3b1edc57a88036",
+    "yearly_state_trend_identity.csv": "abaadba0dd0d2a23cd32e0b8fdff82e658439f582253a7c98d3ab7b549be5fbe"
+  },
+  "monte_carlo_run": false,
+  "new_models_or_parameters_tested": 0,
+  "old_charter_performance_thresholds_used": false,
+  "operator_rerun_required": false,
+  "reasons": [
+    "Weak absolute net return versus drawdown",
+    "Both candidates lose money under higher costs and extra-day delay",
+    "2026 state returns coincide with matched trend",
+    "Most relative benefit concentrated in July 2025"
+  ],
+  "source_archive_sha256": "732c57691d966577183ab147081fd92b3464667cb8ec2415fb1452b908acdc2a",
+  "source_commit": "85a98b3e0acfc93645036578cf61ee46805c96a4",
+  "status": "REJECT_PROMOTION_AS_STANDALONE_RETURN_STRATEGY_RETAIN_DEFENSIVE_BENCHMARK"
+}

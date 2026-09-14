@@ -1,0 +1,17 @@
+policy,comparator,scenario,year,days,maximum_absolute_daily_return_difference,mean_trend_mixture_on_year_signal_bars
+state_rule_vol20_band2,trend_vol20_band2,frictionless,2025,365,0.0074870945866003513,0.49315068493150682
+state_rule_vol20_band2,trend_vol20_band2,frictionless,2026,238,4.4408920985006262e-16,1
+state_rule_vol20_band2,trend_vol20_band2,base,2025,365,0.0074870945866003513,0.49315068493150682
+state_rule_vol20_band2,trend_vol20_band2,base,2026,238,4.4408920985006262e-16,1
+state_rule_vol20_band2,trend_vol20_band2,cost_stress,2025,365,0.0074870945866003513,0.49315068493150682
+state_rule_vol20_band2,trend_vol20_band2,cost_stress,2026,238,2.2204460492503131e-16,1
+state_rule_vol20_band2,trend_vol20_band2,delay_one_day,2025,365,0.018121989400328609,0.49315068493150682
+state_rule_vol20_band2,trend_vol20_band2,delay_one_day,2026,238,4.4408920985006262e-16,1
+state_rule_vol40_band2,trend_vol40_band2,frictionless,2025,365,0.021855510225066821,0.49315068493150682
+state_rule_vol40_band2,trend_vol40_band2,frictionless,2026,238,3.3306690738754696e-16,1
+state_rule_vol40_band2,trend_vol40_band2,base,2025,365,0.021760303171298512,0.49315068493150682
+state_rule_vol40_band2,trend_vol40_band2,base,2026,238,2.2204460492503131e-16,1
+state_rule_vol40_band2,trend_vol40_band2,cost_stress,2025,365,0.021617492590646492,0.49315068493150682
+state_rule_vol40_band2,trend_vol40_band2,cost_stress,2026,238,2.2204460492503131e-16,1
+state_rule_vol40_band2,trend_vol40_band2,delay_one_day,2025,365,0.052719947257906741,0.49315068493150682
+state_rule_vol40_band2,trend_vol40_band2,delay_one_day,2026,238,3.3306690738754696e-16,1

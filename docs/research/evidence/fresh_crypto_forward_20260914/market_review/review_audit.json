@@ -1,0 +1,160 @@
+{
+  "archive_files_verified": 17,
+  "archive_sha256": "732c57691d966577183ab147081fd92b3464667cb8ec2415fb1452b908acdc2a",
+  "code_hash_modes": {
+    "docs/research/FRESH_CRYPTO_FORWARD_20260914.md": "CRLF",
+    "docs/research/FRESH_CRYPTO_LONG_HISTORY_20260914.md": "CRLF",
+    "docs/research/evidence/fresh_crypto_long_history_20260914/market_review/candidate_freeze.json": "CRLF",
+    "pyproject.toml": "CRLF",
+    "research/fresh_crypto/data.py": "CRLF",
+    "research/fresh_crypto/engine.py": "CRLF",
+    "research/fresh_crypto_forward.py": "CRLF",
+    "research/fresh_crypto_forward_data.py": "CRLF",
+    "research/fresh_crypto_long_history.py": "CRLF",
+    "research/fresh_crypto_ml/design.py": "CRLF",
+    "research/fresh_crypto_ml/features.py": "CRLF",
+    "research/fresh_crypto_ml/models.py": "CRLF",
+    "research/fresh_crypto_ml/portfolio.py": "CRLF",
+    "research/fresh_discovery/accounting.py": "CRLF",
+    "research/fresh_discovery/data.py": "CRLF",
+    "scripts/local/run_fresh_crypto_forward.ps1": "CRLF",
+    "scripts/local/run_fresh_crypto_long_history.ps1": "CRLF",
+    "tests/test_fresh_crypto_forward.py": "CRLF",
+    "tests/test_fresh_crypto_long_history.py": "CRLF",
+    "uv.lock": "CRLF"
+  },
+  "corruption_canary_passed": true,
+  "daily_rows": 48240,
+  "development_source": {
+    "downloads": 0,
+    "normalized_input_sha256": {
+      "BTC-USD.csv": "9864fb4539fd8199f2c4eab855e7dd8db4aa4e368a5eb670c0f870082a1f58d6",
+      "ETH-USD.csv": "993cb7d7b63161181dfa245add3a146fef85a473173038103a8f94de44d4ece5"
+    },
+    "original_vendor_provenance": "operator_local_unverified",
+    "price_window": "2017-01-01 through 2024-12-31",
+    "source_archive_sha256": "1e760e98447d1544cce5f8be4d93953ce6026e12cc2dc6002c5358f0a1a600fb",
+    "source_commit": "535453e3a7499c00111f7f90a587c36dea9a1a7a",
+    "source_path": "/workspace/scratch/f8b0367d0bf0/upload/fresh_crypto_long_history_20260914_142341_250.zip"
+  },
+  "first_evaluation_date": "2025-01-01",
+  "independent_buy_hold_checks": 12,
+  "independent_statistic_rows": 240,
+  "influence_diagnostic": "Post hoc omission of saved daily returns by calendar month; no refit, significance test or tradable path claim",
+  "last_evaluation_date": "2026-08-26",
+  "ledgers_replayed": 80,
+  "monte_carlo_runs": 0,
+  "new_holdout_windows": 0,
+  "new_model_fits": 0,
+  "new_strategy_variants": 0,
+  "normalized_calendar_days": 3525,
+  "prepared_artifact_hashes_verified": 6,
+  "prior_access_2025": "already_inspected_in_other_repository_research",
+  "prior_access_2026": "unknown",
+  "raw_local_file_hashes_independently_recomputed": false,
+  "replay_differences": {
+    "annual_returns": {
+      "days": 0.0,
+      "total_return": 4.107825191113079e-15,
+      "year": 0.0
+    },
+    "buy_hold_identities": {
+      "expected_nav": 0.0,
+      "reported_nav": 0.0,
+      "residual": 0.0
+    },
+    "daily_ledger": {
+      "BTC_pnl": 4.839878497975292e-16,
+      "BTC_weight": 6.439293542825908e-15,
+      "ETH_pnl": 3.9898639947466563e-16,
+      "ETH_weight": 5.828670879282072e-15,
+      "USD_weight": 1.1546319456101628e-14,
+      "accounting_residual": 5.206788877643915e-16,
+      "executed": 0.0,
+      "execution_cost": 8.792879618857441e-17,
+      "gross_market_pnl": 6.522560269672795e-16,
+      "mixture": 0.0,
+      "nav": 2.4424906541753444e-15,
+      "return": 8.881784197001252e-16,
+      "risky_exposure": 1.1601830607332886e-14,
+      "terminal_liquidation": 0.0,
+      "turnover": 1.172412861238925e-14
+    },
+    "features": {
+      "acceleration": 0.0,
+      "annual_volatility": 0.0,
+      "btc_eth_correlation": 0.0,
+      "btc_momentum180": 0.0,
+      "btc_momentum365": 0.0,
+      "btc_momentum90": 0.0,
+      "downside_fraction": 0.0,
+      "eth_momentum180": 0.0,
+      "eth_momentum365": 0.0,
+      "eth_momentum90": 0.0,
+      "recent_drawdown": 0.0,
+      "relative_strength14": 0.0,
+      "relative_volume": 0.0,
+      "signal_index": 0.0,
+      "trend_agreement": 0.0,
+      "volatility_ratio": 0.0
+    },
+    "matched_comparisons": {
+      "cagr_difference": 4.107825191113079e-15,
+      "drawdown_difference": 1.7763568394002505e-15,
+      "matched_risk_setting": 0.0,
+      "sharpe_difference": 2.375877272697835e-14,
+      "volatility_difference": 2.220446049250313e-16
+    },
+    "metrics": {
+      "annual_arithmetic_execution_drag": 8.500145032286355e-17,
+      "annual_one_way_turnover": 2.6645352591003757e-14,
+      "annual_volatility": 2.498001805406602e-16,
+      "band": 0.0,
+      "cagr": 4.107825191113079e-15,
+      "calmar": 1.5126788710517758e-14,
+      "cash_excess_sharpe": 1.6819878823071122e-14,
+      "certainty_equivalent_gamma3": 2.4147350785597155e-15,
+      "days": 0.0,
+      "executed_rebalances": 0.0,
+      "longest_underwater_days": 0.0,
+      "max_drawdown": 1.5543122344752192e-15,
+      "mean_risky_exposure": 1.6653345369377348e-16,
+      "profile": 0.0,
+      "skipped_rebalances": 0.0,
+      "terminal_nav": 4.551914400963142e-15,
+      "total_return": 4.551914400963142e-15,
+      "worst_day": 3.3306690738754696e-16
+    },
+    "mixture_decisions": {
+      "carried_before_initial_entry": 0.0,
+      "mixture": 0.0,
+      "signal_index": 0.0,
+      "trend_agreement": 0.0,
+      "volatility_ratio": 0.0
+    },
+    "target_weights": {
+      "BTC": 1.1102230246251565e-16,
+      "ETH": 5.551115123125783e-17,
+      "USD": 2.220446049250313e-16,
+      "mixture": 0.0,
+      "signal_index": 0.0
+    }
+  },
+  "reviewed_development_overlap_rows_per_asset": 2922,
+  "reviewer_environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "python": "3.12.14"
+  },
+  "source_commit": "85a98b3e0acfc93645036578cf61ee46805c96a4",
+  "source_environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "python": "3.12.13",
+    "scikit-learn": "1.9.0",
+    "scipy": "1.17.1",
+    "threadpoolctl": "3.6.0"
+  },
+  "source_vendor_and_acquisition_provenance_verified": false,
+  "status": "FROZEN_HISTORICAL_FORWARD_AUDITED_NOT_PRISTINE_OOS"
+}

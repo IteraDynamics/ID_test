@@ -1371,3 +1371,33 @@ comparisons are retained. No globally pristine OOS claim or Monte Carlo result.
 Specification: `docs/research/FRESH_CRYPTO_FORWARD_20260914.md`. Engineering evidence:
 `docs/research/evidence/fresh_crypto_forward_20260914/engineering_verification.json`.
 No Core/runtime/paper/live or capital change.
+
+### 2026-09-14 — Frozen crypto forward result audited; standalone promotion rejected
+
+The operator supplied `fresh_crypto_forward_20260914_153208_047.zip` from `85a98b3`.
+All 17 artifact hashes and 20 consumed code/specification hashes verify, as do the
+prepared input chain and 2,922 development rows per asset against the pinned source.
+All 80 ledgers / 48,240 rows replay to numerical precision. Independent wealth,
+240 metric rows, 12 buy-and-hold identities and the changed-return canary pass.
+No strategy, threshold, model or execution assumption changed during this audit.
+
+January 2025 through August 26, 2026 base results: state-20 -0.23% CAGR, 0.063 Sharpe,
+-18.48% maximum drawdown; state-40 2.15%, 0.212 and -28.52%. Both beat matched trend
+and BTC on full-period CAGR across all four scenarios, but both have negative CAGR
+under 75 bps costs and extra-day delay. State-40 delay CAGR is -4.99%. About 84.10%
+of state-40's relative log-wealth gain over trend comes from July 2025. In 2026,
+state and matched trend daily returns agree to numerical precision in all scenarios.
+
+Decision: reject promotion of this version as a standalone return strategy; retain
+the state rule as a defensive crypto benchmark. Do not resume ML tuning or proceed
+to Monte Carlo as a qualification step. The next research design should seek an
+economically distinct additional return source; none is implemented in this record.
+No old charter metric gate is used. No rerun is required of the operator now.
+
+The supplied period remains locked historical forward validation, not globally
+pristine OOS: earlier research used 2025 and 2026 prior access is unknown. These
+outcomes are now inspected and cannot become an untouched holdout for a redesign.
+Full findings: `docs/research/FRESH_CRYPTO_FORWARD_RESULT_20260914.md`. Audit reproducer:
+`scripts/review_fresh_crypto_forward.py`. Evidence and decision:
+`docs/research/evidence/fresh_crypto_forward_20260914/market_review/`.
+No new model fit, Monte Carlo, Core/runtime/paper/live or capital change.
