@@ -1187,3 +1187,28 @@ Reporting-only rounding/metadata-label fixes added with 26 passing tests. Origin
 summaries are preserved, and the positive-day correction has a separate table. No strategy,
 accounting, Core, runtime, paper/live or capital change. Full findings and audit:
 `docs/research/FRESH_STRATEGY_DISCOVERY_RESULT_20260914.md`.
+
+### 2026-09-14 — Fresh crypto extension ready for operator-local screening
+
+The operator asked why buy-and-hold was difficult to beat and opened the fresh exercise
+to crypto. The ETF comparison confounds exposure and timing: SPY realized 19.97% annual
+volatility against momentum's 12.27%, but SPY's higher excess Sharpe also shows that risk
+reduction alone does not explain the gap. No additional ETF configuration was evaluated.
+
+Implemented an independent BTC/ETH spot screen: trend ensemble, breakout, and rotation;
+each at 20%/40% forecast-volatility caps and uncapped unlevered exposure. Nine candidates,
+three controls with identical sizing rules, four buy-and-hold/cash benchmarks, four
+execution scenarios. Every target and all 64 ledgers replay before a run completes.
+UTC daily accounting, a full day after signal availability before execution, 30/75 bps
+one-way cost assumptions, zero-yield USD cash, and common pre-2025 history are explicit.
+
+Local hourly/four-hour/daily USD files are reused by default with strict complete-day
+validation. Only explicit `-DownloadMissing` permits BTC/ETH Coinbase spot downloads.
+Ambiguous/missing history produces a shareable diagnostic ZIP. No mixed ETF/crypto
+portfolio result or crypto performance claim is made before the operator's run.
+
+24 new focused tests passed with warnings treated as errors; the 26 existing fresh ETF
+tests also passed. Synthetic checks cover fee identities, causality, weekends, complete
+intraday aggregation, offline reuse, download boundaries and complete screen replay.
+PowerShell was reviewed statically. No OOS/Monte Carlo, Core, runtime or capital change.
+Procedure and complete trial list: `docs/research/FRESH_CRYPTO_DISCOVERY_20260914.md`.
