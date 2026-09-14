@@ -1142,3 +1142,30 @@ Adjusted BIL verified; zero refits, 14 policies / 42 ledgers, 17 tests. All ML p
 ### 2026-09-10 — Incremental information and cost-aware abstention
 
 Completed42 fixed residual Ridge/GBM fits and30 ledgers. Neither model meets the recorded prediction/economic consistency criteria. Small full-period forecast improvements reverse excluding2020; calibration often disables the residual. True BIL abstention executes, but neither calibrated policy establishes an advantage over controls. Stop this feature/target probe; next decision is a new information/economic hypothesis or pausing this line, not another architecture sweep. No2025/Core/runtime/capital changes. See `docs/research/ML_INCREMENTAL_INFORMATION_RESULT_20260910.md`.
+
+
+### 2026-09-14 — Independent exploratory strategy batch authorized
+
+The operator invoked senior-quant-researcher and explicitly authorized a fresh
+strategy research branch, implementation committed to GitHub, and PowerShell
+commands for local backtests followed by shared-result review. For this exercise
+the prior performance-charter goals and research approval sequence are waived by
+the operator; deterministic, fail-closed research accounting remains required.
+
+Branch: research/fresh-strategy-lab-20260914, based on economic-opportunity-review
+at 8869dfcc85f9fdf0b82ee308e813a3b176dd3f0c. Implemented a first independent batch
+covering index shock bounce, sector residual reversal, and session-balance timing,
+plus a fixed ensemble and simple controls. Source acquisition and scoring are
+limited to pre-2024 history; later data are not automatically pristine OOS because
+of prior research use. All configurations and cost/exposure scenarios are retained.
+
+Status: READY FOR LOCAL EXECUTION; no market performance result is claimed.
+The authoring workspace was offline; focused mechanics tests are included and
+the repository's existing CI can run them on push. Local entry point:
+scripts/local/run_fresh_strategy_lab.ps1. Results bundle is generated automatically.
+Full specification and assumptions: docs/research/FRESH_STRATEGY_LAB_20260914.md.
+
+Next: inspect actual net return, Sharpe, Calmar, drawdown, cost/delay sensitivity
+and concentration before selecting candidates for a separately frozen evaluation
+and block-resampled Monte Carlo. No OOS or Monte Carlo run yet. No Core v1,
+runtime, strategy registry, paper/live, account, order, NAV or exposure change.
