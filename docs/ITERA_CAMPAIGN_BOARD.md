@@ -1337,3 +1337,37 @@ Result: `docs/research/FRESH_CRYPTO_LONG_HISTORY_RESULT_20260914.md`. Audit repr
 `scripts/review_fresh_crypto_long_history.py`. Evidence and candidate freeze:
 `docs/research/evidence/fresh_crypto_long_history_20260914/market_review/`.
 No Core/runtime/paper/live or capital change.
+
+### 2026-09-14 — Frozen crypto historical forward runner ready for local evaluation
+
+The operator approved implementation of the forward-validation step. Added a local
+prepare/evaluate workflow for the frozen state-20/state-40 banded candidates, retaining
+all 20 original policies and four scenarios. The original 14 dependency hashes and
+candidate-freeze digest must match. There is no new model fit or parameter search.
+
+All portfolios start from cash on January 1, 2025, using the December 30 signal and
+inheriting the original weekly state decisions. No extra January 1 state update or
+2026 inventory reset occurs. The common end comes from the specified files' date
+coverage, capped at August 26, 2026 and requiring complete 2025. Date selection and
+input hashes are saved before forward OHLCV validation. The 2,922 development rows
+per asset must agree with the reviewed snapshot before any later bars are spliced.
+Preparation saves immutable normalized snapshots; evaluation rechecks code and hashes.
+
+44 tests passed with warnings as errors: 27 forward tests and 17 existing fixed-rule
+tests. The synthetic two-stage CLI prepared inputs, replayed all 80 forward ledgers /
+31,680 rows exactly, passed 12 independent buy-and-hold identities, rejected a return
+corruption canary and verified the result ZIP. Tests cover inherited state timing,
+future perturbations, input/calendar corruption, tampering and inventory boundaries.
+An initial protocol JSON tuple/list mismatch was fixed and the full suite passed.
+The actual uploaded long-history ZIP passed the input-only check; no post-2024 market
+prices were read or evaluated here. PowerShell was reviewed statically.
+
+Next action: operator pulls this branch, runs `scripts/local/run_fresh_crypto_forward.ps1`
+with the existing local data root, and shares the printed ZIP. Results remain labelled
+locked historical forward validation: earlier repository research used 2025; 2026
+prior-access status defaults to unknown. Full/year slices, all costs/delays and matched
+comparisons are retained. No globally pristine OOS claim or Monte Carlo result.
+
+Specification: `docs/research/FRESH_CRYPTO_FORWARD_20260914.md`. Engineering evidence:
+`docs/research/evidence/fresh_crypto_forward_20260914/engineering_verification.json`.
+No Core/runtime/paper/live or capital change.

@@ -1,0 +1,69 @@
+{
+  "actual_operator_source_input_only_check": {
+    "archive_sha256": "1e760e98447d1544cce5f8be4d93953ce6026e12cc2dc6002c5358f0a1a600fb",
+    "last_date": "2024-12-31",
+    "passed": true,
+    "rows_per_asset": 2922
+  },
+  "base_commit": "266c616e31e26f63fe0295418096819f55649b47",
+  "command": "uv run --locked --python 3.12 --extra dev python -m pytest tests/test_fresh_crypto_forward.py tests/test_fresh_crypto_long_history.py -q -W error",
+  "current_implementation_sha256": {
+    "docs/research/FRESH_CRYPTO_FORWARD_20260914.md": "19f3db39fa58222554e8f260c1480a7f4837b7b821ec97bdb3b04971580168b2",
+    "docs/research/evidence/fresh_crypto_long_history_20260914/market_review/candidate_freeze.json": "b8676a153882587c55b8bbeb76d59022490e12c960920473d0f7d087f4585230",
+    "research/fresh_crypto_forward.py": "109721e456f4930b6e93029df450e2d66d4fd606076bbcff9cad2f04a83ba4e3",
+    "research/fresh_crypto_forward_data.py": "3282da85da15334c2c88933d2d8309c6de6f04c0f5e4456e3a08ed432a42a0a5",
+    "scripts/local/run_fresh_crypto_forward.ps1": "18f8e6269f7e0f475fd2b0be78301977d3edfa192da1670cab7370d2f6097ca7",
+    "tests/test_fresh_crypto_forward.py": "0b0f810f09af6ae22aa10791585ee64791bf5a630f197251e4f2ff3355c2207d"
+  },
+  "environment": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "pytest": "9.0.3",
+    "python": "3.12.14",
+    "scikit-learn": "1.9.0",
+    "scipy": "1.17.1",
+    "threadpoolctl": "3.6.0"
+  },
+  "existing_long_history_tests": 17,
+  "initial_test_issue_fixed": "Tuple/list mismatch after protocol JSON serialization; protocol now canonicalizes to JSON-compatible types before preparation.",
+  "local_forward_data_availability": "operator_Windows_files_not_accessible_here",
+  "market_forward_evaluations": 0,
+  "monte_carlo_runs": 0,
+  "new_forward_tests": 27,
+  "new_learned_model_fits": 0,
+  "next_action": "Operator pulls branch and runs scripts/local/run_fresh_crypto_forward.ps1 against existing local daily files, then shares ZIP.",
+  "original_frozen_dependencies_verified": 14,
+  "post_2024_market_prices_read": false,
+  "powershell": "statically_reviewed_not_executed_on_Linux",
+  "status": "ENGINEERING_VERIFIED_OPERATOR_MARKET_FORWARD_RUN_PENDING",
+  "synthetic_cli_identity_note": "Only synthetic fixture input pins and code identity are injected inside the test; the same prepare/evaluate CLI functions and snapshot hash checks execute.",
+  "synthetic_two_stage_cli": {
+    "corruption_canary_passed": true,
+    "daily_rows": 31680,
+    "exact_replay_passed": true,
+    "first_evaluation_date": "2025-01-01",
+    "independent_buy_hold_checks": 12,
+    "last_evaluation_date": "2026-01-31",
+    "ledger_count": 80,
+    "maximum_accounting_residual": 4.444815151781326e-16,
+    "model_fits": 0,
+    "monte_carlo_run": false,
+    "policy_count": 20,
+    "status": "SYNTHETIC_MECHANICS_ONLY"
+  },
+  "test_duration_seconds": 33.728,
+  "tests_passed": 44,
+  "verified_failure_modes": [
+    "future perturbation leaves earlier targets and P&L unchanged",
+    "first fill and cash start with delay",
+    "weekly state inherited across entry",
+    "no 2026 inventory reset",
+    "missing/duplicate/intraday dates",
+    "invalid OHLCV",
+    "conflicting development overlap",
+    "changed prepared inputs/plan/source/code identity",
+    "raw mutation during preparation",
+    "frozen dependency/selection tampering",
+    "existing run/ZIP overwrite"
+  ]
+}
