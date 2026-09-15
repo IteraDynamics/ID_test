@@ -1,0 +1,41 @@
+{
+  "status": "DEVELOPMENT_REHEARSAL_NOT_COHORT",
+  "review_date": "2026-09-15",
+  "analyst": "ChatGPT/Codex; exact serving checkpoint not exposed",
+  "selection": "Two purposively chosen business-model contrasts, not a random sample. Latest reports were inspected before final case selection. Secondary news snippets were seen during discovery; no historical blindness claim.",
+  "eligibility": "Current/event-time market cap, ADV20, exact publication instants and full eligible security status have not been independently established. These are teaching cases, not cohort members.",
+  "sources": {
+    "C1": {"url": "https://www.sec.gov/Archives/edgar/data/1334036/000133403626000050/croxq22026-pressrelease.htm", "date": "2026-07-30", "locator": "Q2 2026 release: statements of operations; GAAP/non-GAAP operations and EPS reconciliation; full-year guidance", "capture": "Read via web retrieval on review_date; original document bytes not archived here"},
+    "D1": {"url": "https://investors.duolingo.com/static-files/3c8277ee-bc94-4f5d-9b77-0db3e46f88b8", "date": "2026-08-05", "locator": "Q2 2026 shareholder letter, printed pages 8-11 and balance sheet page 15", "capture": "Read via web retrieval on review_date; original PDF bytes not archived here"},
+    "D2": {"url": "https://investors.duolingo.com/node/11971/html", "date": "2026-08-06", "locator": "June 2026 10-Q, statements of operations and Note 8 Founder Awards / Stock-Based Compensation", "capture": "Read via web retrieval on review_date; original document bytes not archived here"},
+    "Q": {"provider": "web finance tool observation; exchange/vendor lineage not exposed", "crox_trade_time": "2026-09-15T15:25:34Z", "duol_trade_time": "2026-09-15T15:25:35Z", "note": "Indicative quotes only; not validated executable prices. Provider P/E and market-cap fields deliberately not used."}
+  },
+  "units": "Financial statement amounts below USD millions, shares millions, EPS and quotes USD/share; growth decimal fractions. Q2 refers to three months ended June 30.",
+  "CROX": {
+    "source_ids": ["C1", "Q"],
+    "revenue_2026": 1179.468, "revenue_2025": 1149.373,
+    "operating_income_2026": 285.678, "operating_income_2025": -427.516,
+    "adjusted_operating_income_2026": 295.634, "adjusted_operating_income_2025": 309.484,
+    "prior_impairments": 737.0,
+    "adjusted_net_income_2026": 225.674, "adjusted_net_income_2025": 237.477,
+    "adjusted_diluted_shares_2026": 49.628, "adjusted_diluted_shares_2025": 56.148,
+    "fy_adjusted_eps_guidance_low": 13.70, "fy_adjusted_eps_guidance_high": 14.00,
+    "indicative_price": 112.20
+  },
+  "DUOL": {
+    "source_ids": ["D1", "D2", "Q"],
+    "revenue_2026": 298.454, "revenue_2025": 252.265,
+    "operating_income_2026": 33.945, "operating_income_2025": 33.363,
+    "founder_comp_benefit_2026": 6.982,
+    "founder_comp_expense_2025": 3.963,
+    "total_sbc_2026": 38.210, "total_sbc_2025": 34.592,
+    "dau_2026": 58.7, "dau_2025": 47.7,
+    "bookings_2026": 289.1, "bookings_2025": 268.0,
+    "cash_and_equivalents": 1180.887, "short_term_investments": 132.979,
+    "estimated_diluted_shares_june30": 50.7,
+    "fy_revenue_guidance": 1207.0, "fy_adjusted_ebitda_guidance": 320.0,
+    "fy_sbc_revenue_guidance": 0.15,
+    "indicative_price": 151.21
+  },
+  "assumptions": {"crox_eps_stress_haircut": 0.30, "note": "Illustrative earnings stress, not a fitted forecast or a probability. DUOL valuation uses June shares/cash with September indicative quote; excludes leases and long-term investments, and is not a current reconciled enterprise value."}
+}
