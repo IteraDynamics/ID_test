@@ -1,0 +1,40 @@
+{
+  "status": "DEVELOPMENT_UNDERWRITING_NOT_COHORT",
+  "asof": "2026-09-15",
+  "units": "USD millions, shares millions, prices USD/share, rates decimal fractions",
+  "sources": {
+    "A": {"url": "https://www.sec.gov/Archives/edgar/data/1334036/000133403626000006/crox-20251231.htm", "period": "FY2025", "locators": "Reportable Operating Segments; consolidated cash flows F-8; Note 13 taxes", "access": "Read via web on 2026-09-15; source bytes not archived"},
+    "B": {"url": "https://www.sec.gov/Archives/edgar/data/1334036/000133403626000050/croxq22026-pressrelease.htm", "publication_date": "2026-07-30", "period": "Q2/H1 2026 with prior-year comparisons", "locators": "Balance sheet p5, cash flows p6, operating results and outlook", "access": "Read via web on 2026-09-15; source bytes not archived"},
+    "Q": {"provider": "web finance tool; original vendor/exchange lineage not exposed", "trade_time": "2026-09-15T18:37:58Z", "price": 111.72, "qualification": "Indicative observation, not verified executable price; provider market cap and P/E unused"}
+  },
+  "observed": {
+    "fy2025_source": "A", "h1_source": "B",
+    "crocs_revenue_fy2025": 3325.807, "heydude_revenue_fy2025": 714.840,
+    "crocs_segment_ebit_fy2025": 1111.679, "corporate_cost_fy2025": 293.309,
+    "cfo_fy2025": 710.431, "capex_fy2025": 51.231, "sbc_fy2025": 36.701,
+    "income_tax_movement_fy2025": -74.099,
+    "h1_2026": {"net_income": 342.443, "da": 40.286, "lease_cost": 56.581, "sbc": 24.852, "impairment": 3.301, "deferred_tax": -0.053, "other_noncash": 8.531, "ar": -154.913, "inventory": -22.832, "prepaid_other": -21.297, "ap_accrued": 1.604, "lease_movement": -56.764, "income_tax_movement": 49.029, "cfo": 270.768, "capex": 38.729, "borrowed": 295, "repaid": 223, "repurchase_including_excise": 256.157, "withholding_repurchases": 3.238, "fx_cash": -4.724, "cash_change": 39.920},
+    "h1_2025": {"cfo": 218.565, "capex": 31.946, "sbc": 20.036, "income_tax_movement": -32.026},
+    "june30_cash": 170.276, "june30_restricted_cash": 3.555,
+    "june30_book_debt": 1307.658, "dec31_book_debt": 1230.885,
+    "june30_basic_shares_rounded": 48.1,
+    "june30_long_term_tax_payable": 639.580
+  },
+  "assumptions": {
+    "price_reference": 111.72,
+    "diluted_shares": 49.0,
+    "debt_value_proxy": 1310.0,
+    "operating_cash_reserve": 100.0,
+    "discount_rate": 0.12,
+    "years": 5,
+    "illustrative_margin_of_safety": 0.20,
+    "incremental_buyback_spend": 250.0,
+    "illustrative_buyback_excise_rate": 0.01,
+    "comment": "All model inputs here and in scenarios are analyst assumptions, not estimates of consensus or fitted parameters. Year 1 is the next normalized 12 months at review date, not FY2026 or a backdated cash flow. Shares include an illustrative allowance above June basic count. Debt proxy is rounded, not independently reconciled current principal. Future SBC remains an expense in segment/corporate margins; no future dilution or SBC addback is also credited."
+  },
+  "scenarios": {
+    "bear": {"crocs_initial_factor": 0.90, "heydude_initial_factor": 0.80, "crocs_growth": -0.02, "heydude_growth": -0.10, "crocs_margin": 0.28, "heydude_margin": 0.0, "corporate_cost": 320.0, "corporate_growth": 0.02, "tax_rate": 0.28, "da": 80.0, "capex": 100.0, "incremental_nwc_fraction": 0.0, "terminal_growth": -0.02, "incremental_tax_settlement_year2": 400.0},
+    "base": {"crocs_initial_factor": 1.03, "heydude_initial_factor": 0.97, "crocs_growth": 0.03, "heydude_growth": 0.0, "crocs_margin": 0.33, "heydude_margin": 0.10, "corporate_cost": 300.0, "corporate_growth": 0.02, "tax_rate": 0.25, "da": 80.0, "capex": 90.0, "incremental_nwc_fraction": 0.10, "terminal_growth": 0.01, "incremental_tax_settlement_year2": 150.0},
+    "bull": {"crocs_initial_factor": 1.06, "heydude_initial_factor": 1.0, "crocs_growth": 0.07, "heydude_growth": 0.03, "crocs_margin": 0.35, "heydude_margin": 0.16, "corporate_cost": 290.0, "corporate_growth": 0.02, "tax_rate": 0.23, "da": 80.0, "capex": 90.0, "incremental_nwc_fraction": 0.10, "terminal_growth": 0.02, "incremental_tax_settlement_year2": 0.0}
+  }
+}
