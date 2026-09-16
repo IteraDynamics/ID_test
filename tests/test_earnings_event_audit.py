@@ -76,3 +76,30 @@ def test_numeric_timestamp_and_no_timezone_date_shift():
     assert day('1577923200')==date(2020,1,2)
     assert day('1577923200000')==date(2020,1,2)
     assert day('2020-01-02T00:00:00+00:00')==date(2020,1,2)
+
+
+def test_source_sample_is_reproducible_and_not_ranked_by_price_outcome(tmp_path):
+    from research.earnings_event.review import select_sample
+    ds=[date(2020,1,1)+timedelta(days=i) for i in range(160)]
+    ds=[d for d in ds if d.weekday()<5]
+    stock=prices(tmp_path,ds)
+    spy=tmp_path/'SPY_1D.csv';spy.write_bytes(stock.read_bytes())
+    event_file(tmp_path,[['ABC',str(ds[i]),1,1] for i in range(62,85)])
+    first=select_sample(tmp_path,size=5)
+    assert len(first['sample'])==5 and first['candidate_windows']==23
+    save(stock,['timestamp','open','high','low','close','volume'],
+         [[str(d),100,120,90,110,1000] for d in ds])
+    assert select_sample(tmp_path,size=5)['sample']==first['sample']
+    assert first['performance'] is None and not first['source_review_complete']
+
+
+def test_calendar_proxy_reports_missing_session(tmp_path):
+    from research.earnings_event.review import select_sample
+    ds=[date(2020,1,1)+timedelta(days=i) for i in range(160)]
+    ds=[d for d in ds if d.weekday()<5]
+    stock=prices(tmp_path,ds)
+    (tmp_path/'SPY_1D.csv').write_bytes(stock.read_bytes())
+    missing=ds.pop(10);prices(tmp_path,ds)
+    event_file(tmp_path,[['ABC',str(ds[65]),1,1]])
+    r=select_sample(tmp_path)
+    assert r['calendar_proxy_discrepancies'][0]['missing_spy_dates']==[str(missing)]

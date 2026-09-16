@@ -1,0 +1,1444 @@
+{
+  "status": "SOURCE_REPAIR_REQUIRED_NO_PERFORMANCE",
+  "cutoff": "2024-12-31",
+  "earnings_sha256": "8092674d14c38a683a16f7cfb56c19b8d6c05ecc822fee9f18a551d3b93c6876",
+  "counts": {
+    "after_cutoff_rows": 1644,
+    "duplicate_groups": 37,
+    "duplicate_extra_rows": 40,
+    "conflicting_groups": 36,
+    "missing_reported_eps_groups": 60,
+    "raw_rows": 15594,
+    "dated_groups_through_cutoff": 13910,
+    "structurally_clean_reported_events": 13814,
+    "clean_tickers": 206
+  },
+  "candidate_windows": 4304,
+  "candidate_tickers": 201,
+  "stock_auto_adjust_counts": {
+    "False": 206
+  },
+  "stock_manifest_hashes": [
+    {
+      "ticker": "AAL",
+      "sha256": "53ab5851370b586e59b098dd372e62ffe745e5f25004d736bde03ed3a121b59f",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "AAP",
+      "sha256": "498c3db9b75cd8d18a328d4c601be48db8c11c168400fbbf74f431878df2c26c",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ABNB",
+      "sha256": "fed747352dac6bed45757cf078123861e4690bcd8829475320fcad4311524c93",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ACGL",
+      "sha256": "2dd12c09b45ef1d455099845792a6abb775895e7013504205c6ba7271d9219ef",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ALK",
+      "sha256": "d98392c7d1f4b9350d4379f7b24a7e0614e96ea21ca0bb453583aa10b37ede7b",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "AMCR",
+      "sha256": "72bfed3bb7a10aaf90a27ea887eccc07401e381fc14dabaf4acbf743b4099798",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "AMG",
+      "sha256": "79c6b9d04379e115d2d25075309b5a0319d0818a831d67ae628247e8f28bfb31",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "AMTM",
+      "sha256": "542b72b29424127c3be4e156539c985eaff1886145f7be3f4e8f91d014d476ce",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "APO",
+      "sha256": "7ac80428986aeea0729b8f3b337f97f9fe1309b6a497c013acd3ffec7d0c70cc",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "APP",
+      "sha256": "df4911200b9374da0377048fcdf79147fe52c71e3ee96526c79aa7dd552bcbdf",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ARES",
+      "sha256": "f63b8492c85d3721a6eb9c59a51778b57f9ebfec2d7bdf08e90dd78f95606f24",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ATO",
+      "sha256": "325121d5a45f86f42a22393bcb960c3797e5bc247a6024c489f5a621e675564f",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "AXON",
+      "sha256": "bf60e0840438e81e3a6c138b03eea76dcd9f030f57fcc84d651af32927451aea",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BALL",
+      "sha256": "a8b6d8ce37be49e1b4421cf179196936d0c0ff03dd46d79e08d5ca4dba6b07a1",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BBT",
+      "sha256": "d68356c0529d3e133a455a8a1bba9078880b3a8608c8e0d994f0eed2064591b2",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BBWI",
+      "sha256": "acf0256239fe1182234b30d4672d35fb2d357174867778e656388a5e413a44df",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BG",
+      "sha256": "430492e8b928d54bf3ec2ece6bc34fa2b7579ef9e7db26246119752c8a2faf62",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BHF",
+      "sha256": "49a9cdcd0be6ae6682119638763ced98245f855c7828f0b4c8425117e116fa68",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BIO",
+      "sha256": "d0ca7896c24cb4aad496eccd1632ea942e4c9668318def579d4eac47fe0f0eee",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BKR",
+      "sha256": "a6d886e55829dcec61808748d21a0290bf88fb5708d1219c87586397f90f1aa0",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BLDR",
+      "sha256": "5338772a0509129a6fa21efdfeef6e80254b26676f01488cb09ee3b7fa512b50",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BNY",
+      "sha256": "09dd1c4f0f89ee5b0e0cb9260d3722515c4dba9bf38cf729d24a270c7d513ffb",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BRO",
+      "sha256": "ed7b91dfa1203a651819d2b0c620b2837848da90c6ce1702cb8354ee49809c4b",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BWA",
+      "sha256": "a288f96683948952552d6edfa815821ca18310062ccf14209d55820c1f2a71ad",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "BX",
+      "sha256": "2cdb131173450c4c0b880b702706ff52b2c2aa0c853704ecb672f31e338bd298",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CAG",
+      "sha256": "60efeebf0f08f0b399ea072fa82a9ec340de5a37e8f90a364c9560df9fb93536",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CARR",
+      "sha256": "b913288b88f0e4ff3016c0930c23e0bf6f0c69a49133dc0af1ed0905a5284514",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CASY",
+      "sha256": "f813b2896a7a8bcdb20230d6a0cced6624985ae255e4c038f233140af60b9b64",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CDW",
+      "sha256": "d388063236657a11825c83d950b4ef746bfc357d0d56198804de70632376dfb8",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CE",
+      "sha256": "a0bb9f07fff302fe16242b85808aaf227ae4180b589043647b669ee4c94cbb63",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CEG",
+      "sha256": "ae4569a83adf446b93495a38f12a7b00a6dd618cc6f666151ec16da17b67c1ec",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CIEN",
+      "sha256": "24897600b4f25590736f3d5a8615c54200e5e44c808e296578946fe4d187d145",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "COHR",
+      "sha256": "33ae1134f73a239afebc8bbe730c846d49130a8acc4799e06911d646860b3c55",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "COIN",
+      "sha256": "884cf2ba6ed61972ebe29127e894d34c732ad34742d83f74158dfe253e1ceb35",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "COR",
+      "sha256": "293cca01105dea7ad105f9c3d4733d9e376591fc584253c36df5f73adcdfc354",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "COTY",
+      "sha256": "a6c215ea0c650dc760927c2cc8bfd1a20e0e878aa4a77ac41987b504e0a78ea0",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CPAY",
+      "sha256": "bbfcc1d6b1221fd2255a464705b09de4b18c75176c6af1fa0526dca260c73599",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CPB",
+      "sha256": "a7ce57bbc5de4c9f84925233d1894a618b8930909b7549e87bb7701828a1a6a0",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CPRI",
+      "sha256": "7841151114f840a389263ee6da62538194f0183f3ecc3944825da07b0041159d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CPT",
+      "sha256": "4378151d7812bca75b4aab20666b822164b67b9d9b73b4e882ee394b29280b21",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CRH",
+      "sha256": "16b6a6429c714dda510a5b5c2ec26828128f18c384231390a3582756ff153e88",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CRL",
+      "sha256": "4131af0d32cea0e43eaaba8d2721b38c754012793ae0bbf84066d7d3b9a7d83d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CRWD",
+      "sha256": "cd7accaf3b92f7ca75f7d12ccad2b86bf74155853aa4bbe35bea788303177cf4",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CSGP",
+      "sha256": "78ed0a28627d63150cea12488d8b070c8d0c7fb67f3ebf651897865b50461a92",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CTVA",
+      "sha256": "61bb8cea235d7d0cadc0652b0eb07c93226a87777bfdf03a5208b01493018c95",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CVNA",
+      "sha256": "43924247f7bda5c80a25a11f72ca1d8d67b6e5abf9f4ac1a1a4a3037fb5d06f9",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "CZR",
+      "sha256": "533e66d20a94a5f1558443f889369d03e4b22cd47ecef003b50d092661f08593",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DASH",
+      "sha256": "e7eff66bf0ac1cecfe9fbfd2c6f7e1a82b501f297579eb01e09d278c4edbaead",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DD",
+      "sha256": "6e7536211df8b82cbae8b3da8cf0fcb9b10f63b4e832b55cb5ba212b98375987",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DDOG",
+      "sha256": "0678e7e25122dfe088707d4be1b0b7aa1ad273765887261ff685009c3115e082",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DECK",
+      "sha256": "6c212988d59fa1d2f047c5b25ba5085fc467ac8910fde63f6b7248b8598e7615",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DELL",
+      "sha256": "187937ad99a8a8cee5b7d6a57c77eb2b354c3fc18e37db0b509e787e8f7ec16b",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DOC",
+      "sha256": "b8a029911da3a5029cb453316526bf0bad04772f368e40b86731de16bd51909a",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DOW",
+      "sha256": "8c9580055a3d6327bd6fffd761071c5d7cc8a40e94c0352f17b7ce24a9c8d2c6",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DPZ",
+      "sha256": "e785ac09414a595ddec9ea6110e796548fca47f733f93d8c924bbfaa7c060b2e",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DXC",
+      "sha256": "2a54fdbba2aeecbc26f6c5e643268828792e40c1fc9ddca43fa5e7fb957c0af9",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "DXCM",
+      "sha256": "bab8d48a38ed81610c9ba62ffea7ea21bff63ffa5259c46405e9507c142a58d8",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ECHO",
+      "sha256": "7e63c6bef70c14a3c0d836837766df7a5ee30c52cf5c373e8974c66be745c85a",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "EG",
+      "sha256": "65b6a199c8fc831858151338f2898334441a6a4364603f180cf40ae37df21e64",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ELV",
+      "sha256": "d2989774ee954435b498cf90e1fff8af4a06e21db4a16afa5aeaed557394d1c9",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "EME",
+      "sha256": "29f7f75bb7a2479fa62b77f58651cfff3fbb75caa1e42bd0db58560952c3c641",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "EMN",
+      "sha256": "dd30a77aa63ff452709517c4148972954e234027e0993aabb4cb5ddf4928598a",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ENPH",
+      "sha256": "b01e2966463f238461aa10c800a106be66e62f20014fa99bf732dd043c7156ea",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "EPAM",
+      "sha256": "20c5d373d2c3256424f7f2c502d29593362290393255e75f34c789f0199b49c4",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "EQT",
+      "sha256": "62dac8c631d08b499bc12bf41085cca577870de2212cce5a5f466547111fc8b4",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ERIE",
+      "sha256": "741a85e6544fb822a5219b6de55683abb111ac987a631637680ea8de3bf8cce8",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ETSY",
+      "sha256": "890b07622e42543c67f29bb58b0d54e0eaf3321122619a1255396f6b2c7a1b42",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "EXE",
+      "sha256": "87bd00ff861173751041e20d4df09758b4987eb607723386e3c2ce4702d60726",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FDS",
+      "sha256": "3417b6e6f56200042bdf907ea0a657bb73727c9f28822f9f47278ec7aec67900",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FICO",
+      "sha256": "cc2fec3ad8111cc39bc80972e6a54f6eb1ab68432ec73c857a3ee3e6299aee4e",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FISV",
+      "sha256": "f328989853de23a978ad39ba28f549b22d8880db48c55e5a9bcb90b90f1d43c7",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FIX",
+      "sha256": "fc26f45d488a0b4d1715bc263639a4792970f87f411da01a95382906cc83bb01",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FLEX",
+      "sha256": "5a8fe92f789085f6d7949eccc3d3001c1f6ba43edaea40fa596dd9273c8801d4",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FLR",
+      "sha256": "49bc2e47746a8e6e34bb02ef6d23759d15170506a61a5bf2a36bb2cc353ad597",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FLS",
+      "sha256": "0a104ec5a64218a4992af101778f1e486914a4a1d1741dd5846f8dfc82c9ebd9",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FMC",
+      "sha256": "114a592edcb6da21b7edc7f913ade2b63c5d21e1781f839c6809d5dedc5ba5ea",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FSLR",
+      "sha256": "402e24c739b51b9453475380d9c08ffb2fffc1475f27f0f0d4981722896d0ac9",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "FTI",
+      "sha256": "bc3696e28097154cb0b42dd31da801ff908c3cdeacdddb084044658bbbbe281a",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "GDDY",
+      "sha256": "309ee6c7320fa05959a13656b3b26e4a172b4a554a65d42df50ed908dc16022a",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "GEHC",
+      "sha256": "7d0e55b67516cada83948d4993237e9b1b57b3190001522e68237b25e97a6212",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "GEN",
+      "sha256": "fb68997242e6624253defc27dbed375b9ef544a62eea051a86917475bfc94f0d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "GEV",
+      "sha256": "49a8a6722c57342e55afdcb7fa1fe7a9506e0a5fd979d0a66c7d7dd0903eae35",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "GL",
+      "sha256": "6250c24d8e6b98940c274cb084b435bcbc7be20382e6f495d281e23d50644ad8",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "GNRC",
+      "sha256": "01c300d75f8843ed2904a2d13987ced8a9b8703e3c7cf55ef0ea9257839e32f5",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "GT",
+      "sha256": "eba894b5a39979360d813de5559c39aeadc1503bfc4f8dcdcf5a9c7fb944b3be",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "HOG",
+      "sha256": "65cbd6009e900c44572b08a2c8ec60525588482b92223a898b019d1a39005bae",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "HOOD",
+      "sha256": "a7d30e7b4890c74eaba82dca5a0d30cfd4478a4db7a32c7c6e54973b0b925f90",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "HP",
+      "sha256": "73242ae872644ed2d88636b290d3a8d71870655cdc7917c858deb4366e36d74a",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "HRB",
+      "sha256": "d8cff391e9d84ed2a67bd91167fdb822665dc311331d28703a0195773a6d7014",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "HUBB",
+      "sha256": "639f9b7a990dc3f2717d4cd91bf9fe36c07e8a2fa93cdbd83f68599b69857fe0",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "HWM",
+      "sha256": "96edcc33a03dd10386614218d099376068c1e5bc9b4afb354d17d2aafeb52ae9",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "IBKR",
+      "sha256": "2f4a90b3a897a5e116c48c23fdc94fb881d09720528d05c1ef1f0141ec9cdde2",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "IEX",
+      "sha256": "ad39bcbeb34558d63ff5e071df47a65a6f623a343794378314be1ec43275bb44",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ILMN",
+      "sha256": "8281d25d4d300b60562fab4f870e95798515efbd4aacf3d1a7339e550c80d881",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "INVH",
+      "sha256": "66297d29b1558e5480beb8d635bf9f54b83433865395b21ea52e35510cbf81a1",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "IPGP",
+      "sha256": "17e6f678ef68d06efbc4524709dbd1c351367c7a4e0416271b5e39c672a4644f",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "J",
+      "sha256": "3c49cd4ed11f968ee880349edbe06347d1138bdf19a28adf4a56004940c82bb9",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "JBL",
+      "sha256": "3c0f3250f5f0f538fdd4aee131ca6a5c17a4e0c244be5cec5ac55f2b79acff3c",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "JEF",
+      "sha256": "851235379550e06bb41c0adabbaa40d213e6d11e7da2375e3e51ba0b8939e75f",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "KDP",
+      "sha256": "667c69234bf640040558ab7e7f9cf26440aca7b4746a7c808f0cdc098b84dbfe",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "KKR",
+      "sha256": "7fdfd7caa528a703de469c355b4f739d06653370e07cec69b70885aa59e2c3e1",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "KMX",
+      "sha256": "f39f8c05d9ebf968f0e40a17a533ae0d3cfc1470e8e5f65f81e825d322d730c7",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "KSS",
+      "sha256": "32cd7adbac169607758687ef128bafee19122e868f9dac4059ec0d74f35afbd1",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "KVUE",
+      "sha256": "195bc325b53e860926ef05fb11f2712582b2d3d1c0dcf20a5fe35046502c918c",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LB",
+      "sha256": "e71a2aba0e7fe8dc8a0b49f885c06b1580d6ce8d5e2987ca2f799e25a3c8ecd6",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LDOS",
+      "sha256": "28a62f4cdf695d2cf48d0e5fa07cfb1ab1c507e3fda658b45883cb522e91eebb",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LEG",
+      "sha256": "5bd1e7b0cc211f93185b377bdb751d9589a9069ffbf8698ebe5c4dd6a7f4ecbf",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LHX",
+      "sha256": "16e0fe5b0483bc4c6f20cf8122478ebfaba38b303422af43efbb2f004fa1db43",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LII",
+      "sha256": "ff4c51c1a2a2e567215280532d92f6341c761368f5640b52b3120b9aa871cd33",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LITE",
+      "sha256": "78817ac80ae268c623d34729d193dc11388301082685eefd233c51ab8c03354d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LKQ",
+      "sha256": "38352d6c482b563c6d6af607df871d085b827c7d3ad9fbd8afb203f1972dbc69",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LNC",
+      "sha256": "dec00973941f6b8978339e4bb560426de2e954b156b75307bda2d1a529131d6f",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LULU",
+      "sha256": "9e3b46cd29b9eddfec4fce6c19505df78fd5aab073980d2181f2d9b9568a3fd5",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LUMN",
+      "sha256": "7b075d976fd21e3503da204cf24bbae3853e5a90ad9bba5c256ef11f871417cb",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LVS",
+      "sha256": "05229c51d5265a7999711a9fd52c77d8581f3fe6183a42d707e8701928c2af95",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LW",
+      "sha256": "0e602e00423177535d065c6dcc42333dd8d80294fa2548495357fb7f39416313",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "LYV",
+      "sha256": "a03ae9986300212ce2fb42d78b28bea044e916ac4baa6597b03f23c581efe46d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "M",
+      "sha256": "d0a54ce529e5c72b779867d6606959d9ecd8b74f19d1363b354597ae487e9134",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MAC",
+      "sha256": "dea3694e880c84723626440c45730524f2bb8258be90b0928525f5ecba6a8dbf",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MAT",
+      "sha256": "244f1334cbd0f746c578d11b0934118674a1bc4d8adb2134057c0f15aeac3647",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "META",
+      "sha256": "0c51b582ff88098f94426159614150d8e8bcdb942f0570b82a755de0e75013b1",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MHK",
+      "sha256": "863e5348c3d61e871c4b6e9a0ce7301092f47f3c3ac9dc2d192274958706d2d6",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MKTX",
+      "sha256": "e6910563946995ff747733f1d9fb35ef5437b1d696ad1246f20a9c8c29e3c19d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MOH",
+      "sha256": "3f307385fdb81ab916511792635e51d110258451b1d9cac99e1951af744b3481",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MPWR",
+      "sha256": "bf6b50b16205c391efdef9d1f1e6ab1cbc99f8d6bab66e1791ab8dae1dcd16e3",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MRNA",
+      "sha256": "e14d18b57300ef5fe4d93a24291c761413dcbb12297e8fbaee3ca66c0564aa94",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MRSH",
+      "sha256": "3201501f55835c16aa24cdf74d551bc1f60109d413c04b544e25e381aae388b0",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MRVL",
+      "sha256": "7876d31b0390fd22dbfe0c819b70d72eb35be282c49a091c46888f6de2363216",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "MTCH",
+      "sha256": "d726fd29f48dc6ac5f8e06c4e67f20b977b26d22c000652352a36e16825154f9",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "NDSN",
+      "sha256": "fbe14ff207f3c67bf0fc61ecd3ac39c7a79911dac96863f39b5894097dec6e49",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "NKTR",
+      "sha256": "79a6a0b26242b7aee5326834f3cf8649f16b12c2b7c959ed931d109a4beafd83",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "NOV",
+      "sha256": "ca7f14a6ead15cd21298fde37c8e3141ab99c92396e39d6d0128812fab5376f5",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "NOW",
+      "sha256": "b841a1e94f7a3295a32aea46043ec2eb2d61edfcb4fc86ba8e79d47d673eda0c",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "NVR",
+      "sha256": "2633fa6e5b302da6f928b55f83a26c53b2a4313ac387aeeb70d1e5c8d2311def",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "NWL",
+      "sha256": "9c634f05994703e291c50637b2f95ebdda6e0dea6bdd41beb86e539c2fac0e87",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "NXPI",
+      "sha256": "be279aadb44423a79fc79c9db9038cdc2421ca50ee29bff66cf9f1cf091f2711",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ODFL",
+      "sha256": "a6b28ccbf6f7fb9646ce88185ef73dbdc426e06473edbe03d4f84b10695bd7dd",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "OGN",
+      "sha256": "70c23eeef2cc1b3bccf7e1811442046169ebe04fcc059722a9008653ac6d399f",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ON",
+      "sha256": "ab9129d45daec93d4e0b9f7f8d941ec0e5e6f701c952c171ae87ee31944271d2",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "OTIS",
+      "sha256": "df8bfd6b6b97a6fbe02debf15a2520c3dfc683b6b997aa1896aad2b08eebde9d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PANW",
+      "sha256": "90e8c5f909c11bfd1c0b639c61bdbd1d870d07a161d17d3d719739a41c72c60a",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PARA",
+      "sha256": "2b3ec289ee78d7623a528a27695606abb80f2bdf3059c641480bd63152c97df8",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PAYC",
+      "sha256": "6816f2970105c4fdf1776085478e46cc8d39931a2a0bcf00e75c6f36536e5d89",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PCG",
+      "sha256": "0baff5ff900201b590ec54d6af98b399e4a40dcfb30b5759bdb966302fc3e39d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PENN",
+      "sha256": "d693b7e06a34ebf9e7da6149caba4f10c88c587dcc46825adae21f19c1dd2c26",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PLTR",
+      "sha256": "16bb89cc4aab67edb423c96917dea65c3d220a395e695e165d2bc004a3904f3f",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PODD",
+      "sha256": "026cc5be8f4c3c7e5bfd9672e33fd3c8fa1279d805e2c8dc002dbdf59804918c",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "POOL",
+      "sha256": "5bcee5a299ce645eada680567014946b8f857e79de600984dbdab142bade0c55",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PRGO",
+      "sha256": "d85c1245e2823ec73304cb33c031262ff5ad9477825427e22e9c8684e5b074c0",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PSKY",
+      "sha256": "621c9a00d24a8d51df5a3e6bf8656c68c025034af1a9603f129ed0025869f6bd",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PTC",
+      "sha256": "be9af3a3329ea8ce84b2dbb771aa4fa50eba40db1f360ac6bfb96f817acf13fc",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "PVH",
+      "sha256": "a4e108af6bce0b9eaa29130266e20ed6b78711918663b0d467e501372bdf7208",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "QRVO",
+      "sha256": "12bb6d4b845c2e4b761365fe988f11aaa1c1f1e85ed227aa6387136e8c9d405f",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "RHI",
+      "sha256": "18ba6a6d03bdc8cb370fd4ee4dac80fce9d2bda597ca39e78e5ecd1b4639c5e8",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "RTX",
+      "sha256": "33401f824d6cedc4907be0c3ddd3fe80110797e60a7c0c5783efee14d8f68616",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "RVTY",
+      "sha256": "13dc5a212da5f36a11b0fa5e5735155be859c473424d6a55f6d47e619d51c909",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "SBNY",
+      "sha256": "d36b4b9d3f5cdb13f42f02b4f80d3a96b8713608532fae0d5ac88ec1b1fc9105",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "SEDG",
+      "sha256": "e98fb277f4068e471afb381c1e1c1f526a9fd8fe3b00152e4298826621a1517b",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "SLG",
+      "sha256": "cbe996563e49945bbcdcca5cfdca2cb98a2566d5e65999fd176788d3bc40cb43",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "SMCI",
+      "sha256": "da28bf515d552437efe1d9b2dbd63b1e6123472f0b836ca92b25188c9bf89596",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "SOLV",
+      "sha256": "667c4f12b547f8b307211b83be4fe6bfc69129d55370c2b20c5c85f36a1ed248",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "STE",
+      "sha256": "a435e365ac901d309a5507e5ae08b32c2060ac0be0f4523c425cd2da1ad0b8fe",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "STLD",
+      "sha256": "55ec7b840291428435b1df57e79e5d42ffe6c0ced21e15ce580fd68550965254",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "SW",
+      "sha256": "2a9895bb7856110719745683b0957748cd832ae3123b6219b2dabfbd36ffddcd",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TDY",
+      "sha256": "6627cfad6b757421ed0a64d18563c5e994c916730aa01b886cab7216bc8deacf",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TECH",
+      "sha256": "a4ef231d205145d9fd0f644c691497ddf43992251aaac322b7983d5e7a535b89",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TER",
+      "sha256": "7da41f2320669bb3e561075ee198125cf8084802efe80e70b2ec6c4224fa20f4",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TFC",
+      "sha256": "e6ff804a4c2b5ce9cd235551856716e5516bd3b04286ec12841f5fd0f2495508",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TFX",
+      "sha256": "7e1f3762b565029597c1ed7269c65a2ee4c9ecba992c852685e47b99009131bb",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TKO",
+      "sha256": "f0467e4d1cd7c9509059857f205240274aa8b5c8c119905b5ee1fc4b7e7959fc",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TMUS",
+      "sha256": "c1d3c0157afc28f7afc38806a125dfbf32598737b780b4c51e3f0a04a7d82808",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TPL",
+      "sha256": "e7cc16c9b8f6e2d5d3723aa5c58ed06360b0b9f3f76bb2dd86b09eb151ef708e",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TRGP",
+      "sha256": "ed0e76325e14e1df5d335f06fd31d3e4309bbeec0f0f1b99684701276b6849cb",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TRIP",
+      "sha256": "41ffdb72b3192870f0ed237f8058ee0547143d3866a2895a998ad447991c7896",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TRMB",
+      "sha256": "27195c02d7d9dd8e86362c0137f018154dd154cb89f8a006c819d2e5da6a864e",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TSLA",
+      "sha256": "a5161e57a97feef2c3d3421c5bbb53a51d480b9b6a272f04a0760bb09c3af1dc",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TT",
+      "sha256": "7e8be4cbbaa0c514aba7c9a94c679f441dd6e001ca3f42295405c0c904f3929a",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TTD",
+      "sha256": "79d59bb751d5ba5ae933bbb756b5b9d073d6e774b8a1273b8adf06702b9cf090",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "TYL",
+      "sha256": "4c6f0195f4358c21b174ae0254822b216760d4d84dd3c719ccfb91b7644d11bf",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "UA",
+      "sha256": "6480937c5090e86ac8cb2973f23ffabfbec0429174cac9996742f276c16b3c24",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "UAA",
+      "sha256": "806f99b1bc5000cc8b8a9242c4661cf1aa7ac438aef7e62b0e8467cc2139f18f",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "UBER",
+      "sha256": "74ed4fd6d90e881684f118aecb3fe78902acd5cbb788236b58f8e2f9c3e2e686",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "UNM",
+      "sha256": "e20f2fcce88d8ae0bc3a8793d22f3edb21543c7f213450b917add5f4681145a4",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "VEEV",
+      "sha256": "7a2e8f3b3550cc7b68131c0e443cc175b5b1147fdf3b1ab4360443c4217422ee",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "VFC",
+      "sha256": "c3a8400f24b0f8596e7ed48f66cbeb60ede2cac81e088cf0a020eb645d65eada",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "VICI",
+      "sha256": "31fdc9432fde1958dd378134318d64baccf6c9c1f9900cae4842b0805658c6a3",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "VLTO",
+      "sha256": "e9eda72b97a656a7d3b47b7847e4d9a5188ef5fc20618dfffe939325857e337d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "VNO",
+      "sha256": "52dbbb4f31f5bf17219ffa2d25dd3b5f3f61263ed2b1928bd028b02f8ed2cad8",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "VNT",
+      "sha256": "6b98af07167eee741ac776fdb1fe9f86abdb03e866ecd4e2c2baeb462623a319",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "VRT",
+      "sha256": "c3c67a3aefe530e61cb830cd55586f58dc295b35c90677b864f40b19d6b3b200",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "VST",
+      "sha256": "22edc3241ec110f688412a9d5d821723051ca5f3255ec36a02d5b552f3f179bf",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "VTRS",
+      "sha256": "dfd7c5763543d89c62760889942edfdde8276aff75224af698a001da2ce7c4be",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "WAB",
+      "sha256": "a1b307d88b5400cd98461fee4e3b325d53f892d981f0f438afb04815219a9b70",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "WBD",
+      "sha256": "1fd1f56006be9bfe0b44e94c92613ae9a975eb4d4495bf4fb728f75cee823365",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "WDAY",
+      "sha256": "57aa019814f40c1676c7bad0e6ade2d09383850f1d2789d497aa4fe93344e754",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "WHR",
+      "sha256": "c39e641aea9c198cfb08ccfb44264d7a959e636f9a03b4f95061676975e24fa7",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "WRB",
+      "sha256": "7d6659fd05a21dda2ba3c09c9f065603b95f3a4e279162eb94570ecdec706aed",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "WSM",
+      "sha256": "78c22838d2e51a1ea4568df3c4dc80cd7e480553d9be0ebac4324a6683c1fb3c",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "WST",
+      "sha256": "d847d8fe18fd2ee6095fe4755b082fd5379da4553b346780365131b5734ebd2a",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "WTW",
+      "sha256": "9145a446bb4eb68a9123d4d12d7d770e32aa1f0eb0ac75325c81e79dfb9fd5af",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "WU",
+      "sha256": "d1fc2e4ca32f82b3b6dea9347abe2e54584eaa23a2f6ceec24536cb5333ae48c",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "XRAY",
+      "sha256": "72847f10fb3bcf2ee2340c43ccacb55b3b8b58e435145ae54651409dae5f2557",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "XRX",
+      "sha256": "e355949b7b4b920af48f0dc1e9aea27aa4c22758e31def66d2ef157734109bc2",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "XYZ",
+      "sha256": "34487f4e66ee6536a68bed79b6eab0b0480f9b6f195248657a6783481d6167f9",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ZBRA",
+      "sha256": "3b000cfbe489a21c6a64d22cc7e8813a7b719dd95eff2c8585045bbe46f4f15d",
+      "auto_adjust": false
+    },
+    {
+      "ticker": "ZION",
+      "sha256": "a0eaf652446013d9d778da680ebdf19bdf83ed168d928d2b041553cf3dd8eee0",
+      "auto_adjust": false
+    }
+  ],
+  "invalid_rows": [
+    {
+      "ticker": "HUBB",
+      "csv_row": 591,
+      "values": {
+        "timestamp": "2021-05-05 00:00:00+00:00",
+        "open": "195.97999572753906",
+        "high": "198.63999938964844",
+        "low": "196.2100067138672",
+        "close": "198.1300048828125",
+        "volume": "127234"
+      }
+    },
+    {
+      "ticker": "LEG",
+      "csv_row": 591,
+      "values": {
+        "timestamp": "2021-05-05 00:00:00+00:00",
+        "open": "54.31999969482422",
+        "high": "56.41999816894531",
+        "low": "55.09000015258789",
+        "close": "55.970001220703125",
+        "volume": "1001279"
+      }
+    },
+    {
+      "ticker": "LEG",
+      "csv_row": 1115,
+      "values": {
+        "timestamp": "2023-06-05 00:00:00+00:00",
+        "open": "31.579999923706055",
+        "high": "31.39550018310547",
+        "low": "30.90999984741211",
+        "close": "30.989999771118164",
+        "volume": "699067"
+      }
+    },
+    {
+      "ticker": "UA",
+      "csv_row": 591,
+      "values": {
+        "timestamp": "2021-05-05 00:00:00+00:00",
+        "open": "20.8700008392334",
+        "high": "21.825000762939453",
+        "low": "21.0",
+        "close": "21.1299991607666",
+        "volume": "5213105"
+      }
+    }
+  ],
+  "spy": {
+    "path": "SPY_1D.csv",
+    "sha256": "83df8fb4ae2123fb7b25da6e72149678c86469e1dd3de4c2e1e1efa1c0078714",
+    "raw_rows": 3199,
+    "columns": [
+      "timestamp",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume"
+    ],
+    "structural_ok": true,
+    "valid_rows": 2789,
+    "after_cutoff_rows": 410,
+    "invalid_rows": 0,
+    "duplicate_dates": 0,
+    "ascending": true,
+    "weekend_rows": 0,
+    "first_date": "2013-12-02",
+    "last_date": "2024-12-31",
+    "manifests": [
+      {
+        "path": "SPY_1D.csv.manifest.json",
+        "sha256": "011348e6c241bfa2962a120636493f1ed43ab2d24bf1fc7d8df8207500e61659"
+      }
+    ],
+    "adjustment_and_identity_verified": false
+  },
+  "calendar_proxy_discrepancies": [],
+  "calendar_note": "SPY observed dates are a diagnostic proxy, not a verified exchange calendar.",
+  "sample_rule": "SHA256(ticker|YYYY-MM-DD), first 30 from structurally clean five-session coverage; no replacement",
+  "sample": [
+    {
+      "ticker": "CAG",
+      "date": "2024-01-04",
+      "rank_hash": "0024d72f83bce73c56c0844a183c2e8efcf5cf39ae9090d97a474ae9477e05e7",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "ECHO",
+      "date": "2019-05-08",
+      "rank_hash": "0029a4e710e9278a15d33636eb70884f36301a2df8584f55cb87f250b103a5aa",
+      "source_status": "IDENTITY_OR_DATE_CONFLICT",
+      "source_note": "Echo Global Logistics release is April 24; EchoStar reports May 8. Local ECHO price series extends beyond the November 2021 take-private. Possible ticker reuse/backfill; do not relabel automatically.",
+      "source_urls": [
+        "https://www.globenewswire.com/news-release/2019/04/24/1809098/10361/en/echo-global-logistics-reports-first-quarter-2019-results.html",
+        "https://ir.echostar.com/news-releases/news-release-details/echostar-announces-financial-results-three-months-ended-march-31",
+        "https://www.sec.gov/Archives/edgar/data/1426945/000110465921142821/tm2133713d1_ex99-1.htm"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "IEX",
+      "date": "2020-10-27",
+      "rank_hash": "0038913a0389e59fe986423d919b6438a166447e3235e98fdfee5c4962b5ca6f",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "CRWD",
+      "date": "2023-03-07",
+      "rank_hash": "0040f083a9a2b5ef1472e947fb8d9dd2e5986a549c1b0e2150b8f6add70a4dad",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "SEDG",
+      "date": "2021-11-02",
+      "rank_hash": "007dcfe57366f059a5a1122a90a8047a3cd31c463f8b266b1db96704613663f1",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "INVH",
+      "date": "2022-07-27",
+      "rank_hash": "008b30252bb919f2a68ded72d7843e7eec04a4ca95d81e0afb0694e10021d4d5",
+      "source_status": "PLANNED_SESSION_LEAD",
+      "source_note": "Issuer schedule explicitly says after market close; original actual publication time not yet archived.",
+      "source_urls": [
+        "https://www.invh.com/news-events/news/news-details/2022/Invitation-Homes-Announces-Dates-for-Second-Quarter-2022-Earnings-Release-and-Conference-Call/default.aspx"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "ILMN",
+      "date": "2023-04-25",
+      "rank_hash": "00de09b9ced750591f4acbae9efb9413ce5b1506ca37f4b47d8840ca3cf09a96",
+      "source_status": "PLANNED_SESSION_LEAD",
+      "source_note": "Issuer schedule says after market close; matching release located; exact actual timing not certified.",
+      "source_urls": [
+        "https://www.illumina.com/company/news-center/press-releases/2023/3ea2dabc-953d-445d-b9e9-c7c3fb1143a6.html"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "BIO",
+      "date": "2022-02-10",
+      "rank_hash": "00e0778279b71b7465f6224e6967f67c96112419a4d45169acf6b1770c4b96f3",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "POOL",
+      "date": "2024-04-25",
+      "rank_hash": "00edba584a7575980ed2f1d5aa09e66dc5bfb5dc6e954ca444fd08c32bbc9a8e",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "WDAY",
+      "date": "2024-02-26",
+      "rank_hash": "0105dd68a1afb9caf0960f1e4efe2e68b571da27110b42113b14a0d3e2860965",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "LW",
+      "date": "2024-12-19",
+      "rank_hash": "0115fed7f397388092e00234857c90355a9d508307de7c01c031494fd58cabac",
+      "source_status": "PLANNED_SESSION_LEAD",
+      "source_note": "Issuer schedule says approximately 6am EST; planned timing is not actual publication certification.",
+      "source_urls": [
+        "https://news.lambweston.com/news-releases/news-release-details/lamb-weston-announces-details-fiscal-year-2025-second-quarter"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "CPB",
+      "date": "2024-06-05",
+      "rank_hash": "011892821358c3b7d3446befad06f90db995c65b4ae97e9990c17681853fa735",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "NOW",
+      "date": "2024-04-24",
+      "rank_hash": "011eec284e35f6acd24de2d62a6559b821100d815e4141464ed5c48601f8d641",
+      "source_status": "PLANNED_SESSION_LEAD",
+      "source_note": "Issuer schedule says following market close; matching release located.",
+      "source_urls": [
+        "https://newsroom.servicenow.com/press-releases/details/2024/ServiceNow-to-Announce-First-Quarter-2024-Financial-Results-on-April-24-04-03-2024-traffic/default.aspx"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "FIX",
+      "date": "2023-07-26",
+      "rank_hash": "0122d349359491913403a7bc59f64169b505a47b188bfdf6d6cadd2f4e835b27",
+      "source_status": "PLANNED_SESSION_LEAD",
+      "source_note": "Issuer-issued Business Wire schedule says after market close; matching release located.",
+      "source_urls": [
+        "https://www.businesswire.com/news/home/20230720242593/en/Comfort-Systems-USA-Announces-Second-Quarter-2023-Conference-Call-and-Webcast"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "BBT",
+      "date": "2023-07-20",
+      "rank_hash": "0129b2d0120484b89f9505c7de1560702d58e5b33b7689ed0250adc259a8603c",
+      "source_status": "HISTORICAL_IDENTITY_UNRESOLVED",
+      "source_note": "Historical BB&T successor trades as TFC from December 9, 2019. A TFC release exists July 20, 2023 but this does not validate the BBT prices or EPS row; no automatic alias mapping.",
+      "source_urls": [
+        "https://www.miaxglobal.com/sites/default/files/alert-files/BBT_Merger_46118.pdf",
+        "https://ir.truist.com/2023-07-20-Truist-reports-second-quarter-2023-results"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "DD",
+      "date": "2019-05-02",
+      "rank_hash": "012addbaff07b1f87a86844e19ed5da28d262942cd9551b67760703a08c54207",
+      "source_status": "CORPORATE_TRANSITION_REVIEW",
+      "source_note": "Located DowDuPont release and pre-8am planned release; need security and spin-off basis reconciliation.",
+      "source_urls": [
+        "https://www.investors.dupont.com/news-and-media/press-release-details/2019/DowDuPont-Provides-Update-Regarding-First-Quarter-2019-Performance/default.aspx"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "TRIP",
+      "date": "2020-11-05",
+      "rank_hash": "012f7056a4469fc84f5417d67dfd476673c068c5e55fc6246befe65c95f3bfbe",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "CPB",
+      "date": "2020-12-09",
+      "rank_hash": "013fba6e48db2f1a5eb431bfb5a8059bfc77ff77e2b26ba2ea95af7443de949c",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "LKQ",
+      "date": "2019-04-25",
+      "rank_hash": "01597f78dfb4543dbc81df3bb9e7ff5c7f71f3d3a2bfc8ecb9dbf493f9b9e404",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "JBL",
+      "date": "2023-12-14",
+      "rank_hash": "017965d560ba8b7d66d7db9e1a1cb22edcb00c759752d981cb11efc0073aeff2",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "AAP",
+      "date": "2022-02-14",
+      "rank_hash": "017f16e4f13e5e6296c6d1c98691865e737be3c46e4ceb91c60f744f8e482f99",
+      "source_status": "PLANNED_SESSION_LEAD",
+      "source_note": "Issuer-issued schedule says after market close; matching release located.",
+      "source_urls": [
+        "https://www.businesswire.com/news/home/20220124005658/en/Advance-Auto-Parts-Announces-Dates-for-Its-Fourth-Quarter-and-Full-Year-2021-Earnings-Release-and-Conference-Call"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "WAB",
+      "date": "2020-07-28",
+      "rank_hash": "01aad205663c49172aae473d1b7137b2686ce2d699a967183da87b3053102af7",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "META",
+      "date": "2021-01-27",
+      "rank_hash": "01c6483120a90a06280465a17f9debeec52b1dc5799178bcb056f884b8e1e399",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "MAC",
+      "date": "2021-11-03",
+      "rank_hash": "01c8ca93a20734d535fb714b487ffb9efa5d57468ba82e11902355884761e29a",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "WTW",
+      "date": "2022-07-28",
+      "rank_hash": "01c993b45475ccc5cdc3c25bce9b1b103dd29c5d1f7b321bdd4334678ccdc318",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "SMCI",
+      "date": "2023-05-02",
+      "rank_hash": "01eda7db7474cef1168d61eda2b4294c2403318fe82a19c546f389d841bcd70d",
+      "source_status": "PREANNOUNCEMENT_CONFOUND",
+      "source_note": "April 24 preliminary results scheduled May 2 final release after market close. First information arrival may precede calendar date; do not treat final release as all-new information.",
+      "source_urls": [
+        "https://ir.supermicro.com/news/news-details/2023/Supermicro-Announces-Preliminary-Financial-Information-for-Third-Quarter-Fiscal-2023/default.aspx"
+      ],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "UBER",
+      "date": "2021-11-04",
+      "rank_hash": "01fa4aa46e8d1e9b1d601915371d61bcf917e17a761e57b59c2c34a2129a1253",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "STLD",
+      "date": "2022-04-20",
+      "rank_hash": "0207b96403018869f3484d43c915312ca738d3880dd47949b8f534684368ded9",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "WDAY",
+      "date": "2020-11-19",
+      "rank_hash": "02180469f3ddafe5787126b5630a32d9c7e5c2d0da8b701f6c345acb263567dd",
+      "source_status": "UNRESOLVED",
+      "source_note": "Initial source search performed; not enough retained evidence to certify event identity and publication session.",
+      "source_urls": [],
+      "tradable_event_verified": false
+    },
+    {
+      "ticker": "IEX",
+      "date": "2024-02-07",
+      "rank_hash": "0218b2972dce66d409d381ea723403663bab7426f5071e8822beb3ef0bebe560",
+      "source_status": "RELEASE_DATE_CONFLICT",
+      "source_note": "Company release is dated February 6, 2024 and reports the same adjusted EPS 1.83 as the calendar row. February 7 is not the release date. Intraday publication time remains unresolved.",
+      "source_urls": [
+        "https://s21.q4cdn.com/862080382/files/doc_news/2024/02/21761.pdf"
+      ],
+      "tradable_event_verified": false
+    }
+  ],
+  "source_review_complete": false,
+  "performance": null,
+  "source_upload": "earnings_price_review_20260916_091103.zip",
+  "source_zip_sha256": "b22e7cde9d435034d674a4374725a6fb3c0d5d481275284481414c6c4a69c813",
+  "stock_hashes_matched_previous_audit": 206,
+  "validation": {
+    "tests_passed": 9,
+    "python": "3.12.14",
+    "pytest": "9.0.3",
+    "returns_computed": false
+  },
+  "source_access_note": "Public web review 2026-09-16. Timing leads include search excerpts; original document bytes are not archived. No sample success rate or verified trading panel claimed. All 30 fixed entries retained, no replacement."
+}
