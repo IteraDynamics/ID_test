@@ -1,0 +1,25 @@
+{
+  "status": "FEASIBILITY_ONLY",
+  "source_upload": "ID_research_data_review_20260915_085930.zip",
+  "earnings_sha256": "8092674d14c38a683a16f7cfb56c19b8d6c05ecc822fee9f18a551d3b93c6876",
+  "cutoff": "2024-12-31",
+  "counts": {
+    "after_cutoff_rows": 1644,
+    "duplicate_groups": 37,
+    "duplicate_extra_rows": 40,
+    "conflicting_groups": 36,
+    "missing_reported_eps_groups": 60,
+    "raw_rows": 15594,
+    "dated_groups_through_cutoff": 13910,
+    "structurally_clean_reported_events": 13814,
+    "clean_tickers": 206
+  },
+  "stock_price_files_in_uploaded_zip": 0,
+  "stock_price_coverage": "Pending local run; zero in sandbox is not evidence of zero on user PC",
+  "tests": {
+    "passed": 7,
+    "python": "3.12.14",
+    "pytest": "9.0.3"
+  },
+  "performance_computed": false
+}
