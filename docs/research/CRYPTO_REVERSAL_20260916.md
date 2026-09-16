@@ -106,3 +106,35 @@ CAMPAIGN_52_SOURCE_CALENDAR_PREFLIGHT_EVIDENCE.md. Coinbase's
 defines bucket-start timestamps, first/last trade open/close and possible missing
 intervals. The input hashes must match before relying on this established lineage.
 No claim that all possible data errors are excluded by structural tests.
+
+## Run locally
+
+From the research checkout:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\local\run_crypto_reversal.ps1 -DataRoot 'C:\Dev\IteraDynamics\ID_test\data'
+```
+
+The script tests the experiment and then runs all frozen scenarios. It does not
+fetch market data. By default it selects the two exact hourly filenames above
+from DataRoot, rather than scanning the directory for alternative files. Optional
+`-BtcCsv` / `-EthCsv` accept explicit paths to the same frozen snapshots; the hashes
+must still match. `-CheckOnly` verifies inputs without signals or performance.
+Relative arguments are resolved before changing the shell's working directory.
+
+Upload the printed `artifacts\crypto_reversal_<UTC timestamp>.zip`. The ZIP includes
+RESULTS.txt, summary.csv (all assets/periods), diagnostics.csv (full-run trade and
+accounting diagnostics), trades.csv, fills.csv, signal_counts.csv, daily curves,
+configuration/code hashes, source-gap inventory, status and artifact hashes.
+Raw input price files are not copied into the ZIP. Failures also produce a ZIP
+with the traceback, rather than silently falling back to a different dataset.
+
+Interpretation notes: turnover is traded notional divided by prior hourly marked
+NAV, summed and annualized; fees are in units of initial capital. Combined turnover
+uses the same portfolio denominator. Maximum drawdown is calculated on hourly
+marks, not the exported daily-only curves. Top-five positive dollar-P&L share and
+terminal wealth with the five largest positive percentage-return trades removed
+are distinct hindsight fragility measures. A negative gross trade sequence has no
+nonnegative geometric break-even cost, reported blank rather than as a positive
+cost allowance. That formula is reported only for single-asset sleeves, not for
+a combination of independently compounding sleeves.
