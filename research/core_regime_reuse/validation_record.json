@@ -1,0 +1,116 @@
+{
+  "status": "research_classifier_reuse_only",
+  "source_lock": {
+    "source_commit": "dbe1b155c83b8490c43271f21ee3199156a4d9a1",
+    "source_tree": "3e6d4bfb1a0f582b59ce0d863299201668f1845d",
+    "scope": "Recovered current Core classifier call path; not a historical performance reproduction or recovered Markov comparison.",
+    "sha256": {
+      "research/regimes/baseline_engine.py": "c72b17368f9e89064f60fa7c0da1eeeca98bcb030f6fedf9172777b0d10faf75",
+      "research/regimes/contracts.py": "e44fa1692bdabecd375e19b8d2cca40c3817f20e9c9a69553b6604dfded77079",
+      "research/regimes/__init__.py": "548b0abd0bdf9c67d26e347be6586f18fd9fc038a99ef2e9eafb96308b7f20e2",
+      "research/harness/resampler.py": "3878fc94be8d5dc1727fabedf5df0bac534dacc1142215d867acf60c12947eb6",
+      "research/harness/backtest_engine.py": "8937084d8a443a622affd95e465ba1c6716f2978d695ee8801fae881402c26fb",
+      "research/harness/cross_asset_state.py": "c792b62df0588b9f9351457ac110c3926f0af879ba902ffe5cd1844e3373b9c2",
+      "scripts/run_core_v1_paper_live.py": "05388fb248dc7af755bd40b27cb6fe54b3bd6cc96b52f9ff67bbf34cdb0722b6",
+      "scripts/run_multi_strategy_walkforward.py": "69bc4cd745f86c203827a05ded420ebc0c7cea593273446ca4ae6879e7ee9d7a",
+      "runtime/core_v1/allocation.py": "cfc552f5c0ac5d557a4e517cfa0192acce54e5ad08b66bcaf324a3d1babefcb5",
+      "research/strategies/trend_following_v8.py": "8cb8207285bf47d0b21afee8c83b8cd72da887dbc8754b3ea187c1e6f14c8e2a",
+      "research/strategies/trend_following_v9.py": "64fd86930a509b813136c2261469afa3d84d9a39bc550b21338f8cb2ddfdad3d",
+      "research/strategies/trend_following_v11.py": "029bfdad57cf3560f43be1b47912ca5100075e100d055097990dd5ea742da32c",
+      "research/strategies/equity_sma175_v3.py": "75a11c34ed8cd78c9a6cd1333d2a8f9c7ba5f69d7ee299a9439e4b4983994f7f",
+      "research/strategies/gold_sma_v1.py": "532b2305a723e269f867beb1494e28bc2b151ecc450502caab79ae458cc61e68"
+    }
+  },
+  "versions": {
+    "python": "3.12.14",
+    "pandas": "3.0.2",
+    "numpy": "2.4.4"
+  },
+  "scope": "Full supplied history; not a replay of Core fold resets or live input windows. No P&L computed.",
+  "timing": "UTC bucket-start input; state available at bucket end, before any additional vendor/execution latency.",
+  "gaps": "Missing hours are not filled; internal partial 4H bins retained as in Core resampler and counted below.",
+  "confidence": "Engine heuristic score, not a calibrated probability.",
+  "sources": {
+    "BTC": {
+      "path": "btcusd_3600s_2018-01-01_to_2025-12-31.csv",
+      "sha256": "d7ca8ad775f899b9f65f25ff07f32dec07b62d1e5979a6c302bc0133b9090079",
+      "rows": 70069,
+      "missing_hours": 36,
+      "first": "2018-01-01 00:00:00+00:00",
+      "last": "2025-12-31 00:00:00+00:00"
+    },
+    "ETH": {
+      "path": "ethusd_3600s_2018-01-01_to_2025-12-31.csv",
+      "sha256": "73721a1ef1dffbff64bf6ef2d92fb508a59b20d5c847684d96fdc7015912845f",
+      "rows": 70086,
+      "missing_hours": 19,
+      "first": "2018-01-01 00:00:00+00:00",
+      "last": "2025-12-31 00:00:00+00:00"
+    }
+  },
+  "ledgers": {
+    "BTC_1H": {
+      "rows": 70069,
+      "prefix_checks": 22,
+      "partial_source_bins": 0,
+      "regime_counts": {
+        "VOL_COMPRESSION": 56239,
+        "TREND_DOWN": 6261,
+        "TREND_UP": 5315,
+        "RANGE": 1380,
+        "VOL_EXPANSION": 511,
+        "HIGH_VOL": 303,
+        "UNKNOWN": 60
+      }
+    },
+    "BTC_4H": {
+      "rows": 17522,
+      "prefix_checks": 22,
+      "partial_source_bins": 15,
+      "regime_counts": {
+        "TREND_UP": 5311,
+        "VOL_COMPRESSION": 4628,
+        "TREND_DOWN": 4577,
+        "RANGE": 1274,
+        "HIGH_VOL": 873,
+        "VOL_EXPANSION": 799,
+        "UNKNOWN": 60
+      }
+    },
+    "ETH_1H": {
+      "rows": 70086,
+      "prefix_checks": 22,
+      "partial_source_bins": 0,
+      "regime_counts": {
+        "VOL_COMPRESSION": 44175,
+        "TREND_DOWN": 11456,
+        "TREND_UP": 10285,
+        "RANGE": 2402,
+        "VOL_EXPANSION": 963,
+        "HIGH_VOL": 745,
+        "UNKNOWN": 60
+      }
+    },
+    "ETH_4H": {
+      "rows": 17525,
+      "prefix_checks": 22,
+      "partial_source_bins": 11,
+      "regime_counts": {
+        "TREND_UP": 5956,
+        "TREND_DOWN": 5234,
+        "HIGH_VOL": 1794,
+        "VOL_COMPRESSION": 1627,
+        "VOL_EXPANSION": 1443,
+        "RANGE": 1411,
+        "UNKNOWN": 60
+      }
+    }
+  },
+  "verification": {
+    "isolated_tests_passed": 12,
+    "preexisting_tracked_files_byte_checked": 980,
+    "preexisting_files_changed": 0,
+    "powershell_executed": false,
+    "python_runner_executed": true
+  }
+}
