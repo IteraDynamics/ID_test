@@ -1,0 +1,11 @@
+param([string]$DataRoot = 'C:\Dev\IteraDynamics\ID_test\data')
+$ErrorActionPreference = 'Stop'
+$codeRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$DataRoot = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($DataRoot)
+Push-Location $codeRoot
+try {
+    uv run --locked --python 3.12 --extra dev python -m pytest tests/test_volatility_incremental.py -q -W error
+    if ($LASTEXITCODE -ne 0) { throw 'Matched-input tests failed.' }
+    uv run --locked --python 3.12 python -m research.volatility_incremental.run --data-root $DataRoot --output-root (Join-Path $codeRoot 'artifacts')
+    if ($LASTEXITCODE -ne 0) { throw 'Run failed; share diagnostic ZIP or error.' }
+} finally { Pop-Location }
