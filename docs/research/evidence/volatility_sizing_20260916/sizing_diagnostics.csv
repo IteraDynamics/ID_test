@@ -1,0 +1,97 @@
+scenario,asset,model,accounting_max_error,replay_max_error,original_trade_slots,positive_weight_trades,combination
+frictionless,BTC,fixed_full,3.756063320430797e-16,2.2185278656395553e-16,50.0,50.0,
+frictionless,ETH,fixed_full,2.14452583010216e-16,0.0,65.0,65.0,
+frictionless,MIX,fixed_full,,,,,"equal initial capital, no sleeve rebalancing"
+frictionless,BTC,fixed_half,2.790581143487118e-16,8.6718074232244485e-16,50.0,50.0,
+frictionless,ETH,fixed_half,3.1555738610100633e-16,5.952436365472569e-16,65.0,65.0,
+frictionless,MIX,fixed_half,,,,,"equal initial capital, no sleeve rebalancing"
+frictionless,BTC,recent24_raw,3.756063320430797e-16,6.660620114864889e-16,50.0,50.0,
+frictionless,ETH,recent24_raw,3.0781290337805616e-16,4.3812279002560583e-16,65.0,65.0,
+frictionless,MIX,recent24_raw,,,,,"equal initial capital, no sleeve rebalancing"
+frictionless,BTC,ewma_raw,3.756063320430797e-16,2.533785721135974e-16,50.0,50.0,
+frictionless,ETH,ewma_raw,3.141039062855468e-16,4.158744028925917e-16,65.0,65.0,
+frictionless,MIX,ewma_raw,,,,,"equal initial capital, no sleeve rebalancing"
+frictionless,BTC,recent24_calibrated,3.756063320430797e-16,2.58056623316089e-16,50.0,50.0,
+frictionless,ETH,recent24_calibrated,3.0027936234132604e-16,5.662603511370619e-16,65.0,65.0,
+frictionless,MIX,recent24_calibrated,,,,,"equal initial capital, no sleeve rebalancing"
+frictionless,BTC,ewma_calibrated,3.756063320430797e-16,4.42551575270006e-16,50.0,50.0,
+frictionless,ETH,ewma_calibrated,2.7508722586792597e-16,4.1962074278619003e-16,65.0,65.0,
+frictionless,MIX,ewma_calibrated,,,,,"equal initial capital, no sleeve rebalancing"
+frictionless,BTC,full_linear,3.756063320430797e-16,4.4317884852261705e-16,50.0,50.0,
+frictionless,ETH,full_linear,2.8941716687510437e-16,6.078558777491713e-16,65.0,65.0,
+frictionless,MIX,full_linear,,,,,"equal initial capital, no sleeve rebalancing"
+frictionless,BTC,boosted,3.1915804200538545e-16,4.891264880245131e-16,50.0,50.0,
+frictionless,ETH,boosted,3.0140877382454e-16,8.365597566056662e-16,65.0,65.0,
+frictionless,MIX,boosted,,,,,"equal initial capital, no sleeve rebalancing"
+base,BTC,fixed_full,1.5497653213938167e-16,3.270241036913114e-16,50.0,50.0,
+base,ETH,fixed_full,3.1248382268497724e-16,4.502654890274519e-16,65.0,65.0,
+base,MIX,fixed_full,,,,,"equal initial capital, no sleeve rebalancing"
+base,BTC,fixed_half,1.860574107501139e-16,5.309628244312212e-16,50.0,50.0,
+base,ETH,fixed_half,3.0971893621271486e-16,6.378652479936078e-16,65.0,65.0,
+base,MIX,fixed_half,,,,,"equal initial capital, no sleeve rebalancing"
+base,BTC,recent24_raw,1.8674364590785196e-16,6.751795311219204e-16,50.0,50.0,
+base,ETH,recent24_raw,3.044973551961354e-16,6.656644273815483e-16,65.0,65.0,
+base,MIX,recent24_raw,,,,,"equal initial capital, no sleeve rebalancing"
+base,BTC,ewma_raw,2.541341610164279e-16,5.289049438311394e-16,50.0,50.0,
+base,ETH,ewma_raw,2.752551993871704e-16,9.170053030071708e-16,65.0,65.0,
+base,MIX,ewma_raw,,,,,"equal initial capital, no sleeve rebalancing"
+base,BTC,recent24_calibrated,1.926155872627541e-16,2.8701328534634135e-16,50.0,50.0,
+base,ETH,recent24_calibrated,2.981495508639421e-16,6.976289236114238e-16,65.0,65.0,
+base,MIX,recent24_calibrated,,,,,"equal initial capital, no sleeve rebalancing"
+base,BTC,ewma_calibrated,1.841435856727401e-16,2.7109368645830623e-16,50.0,50.0,
+base,ETH,ewma_calibrated,3.0360747119121106e-16,4.437533211368197e-16,65.0,65.0,
+base,MIX,ewma_calibrated,,,,,"equal initial capital, no sleeve rebalancing"
+base,BTC,full_linear,2.265441853909971e-16,2.996871276729205e-16,50.0,50.0,
+base,ETH,full_linear,3.116440638493679e-16,8.867259546868822e-16,65.0,65.0,
+base,MIX,full_linear,,,,,"equal initial capital, no sleeve rebalancing"
+base,BTC,boosted,1.8528627006214943e-16,2.80139322554264e-16,50.0,50.0,
+base,ETH,boosted,3.015485739917138e-16,4.598840419591142e-16,65.0,65.0,
+base,MIX,boosted,,,,,"equal initial capital, no sleeve rebalancing"
+cost_stress,BTC,fixed_full,2.3730403863514106e-16,7.944413202058661e-16,50.0,50.0,
+cost_stress,ETH,fixed_full,4.582723097732868e-16,2.2194405932709957e-16,65.0,65.0,
+cost_stress,MIX,fixed_full,,,,,"equal initial capital, no sleeve rebalancing"
+cost_stress,BTC,fixed_half,2.1016740024633781e-16,4.636671326844088e-16,50.0,50.0,
+cost_stress,ETH,fixed_half,2.932874757736793e-16,8.038047739039471e-16,65.0,65.0,
+cost_stress,MIX,fixed_half,,,,,"equal initial capital, no sleeve rebalancing"
+cost_stress,BTC,recent24_raw,2.329959561822708e-16,3.5176516715619965e-16,50.0,50.0,
+cost_stress,ETH,recent24_raw,2.7082293618103077e-16,6.134797989728118e-16,65.0,65.0,
+cost_stress,MIX,recent24_raw,,,,,"equal initial capital, no sleeve rebalancing"
+cost_stress,BTC,ewma_raw,2.5001703989062627e-16,1.0587480980349678e-15,50.0,50.0,
+cost_stress,ETH,ewma_raw,2.4541896688310667e-16,9.046734903268502e-16,65.0,65.0,
+cost_stress,MIX,ewma_raw,,,,,"equal initial capital, no sleeve rebalancing"
+cost_stress,BTC,recent24_calibrated,2.469321442194339e-16,9.256731461898134e-16,50.0,50.0,
+cost_stress,ETH,recent24_calibrated,2.5399335702400833e-16,1.0336573566435252e-15,65.0,65.0,
+cost_stress,MIX,recent24_calibrated,,,,,"equal initial capital, no sleeve rebalancing"
+cost_stress,BTC,ewma_calibrated,2.5768557762869335e-16,7.723468347082473e-16,50.0,50.0,
+cost_stress,ETH,ewma_calibrated,2.7654685940795447e-16,4.4339831932378407e-16,65.0,65.0,
+cost_stress,MIX,ewma_calibrated,,,,,"equal initial capital, no sleeve rebalancing"
+cost_stress,BTC,full_linear,3.1181107845118125e-16,4.068509961277214e-16,50.0,50.0,
+cost_stress,ETH,full_linear,3.131741018669362e-16,1.1574033118342314e-15,65.0,65.0,
+cost_stress,MIX,full_linear,,,,,"equal initial capital, no sleeve rebalancing"
+cost_stress,BTC,boosted,3.5105014160696077e-16,4.823144891844671e-16,50.0,50.0,
+cost_stress,ETH,boosted,2.8068077069150883e-16,9.35117361575209e-16,65.0,65.0,
+cost_stress,MIX,boosted,,,,,"equal initial capital, no sleeve rebalancing"
+delay_stress,BTC,fixed_full,2.0637736471241304e-16,3.2582683311905937e-16,50.0,50.0,
+delay_stress,ETH,fixed_full,2.286651631817165e-16,0.0,65.0,65.0,
+delay_stress,MIX,fixed_full,,,,,"equal initial capital, no sleeve rebalancing"
+delay_stress,BTC,fixed_half,1.8696661384946134e-16,5.290439585811755e-16,50.0,50.0,
+delay_stress,ETH,fixed_half,3.107502310604289e-16,7.807267766791021e-16,65.0,65.0,
+delay_stress,MIX,fixed_half,,,,,"equal initial capital, no sleeve rebalancing"
+delay_stress,BTC,recent24_raw,1.8300670137123793e-16,3.995836556752047e-16,50.0,50.0,
+delay_stress,ETH,recent24_raw,3.025280477564601e-16,7.568729228722639e-16,65.0,65.0,
+delay_stress,MIX,recent24_raw,,,,,"equal initial capital, no sleeve rebalancing"
+delay_stress,BTC,ewma_raw,1.7313584602451757e-16,5.114135202916086e-16,50.0,50.0,
+delay_stress,ETH,ewma_raw,3.2856083948006563e-16,4.297285191636393e-16,65.0,65.0,
+delay_stress,MIX,ewma_raw,,,,,"equal initial capital, no sleeve rebalancing"
+delay_stress,BTC,recent24_calibrated,2.3504376894528053e-16,2.669656176652905e-16,50.0,50.0,
+delay_stress,ETH,recent24_calibrated,2.9131685697462533e-16,6.322471892935914e-16,65.0,65.0,
+delay_stress,MIX,recent24_calibrated,,,,,"equal initial capital, no sleeve rebalancing"
+delay_stress,BTC,ewma_calibrated,1.8920189911552723e-16,2.8982998670204044e-16,50.0,50.0,
+delay_stress,ETH,ewma_calibrated,2.9645551587842813e-16,8.395759632124645e-16,65.0,65.0,
+delay_stress,MIX,ewma_calibrated,,,,,"equal initial capital, no sleeve rebalancing"
+delay_stress,BTC,full_linear,1.629006608880093e-16,6.029385794665677e-16,50.0,50.0,
+delay_stress,ETH,full_linear,3.1106142108572293e-16,8.302644864652406e-16,65.0,65.0,
+delay_stress,MIX,full_linear,,,,,"equal initial capital, no sleeve rebalancing"
+delay_stress,BTC,boosted,2.19687843558223e-16,2.9822460549419286e-16,50.0,50.0,
+delay_stress,ETH,boosted,3.116436838487199e-16,8.504026526720572e-16,65.0,65.0,
+delay_stress,MIX,boosted,,,,,"equal initial capital, no sleeve rebalancing"

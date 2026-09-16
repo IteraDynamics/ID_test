@@ -62,3 +62,16 @@ def test_size_timing_and_cap():
     assert size_at(p,t+24*HOUR)[0]==0
     p['prediction']=np.log((DAILY_RISK/2)**2)
     assert size_at(p,t)[0]==1.
+
+
+def test_terminal_liquidation_and_multiple_trade_compounding():
+    f=fixture();start=f.index[280];end=f.index[-1]
+    entries=[f.index[300],end-24*HOUR]
+    orders={t:dict(available_at=str(t-HOUR),signal_start=str(t-5*HOUR)) for t in entries}
+    o=simulate(f,orders,24,30,start,end)
+    assert len(o.trades)==2 and o.trades[-1]['terminal_exit']
+    weights={t:.5 for t in entries}
+    r=replay(f,o,weights,30)
+    assert r.curve.nav.iloc[-1]==pytest.approx(np.prod([1+.5*t['net_return'] for t in o.trades]))
+    full=replay(f,o,{t:1. for t in entries},30)
+    np.testing.assert_allclose(full.curve,o.curve,rtol=1e-10,atol=1e-10)
