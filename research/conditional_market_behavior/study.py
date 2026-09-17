@@ -25,7 +25,9 @@ def _stability_model(train):
  if len(tr)<250 or tr.transition_7d.nunique()<2:raise ValueError('Insufficient stability training data')
  pre=ColumnTransformer([('core',OneHotEncoder(handle_unknown='ignore'),['core_label']),('x',StandardScaler(),STAB_COLS)]);m=make_pipeline(pre,LogisticRegression(C=.1,max_iter=3000,random_state=1729));m.fit(tr[['core_label',*STAB_COLS]],tr.transition_7d.astype(int));return m
 def _predict_stability(model,frame,ages):
- x=frame.copy();x['episode_age']=ages.reindex(x.index);return pd.Series(model.predict_proba(x[['core_label',*STAB_COLS]])[:,1],index=x.index)
+ x=frame.copy();x['episode_age']=ages.reindex(x.index);valid=x[['core_label',*STAB_COLS]].notna().all(axis=1);out=pd.Series(np.nan,index=x.index,dtype=float)
+ if valid.any():out.loc[valid]=model.predict_proba(x.loc[valid,['core_label',*STAB_COLS]])[:,1]
+ return out
 def _ridge(train,test,target,cols):
  tr=train.dropna(subset=[target,*cols]);te=test.dropna(subset=[target,*cols])
  if len(tr)<250 or te.empty:return None
@@ -44,13 +46,13 @@ def evaluate(hourly,asset,hours,years=range(2020,2026)):
    try:osm=_stability_model(oh)
    except ValueError:continue
    common=train.index.intersection(ob.index);train.loc[common,'instability_7d']=_predict_stability(osm,ob,ob.episode_age).reindex(common)
-  keys=dict(asset=asset,timeframe=hours,year=year);out['fits'].append(dict(**keys,training_rows=len(train),oof_instability_rows=int(train.instability_7d.notna().sum()),fit_at=str(cutoff),latest_training_label_end=str(train.label_end.max())))
+  keys=dict(asset=asset,timeframe=hours,year=year);out['fits'].append(dict(**keys,training_rows=len(train),oof_instability_rows=int(train.instability_7d.notna().sum()),evaluation_instability_rows=int(test.instability_7d.notna().sum()),fit_at=str(cutoff),latest_training_label_end=str(train.label_end.max())))
   for label,gte in test.groupby('core_label'):
    gtr=train.loc[train.core_label==label,'instability_7d'].dropna()
    if len(gtr)<50:continue
    cuts=np.unique(gtr.quantile([.2,.4,.6,.8]).to_numpy())
    if len(cuts)!=4:continue
-   b=np.digitize(gte.instability_7d.to_numpy(),cuts,right=True)+1
+   b=np.full(len(gte),0,dtype=int);available=gte.instability_7d.notna().to_numpy();b[available]=np.digitize(gte.loc[available,'instability_7d'].to_numpy(),cuts,right=True)+1
    for h in HORIZONS:
     for target in OUTCOMES:
      col=f'{target}_{h}d';valid=gte[col].notna()&gte.instability_7d.notna()
@@ -66,9 +68,10 @@ def evaluate(hourly,asset,hours,years=range(2020,2026)):
      r=_ridge(tr,te,col,cols)
      if r:pred[name]=r
     if 'core' not in pred:continue
-    bi,bp=pred['core'];by=te.loc[bi,col].to_numpy();bl=float(np.mean((bp-by)**2))
     for name,(idx,p) in pred.items():
-     y=te.loc[idx,col].to_numpy();loss=float(np.mean((p-y)**2));out['scores'].append(dict(**keys,horizon_days=h,target=target,representation=name,n=len(idx),mse=loss,core_mse=bl,skill_vs_core=1-loss/bl if bl else None))
+     y=te.loc[idx,col].to_numpy();loss=float(np.mean((p-y)**2));base_idx=idx;core_r=_ridge(tr,te.loc[base_idx],col,[])
+     if not core_r:continue
+     _,core_p=core_r;bl=float(np.mean((core_p-y)**2));out['scores'].append(dict(**keys,horizon_days=h,target=target,representation=name,n=len(idx),mse=loss,core_mse=bl,skill_vs_core=1-loss/bl if bl else None))
   print(f'{asset} {hours}H {year}: conditional behavior complete',flush=True)
  return out
 __all__=['evaluate','add_forward_outcomes','HORIZONS','OUTCOMES','STABILITY_HORIZON']
