@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from research.conditional_market_behavior.study import HORIZONS,OUTCOMES,STABILITY_HORIZON,add_forward_outcomes
+from research.conditional_market_behavior.study import HORIZONS,OUTCOMES,STABILITY_HORIZON,STAB_COLS,_predict_stability,add_forward_outcomes
 
 def test_frozen_specification():
  assert HORIZONS==(1,3,5,7,14)
@@ -18,3 +18,14 @@ def test_forward_outcomes_use_future_only_and_fail_closed():
 def test_path_efficiency_bounded_when_defined():
  idx=pd.date_range('2020-01-01',periods=24*20,freq='h',tz='UTC');hourly=pd.DataFrame({'close':100+np.sin(np.arange(len(idx))/20)+np.arange(len(idx))*.01},index=idx)
  panel=pd.DataFrame(index=pd.date_range('2020-01-02',periods=15,freq='D',tz='UTC'));out=add_forward_outcomes(panel,hourly);v=out['path_efficiency_7d'].dropna();assert ((v>=0)&(v<=1+1e-12)).all()
+
+def test_stability_prediction_fails_closed_per_unavailable_row():
+ class Dummy:
+  def predict_proba(self,x):
+   assert x.notna().all().all();return np.tile([.25,.75],(len(x),1))
+ idx=pd.date_range('2020-01-01',periods=3,freq='D',tz='UTC');frame=pd.DataFrame({'core_label':['A']*3},index=idx)
+ for c in STAB_COLS:
+  if c!='episode_age':frame[c]=1.
+ frame.loc[idx[0],STAB_COLS[0]]=np.nan
+ p=_predict_stability(Dummy(),frame,pd.Series([1.,2.,3.],index=idx))
+ assert np.isnan(p.iloc[0]) and p.iloc[1]==.75 and p.iloc[2]==.75
