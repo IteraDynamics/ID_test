@@ -19,8 +19,7 @@ def first_destination(labels: pd.Series, horizon: int) -> pd.Series:
     values=labels.astype(str).to_numpy(); result=np.empty(len(values),dtype=object)
     for i,current in enumerate(values):
         destination='NO_TRANSITION'
-        complete=i+horizon < len(values)
-        if not complete:
+        if i+horizon >= len(values):
             result[i]=None; continue
         for j in range(i+1,i+horizon+1):
             if values[j] != current:
@@ -29,8 +28,10 @@ def first_destination(labels: pd.Series, horizon: int) -> pd.Series:
     return pd.Series(result,index=labels.index,dtype='object')
 
 
-def _multiclass(train,test,cols,target,include_core=False):
+def _multiclass(train,test,cols,target,include_core=False,conditional_transition=False):
     tr=train.dropna(subset=[target,*cols]).copy(); te=test.dropna(subset=[target,*cols]).copy()
+    if conditional_transition:
+        tr=tr.loc[tr[target].ne('NO_TRANSITION')].copy(); te=te.loc[te[target].ne('NO_TRANSITION')].copy()
     classes=sorted(tr[target].astype(str).unique())
     if len(classes)<2 or te.empty: return None
     if include_core:
@@ -70,7 +71,7 @@ def _pair_geometry(test: pd.DataFrame, model: TrajectoryModel, keys: dict) -> li
 
 
 def evaluate(panel: pd.DataFrame, asset: str, hours: int, years=range(2020,2026)) -> dict:
-    outputs={k:[] for k in ['scores','pair_counts','pair_geometry','fits']}
+    outputs={k:[] for k in ['scores','conditional_destination_scores','pair_counts','pair_geometry','fits']}
     for year in years:
         cutoff=pd.Timestamp(f'{year}-01-01',tz='UTC'); end=pd.Timestamp(f'{year+1}-01-01',tz='UTC')
         fitting=panel.loc[(panel.index<cutoff)&(panel.label_end<cutoff)]; raw_test=panel.loc[(panel.index>=cutoff)&(panel.index<end)]
@@ -85,6 +86,8 @@ def evaluate(panel: pd.DataFrame, asset: str, hours: int, years=range(2020,2026)
             for name,cols,core in reps:
                 score=_multiclass(train,test,cols,target,core)
                 if score: outputs['scores'].append(dict(**keys,horizon_days=h,representation=name,**score))
+                conditional=_multiclass(train,test,cols,target,core,conditional_transition=True)
+                if conditional: outputs['conditional_destination_scores'].append(dict(**keys,horizon_days=h,representation=name,**conditional))
             tr_pairs=train.loc[train[target].notna() & train[target].ne('NO_TRANSITION')].groupby(['core_label',target]).size()
             te_pairs=test.loc[test[target].notna() & test[target].ne('NO_TRANSITION')].groupby(['core_label',target]).size()
             pairs=set(tr_pairs.index)|set(te_pairs.index)
