@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from research.latent_state_trajectories.study import TrajectoryModel, PCS, TRAJECTORY
+from research.latent_state_trajectories.study import TrajectoryModel, PCS, TRAJECTORY, _pre_transition_mask
 from research.multidimensional_regimes.study import FEATURES
 
 def frame(n=320):
@@ -23,3 +23,10 @@ def test_future_mutation_does_not_change_past_trajectory():
 def test_required_trajectory_columns_exist():
     f=frame(); out=TrajectoryModel().fit(f.iloc[:280]).transform(f.iloc[280:])
     assert set(PCS+TRAJECTORY).issubset(out.columns)
+
+def test_pre_transition_mask_is_boolean_and_invertible():
+    labels=pd.Series(['A','A','B','B','C','C'])
+    mask=_pre_transition_mask(labels,1)
+    assert mask.dtype == bool
+    assert mask.tolist() == [True,False,True,False,True,False]
+    assert (~mask).dtype == bool
