@@ -23,6 +23,11 @@ def _safe_cos(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return out
 
 
+def _pre_transition_mask(labels: pd.Series, lead: int) -> pd.Series:
+    next_change = labels.astype(str).ne(labels.astype(str).shift(-1))
+    return next_change.shift(-lead, fill_value=False).astype(bool)
+
+
 class TrajectoryModel:
     def fit(self, train: pd.DataFrame) -> 'TrajectoryModel':
         self.compression = CompressionModel().fit(train)
@@ -73,7 +78,6 @@ def add_forward_events(frame: pd.DataFrame) -> pd.DataFrame:
         future = pd.concat([labels.shift(-i) for i in range(1,h+1)], axis=1)
         out[f'core_transition_{h}d'] = future.ne(labels, axis=0).any(axis=1).astype(float)
         out.loc[future.isna().any(axis=1), f'core_transition_{h}d'] = np.nan
-    # Expansion is deliberately relative, not tuned: forward log variance > current/trailing log ATR proxy.
     if 'log_variance' in out and 'log_atr' in out:
         out['vol_expansion'] = (out.log_variance > 2.0*out.log_atr).astype(float)
         out.loc[out.log_variance.isna(), 'vol_expansion'] = np.nan
@@ -121,7 +125,6 @@ def evaluate(panel: pd.DataFrame, asset: str, hours: int, years=range(2020,2026)
         train=add_forward_events(model.transform(fitting)); test=add_forward_events(model.transform(test))
         keys=dict(asset=asset,timeframe=hours,year=year)
         outputs['fits'].append(dict(**keys,fit_at=str(cutoff),training_rows=len(train),latest_training_label_end=str(train.label_end.max()),center=model.center.tolist(),core_centers={k:v.tolist() for k,v in model.core_centers.items()}))
-        # Continuous risk targets.
         for target in ('log_variance','downside'):
             tr=train.dropna(subset=[target,*PCS,*TRAJECTORY]); te=test.dropna(subset=[target,*PCS,*TRAJECTORY])
             y=te[target].to_numpy(); prior=tr[target].mean(); base=np.mean((y-prior)**2)
@@ -137,20 +140,17 @@ def evaluate(panel: pd.DataFrame, asset: str, hours: int, years=range(2020,2026)
                 if target=='downside': pred=np.clip(pred,0,1)
                 loss=np.mean((y-pred)**2)
                 outputs['scores'].append(dict(**keys,representation=name,target=target,observations=len(te),mse=float(loss),constant_mse=float(base),skill_vs_constant=float(1-loss/base),skill_vs_core=float(1-loss/core_loss) if core_loss else None))
-        # Transition and expansion classification.
         for target in [f'core_transition_{h}d' for h in HORIZONS]+(['vol_expansion'] if 'vol_expansion' in train else []):
             for name,cols,core in [('pca4',PCS,False),('trajectory',TRAJECTORY,False),('pca4_plus_trajectory',PCS+TRAJECTORY,False),('core_plus_trajectory',TRAJECTORY,True),('core_plus_pca4_plus_trajectory',PCS+TRAJECTORY,True)]:
                 score=_binary_score(train,test,cols,target,core)
                 if score: outputs['events'].append(dict(**keys,representation=name,target=target,**score))
-        # Descriptive pre-transition windows: no tuned thresholds.
         labels=test.core_label.astype(str)
-        next_change=labels.ne(labels.shift(-1))
         for lead in (1,2,3,5,7):
-            pre=next_change.shift(-lead).fillna(False)
+            pre=_pre_transition_mask(labels, lead)
             for col in TRAJECTORY:
                 a=test.loc[pre,col].dropna(); b=test.loc[~pre,col].dropna()
                 outputs['lead_lag'].append(dict(**keys,lead_days=lead,feature=col,pre_transition_n=len(a),control_n=len(b),pre_transition_mean=float(a.mean()) if len(a) else None,control_mean=float(b.mean()) if len(b) else None,standardized_difference=float((a.mean()-b.mean())/b.std(ddof=0)) if len(a) and b.std(ddof=0)>0 else None))
         print(f'{asset} {hours}H {year}: latent trajectory study complete',flush=True)
     return outputs
 
-__all__=['evaluate','panel_from_hourly','TrajectoryModel','PCS','TRAJECTORY','HORIZONS']
+__all__=['evaluate','panel_from_hourly','TrajectoryModel','PCS','TRAJECTORY','HORIZONS','_pre_transition_mask']
