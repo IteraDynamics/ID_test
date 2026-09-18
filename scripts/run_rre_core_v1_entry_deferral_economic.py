@@ -147,7 +147,9 @@ def run_fold(payload):
         key=(spec.asset,hours)
         if key in score_cache: continue
         panel=panels[(spec.asset,hours)]
-        cutoff=pd.Timestamp(f"{year}-01-01",tz="UTC");end=pd.Timestamp(f"{int(year)+1}-01-01",tz="UTC")
+        cutoff=pd.Timestamp(f"{year}-01-01");end=pd.Timestamp(f"{int(year)+1}-01-01")
+        if getattr(panel.index, "tz", None) is not None:
+            cutoff=cutoff.tz_localize(panel.index.tz);end=end.tz_localize(panel.index.tz)
         model=FrozenInstabilityModel.fit(panel,cutoff)
         test=panel.loc[(panel.index>=cutoff)&(panel.index<end)]
         scores=model.transform_and_score(test).sort_index()
