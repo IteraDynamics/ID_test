@@ -15,7 +15,7 @@ if ([string]::IsNullOrWhiteSpace($DataDir)) {
         (Join-Path $repo "data"),
         "C:\Dev\IteraDynamics\ID_test\data"
     )
-    $DataDir = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    $DataDir = $candidates | Where-Object { (Test-Path (Join-Path $_ "btcusd_3600s_2018-01-01_to_2025-12-31.csv")) -and (Test-Path (Join-Path $_ "ethusd_3600s_2018-01-01_to_2025-12-31.csv")) -and (Test-Path (Join-Path $_ "SPY_1D.csv")) -and (Test-Path (Join-Path $_ "QQQ_1D.csv")) -and (Test-Path (Join-Path $_ "BIL_1D.csv")) -and (Test-Path (Join-Path $_ "GLD_1D.csv")) } | Select-Object -First 1
 }
 if ([string]::IsNullOrWhiteSpace($DataDir) -or !(Test-Path $DataDir)) { throw "Data directory not found. Pass -DataDir explicitly." }
 
