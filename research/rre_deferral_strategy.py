@@ -62,6 +62,7 @@ class RREDeferralStrategy:
             action=Action.HOLD,
             desired_exposure_frac=current,
             confidence=intent.confidence,
+            horizon_hours=intent.horizon_hours,
             reason=f"rre_defer_q80:{intent.reason}",
             strategy_id=intent.strategy_id,
             meta={**intent.meta, "rre_deferred": True, "canonical_action": intent.action.value},
