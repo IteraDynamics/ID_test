@@ -6,7 +6,7 @@ Set-StrictMode -Version Latest
 $repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 Set-Location $repo
 
-Write-Host "RRE / Core v1 economic preflight — NO market backtest / NO P&L"
+Write-Host "RRE / Core v1 economic preflight - NO market backtest / NO PnL"
 
 uv run --python $Python pytest tests/test_rre_entry_deferral.py tests/test_rre_frozen_instability.py -q
 if ($LASTEXITCODE -ne 0) { throw "RRE frozen-component tests failed" }
