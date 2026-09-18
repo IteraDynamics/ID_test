@@ -46,11 +46,9 @@ class ControlQualificationError(RuntimeError):
 def canonical_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(payload, sort_keys=True, separators=(",", ":")) + "
-",
+        json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\\n",
         encoding="utf-8",
-        newline="
-",
+        newline="\\n",
     )
 
 
