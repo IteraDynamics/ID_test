@@ -46,9 +46,11 @@ class ControlQualificationError(RuntimeError):
 def canonical_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n",
+        json.dumps(payload, sort_keys=True, separators=(",", ":")) + "
+",
         encoding="utf-8",
-        newline="\n",
+        newline="
+",
     )
 
 
@@ -153,7 +155,11 @@ def main() -> None:
 
     manifest = {
         "status": "PASS",
-        "type": "rre_core_v1_fresh_paired_control_qualification",\n        "historical_reproduction_status": "HISTORICAL_SOURCE_BLOCKED",\n        "fresh_paired_control_status": "PASS",\n        "historical_nav_reproduction_claimed": False,\n        "paired_control_dataset_frozen": True,
+        "type": "rre_core_v1_fresh_paired_control_qualification",
+        "historical_reproduction_status": "HISTORICAL_SOURCE_BLOCKED",
+        "fresh_paired_control_status": "PASS",
+        "historical_nav_reproduction_claimed": False,
+        "paired_control_dataset_frozen": True,
         "observation_only": True,
         "source_sha256": sources,
         "configuration": EXPECTED_CONFIG,
@@ -215,7 +221,8 @@ def main() -> None:
         },
     )
 
-    print("RRE / Core v1 fresh paired-control qualification: PASS")\n    print("Historical reproduction: HISTORICAL_SOURCE_BLOCKED")
+    print("RRE / Core v1 fresh paired-control qualification: PASS")
+    print("Historical reproduction: HISTORICAL_SOURCE_BLOCKED")
     print("Positive-capital sleeve inventory:")
     for row in inv1:
         print(
