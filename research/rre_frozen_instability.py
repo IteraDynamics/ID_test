@@ -33,7 +33,25 @@ class FrozenInstabilityModel:
     @classmethod
     def fit(cls, panel: pd.DataFrame, cutoff: pd.Timestamp) -> "FrozenInstabilityModel":
         cutoff = pd.Timestamp(cutoff)
-        fitting = panel.loc[(panel.index < cutoff) & (panel.label_end < cutoff)].copy()
+        panel_tz = getattr(panel.index, "tz", None)
+        if panel_tz is None:
+            if cutoff.tzinfo is not None:
+                cutoff = cutoff.tz_convert("UTC").tz_localize(None)
+        else:
+            if cutoff.tzinfo is None:
+                cutoff = cutoff.tz_localize(panel_tz)
+            else:
+                cutoff = cutoff.tz_convert(panel_tz)
+        label_end = pd.to_datetime(panel.label_end, errors="raise")
+        label_tz = getattr(label_end.dt, "tz", None)
+        label_cutoff = cutoff
+        if label_tz is None and cutoff.tzinfo is not None:
+            label_cutoff = cutoff.tz_convert("UTC").tz_localize(None)
+        elif label_tz is not None and cutoff.tzinfo is None:
+            label_cutoff = cutoff.tz_localize(label_tz)
+        elif label_tz is not None and cutoff.tzinfo is not None:
+            label_cutoff = cutoff.tz_convert(label_tz)
+        fitting = panel.loc[(panel.index < cutoff) & (label_end < label_cutoff)].copy()
         if fitting.empty:
             raise FrozenInstabilityError("EMPTY_MATURED_TRAINING_PANEL")
         trajectory = TrajectoryModel().fit(fitting)
