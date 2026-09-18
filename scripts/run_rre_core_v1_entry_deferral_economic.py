@@ -115,7 +115,7 @@ def same_result(a,b,label):
 
 
 def run_fold(payload):
-    args_dict,year,cost_case=payload
+    args_dict,year,cost_case,panels=payload
     args=SimpleNamespace(**args_dict); cost=BASE_COST if cost_case=="base" else STRESS_COST; ra=ns_for(args,cost)
     raw=load_data(ra); specs=selected_specs(ra); folds=_build_folds(args.data_start,args.oos_start,args.oos_end)
     fold=next(f for f in folds if str(f.label)==str(year))
@@ -132,7 +132,7 @@ def run_fold(payload):
         hours=4 if spec.timeframe.upper()=="4H" else 1
         key=(spec.asset,hours)
         if key in score_cache: continue
-        panel=panel_from_hourly(raw[spec.asset],hours)
+        panel=panels[(spec.asset,hours)]
         cutoff=pd.Timestamp(f"{year}-01-01",tz="UTC");end=pd.Timestamp(f"{int(year)+1}-01-01",tz="UTC")
         model=FrozenInstabilityModel.fit(panel,cutoff)
         test=panel.loc[(panel.index>=cutoff)&(panel.index<end)]
@@ -200,7 +200,16 @@ def evaluate_case(results,args,cost_case,out):
 
 def run_case(args,cost_case):
     folds=_build_folds(args.data_start,args.oos_start,args.oos_end);years=[str(f.label) for f in folds]
-    payload=[(vars(args),y,cost_case) for y in years];workers=max(1,min(args.workers,len(payload)))
+    # Runtime optimization only: construct immutable daily RRE panels once in the
+    # parent process instead of rebuilding the same panels in every annual worker.
+    ra=ns_for(args,BASE_COST if cost_case=="base" else STRESS_COST)
+    raw_for_panels=load_data(ra)
+    panels={
+        ("BTC",4):panel_from_hourly(raw_for_panels["BTC"],4),
+        ("ETH",1):panel_from_hourly(raw_for_panels["ETH"],1),
+        ("ETH",4):panel_from_hourly(raw_for_panels["ETH"],4),
+    }
+    payload=[(vars(args),y,cost_case,panels) for y in years];workers=max(1,min(args.workers,len(payload)))
     results=[]
     with ProcessPoolExecutor(max_workers=workers) as ex:
         futs={ex.submit(run_fold,p):p[1] for p in payload}
