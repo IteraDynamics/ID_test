@@ -182,8 +182,8 @@ def main() -> None:
             "preserves the accepted historical path and does not correct or exploit that branch."
         ),
         "pass_meaning": (
-            "Accepted canonical historical Core v1 control and deterministic target-stream seam "
-            "reproduced; suitable only for a separately frozen RRE paired experiment."
+            "Canonical Core v1 and deterministic target-stream seam reproduced on newly frozen common sources; "
+            "historical NAV identity is not claimed; suitable only for a separately frozen RRE paired experiment."
         ),
     }
     canonical_json(out / "qualification_manifest.json", manifest)
