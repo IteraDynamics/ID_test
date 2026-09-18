@@ -28,12 +28,20 @@ from research.rre_frozen_instability import FrozenInstabilityModel
 from runtime.core_v1.allocation import SELECTED_CORE_V1_SCENARIO, SELECTED_CORE_V1_SLEEVES, validate_selected_allocation
 from scripts.run_campaign52_governed_equivalence import SOURCE_SHA256, sha256_file
 from scripts.run_core_v1_sleeve_contribution_audit import load_data, make_execution_configs, sleeve_df, strategy_for
-from scripts.run_multi_strategy_fund import _build_sleeves
+from scripts.run_multi_strategy_fund import SleeveSpec, _build_sleeves
 from scripts.run_multi_strategy_walkforward import _build_folds
 
 EXPECTED_SCENARIO = "candidate_btc1h_hedges_to_btc4h_gld_qqq"
 BASE_COST = dict(fee=.0006, equity_fee=.0001, base_slippage=3.0, slippage_vol_factor=50.0)
 STRESS_COST = dict(fee=.0012, equity_fee=.0002, base_slippage=6.0, slippage_vol_factor=100.0)
+RRE_SOURCE_SHA256 = {
+    "btc_data": SOURCE_SHA256["btc_data"],
+    "eth_data": SOURCE_SHA256["eth_data"],
+    "spy_data": "5c7461eb6fc265e1f53b7e68e51e4386e28720cb6095da14556feae0f6abc911",
+    "qqq_data": "7f3c42c05390a86bf8d9f1e3f4990eddc9163ab46ad8855a87120ecf08504cde",
+    "bil_data": "174f541610e8f34246837ada83c9346c20d5df5805af5349cf6ec043d8265022",
+    "gld_data": "1942a0e13c92487a72bb5c1e6f13b0317ab7f99cb3f798d9d0d279df91630477",
+}
 
 
 class RREEconomicError(RuntimeError):
@@ -62,7 +70,7 @@ def verify(args):
     expected={"BTC_4H_trend":.15,"ETH_1H_trend":.10,"ETH_4H_trend":.10,"SPY_1D_equity":.175,"QQQ_1D_equity":.275,"GLD_1D_gold":.20}
     if active != expected: raise RREEconomicError(f"CORE_ALLOCATION_DRIFT:{active}")
     hashes={}
-    for key,expected_hash in SOURCE_SHA256.items():
+    for key,expected_hash in RRE_SOURCE_SHA256.items():
         actual=sha256_file(Path(getattr(args,key)))
         if actual != expected_hash: raise RREEconomicError(f"SOURCE_SHA256_MISMATCH:{key}:{actual}")
         hashes[key]=actual
@@ -84,8 +92,14 @@ def selected_specs(run_args):
     for chosen in SELECTED_CORE_V1_SLEEVES:
         if chosen.label not in base: raise RREEconomicError(f"MISSING_BASE_SLEEVE:{chosen.label}")
         s=base[chosen.label]
-        s.capital=run_args.capital*chosen.weight
-        out.append(s)
+        out.append(SleeveSpec(
+            label=s.label,
+            family=s.family,
+            asset=s.asset,
+            timeframe=s.timeframe,
+            strategy=s.strategy,
+            capital=run_args.capital*chosen.weight,
+        ))
     return out
 
 
@@ -165,7 +179,12 @@ def run_fold(payload):
 
     cfund=align_equity_curves(control_curves,base_freq="1h").sum(axis=1).loc[fold.oos_start:fold.oos_end].dropna()
     efund=align_equity_curves(experimental_curves,base_freq="1h").sum(axis=1).loc[fold.oos_start:fold.oos_end].dropna()
-    return dict(year=str(year),control_nav=cfund,experimental_nav=efund,diagnostics=diagnostics,audit=audit)
+    cfm,efm=metric(cfund),metric(efund)
+    return dict(
+        year=str(year),control_nav=cfund,experimental_nav=efund,diagnostics=diagnostics,audit=audit,
+        control_fund_sharpe=cfm["sharpe"],experimental_fund_sharpe=efm["sharpe"],
+        paired_fund_sharpe_diff=efm["sharpe"]-cfm["sharpe"],
+    )
 
 
 def stitch(results,key,capital):
@@ -185,15 +204,17 @@ def evaluate_case(results,args,cost_case,out):
     n_defined=len(diag);required=int(np.ceil((2*n_defined)/3));wins=int((diag.paired_sharpe_diff>0).sum()) if len(diag) else 0
     deferred=int(audit.deferred.sum()) if len(audit) else 0
     per_sleeve_deferred=audit.loc[audit.deferred].groupby("sleeve").size().to_dict() if len(audit) else {}
+    annual_fund_diffs=[float(r["paired_fund_sharpe_diff"]) for r in sorted(results,key=lambda x:x["year"])]
+    mean_paired_fund_sharpe_diff=float(np.mean(annual_fund_diffs)) if annual_fund_diffs else float("nan")
     dd_ok=em["max_drawdown_pct"] >= cm["max_drawdown_pct"]-0.10*abs(cm["max_drawdown_pct"])
     gates=dict(
-        positive_fund_sharpe_diff=(em["sharpe"]-cm["sharpe"])>0,
+        positive_mean_paired_fund_sharpe_diff=mean_paired_fund_sharpe_diff>0,
         cross_fold_consistency=wins>=required,
         each_sleeve_positive=all(by.get(s,float("-inf"))>0 for s in sorted(ELIGIBLE_SLEEVES)),
         drawdown_within_allowance=bool(dd_ok),
         intervention_count=deferred>=20 and all(per_sleeve_deferred.get(s,0)>=3 for s in ELIGIBLE_SLEEVES),
     )
-    summary=dict(cost_case=cost_case,control=cm,experimental=em,fund_sharpe_diff=em["sharpe"]-cm["sharpe"],defined_diagnostics=n_defined,required_positive_diagnostics=required,positive_diagnostics=wins,mean_sleeve_fold_sharpe_diff=float(diag.paired_sharpe_diff.mean()),mean_by_sleeve=by,deferred_events=deferred,deferred_by_sleeve=per_sleeve_deferred,base_evaluable_gates=gates,base_gate_pass=all(gates.values()))
+    summary=dict(cost_case=cost_case,control=cm,experimental=em,stitched_fund_sharpe_diff=em["sharpe"]-cm["sharpe"],mean_paired_fund_sharpe_diff=mean_paired_fund_sharpe_diff,annual_paired_fund_sharpe_diffs=annual_fund_diffs,defined_diagnostics=n_defined,required_positive_diagnostics=required,positive_diagnostics=wins,mean_sleeve_fold_sharpe_diff=float(diag.paired_sharpe_diff.mean()),mean_by_sleeve=by,deferred_events=deferred,deferred_by_sleeve=per_sleeve_deferred,base_evaluable_gates=gates,base_gate_pass=all(gates.values()))
     (out/"summary.json").write_text(json.dumps(summary,indent=2,sort_keys=True),encoding="utf-8")
     return summary
 
